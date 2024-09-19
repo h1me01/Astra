@@ -202,6 +202,11 @@ namespace Chess {
         const PieceType pt = typeOf(pc_from);
         const U64 mask = SQUARE_BB[from] | SQUARE_BB[to];
 
+        assert(from >= 0 && from < NUM_SQUARES);
+        assert(to >= 0 && to < NUM_SQUARES);
+        assert(typeOf(pc_to) != KING);
+        assert(typeOf(pc_from) != NO_PIECE_TYPE);
+
         game_ply++;
         history[game_ply] = StateInfo(history[game_ply - 1]);
         history[game_ply].half_move_clock++;
@@ -278,6 +283,7 @@ namespace Chess {
         hash ^= Zobrist::castle[getCastleHashIndex(history[game_ply].castle_mask)];
 
         history[game_ply].hash = hash;
+
         stm = ~stm;
     }
 

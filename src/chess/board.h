@@ -112,6 +112,7 @@ namespace Chess {
 
     inline void Board::movePiece(Square from, Square to, bool update_nnue) {
         const Piece p = board[from];
+
         piece_bb[p] ^= SQUARE_BB[from] | SQUARE_BB[to];
         board[to] = p;
         board[from] = NO_PIECE;

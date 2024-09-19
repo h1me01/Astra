@@ -5,7 +5,7 @@ namespace UCI {
 
     Uci::Uci() : w_time(0), b_time(0), w_inc(0), b_inc(0), moves_to_go(0), move_time(0), engine(STARTING_FEN), board(STARTING_FEN) {
         options["Hash"] = Option("spin", "256", "256", 1, 2048);
-        options["EvalFile"] = Option("string", "nn-2x768-2x512-1.nnue", "nn-2x768-2x512-1.nnue", 0, 0);
+        options["EvalFile"] = Option("string", "C:/Users/semio/Downloads/nn-2x768-2x512-1.nnue", "nn-2x768-2x512-1.nnue", 0, 0);
         options["SyzygyPath"] = Option("string", "", "", 0, 0);
 
         applyOptions();
@@ -22,8 +22,11 @@ namespace UCI {
                 fen += token + " ";
             }
         } else {
+            std::cout << "Unknown command" << std::endl;
             return;
         }
+
+        std::string p_str[6] = {"P", "N", "B", "R", "Q", "K"};
 
         board = Board(fen);
         while (is >> token) {
@@ -59,7 +62,7 @@ namespace UCI {
         }
 
         // start search
-        Astra::SearchResult result = engine.bestMove(MAX_PLY - 1, time_per_move);
+        Astra::SearchResult result = engine.bestMove(99, time_per_move);
         std::cout << "bestmove " << result.best_move << std::endl;
 
         // important to reset
@@ -94,11 +97,13 @@ namespace UCI {
                 applyOptions();
             } else if (token == "d") {
                 engine.board.print(engine.board.getTurn());
+            } else if(token == "stop") {
+
             } else if (token == "quit") {
                 tb_free();
                 break;
             } else {
-                std::cout << "Unknown Command!" << std::endl;
+                std::cout << "Unknown Command" << std::endl;
             }
         }
     }

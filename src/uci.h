@@ -43,8 +43,7 @@ namespace UCI {
         const bool is_capture = p_to != NO_PIECE;
 
         if (typeOf(p_from) == PAWN) {
-            const bool is_double_push = (rankOf(from) == 1 && rankOf(to) == 3) ||
-                                  (rankOf(from) == 6 && rankOf(to) == 4);
+            const bool is_double_push = (rankOf(from) == 1 && rankOf(to) == 3) || (rankOf(from) == 6 && rankOf(to) == 4);
             const bool is_promotion = rankOf(to) == 0 || rankOf(to) == 7;
             const bool is_ep = board.history[board.getPly()].ep_sq == to;
 
