@@ -194,6 +194,10 @@ namespace Astra {
     }
 
     Score Search::abSearch(int depth, Score alpha, Score beta, Node node, Stack *ss) {
+        if (time_manager.isTimeExceeded()) {
+           return 0;
+        }
+
         if (ss->ply >= MAX_PLY) {
             return Eval::evaluate(board);
         }
