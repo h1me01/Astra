@@ -2,7 +2,7 @@
 #include <cassert>
 #include "tt.h"
 
-namespace Astra {
+namespace Tsukuyomi {
 
     TTable::TTable(const int size_mb) {
         init(size_mb);

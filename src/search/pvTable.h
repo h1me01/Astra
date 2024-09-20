@@ -5,7 +5,7 @@
 
 using namespace Chess;
 
-namespace Astra {
+namespace Tsukuyomi {
 
     struct PVLine {
         Move pv[MAX_PLY + 1];

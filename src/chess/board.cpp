@@ -93,7 +93,7 @@ namespace Chess {
         }
 
         std::cout << "Fen: " << getFen() << std::endl;
-        std::cout << "Hash key: " << hash << "\n\n";
+        std::cout << "Hash key: " << std::hex << hash << "\n\n";
     }
 
     std::string Board::getFen() const {
@@ -124,7 +124,7 @@ namespace Chess {
                 << (castleNotationHelper(fen) ? " " : "- ")
                 << (history[game_ply].ep_sq == NO_SQUARE ? "-" : SQSTR[history[game_ply].ep_sq]);
 
-        fen << " " << history[game_ply].half_move_clock << " " << (game_ply + 1) / 2;
+        fen << " " << history[game_ply].half_move_clock << " " << (game_ply == 0 ? 1 : (game_ply + 1) / 2);
         return fen.str();
     }
 

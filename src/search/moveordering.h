@@ -7,7 +7,7 @@
 
 using namespace Chess;
 
-namespace Astra {
+namespace Tsukuyomi {
 
     const int PIECE_VALUES[] = {100, 320, 330, 500, 900, 0, 0};
 

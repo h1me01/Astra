@@ -5,7 +5,7 @@
 #include "../chess/movegen.h"
 #include "../syzygy/tbprobe.h"
 
-namespace Astra {
+namespace Tsukuyomi {
 
     constexpr int RAZOR_MARGIN = 129;
     constexpr int DELTA_MARGIN = 400;

@@ -7,7 +7,7 @@ int main() {
 
     initLookUpTables();
     Zobrist::init();
-    Astra::initReductions();
+    Tsukuyomi::initReductions();
 
     // generate data for neural network
     //saveNetInput(fenToInput(loadDataset()));
