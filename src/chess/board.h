@@ -29,7 +29,7 @@ namespace Chess {
 
     class Board {
     public:
-        StateInfo history[512];
+        StateInfo history[1024];
         // contains squares of enemy pieces that check our king
         U64 checkers;
         // contains squares of our pieces that are pinned

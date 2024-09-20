@@ -9,6 +9,7 @@ namespace UCI {
         options["SyzygyPath"] = Option("string", "", "", 0, 0);
 
         applyOptions();
+        engine.reset();
     }
 
     void Uci::updatePosition(std::istringstream &is) {
