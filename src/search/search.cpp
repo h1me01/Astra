@@ -313,11 +313,14 @@ namespace Tsukuyomi {
         // only use pruning/reduction when not in check and root/pv node
         if (!in_check && !root_node) {
             // internal iterative reductions
-            if (depth >= 4) {
-                depth--;
-            }
             if (pv_node && tt_entry.move == NO_MOVE) {
                 depth -= 3;
+            }
+            if (depth >= 3 && !tt_hit) {
+                depth--;
+            }
+            if (pv_node && !tt_hit) {
+                depth--;
             }
             if (depth <= 0) {
                 return qSearch(alpha, beta, PV, ss);
@@ -325,20 +328,23 @@ namespace Tsukuyomi {
 
             // reverse futility pruning
             int rfp_margin = ss->static_eval - 40 * depth + 30 * is_improving;
-            if (depth < 7
+            if (!pv_node &&
+                depth < 7
                 && rfp_margin >= beta
                 && abs(beta) < VALUE_TB_WIN_IN_MAX_PLY) {
                 return beta;
             }
 
             // razoring
-            if (depth < 3
+            if (!pv_node
+                && depth < 3
                 && ss->static_eval + RAZOR_MARGIN < alpha) {
                 return qSearch(alpha, beta, NON_PV, ss);
             }
 
             // null move pruning
-            if (board.nonPawnMat(stm) &&
+            if (!pv_node &&
+                board.nonPawnMat(stm) &&
                 excluded_move != NO_MOVE &&
                 (ss - 1)->current_move != NULL_MOVE &&
                 depth >= 3 &&
@@ -423,30 +429,6 @@ namespace Tsukuyomi {
                     if (depth < 7 && !see(board, move, -40 * depth)) {
                         continue;
                     }
-                }
-            }
-
-            // Singular extensions
-            if (false &&
-                !root_node
-                && depth >= 8
-                && tt_hit // tt_score cannot be VALUE_NONE!
-                && tt_entry.move == move
-                && excluded_move != NO_MOVE
-                && std::abs(tt_score) < VALUE_TB_WIN_IN_MAX_PLY
-                && tt_entry.bound & LOWER_BOUND
-                && tt_entry.depth >= depth - 3) {
-                const Score singular_beta = tt_score - 3 * depth;
-                const int singular_depth = (depth - 1) / 2;
-
-                ss->excluded_move = move;
-                const auto value = abSearch(singular_depth, singular_beta - 1, singular_beta, NON_PV, ss);
-                ss->excluded_move = NO_MOVE;
-
-                if (value < singular_beta) {
-                    extension = 1;
-                } else if (singular_beta >= beta) {
-                    return singular_beta;
                 }
             }
 
