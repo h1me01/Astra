@@ -9,7 +9,6 @@ namespace Tsukuyomi {
 
     constexpr int RAZOR_MARGIN = 130;
     constexpr int DELTA_MARGIN = 400;
-    constexpr int FUTILITY_MARGIN = 68;
 
     int REDUCTIONS[MAX_PLY][MAX_MOVES];
 
@@ -83,8 +82,13 @@ namespace Tsukuyomi {
         return VALUE_NONE;
     }
 
-    Search::Search(const std::string &fen) : board(fen), tt(16) {
+    Search::Search(const std::string &fen) : board(fen){
+        tt = new TTable(16);
         reset();
+    }
+
+    Search::~Search() {
+        delete tt;
     }
 
     Score Search::qSearch(Score alpha, Score beta, Node node, Stack *ss) {
@@ -106,7 +110,7 @@ namespace Tsukuyomi {
         // look up in transposition table
         TTEntry tt_entry;
         const U64 hash = board.getHash();
-        const bool tt_hit = tt.lookup(tt_entry, hash);
+        const bool tt_hit = tt->lookup(tt_entry, hash);
         const Score tt_score = tt_hit ? scoreFromTT(tt_entry.score, ss->ply) : VALUE_NONE;
         Bound tt_bound = tt_entry.bound;
 
@@ -114,13 +118,12 @@ namespace Tsukuyomi {
             && !pv_node
             && tt_score != VALUE_NONE
             && tt_bound != NO_BOUND) {
-            if (tt_bound == EXACT_BOUND) {
-                return tt_score;
-            }
-            if (tt_bound == LOWER_BOUND && tt_score >= beta) {
-                return tt_score;
-            }
-            if (tt_bound == UPPER_BOUND && tt_score <= alpha) {
+
+            bool is_exact = tt_bound == EXACT_BOUND;
+            bool is_lower_bound = tt_bound == LOWER_BOUND && tt_score >= beta;
+            bool is_upper_bound = tt_bound == UPPER_BOUND && tt_score <= alpha;
+
+            if(is_exact || is_lower_bound || is_upper_bound) {
                 return tt_score;
             }
         }
@@ -147,8 +150,9 @@ namespace Tsukuyomi {
             if (best_score > VALUE_TB_LOSS_IN_MAX_PLY && !in_check) {
                 // delta pruning
                 PieceType captured = typeOf(board.pieceAt(move.to()));
-                if (best_score + DELTA_MARGIN + PIECE_VALUES[captured] < alpha &&
-                    !isPromotion(move) && board.nonPawnMat(stm)) {
+                if (best_score + DELTA_MARGIN + PIECE_VALUES[captured] < alpha
+                    && !isPromotion(move)
+                    && board.nonPawnMat(stm)) {
                     continue;
                 }
 
@@ -160,7 +164,7 @@ namespace Tsukuyomi {
 
             nodes++;
 
-            board.makeMove(move, true);
+            board.makeMove(move, tt, true);
             Score score = -qSearch(-beta, -alpha, node, ss + 1);
             board.unmakeMove(move);
 
@@ -190,7 +194,7 @@ namespace Tsukuyomi {
         // store in transposition table
         if (best_move != NO_MOVE) {
             Bound bound = best_score >= beta ? LOWER_BOUND : UPPER_BOUND;
-            tt.store(hash, best_move, scoreToTT(best_score, ss->ply), 0, bound);
+            tt->store(hash, best_move, scoreToTT(best_score, ss->ply), 0, bound);
         }
 
         assert(best_score > -VALUE_INFINITE && best_score < VALUE_INFINITE);
@@ -236,10 +240,16 @@ namespace Tsukuyomi {
 
         (ss + 1)->excluded_move = NO_MOVE;
 
+        // selective depth
+        if (pv_node && ss->ply > sel_depth) {
+            // heighest depth a pv node has reached
+            sel_depth = ss->ply;
+        }
+
         // Look up in the TT
         TTEntry tt_entry;
         const U64 hash = board.getHash();
-        const bool tt_hit = tt.lookup(tt_entry, hash);
+        const bool tt_hit = tt->lookup(tt_entry, hash);
         const Score tt_score = tt_hit ? scoreFromTT(tt_entry.score, ss->ply) : VALUE_NONE;
 
         const Move excluded_move = ss->excluded_move;
@@ -294,48 +304,45 @@ namespace Tsukuyomi {
         bool is_improving = false;
 
         if (in_check) {
-            ss->eval = VALUE_NONE;
+            ss->static_eval = (ss - 2)->static_eval;
         } else {
-            ss->eval = tt_hit && tt_score != VALUE_NONE ? tt_score : Eval::evaluate(board);
-            is_improving = (ss - 2)->eval != VALUE_NONE && ss->eval > (ss - 2)->eval;
+            ss->static_eval = tt_hit && tt_score != VALUE_NONE ? tt_score : Eval::evaluate(board);
+            is_improving = ss->static_eval > (ss - 2)->static_eval;
         }
 
         // only use pruning/reduction when not in check and root/pv node
         if (!in_check && !root_node) {
             // internal iterative reductions
-            if (depth >= 3 && !tt_hit) {
+            if (depth >= 4) {
                 depth--;
             }
-            if (pv_node && !tt_hit) {
-                depth--;
+            if (pv_node && tt_entry.move == NO_MOVE) {
+                depth -= 3;
             }
             if (depth <= 0) {
                 return qSearch(alpha, beta, PV, ss);
             }
 
             // reverse futility pruning
-            int rfp_margin = ss->eval - 40 * depth + 30 * is_improving;
-            if (!pv_node
-                && abs(beta) < VALUE_TB_WIN_IN_MAX_PLY
-                && depth < 7
-                && rfp_margin >= beta) {
+            int rfp_margin = ss->static_eval - 40 * depth + 30 * is_improving;
+            if (depth < 7
+                && rfp_margin >= beta
+                && abs(beta) < VALUE_TB_WIN_IN_MAX_PLY) {
                 return beta;
             }
 
             // razoring
-            if (!pv_node
-                && depth < 3
-                && ss->eval + RAZOR_MARGIN < alpha) {
+            if (depth < 3
+                && ss->static_eval + RAZOR_MARGIN < alpha) {
                 return qSearch(alpha, beta, NON_PV, ss);
             }
 
             // null move pruning
-            if (!pv_node &&
-                board.nonPawnMat(stm) &&
+            if (board.nonPawnMat(stm) &&
                 excluded_move != NO_MOVE &&
                 (ss - 1)->current_move != NULL_MOVE &&
                 depth >= 3 &&
-                ss->eval >= beta) {
+                ss->static_eval >= beta) {
                 constexpr int R = 5;
 
                 ss->current_move = NULL_MOVE;
@@ -345,6 +352,11 @@ namespace Tsukuyomi {
                 board.unmakeNullMove();
 
                 if (score >= beta) {
+                    // don't return unproven mate scores
+                    if (score >= VALUE_TB_WIN_IN_MAX_PLY) {
+                        return beta;
+                    }
+
                     return score;
                 }
             }
@@ -416,6 +428,30 @@ namespace Tsukuyomi {
                 }
             }
 
+            // Singular extensions
+            if (false &&
+                !root_node
+                && depth >= 8
+                && tt_hit // tt_score cannot be VALUE_NONE!
+                && tt_entry.move == move
+                && excluded_move != NO_MOVE
+                && std::abs(tt_score) < VALUE_TB_WIN_IN_MAX_PLY
+                && tt_entry.bound & LOWER_BOUND
+                && tt_entry.depth >= depth - 3) {
+                const Score singular_beta = tt_score - 3 * depth;
+                const int singular_depth = (depth - 1) / 2;
+
+                ss->excluded_move = move;
+                const auto value = abSearch(singular_depth, singular_beta - 1, singular_beta, NON_PV, ss);
+                ss->excluded_move = NO_MOVE;
+
+                if (value < singular_beta) {
+                    extension = 1;
+                } else if (singular_beta >= beta) {
+                    return singular_beta;
+                }
+            }
+
             // one reply extension
             if (in_check && (ss - 1)->move_count == 1 && ss->move_count == 1) {
                 extension += 1;
@@ -424,12 +460,12 @@ namespace Tsukuyomi {
             const int newDepth = depth - 1 + extension;
 
             nodes++;
-            board.makeMove(move, true);
+            board.makeMove(move, tt, true);
 
             ss->current_move = move;
 
             // late move reduction
-            if (depth > 2 && !in_check && made_moves > 3) {
+            if (depth >= 2 && !in_check && made_moves > 1) {
                 int rdepth = REDUCTIONS[depth][made_moves];
                 rdepth += is_improving;
                 rdepth -= pv_node;
@@ -501,7 +537,7 @@ namespace Tsukuyomi {
                 bound = UPPER_BOUND;
             }
 
-            tt.store(hash, best_move, scoreToTT(highest_score, ss->ply), depth, bound);
+            tt->store(hash, best_move, scoreToTT(highest_score, ss->ply), depth, bound);
         }
 
         assert(highest_score > -VALUE_INFINITE && highest_score < VALUE_INFINITE);
@@ -553,12 +589,14 @@ namespace Tsukuyomi {
     SearchResult Search::bestMove(int max_depth, unsigned int time_per_move) {
         SearchResult search_result;
 
-        Stack stack[MAX_PLY + 4], *ss = stack + 2;
+        Stack stack[MAX_PLY + 4];
+        Stack *ss = stack + 2;
+
         for (int i = 2; i > 0; --i) {
             (ss - i)->ply = i;
             (ss - i)->move_count = 0;
             (ss - i)->current_move = NO_MOVE;
-            (ss - i)->eval = 0;
+            (ss - i)->static_eval = 0;
             (ss - i)->excluded_move = NO_MOVE;
         }
 
@@ -566,7 +604,7 @@ namespace Tsukuyomi {
             (ss + i)->ply = i;
             (ss + i)->move_count = 0;
             (ss + i)->current_move = NO_MOVE;
-            (ss + i)->eval = 0;
+            (ss + i)->static_eval = 0;
             (ss + i)->excluded_move = NO_MOVE;
         }
 
@@ -577,6 +615,8 @@ namespace Tsukuyomi {
 
         int depth = 1;
         for (; depth <= max_depth; depth++) {
+            sel_depth = 0;
+
             const Score previous_result = search_result.score;
             const Score result = aspSearch(depth, previous_result, ss);
 
@@ -589,6 +629,7 @@ namespace Tsukuyomi {
 
             // info for uci
             std::cout << "info depth " << depth
+                    << " seldepth " << static_cast<int>(sel_depth)
                     << " score ";
 
             Score best_score = search_result.score;
@@ -619,7 +660,7 @@ namespace Tsukuyomi {
     void Search::reset() {
         board = Board(STARTING_FEN);
         nodes = 0;
-        tt.clear();
+        tt->clear();
         pv_table.reset();
         move_ordering.clear();
     }

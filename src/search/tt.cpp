@@ -65,4 +65,8 @@ namespace Tsukuyomi {
         }
     }
 
+    void TTable::prefetch(U64 hash) const {
+        __builtin_prefetch(&entries[hash & mask]);
+    }
+
 } // namespace Astra

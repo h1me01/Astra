@@ -38,6 +38,8 @@ namespace Tsukuyomi {
         bool lookup(TTEntry& entry, U64 hash) const;
         void store(U64 hash, Move move, Score score, int depth, Bound bound) const;
 
+        void prefetch(U64 hash) const;
+
     private:
         U64 tt_size;
         U64 mask;

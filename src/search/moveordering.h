@@ -9,7 +9,7 @@ using namespace Chess;
 
 namespace Tsukuyomi {
 
-    const int PIECE_VALUES[] = {100, 320, 330, 500, 900, 0, 0};
+    const int PIECE_VALUES[] = {100, 325, 325, 500, 1000, 0, 0};
 
     // static exchange evaluation
     bool see(const Board &board, Move move, int threshold);
@@ -31,7 +31,7 @@ namespace Tsukuyomi {
         void updateCounters(Move& move, Move &prev_move);
         void updateHistory(Board &board, Move &move, int bonus);
 
-        void sortMoves(Board &board, MoveList &moves, TTable &tt, Move& prev_move, int ply) const;
+        void sortMoves(Board &board, MoveList &moves, TTable *tt, Move& prev_move, int ply) const;
 
     private:
         Move killer1[MAX_PLY];

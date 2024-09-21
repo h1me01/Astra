@@ -6,6 +6,7 @@
 #include "attacks.h"
 #include "../eval/accumulator.h"
 #include "../eval/nnue.h"
+#include "../search/tt.h"
 
 namespace Chess {
 
@@ -63,7 +64,7 @@ namespace Chess {
         U64 diagSliders(Color c) const;
         U64 orthSliders(Color c) const;
 
-        void makeMove(const Move &m, bool update_nnue = false);
+        void makeMove(const Move &m, Tsukuyomi::TTable* tt = nullptr, bool update_nnue = false);
         void unmakeMove(const Move &m);
 
         void makeNullMove();

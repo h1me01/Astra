@@ -4,7 +4,7 @@
 namespace UCI {
 
     Uci::Uci() : w_time(0), b_time(0), w_inc(0), b_inc(0), moves_to_go(0), move_time(0), engine(STARTING_FEN), board(STARTING_FEN) {
-        options["Hash"] = Option("spin", "256", "256", 1, 2048);
+        options["Hash"] = Option("spin", "64", "64", 1, 4096);
         options["EvalFile"] = Option("string", "C:/Users/semio/Downloads/nn-2x768-2x512-1.nnue", "nn-2x768-2x512-1.nnue", 0, 0);
         options["SyzygyPath"] = Option("string", "", "", 0, 0);
 
@@ -32,7 +32,7 @@ namespace UCI {
         board = Board(fen);
         while (is >> token) {
             if (token != "moves") {
-                board.makeMove(getMove(token), false);
+                board.makeMove(getMove(token));
             }
         }
 
@@ -112,7 +112,7 @@ namespace UCI {
     // options functions
     void Uci::applyOptions() {
         auto path = getOption("SyzygyPath");
-        if (!path.empty()) {
+        if (!path.empty() && path != "<empty>") {
             if (tb_init(path.c_str())) {
                 engine.use_TB = true;
                 std::cout << "info string successfully loaded syzygy path " << path << std::endl;
@@ -126,7 +126,7 @@ namespace UCI {
             NNUE::nnue.init(path);
         }
 
-        engine.tt.init(std::stoi(getOption("Hash")));
+        engine.tt->init(std::stoi(getOption("Hash")));
     }
 
     void Uci::setOption(std::istringstream &is) {

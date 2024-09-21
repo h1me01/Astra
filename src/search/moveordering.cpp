@@ -128,9 +128,9 @@ namespace Tsukuyomi {
         history[c][from][to] += score;
     }
 
-    void MoveOrdering::sortMoves(Board &board, MoveList &moves, TTable &tt, Move& prev_move, int ply) const {
+    void MoveOrdering::sortMoves(Board &board, MoveList &moves, TTable *tt, Move& prev_move, int ply) const {
         TTEntry entry;
-        const bool tt_hit = tt.lookup(entry, board.getHash());
+        const bool tt_hit = tt->lookup(entry, board.getHash());
 
         std::vector<int> scores(moves.size(), 0);
 
