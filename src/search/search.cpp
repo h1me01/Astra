@@ -387,8 +387,6 @@ namespace Tsukuyomi {
 
         Move best_move = NO_MOVE;
 
-        bool do_full_search = false;
-
         ss->move_count = moves.size();
 
         uint8_t quiet_count = 0;
@@ -473,12 +471,13 @@ namespace Tsukuyomi {
                 rdepth = std::clamp(newDepth - rdepth, 1, newDepth + 1);
 
                 score = -abSearch(rdepth, -alpha - 1, -alpha, NON_PV, ss + 1);
-                do_full_search = score > alpha && rdepth < newDepth;
-            } else {
-                do_full_search = !pv_node || made_moves > 1;
-            }
 
-            if (do_full_search) {
+                // if late move reduction failed high, research
+                if(score > alpha && rdepth < newDepth) {
+                    score = -abSearch(newDepth, -alpha - 1, -alpha, NON_PV, ss + 1);
+                }
+            } else if (!pv_node || made_moves > 1) {
+                // full-depth search if lmr was skipped
                 score = -abSearch(newDepth, -alpha - 1, -alpha, NON_PV, ss + 1);
             }
 

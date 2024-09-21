@@ -193,7 +193,7 @@ namespace Chess {
         return piece_bb[knight] | piece_bb[bishop] | piece_bb[rook] | piece_bb[queen];
     }
 
-    void Board::makeMove(const Move &m,  Tsukuyomi::TTable* tt, bool update_nnue) {
+    void Board::makeMove(const Move &m, Tsukuyomi::TTable* tt, bool update_nnue) {
         const MoveFlags mf = m.flag();
         const Square from = m.from();
         const Square to = m.to();
@@ -286,7 +286,9 @@ namespace Chess {
 
         stm = ~stm;
 
-        tt->prefetch(hash);
+        if (tt != nullptr) {
+            tt->prefetch(hash);
+        }
     }
 
     void Board::unmakeMove(const Move &m) {
