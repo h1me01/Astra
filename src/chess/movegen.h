@@ -5,6 +5,10 @@
 
 namespace Chess {
 
+    enum MoveType {
+        CAPTURE_MOVES, ALL_MOVES
+    };
+
     constexpr U64 ooMask(Color c) {
         return c == WHITE ? WHITE_OO_MASK : BLACK_OO_MASK;
     }
@@ -147,7 +151,7 @@ namespace Chess {
         return moves;
     }
 
-    template<Color Us>
+    template<Color Us, MoveType mt>
     Move *genPieceMoves(const Board &board, Move *moves, const U64 occ, const int num_checkers) {
         Square s; // used to store square
         U64 attacks; // used to store piece attack squares;
@@ -162,8 +166,11 @@ namespace Chess {
                 s = popLsb(pinned_pieces);
                 // only include getAttacks that are aligned with our king
                 attacks = getAttacks(typeOf(board.pieceAt(s)), s, occ) & LINE[our_king_sq][s];
+
                 moves = make<CAPTURE>(moves, s, attacks & board.capture_mask);
-                moves = make<QUIET>(moves, s, attacks & board.quiet_mask);
+                if(mt == ALL_MOVES) {
+                    moves = make<QUIET>(moves, s, attacks & board.quiet_mask);
+                }
             }
         }
 
@@ -172,8 +179,11 @@ namespace Chess {
         while (our_knights) {
             s = popLsb(our_knights);
             attacks = getAttacks(KNIGHT, s, occ);
+
             moves = make<CAPTURE>(moves, s, attacks & board.capture_mask);
-            moves = make<QUIET>(moves, s, attacks & board.quiet_mask);
+            if (mt == ALL_MOVES) {
+                moves = make<QUIET>(moves, s, attacks & board.quiet_mask);
+            }
         }
 
         // bishops and queens
@@ -181,8 +191,11 @@ namespace Chess {
         while (our_diag_sliders) {
             s = popLsb(our_diag_sliders);
             attacks = getAttacks(BISHOP, s, occ);
+
             moves = make<CAPTURE>(moves, s, attacks & board.capture_mask);
-            moves = make<QUIET>(moves, s, attacks & board.quiet_mask);
+            if (mt == ALL_MOVES) {
+                moves = make<QUIET>(moves, s, attacks & board.quiet_mask);
+            }
         }
 
         // rooks and queens
@@ -190,14 +203,17 @@ namespace Chess {
         while (our_orth_sliders) {
             s = popLsb(our_orth_sliders);
             attacks = getAttacks(ROOK, s, occ);
+
             moves = make<CAPTURE>(moves, s, attacks & board.capture_mask);
-            moves = make<QUIET>(moves, s, attacks & board.quiet_mask);
+            if (mt == ALL_MOVES) {
+                moves = make<QUIET>(moves, s, attacks & board.quiet_mask);
+            }
         }
 
         return moves;
     }
 
-    template<Color Us>
+    template<Color Us, MoveType mt>
     Move *genPawnMoves(const Board &board, Move *moves, const U64 occ, const int num_checkers) {
         constexpr Color them = ~Us;
         const Square ep_sq = board.history[board.getPly()].ep_sq;
@@ -227,11 +243,13 @@ namespace Chess {
                     const U64 attacks = pawnAttacks(Us, s) & board.capture_mask & LINE[s][our_king_sq];
                     moves = make<CAPTURE>(moves, s, attacks);
 
-                    const U64 single_push = shift(relativeDir(Us, NORTH), SQUARE_BB[s]) & ~occ & LINE[our_king_sq][s];
-                    moves = make<QUIET>(moves, s, single_push);
+                    if (mt == ALL_MOVES) {
+                        const U64 single_push = shift(relativeDir(Us, NORTH), SQUARE_BB[s]) & ~occ & LINE[our_king_sq][s];
+                        moves = make<QUIET>(moves, s, single_push);
 
-                    const U64 double_push = shift(relativeDir(Us, NORTH), single_push & MASK_RANK[relativeRank(Us, RANK_3)]);
-                    moves = make<DOUBLE_PUSH>(moves, s, double_push & ~occ & LINE[our_king_sq][s]);
+                        const U64 double_push = shift(relativeDir(Us, NORTH), single_push & MASK_RANK[relativeRank(Us, RANK_3)]);
+                        moves = make<DOUBLE_PUSH>(moves, s, double_push & ~occ & LINE[our_king_sq][s]);
+                    }
                 }
             }
 
@@ -269,12 +287,12 @@ namespace Chess {
         // quiet mask is applied later, to consider the possibility of a double push blocking a check
         single_push &= board.quiet_mask;
 
-        while (single_push) {
+        while (single_push && mt == ALL_MOVES) {
             s = popLsb(single_push);
             *moves++ = Move(s - relativeDir(Us, NORTH), s, QUIET);
         }
 
-        while (double_push) {
+        while (double_push && mt == ALL_MOVES) {
             s = popLsb(double_push);
             *moves++ = Move(s - relativeDir(Us, NORTH_NORTH), s, DOUBLE_PUSH);
         }
@@ -296,9 +314,13 @@ namespace Chess {
         our_pawns = board.getPieceBB(Us, PAWN) & ~board.pinned & MASK_RANK[relativeRank(Us, RANK_7)];
         if (our_pawns) {
             // attacks contains squares that the pawns can move to
+            U64 attacks;
+
             // quiet promotions
-            U64 attacks = shift(relativeDir(Us, NORTH), our_pawns) & board.quiet_mask;
-            moves = makePromotions<Us, NORTH, PR_KNIGHT>(moves, attacks);
+            if (mt == ALL_MOVES) {
+                attacks = shift(relativeDir(Us, NORTH), our_pawns) & board.quiet_mask;
+                moves = makePromotions<Us, NORTH, PR_KNIGHT>(moves, attacks);
+            }
 
             // promotion captures
             attacks = shift(relativeDir(Us, NORTH_WEST), our_pawns) & board.capture_mask;
@@ -311,7 +333,7 @@ namespace Chess {
         return moves;
     }
 
-    template<Color Us>
+    template<Color Us, MoveType mt>
     Move *genLegalMoves(Board &board, Move *moves) {
         const Color them = ~Us;
         const Square ep_sq = board.history[board.getPly()].ep_sq;
@@ -327,7 +349,9 @@ namespace Chess {
         const U64 attacks = getAttacks(KING, our_king_sq, occ) & ~(our_occ | board.danger);
 
         moves = make<CAPTURE>(moves, our_king_sq, attacks & their_occ);
-        moves = make<QUIET>(moves, our_king_sq, attacks & ~their_occ);
+        if (mt == ALL_MOVES) {
+            moves = make<QUIET>(moves, our_king_sq, attacks & ~their_occ);
+        }
 
         // if double check, then only king moves are legal
         const int num_checkers = sparsePopCount(board.checkers);
@@ -373,22 +397,28 @@ namespace Chess {
             // we can move to any square which is not occupied
             board.quiet_mask = ~occ;
 
-            moves = genCastlingMoves<Us>(board, moves, occ);
+            if (mt == ALL_MOVES) {
+                moves = genCastlingMoves<Us>(board, moves, occ);
+            }
         }
 
-        moves = genPieceMoves<Us>(board, moves, occ, num_checkers);
-        moves = genPawnMoves<Us>(board, moves, occ, num_checkers);
+        moves = genPieceMoves<Us, mt>(board, moves, occ, num_checkers);
+        moves = genPawnMoves<Us, mt>(board, moves, occ, num_checkers);
 
         return moves;
     }
 
     class MoveList {
     public:
-        explicit MoveList(Board &board) {
-            if (board.getTurn() == WHITE) {
-                last = genLegalMoves<WHITE>(board, list);
+        explicit MoveList(Board &board, MoveType mt = ALL_MOVES) {
+            bool is_w = board.getTurn() == WHITE;
+
+            if (mt == CAPTURE_MOVES) {
+                last = is_w ? genLegalMoves<WHITE, CAPTURE_MOVES>(board, list) :
+                              genLegalMoves<BLACK, CAPTURE_MOVES>(board, list);
             } else {
-                last = genLegalMoves<BLACK>(board, list);
+                last = is_w ? genLegalMoves<WHITE, ALL_MOVES>(board, list) :
+                              genLegalMoves<BLACK, ALL_MOVES>(board, list);
             }
         }
 

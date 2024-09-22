@@ -137,15 +137,12 @@ namespace Tsukuyomi {
             alpha = best_score;
         }
 
-        MoveList moves(board);
+        MoveList moves(board, CAPTURE_MOVES);
         move_ordering.sortMoves(board, moves, tt, (ss - 1)->current_move, ss->ply);
 
         Move best_move = NO_MOVE;
         for (Move move: moves) {
-            if (!isCapture(move)) {
-                // don't search for non captures
-                continue;
-            }
+            //assert(isCapture(move));
 
             if (best_score > VALUE_TB_LOSS_IN_MAX_PLY && !in_check) {
                 // delta pruning
@@ -184,11 +181,6 @@ namespace Tsukuyomi {
                     }
                 }
             }
-        }
-
-        // check for mate and stalemate
-        if (moves.size() == 0) {
-            best_score = in_check ? -VALUE_MATE + ss->ply : 0;
         }
 
         // store in transposition table
