@@ -91,15 +91,15 @@ namespace Tsukuyomi {
     }
 
     MoveOrdering::MoveOrdering() {
+        for (int i = 0; i < MAX_PLY; ++i) {
+            killer1[i] = NO_MOVE;
+            killer2[i] = NO_MOVE;
+        }
+
         clear();
     }
 
     void MoveOrdering::clear() {
-        for (int i = 0; i < MAX_PLY; i++) {
-            killer1[i] = NULL_MOVE;
-            killer2[i] = NULL_MOVE;
-        }
-
         for (auto &counter: counters)
             for (auto &j: counter)
                 j = NO_MOVE;

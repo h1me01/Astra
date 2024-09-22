@@ -25,6 +25,7 @@ namespace Tsukuyomi {
     class MoveOrdering {
     public:
         MoveOrdering();
+
         void clear();
 
         void updateKiller(Move &move, int ply);

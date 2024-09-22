@@ -585,6 +585,7 @@ namespace Tsukuyomi {
         time_manager.start();
 
         pv_table.reset();
+        move_ordering.clear();
 
         int depth = 1;
         for (; depth <= max_depth; depth++) {
