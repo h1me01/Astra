@@ -78,8 +78,7 @@ namespace NNUE {
     void NNUE::loadParameters(const std::string &filename) {
         std::ifstream file(filename, std::ios::binary);
         if (!file.is_open()) {
-            std::cerr << "Error opening binary file: " << filename << std::endl;
-            exit(1);
+            std::cerr << "Error opening NNUE file: " << filename << std::endl;
         }
 
         file.read(reinterpret_cast<char*>(fc1_weights), sizeof(int16_t) * INPUT_SIZE * HIDDEN_SIZE);
