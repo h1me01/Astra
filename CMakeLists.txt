@@ -17,7 +17,6 @@ add_executable(Tsukuyomi
         src/chess/perft.h
         src/search/search.cpp
         src/search/search.h
-        src/search/moveordering.cpp
         src/search/moveordering.h
         src/search/tt.h
         src/search/tt.cpp
@@ -39,5 +38,6 @@ add_executable(Tsukuyomi
         src/uci.cpp
         src/uci.h
         src/options.h
+        src/search/moveordering.cpp
 
 )

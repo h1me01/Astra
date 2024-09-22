@@ -103,7 +103,7 @@ namespace Chess {
 
         // potential enemy bishop, rook and queen attacks at our king
         U64 candidates = getAttacks(ROOK, king_sq, their_occ) & board.orthSliders(them)
-                       | getAttacks(BISHOP, king_sq, their_occ) & board.diagSliders(them);
+                         | getAttacks(BISHOP, king_sq, their_occ) & board.diagSliders(them);
 
         pinned = 0;
         while (candidates) {
@@ -390,6 +390,15 @@ namespace Chess {
             } else {
                 last = genLegalMoves<BLACK>(board, list);
             }
+        }
+
+        constexpr int find(Move m) const {
+            for (int i = 0; i < size(); i++) {
+                if (list[i] == m) {
+                    return i;
+                }
+            }
+            return -1;
         }
 
         constexpr Move &operator[](int i) {

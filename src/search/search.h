@@ -2,7 +2,7 @@
 #define SEARCH_H
 
 #include "tt.h"
-#include "pvTable.h"
+#include "pvtable.h"
 #include "timemanager.h"
 #include "moveordering.h"
 #include "../chess/board.h"
