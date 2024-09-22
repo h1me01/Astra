@@ -4,7 +4,7 @@
 namespace UCI {
 
     Uci::Uci() : w_time(0), b_time(0), w_inc(0), b_inc(0), moves_to_go(0), move_time(0), engine(STARTING_FEN), board(STARTING_FEN) {
-        options["Hash"] = Option("spin", "64", "64", 1, 4096);
+        options["Hash"] = Option("spin", "64", "64", 1, 2048);
         options["EvalFile"] = Option("string", "nn-2x768-2x512-1.nnue", "nn-2x768-2x512-1.nnue", 0, 0);
         options["SyzygyPath"] = Option("string", "", "", 0, 0);
 
