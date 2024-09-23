@@ -9,7 +9,7 @@ Astra is a UCI-compatible chess engine written in C++.
 - Bitboards
 - Magic Bitboards
 
-## Search Algorithms
+## Search
 - Principal Variation Search (PVS)
 - Quiescence Search
 - Iterative Deepening
