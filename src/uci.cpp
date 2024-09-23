@@ -5,7 +5,7 @@ namespace UCI {
 
     Uci::Uci() : w_time(0), b_time(0), w_inc(0), b_inc(0), moves_to_go(0), move_time(0), engine(STARTING_FEN), board(STARTING_FEN) {
         options["Hash"] = Option("spin", "64", "64", 1, 2048);
-        options["EvalFile"] = Option("string", "nn-2x768-2x512-1.nnue", "nn-2x768-2x512-1.nnue", 0, 0);
+        options["EvalFile"] = Option("string", "nn-2x768-2x256-1.nnue", "nn-2x768-2x256-1.nnue", 0, 0);
         options["SyzygyPath"] = Option("string", "", "", 0, 0);
 
         applyOptions();
@@ -63,7 +63,7 @@ namespace UCI {
         }
 
         // start search
-        Tsukuyomi::SearchResult result = engine.bestMove(99, time_per_move);
+        Astra::SearchResult result = engine.bestMove(99, time_per_move);
         std::cout << "bestmove " << result.best_move << std::endl;
 
         // important to reset

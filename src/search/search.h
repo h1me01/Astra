@@ -9,7 +9,7 @@
 
 using namespace Chess;
 
-namespace Tsukuyomi {
+namespace Astra {
 
     enum Node {
         NON_PV, PV, ROOT

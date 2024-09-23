@@ -1,10 +1,10 @@
 cmake_minimum_required(VERSION 3.28)
-project(Tsukuyomi)
+project(Astra)
 
 set(CMAKE_CXX_STANDARD 26)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static-libstdc++ -static-libgcc")
 
-add_executable(Tsukuyomi
+add_executable(Astra
         src/main.cpp
         src/chess/types.h
         src/chess/misc.h

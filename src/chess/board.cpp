@@ -165,12 +165,12 @@ namespace Chess {
     }
 
     U64 Board::attackers(Color c, Square s, const U64 occ) const {
-        const int pawn = (c == WHITE) ? WHITE_PAWN : BLACK_PAWN;
-        const int knight = (c == WHITE) ? WHITE_KNIGHT : BLACK_KNIGHT;
-        const int bishop = (c == WHITE) ? WHITE_BISHOP : BLACK_BISHOP;
-        const int rook = (c == WHITE) ? WHITE_ROOK : BLACK_ROOK;
-        const int queen = (c == WHITE) ? WHITE_QUEEN : BLACK_QUEEN;
-        const Color opp_color = (c == WHITE) ? BLACK : WHITE;
+        const int pawn = c == WHITE ? WHITE_PAWN : BLACK_PAWN;
+        const int knight = c == WHITE ? WHITE_KNIGHT : BLACK_KNIGHT;
+        const int bishop = c == WHITE ? WHITE_BISHOP : BLACK_BISHOP;
+        const int rook = c == WHITE ? WHITE_ROOK : BLACK_ROOK;
+        const int queen = c == WHITE ? WHITE_QUEEN : BLACK_QUEEN;
+        const Color opp_color = c == WHITE ? BLACK : WHITE;
 
         U64 attacks = pawnAttacks(opp_color, s) & piece_bb[pawn];
         attacks |= getAttacks(KNIGHT, s, occ) & piece_bb[knight];
@@ -193,7 +193,7 @@ namespace Chess {
         return piece_bb[knight] | piece_bb[bishop] | piece_bb[rook] | piece_bb[queen];
     }
 
-    void Board::makeMove(const Move &m, Tsukuyomi::TTable* tt, bool update_nnue) {
+    void Board::makeMove(const Move &m, Astra::TTable* tt, bool update_nnue) {
         const MoveFlags mf = m.flag();
         const Square from = m.from();
         const Square to = m.to();

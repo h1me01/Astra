@@ -5,7 +5,7 @@
 
 using namespace Chess;
 
-namespace Tsukuyomi {
+namespace Astra {
 
     enum Bound {
         NO_BOUND,

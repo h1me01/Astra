@@ -6,7 +6,7 @@
 
 using namespace Chess;
 
-namespace Tsukuyomi {
+namespace Astra {
 
     class TimeManager {
     public:

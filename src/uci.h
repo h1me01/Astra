@@ -17,7 +17,7 @@ namespace UCI {
         int w_time, b_time, w_inc, b_inc, moves_to_go, move_time;
 
         Board board;
-        Tsukuyomi::Search engine;
+        Astra::Search engine;
 
         std::unordered_map<std::string, Option> options;
 

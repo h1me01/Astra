@@ -3,11 +3,12 @@
 #include "uci.h"
 
 int main() {
-    std::cout << "Tsukuyomi Chess Engine by Semih Oezalp" << std::endl;
+    const std::string version = "1.0";
+    std::cout << "Astra " << version << " Chess Engine by Semih Oezalp" << std::endl;
 
     initLookUpTables();
     Zobrist::init();
-    Tsukuyomi::initReductions();
+    Astra::initReductions();
 
     // generate data for neural network
     //saveNetInput(fenToInput(loadDataset()));

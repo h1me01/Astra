@@ -1,7 +1,7 @@
 #include "moveordering.h"
 #include "../chess/bitboard.h"
 
-namespace Tsukuyomi {
+namespace Astra {
 
     // static exchange evaluation
     bool see(const Board &board, Move move, int threshold) {
