@@ -23,8 +23,9 @@ Astra is a UCI chess engine written in C++.
 - Razoring
 - Static Exchange Evaluation (SEE)
 - Late Move Reductions (LMR)
+- History Heuristic
 - Killer Heuristic
-- Countermove Heuristic
+- Counter Heuristic
 - Singular Extensions
 - One Reply Extension
 
