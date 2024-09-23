@@ -1,7 +1,6 @@
 #ifndef MOVEORDERING_H
 #define MOVEORDERING_H
 
-#include "tt.h"
 #include "../chess/board.h"
 #include "../chess/movegen.h"
 
@@ -32,7 +31,7 @@ namespace Tsukuyomi {
         void updateCounters(Move& move, Move &prev_move);
         void updateHistory(Board &board, Move &move, int bonus);
 
-        void sortMoves(Board &board, MoveList &moves, TTable *tt, Move& prev_move, int ply) const;
+        void sortMoves(Board &board, MoveList &moves, Move& tt_move, Move& prev_move, int ply) const;
 
     private:
         Move killer1[MAX_PLY];

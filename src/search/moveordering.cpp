@@ -128,15 +128,12 @@ namespace Tsukuyomi {
         history[c][from][to] += score;
     }
 
-    void MoveOrdering::sortMoves(Board &board, MoveList &moves, TTable *tt, Move& prev_move, int ply) const {
-        TTEntry entry;
-        const bool tt_hit = tt->lookup(entry, board.getHash());
-
+    void MoveOrdering::sortMoves(Board &board, MoveList &moves, Move& tt_move, Move& prev_move, int ply) const {
         std::vector<int> scores(moves.size(), 0);
 
         uint8_t move_count = 0;
         for (Move move: moves) {
-            if (tt_hit && move == entry.move) {
+            if (move == tt_move) {
                 scores[move_count] = TT_SCORE;
             } else if (isCapture(move)) {
                 const int mvvlvaScore = mvvlva(board, move);

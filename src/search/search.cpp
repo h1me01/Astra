@@ -82,7 +82,7 @@ namespace Tsukuyomi {
         return VALUE_NONE;
     }
 
-    Search::Search(const std::string &fen) : board(fen){
+    Search::Search(const std::string &fen) : board(fen) {
         tt = new TTable(16);
         reset();
     }
@@ -118,12 +118,11 @@ namespace Tsukuyomi {
             && !pv_node
             && tt_score != VALUE_NONE
             && tt_bound != NO_BOUND) {
-
             bool is_exact = tt_bound == EXACT_BOUND;
             bool is_lower_bound = tt_bound == LOWER_BOUND && tt_score >= beta;
             bool is_upper_bound = tt_bound == UPPER_BOUND && tt_score <= alpha;
 
-            if(is_exact || is_lower_bound || is_upper_bound) {
+            if (is_exact || is_lower_bound || is_upper_bound) {
                 return tt_score;
             }
         }
@@ -138,7 +137,7 @@ namespace Tsukuyomi {
         }
 
         MoveList moves(board, CAPTURE_MOVES);
-        move_ordering.sortMoves(board, moves, tt, (ss - 1)->current_move, ss->ply);
+        move_ordering.sortMoves(board, moves, tt_entry.move, (ss - 1)->current_move, ss->ply);
 
         Move best_move = NO_MOVE;
         for (Move move: moves) {
@@ -378,7 +377,7 @@ namespace Tsukuyomi {
         }
 
         MoveList moves(board);
-        move_ordering.sortMoves(board, moves, tt, (ss - 1)->current_move, ss->ply);
+        move_ordering.sortMoves(board, moves, tt_entry.move, (ss - 1)->current_move, ss->ply);
 
         Score highest_score = -VALUE_INFINITE;
         Score score = VALUE_NONE;
@@ -424,6 +423,31 @@ namespace Tsukuyomi {
                 }
             }
 
+            // singular extensions
+            if (!root_node
+                && depth >= 8
+                && tt_hit
+                && tt_score != VALUE_NONE
+                && tt_entry.move == move
+                && excluded_move != NO_MOVE
+                && std::abs(tt_score) < VALUE_TB_WIN_IN_MAX_PLY
+                && tt_entry.bound & LOWER_BOUND
+                && tt_entry.depth >= depth - 3) {
+
+                const Score singular_beta = tt_score - 3 * depth;
+                const int singular_depth = (depth - 1) / 2;
+
+                ss->excluded_move = move;
+                const auto value = abSearch(singular_depth, singular_beta - 1, singular_beta, NON_PV, ss);
+                ss->excluded_move = NO_MOVE;
+
+                if (value < singular_beta) {
+                    extension = 1;
+                } else if (singular_beta >= beta) {
+                    return singular_beta;
+                }
+            }
+
             // one reply extension
             if (in_check && (ss - 1)->move_count == 1 && ss->move_count == 1) {
                 extension += 1;
@@ -447,7 +471,7 @@ namespace Tsukuyomi {
                 score = -abSearch(rdepth, -alpha - 1, -alpha, NON_PV, ss + 1);
 
                 // if late move reduction failed high, research
-                if(score > alpha && rdepth < newDepth) {
+                if (score > alpha && rdepth < newDepth) {
                     score = -abSearch(newDepth, -alpha - 1, -alpha, NON_PV, ss + 1);
                 }
             } else if (!pv_node || made_moves > 1) {
@@ -522,7 +546,7 @@ namespace Tsukuyomi {
         Score beta = VALUE_INFINITE;
 
         // only use aspiration window when depth is higher or equal to 9
-        int delta = 50;
+        int delta = 30;
         if (depth >= 9) {
             alpha = prev_eval - delta;
             beta = prev_eval + delta;
