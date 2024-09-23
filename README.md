@@ -1,6 +1,6 @@
 # Astra Chess Engine
 
-Astra is a UCI-compatible chess engine written in C++.
+Astra is a UCI chess engine written in C++.
 
 ## Strength
 - Unknown
