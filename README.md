@@ -31,6 +31,7 @@ Astra is a UCI chess engine written in C++.
 
 ## Evaluation
 - NNUE (Efficiently Updatable Neural Network)
+- Currently trained on ~38 mil. positions
 - [Pytorch Neural Network](https://github.com/h1me01/Pytorch-Neural-Network)
 
 ## Credits
