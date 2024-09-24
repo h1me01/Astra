@@ -60,12 +60,11 @@ namespace Chess {
     template<Color Us>
     U64 dangerMask(const Board &board, U64 occ) {
         constexpr Color them = ~Us;
-        const U64 their_pawns = board.getPieceBB(them, PAWN);
 
         // enemy king attacks
         U64 danger = getAttacks(KING, board.kingSq(them), occ);
         // enemy pawns attacks
-        danger |= diagPawnAttacks<them>(their_pawns);
+        danger |= diagPawnAttacks<them>(board.getPieceBB(them, PAWN));
 
         // enemy knights attacks
         U64 their_knights = board.getPieceBB(them, KNIGHT);
@@ -113,7 +112,6 @@ namespace Chess {
         while (candidates) {
             const Square s = popLsb(candidates);
             U64 blockers = SQUARES_BETWEEN[king_sq][s] & our_occ;
-
             // if between the enemy slider attack and our king is no of our pieces
             // add the enemy piece to the checkers bitboard
             if (blockers == 0) {
