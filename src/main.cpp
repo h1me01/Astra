@@ -3,7 +3,7 @@
 #include "uci.h"
 
 int main() {
-    const std::string version = "1.0";
+    const std::string version = "1.1";
     std::cout << "Astra " << version << " Chess Engine by Semih Oezalp" << std::endl;
 
     initLookUpTables();

@@ -17,7 +17,7 @@ namespace Astra {
 
         for (int depth = 1; depth < MAX_PLY; depth++) {
             for (int moves = 1; moves < MAX_MOVES; moves++) {
-                REDUCTIONS[depth][moves] = 1.25 + log(depth) * log(moves) / 2;
+                REDUCTIONS[depth][moves] = 1.25  + log(depth) * log(moves) / 2;
             }
         }
     }
@@ -407,7 +407,7 @@ namespace Astra {
                         continue;
                     }
                 } else {
-                    // quiet moves pruning
+                    // late move pruning
                     if (!in_check
                         && !pv_node
                         && !is_promotion
@@ -608,11 +608,12 @@ namespace Astra {
         time_manager.setTimePerMove(time_per_move);
         time_manager.start();
 
-        pv_table.reset();
         move_ordering.clear();
 
         int depth = 1;
         for (; depth <= max_depth; depth++) {
+            pv_table.reset();
+
             sel_depth = 0;
 
             const Score previous_result = search_result.score;
@@ -645,7 +646,14 @@ namespace Astra {
                     << " nps " << nodes * 1000 / (elapsed_time + 1)
                     << " time " << elapsed_time;
 
-            std::cout << " pv" << getPv() << std::endl;
+            std::string pv = getPv();
+            std::cout << " pv";
+            if (pv == "") {
+                std::cout << " " << search_result.best_move;
+            } else {
+                std::cout << pv;
+            }
+            std::cout << std::endl;
         }
 
         if (depth == 1) {

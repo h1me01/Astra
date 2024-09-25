@@ -63,7 +63,7 @@ namespace UCI {
         }
 
         // start search
-        Astra::SearchResult result = engine.bestMove(99, time_per_move);
+        Astra::SearchResult result = engine.bestMove(64, time_per_move);
         std::cout << "bestmove " << result.best_move << std::endl;
 
         // important to reset
