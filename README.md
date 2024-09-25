@@ -37,4 +37,5 @@ Astra is a UCI chess engine written in C++.
 ## Credits
 - [Stockfish](https://github.com/official-stockfish/Stockfish)
 - [Koivisto](https://github.com/Luecx/Koivisto)
+- [Smallbrain](https://github.com/Disservin/Smallbrain)
 - [Chess Programming Wiki](https://www.chessprogramming.org/Main_Page)
