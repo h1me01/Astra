@@ -28,6 +28,13 @@ namespace Astra {
         Score score = -VALUE_INFINITE;
     };
 
+    struct Limits {
+        int time = 0;
+        U64 nodes = 0;
+        int depth = MAX_PLY - 1;
+        bool infinite = false;
+    };
+
     void initReductions();
 
     class Search {
@@ -37,13 +44,15 @@ namespace Astra {
         MoveOrdering move_ordering;
         TimeManager time_manager;
 
+        Limits limit;
+
         bool use_TB = false;
 
         // time_per_move in ms
         explicit Search(const std::string& fen);
         ~Search();
 
-        SearchResult bestMove(int max_depth, unsigned int time_per_move);
+        SearchResult bestMove(int max_depth);
 
         std::string getPv();
 
@@ -54,6 +63,8 @@ namespace Astra {
         uint8_t sel_depth = 0;
 
         PVTable pv_table;
+
+        bool isLimitReached(int depth) const;
 
         Score qSearch(Score alpha, Score beta, Node node, Stack *ss);
         Score abSearch(int depth, Score alpha, Score beta, Node node, Stack *ss);

@@ -193,7 +193,7 @@ namespace Astra {
     }
 
     Score Search::abSearch(int depth, Score alpha, Score beta, Node node, Stack *ss) {
-        if (time_manager.isTimeExceeded()) {
+        if (isLimitReached(depth)) {
             return beta;
         }
 
@@ -564,7 +564,7 @@ namespace Astra {
 
             result = abSearch(depth, alpha, beta, ROOT, ss);
 
-            if (time_manager.isTimeExceeded()) {
+            if (isLimitReached(depth)) {
                 return result;
             }
 
@@ -583,7 +583,7 @@ namespace Astra {
         return result;
     }
 
-    SearchResult Search::bestMove(int max_depth, unsigned int time_per_move) {
+    SearchResult Search::bestMove(int max_depth) {
         SearchResult search_result;
 
         Stack stack[MAX_PLY + 4];
@@ -605,7 +605,7 @@ namespace Astra {
             (ss + i)->excluded_move = NO_MOVE;
         }
 
-        time_manager.setTimePerMove(time_per_move);
+        time_manager.setTimePerMove(limit.time);
         time_manager.start();
 
         move_ordering.clear();
@@ -619,7 +619,7 @@ namespace Astra {
             const Score previous_result = search_result.score;
             const Score result = aspSearch(depth, previous_result, ss);
 
-            if (time_manager.isTimeExceeded()) {
+            if (isLimitReached(depth)) {
                 break;
             }
 
@@ -679,6 +679,26 @@ namespace Astra {
         }
 
         return pv.str();
+    }
+
+    bool Search::isLimitReached(int depth) const {
+        if (limit.infinite) {
+            return false;
+        }
+
+        if (limit.time != 0 && time_manager.isTimeExceeded()) {
+            return true;
+        }
+
+        if (limit.nodes != 0 && nodes >= limit.nodes) {
+            return true;
+        }
+
+        if (limit.depth != 0 && depth > limit.depth) {
+            return true;
+        }
+
+        return false;
     }
 
 } // namespace Astra

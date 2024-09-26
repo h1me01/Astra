@@ -43,12 +43,29 @@ namespace UCI {
     void Uci::go(std::istringstream& is) {
         std::string token;
         while (is >> token) {
-            if (token == "wtime") is >> w_time;
-            else if (token == "btime") is >> b_time;
-            else if (token == "winc") is >> w_inc;
-            else if (token == "binc") is >> b_inc;
-            else if (token == "movestogo") is >> moves_to_go;
-            else if (token == "movetime") is >> move_time;
+            if (token == "wtime") {
+                is >> w_time;
+            } else if (token == "btime") {
+                is >> b_time;
+            } else if (token == "winc") {
+                is >> w_inc;
+            } else if (token == "binc") {
+                is >> b_inc;
+            } else if (token == "movestogo") {
+                is >> moves_to_go;
+            } else if (token == "movetime") {
+                is >> move_time;
+            } else if(token == "depth") {
+                int depth;
+                is >> depth;
+                engine.limit.depth = depth;
+            } else if(token == "nodes") {
+                U64 nodes;
+                is >> nodes;
+                engine.limit.nodes = nodes;
+            } else if (token == "infinite") {
+                engine.limit.infinite = true;
+            }
         }
 
         Color stm = engine.board.getTurn();
@@ -58,12 +75,14 @@ namespace UCI {
         unsigned int time_per_move;
         if(move_time != 0) {
             time_per_move = move_time;
-        } else {
+        } else if (time_left != 0) {
             time_per_move = engine.time_manager.getTime(time_left, inc, moves_to_go);
         }
 
+        engine.limit.time = time_per_move;
+
         // start search
-        Astra::SearchResult result = engine.bestMove(64, time_per_move);
+        Astra::SearchResult result = engine.bestMove(64);
         std::cout << "bestmove " << result.best_move << std::endl;
 
         // important to reset
@@ -127,6 +146,7 @@ namespace UCI {
         }
 
         engine.tt->init(std::stoi(getOption("Hash")));
+        engine.reset();
     }
 
     void Uci::setOption(std::istringstream &is) {
