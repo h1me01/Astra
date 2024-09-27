@@ -11,7 +11,7 @@ namespace NNUE {
 
     constexpr int NUM_FEATURES = 768;
     constexpr int INPUT_SIZE = 2 * NUM_FEATURES;
-    constexpr int HIDDEN_SIZE =  2 * 256;
+    constexpr int HIDDEN_SIZE =  512;
     constexpr int OUTPUT_SIZE = 1;
 
     class NNUE {

@@ -29,6 +29,7 @@ namespace NNUE {
 
     int32_t NNUE::forward(const int16_t *input) const {
         int32_t prediction = fc2_biases[0];
+
         for (int j = 0; j < HIDDEN_SIZE; j++) {
             if (input[j] <= 0) continue;
             prediction += fc2_weights[j] * input[j];
@@ -67,11 +68,11 @@ namespace NNUE {
         for (int i = 0; i < HIDDEN_SIZE; i++) {
             const int idx = i * INPUT_SIZE;
 
-            acc[WHITE][i] += fc1_weights[idx + w_to_idx] + fc1_weights[idx + NUM_FEATURES + b_to_idx];
-            acc[WHITE][i] -= (fc1_weights[idx + w_from_idx] + fc1_weights[idx + NUM_FEATURES + b_from_idx]);
+            acc[WHITE][i] += fc1_weights[idx + w_to_idx] + fc1_weights[idx + NUM_FEATURES + b_to_idx] -
+                            (fc1_weights[idx + w_from_idx] + fc1_weights[idx + NUM_FEATURES + b_from_idx]);
 
-            acc[BLACK][i] += fc1_weights[idx + b_to_idx] + fc1_weights[idx + NUM_FEATURES + w_to_idx];
-            acc[BLACK][i] -= (fc1_weights[idx + b_from_idx] + fc1_weights[idx + NUM_FEATURES + w_from_idx]);
+            acc[BLACK][i] += fc1_weights[idx + b_to_idx] + fc1_weights[idx + NUM_FEATURES + w_to_idx] -
+                            (fc1_weights[idx + b_from_idx] + fc1_weights[idx + NUM_FEATURES + w_from_idx]);
         }
     }
 
@@ -81,11 +82,11 @@ namespace NNUE {
             std::cerr << "Error opening NNUE file: " << filename << std::endl;
         }
 
-        file.read(reinterpret_cast<char*>(fc1_weights), sizeof(int16_t) * INPUT_SIZE * HIDDEN_SIZE);
-        file.read(reinterpret_cast<char*>(fc1_biases), sizeof(int16_t) * HIDDEN_SIZE);
+        file.read(reinterpret_cast<char *>(fc1_weights), sizeof(int16_t) * INPUT_SIZE * HIDDEN_SIZE);
+        file.read(reinterpret_cast<char *>(fc1_biases), sizeof(int16_t) * HIDDEN_SIZE);
 
-        file.read(reinterpret_cast<char*>(fc2_weights), sizeof(int16_t) * HIDDEN_SIZE);
-        file.read(reinterpret_cast<char*>(fc2_biases), sizeof(int32_t) * OUTPUT_SIZE);
+        file.read(reinterpret_cast<char *>(fc2_weights), sizeof(int16_t) * HIDDEN_SIZE);
+        file.read(reinterpret_cast<char *>(fc2_biases), sizeof(int32_t) * OUTPUT_SIZE);
 
         file.close();
     }
