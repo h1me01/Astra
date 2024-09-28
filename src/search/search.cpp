@@ -17,7 +17,7 @@ namespace Astra {
 
         for (int depth = 1; depth < MAX_PLY; depth++) {
             for (int moves = 1; moves < MAX_MOVES; moves++) {
-                REDUCTIONS[depth][moves] = 1.25  + log(depth) * log(moves) / 2;
+                REDUCTIONS[depth][moves] = 1 + log(depth) * log(moves) / 1.75;
             }
         }
     }
@@ -317,20 +317,20 @@ namespace Astra {
                 return qSearch(alpha, beta, PV, ss);
             }
 
-            // reverse futility pruning
-            int rfp_margin = ss->static_eval - 40 * depth + 30 * is_improving;
-            if (!pv_node &&
-                depth < 7
-                && rfp_margin >= beta
-                && abs(beta) < VALUE_TB_WIN_IN_MAX_PLY) {
-                return beta;
-            }
-
             // razoring
             if (!pv_node
                 && depth < 3
                 && ss->static_eval + RAZOR_MARGIN < alpha) {
                 return qSearch(alpha, beta, NON_PV, ss);
+            }
+
+            // reverse futility pruning
+            int rfp_margin = ss->static_eval - 62 * depth + 71 * is_improving;
+            if (!pv_node &&
+                depth < 7
+                && rfp_margin >= beta
+                && abs(beta) < VALUE_TB_WIN_IN_MAX_PLY) {
+                return beta;
             }
 
             // null move pruning
@@ -433,7 +433,6 @@ namespace Astra {
                 && std::abs(tt_score) < VALUE_TB_WIN_IN_MAX_PLY
                 && tt_entry.bound & LOWER_BOUND
                 && tt_entry.depth >= depth - 3) {
-
                 const Score singular_beta = tt_score - 3 * depth;
                 const int singular_depth = (depth - 1) / 2;
 
@@ -461,7 +460,7 @@ namespace Astra {
             ss->current_move = move;
 
             // late move reduction
-            if (depth >= 2 && !in_check && made_moves > 1) {
+            if (depth >= 2 && !in_check && made_moves > 3) {
                 int rdepth = REDUCTIONS[depth][made_moves];
                 rdepth += is_improving;
                 rdepth -= pv_node;

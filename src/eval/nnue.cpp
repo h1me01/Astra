@@ -13,7 +13,7 @@ namespace NNUE {
         PieceType pt = typeOf(p);
         s = relativeSquare(view, s);
         const int idx = static_cast<int>(s) + static_cast<int>(pt) * 64 + (pc != view) * 64 * 6;
-        assert(idx >= 0 && idx < NUM_FEATURES);
+        assert(idx >= 0 && idx < INPUT_SIZE);
         return idx;
     }
 
@@ -27,13 +27,19 @@ namespace NNUE {
         }
     }
 
-    int32_t NNUE::forward(const int16_t *input) const {
+    int32_t NNUE::forward(const std::vector<int16_t *> &acc, Color stm) const {
         int32_t prediction = fc2_biases[0];
 
         for (int j = 0; j < HIDDEN_SIZE; j++) {
-            if (input[j] <= 0) continue;
-            prediction += fc2_weights[j] * input[j];
+            if (acc[stm][j] > 0) {
+                prediction += fc2_weights[j] * acc[stm][j];
+            }
+
+            if (acc[~stm][j] > 0) {
+                prediction += fc2_weights[HIDDEN_SIZE + j] * acc[~stm][j];
+            }
         }
+
         return prediction / (512 * 16);
     }
 
@@ -43,8 +49,8 @@ namespace NNUE {
 
         for (int i = 0; i < HIDDEN_SIZE; i++) {
             const int idx = i * INPUT_SIZE;
-            acc[WHITE][i] += fc1_weights[idx + w_idx] + fc1_weights[idx + NUM_FEATURES + b_idx];
-            acc[BLACK][i] += fc1_weights[idx + b_idx] + fc1_weights[idx + NUM_FEATURES + w_idx];
+            acc[WHITE][i] += fc1_weights[idx + w_idx];
+            acc[BLACK][i] += fc1_weights[idx + b_idx];
         }
     }
 
@@ -54,8 +60,8 @@ namespace NNUE {
 
         for (int i = 0; i < HIDDEN_SIZE; i++) {
             const int idx = i * INPUT_SIZE;
-            acc[WHITE][i] -= (fc1_weights[idx + w_idx] + fc1_weights[idx + NUM_FEATURES + b_idx]);
-            acc[BLACK][i] -= (fc1_weights[idx + b_idx] + fc1_weights[idx + NUM_FEATURES + w_idx]);
+            acc[WHITE][i] -= fc1_weights[idx + w_idx];
+            acc[BLACK][i] -= fc1_weights[idx + b_idx];
         }
     }
 
@@ -68,11 +74,8 @@ namespace NNUE {
         for (int i = 0; i < HIDDEN_SIZE; i++) {
             const int idx = i * INPUT_SIZE;
 
-            acc[WHITE][i] += fc1_weights[idx + w_to_idx] + fc1_weights[idx + NUM_FEATURES + b_to_idx] -
-                            (fc1_weights[idx + w_from_idx] + fc1_weights[idx + NUM_FEATURES + b_from_idx]);
-
-            acc[BLACK][i] += fc1_weights[idx + b_to_idx] + fc1_weights[idx + NUM_FEATURES + w_to_idx] -
-                            (fc1_weights[idx + b_from_idx] + fc1_weights[idx + NUM_FEATURES + w_from_idx]);
+            acc[WHITE][i] += fc1_weights[idx + w_to_idx] - fc1_weights[idx + w_from_idx];
+            acc[BLACK][i] += fc1_weights[idx + b_to_idx] - fc1_weights[idx + b_from_idx];
         }
     }
 
@@ -85,7 +88,7 @@ namespace NNUE {
         file.read(reinterpret_cast<char *>(fc1_weights), sizeof(int16_t) * INPUT_SIZE * HIDDEN_SIZE);
         file.read(reinterpret_cast<char *>(fc1_biases), sizeof(int16_t) * HIDDEN_SIZE);
 
-        file.read(reinterpret_cast<char *>(fc2_weights), sizeof(int16_t) * HIDDEN_SIZE);
+        file.read(reinterpret_cast<char *>(fc2_weights), sizeof(int16_t) * 2 * HIDDEN_SIZE);
         file.read(reinterpret_cast<char *>(fc2_biases), sizeof(int32_t) * OUTPUT_SIZE);
 
         file.close();
