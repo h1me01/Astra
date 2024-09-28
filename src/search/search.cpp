@@ -60,13 +60,15 @@ namespace Astra {
         U64 bishops = board.getPieceBB(WHITE, BISHOP) | board.getPieceBB(BLACK, BISHOP);
         U64 rooks = board.getPieceBB(WHITE, ROOK) | board.getPieceBB(BLACK, ROOK);
         U64 queens = board.getPieceBB(WHITE, QUEEN) | board.getPieceBB(BLACK, QUEEN);
+        U64 kings = board.getPieceBB(WHITE, KING) | board.getPieceBB(BLACK, KING);
 
         int fifty_move_counter = board.history[board.getPly()].half_move_clock;
         bool any_castling = popCount(board.history[board.getPly()].castle_mask) != 6;
         Square ep_sq = board.history[board.getPly()].ep_sq;
-        bool white_to_move = board.getTurn() == WHITE;
+        bool stm = board.getTurn() == WHITE;
 
-        unsigned result = tb_probe_wdl(occ, w_occ, b_occ, pawns, knights, bishops, rooks, queens, fifty_move_counter, any_castling, ep_sq, white_to_move);
+        unsigned result = tb_probe_wdl(
+            w_occ, b_occ, kings, queens, rooks, bishops, knights,  pawns, fifty_move_counter, any_castling, ep_sq == NO_SQUARE ? 0 : ep_sq, stm);
 
         if (result == TB_LOSS) {
             return VALUE_TB_LOSS;
@@ -271,24 +273,44 @@ namespace Astra {
             }
         }
 
+        Score max_score = VALUE_INFINITE;
+        Score best_score = -VALUE_INFINITE;
+
         // tablebase probing
-        if (use_TB) {
+        if (use_TB && !root_node) {
             Score tb_score = probeWDL(board);
+
             if (tb_score != VALUE_NONE) {
-                std::cout << "TB score: " << tb_score << std::endl;
+                Bound bound = NO_BOUND;
+
                 switch (tb_score) {
                     case VALUE_TB_WIN:
                         tb_score = VALUE_MIN_MATE - ss->ply - 1;
+                        bound = LOWER_BOUND;
                         break;
                     case VALUE_TB_LOSS:
                         tb_score = -VALUE_MIN_MATE + ss->ply + 1;
+                        bound = UPPER_BOUND;
                         break;
                     default:
                         tb_score = 0;
+                        bound = EXACT_BOUND;
                         break;
                 }
 
-                return tb_score;
+                if (bound == EXACT_BOUND || (bound == LOWER_BOUND && tb_score >= beta) || (bound == UPPER_BOUND && tb_score <= alpha)) {
+                    tt->store(hash, NO_MOVE, scoreToTT(tb_score, ss->ply), depth + 6, bound);
+                    return tb_score;
+                }
+
+                if (pv_node) {
+                    if (bound == LOWER_BOUND) {
+                        best_score = tb_score;
+                        alpha = std::max(alpha, best_score);
+                    } else {
+                        max_score = tb_score;
+                    }
+                }
             }
         }
 
@@ -379,7 +401,6 @@ namespace Astra {
         MoveList moves(board);
         move_ordering.sortMoves(board, moves, tt_entry.move, (ss - 1)->current_move, ss->ply);
 
-        Score highest_score = -VALUE_INFINITE;
         Score score = VALUE_NONE;
 
         Move best_move = NO_MOVE;
@@ -400,7 +421,7 @@ namespace Astra {
             const bool is_capture = isCapture(move);
             const bool is_promotion = isPromotion(move);
 
-            if (!root_node && highest_score > VALUE_TB_LOSS_IN_MAX_PLY) {
+            if (!root_node && best_score > VALUE_TB_LOSS_IN_MAX_PLY) {
                 if (is_capture) {
                     // see pruning
                     if (depth < 6 && !see(board, move, -90 * depth)) {
@@ -487,8 +508,8 @@ namespace Astra {
 
             assert(score > -VALUE_INFINITE && score < VALUE_INFINITE);
 
-            if (score > highest_score) {
-                highest_score = score;
+            if (score > best_score) {
+                best_score = score;
 
                 if (score > alpha) {
                     alpha = score;
@@ -517,15 +538,19 @@ namespace Astra {
 
         // check for mate and stalemate
         if (moves.size() == 0) {
-            highest_score = in_check ? -VALUE_MATE + ss->ply : 0;
+            best_score = in_check ? -VALUE_MATE + ss->ply : 0;
         }
 
         ss->move_count = made_moves;
 
+        if (pv_node) {
+            best_score = std::min(best_score, max_score);
+        }
+
         // store in transposition table
         if (excluded_move != NULL_MOVE && best_move != NO_MOVE) {
             Bound bound;
-            if (highest_score >= beta) {
+            if (best_score >= beta) {
                 bound = LOWER_BOUND;
             } else if (pv_node && best_move != NO_MOVE) {
                 bound = EXACT_BOUND;
@@ -533,11 +558,11 @@ namespace Astra {
                 bound = UPPER_BOUND;
             }
 
-            tt->store(hash, best_move, scoreToTT(highest_score, ss->ply), depth, bound);
+            tt->store(hash, best_move, scoreToTT(best_score, ss->ply), depth, bound);
         }
 
-        assert(highest_score > -VALUE_INFINITE && highest_score < VALUE_INFINITE);
-        return highest_score;
+        assert(best_score > -VALUE_INFINITE && best_score < VALUE_INFINITE);
+        return best_score;
     }
 
     Score Search::aspSearch(int depth, Score prev_eval, Stack *ss) {
