@@ -132,7 +132,9 @@ namespace UCI {
     void Uci::applyOptions() {
         auto path = getOption("SyzygyPath");
         if (!path.empty() && path != "<empty>") {
-            if (tb_init(path.c_str())) {
+            bool success = tb_init(path.c_str());
+
+            if (success && TB_LARGEST > 0) {
                 engine.use_TB = true;
                 std::cout << "info string successfully loaded syzygy path " << path << std::endl;
             } else {

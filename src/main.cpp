@@ -1,10 +1,9 @@
 #include "datagen.h"
 #include "chess/perft.h"
 #include "uci.h"
-#include "eval/eval.h"
 
 int main() {
-    const std::string version = "1.1";
+    const std::string version = "2.0";
     std::cout << "Astra " << version << " Chess Engine by Semih Oezalp" << std::endl;
 
     initLookUpTables();
