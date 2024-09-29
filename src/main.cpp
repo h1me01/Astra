@@ -14,7 +14,7 @@ int main() {
     //saveNetInput(fenToInput(loadDataset()));
 
     // test performance and correctness of move generation
-    //testPerft(5);
+    testPerft(5);
 
     UCI::Uci uci;
     uci.loop();

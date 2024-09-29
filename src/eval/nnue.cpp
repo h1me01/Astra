@@ -27,7 +27,7 @@ namespace NNUE {
         }
     }
 
-    int32_t NNUE::forward(const std::vector<int16_t *> &acc, Color stm) const {
+    int32_t NNUE::forward(const Accumulator &acc, Color stm) const {
         int32_t prediction = fc2_biases[0];
 
         for (int j = 0; j < HIDDEN_SIZE; j++) {
@@ -43,7 +43,7 @@ namespace NNUE {
         return prediction / (512 * 16);
     }
 
-    void NNUE::putPiece(const std::vector<int16_t *> &acc, Piece p, Square s) const {
+    void NNUE::putPiece(Accumulator &acc, Piece p, Square s) const {
         const int w_idx = index(s, p, WHITE);
         const int b_idx = index(s, p, BLACK);
 
@@ -54,7 +54,7 @@ namespace NNUE {
         }
     }
 
-    void NNUE::removePiece(const std::vector<int16_t *> &acc, Piece p, Square s) const {
+    void NNUE::removePiece(Accumulator &acc, Piece p, Square s) const {
         const int w_idx = index(s, p, WHITE);
         const int b_idx = index(s, p, BLACK);
 
@@ -65,7 +65,7 @@ namespace NNUE {
         }
     }
 
-    void NNUE::movePiece(const std::vector<int16_t *> &acc, Piece p, Square from, Square to) const {
+    void NNUE::movePiece(Accumulator &acc, Piece p, Square from, Square to) const {
         const int w_from_idx = index(from, p, WHITE);
         const int w_to_idx = index(to, p, WHITE);
         const int b_from_idx = index(from, p, BLACK);

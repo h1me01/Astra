@@ -56,7 +56,7 @@ namespace Chess {
         int getPly() const { return game_ply; }
         U64 getHash() const { return hash; }
         Square kingSq(Color c) const { return bsf(getPieceBB(c, KING)); }
-        std::vector<int16_t *> getAccumulator() const { return accumulators.back(); }
+        NNUE::Accumulator getAccumulator() const { return accumulators.back(); }
         void refreshAccumulator();
 
         U64 occupancy(Color c) const;
@@ -95,7 +95,7 @@ namespace Chess {
         piece_bb[p] |= SQUARE_BB[s];
 
         if (update_nnue) {
-            std::vector<int16_t *> acc = accumulators.back();
+            NNUE::Accumulator acc = accumulators.back();
             NNUE::nnue.putPiece(acc, p, s);
         }
     }
@@ -106,7 +106,7 @@ namespace Chess {
         board[s] = NO_PIECE;
 
         if (update_nnue) {
-            std::vector<int16_t *> acc = accumulators.back();
+            NNUE::Accumulator acc = accumulators.back();
             NNUE::nnue.removePiece(acc, p, s);
         }
     }
@@ -122,7 +122,7 @@ namespace Chess {
         hash ^= Zobrist::psq[p][to];
 
         if (update_nnue) {
-            std::vector<int16_t *> acc = accumulators.back();
+            NNUE::Accumulator acc = accumulators.back();
             NNUE::nnue.movePiece(acc, p, from, to);
         }
     }

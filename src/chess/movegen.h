@@ -69,8 +69,7 @@ namespace Chess {
         // enemy knights attacks
         U64 their_knights = board.getPieceBB(them, KNIGHT);
         while (their_knights) {
-            const Square s = popLsb(their_knights);
-            danger |= getAttacks(KNIGHT, s, occ);
+            danger |= getAttacks(KNIGHT, popLsb(their_knights), occ);
         }
 
         // exclude our king from the occupancy, because checks should not be included
@@ -79,15 +78,13 @@ namespace Chess {
         // enemy bishop and queen attacks
         U64 their_diag_sliders = board.diagSliders(them);
         while (their_diag_sliders) {
-            const Square s = popLsb(their_diag_sliders);
-            danger |= getAttacks(BISHOP, s, occ);
+            danger |= getAttacks(BISHOP, popLsb(their_diag_sliders), occ);
         }
 
         // enemy rook and queen attacks
         U64 their_orth_sliders = board.orthSliders(them);
         while (their_orth_sliders) {
-            const Square s = popLsb(their_orth_sliders);
-            danger |= getAttacks(ROOK, s, occ);
+            danger |= getAttacks(ROOK, popLsb(their_orth_sliders), occ);
         }
 
         return danger;

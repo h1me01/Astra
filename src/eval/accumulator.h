@@ -2,7 +2,6 @@
 #define ACCUMULATOR_H
 
 #include "nnue.h"
-#include <vector>
 #include <cassert>
 #include <cstring> // std::memcpy
 
@@ -13,7 +12,6 @@ namespace NNUE {
     class Accumulators {
     public:
         Accumulators() : index(0) {
-            accumulators.resize(MAX_PLY, std::vector<int16_t *>(2));
             allocateMemory();
 
             for (int j = 0; j < HIDDEN_SIZE; j++) {
@@ -31,7 +29,11 @@ namespace NNUE {
                 clearMemory();
                 index = other.index;
                 allocateMemory();
-                copyFrom(other);
+
+                for (int i = 0; i <= index; i++) {
+                    std::memcpy(accumulators[i][0], other.accumulators[i][0], HIDDEN_SIZE * sizeof(int16_t));
+                    std::memcpy(accumulators[i][1], other.accumulators[i][1], HIDDEN_SIZE * sizeof(int16_t));
+                }
             }
             return *this;
         }
@@ -59,14 +61,14 @@ namespace NNUE {
             index--;
         }
 
-        std::vector<int16_t *> back() const {
+        Accumulator back() const {
             assert(index >= 0 && index < MAX_PLY);
             return accumulators[index];
         }
 
     private:
-        std::vector<std::vector<int16_t *> > accumulators;
         int index;
+        std::array<Accumulator, MAX_PLY> accumulators{};
 
         void allocateMemory() {
             for (int i = 0; i < MAX_PLY; i++) {
@@ -76,16 +78,9 @@ namespace NNUE {
         }
 
         void clearMemory() const {
-            for (auto &acc: accumulators) {
+            for (const auto &acc: accumulators) {
                 delete[] acc[0];
                 delete[] acc[1];
-            }
-        }
-
-        void copyFrom(const Accumulators &other) const {
-            for (int i = 0; i <= index; i++) {
-                std::memcpy(accumulators[i][0], other.accumulators[i][0], HIDDEN_SIZE * sizeof(int16_t));
-                std::memcpy(accumulators[i][1], other.accumulators[i][1], HIDDEN_SIZE * sizeof(int16_t));
             }
         }
     };

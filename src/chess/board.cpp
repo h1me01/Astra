@@ -130,7 +130,7 @@ namespace Chess {
 
     void Board::refreshAccumulator() {
         accumulators.clear();
-        std::vector<int16_t*> acc = accumulators.back();
+       NNUE::Accumulator acc = accumulators.back();
 
         for (int j = 0; j < NNUE::HIDDEN_SIZE; j++) {
             acc[WHITE][j] = NNUE::nnue.fc1_biases[j];
@@ -147,11 +147,15 @@ namespace Chess {
     }
 
     U64 Board::diagSliders(Color c) const {
-        return c == WHITE ? piece_bb[WHITE_BISHOP] | piece_bb[WHITE_QUEEN] : piece_bb[BLACK_BISHOP] | piece_bb[BLACK_QUEEN];
+        Piece bishop = c == WHITE ? WHITE_BISHOP : BLACK_BISHOP;
+        Piece queen = c == WHITE ? WHITE_QUEEN : BLACK_QUEEN;
+        return piece_bb[bishop] | piece_bb[queen];
     }
 
     U64 Board::orthSliders(Color c) const {
-        return c == WHITE ? piece_bb[WHITE_ROOK] | piece_bb[WHITE_QUEEN] : piece_bb[BLACK_ROOK] | piece_bb[BLACK_QUEEN];
+        Piece rook = c == WHITE ? WHITE_ROOK : BLACK_ROOK;
+        Piece queen = c == WHITE ? WHITE_QUEEN : BLACK_QUEEN;
+        return piece_bb[rook] | piece_bb[queen];
     }
 
     U64 Board::occupancy(Color c) const {
@@ -181,8 +185,8 @@ namespace Chess {
     }
 
     bool Board::inCheck() const {
-        const U64 pieces = occupancy(WHITE) | occupancy(BLACK);
-        return attackers(~stm, kingSq(stm), pieces);
+        const U64 occ = occupancy(WHITE) | occupancy(BLACK);
+        return attackers(~stm, kingSq(stm), occ);
     }
 
     bool Board::nonPawnMat(Color c) const {
@@ -360,7 +364,7 @@ namespace Chess {
     bool Board::isThreefold() const {
         int count = 0;
         for (int i = game_ply - 1; i >= 0 && count < 2; i--) {
-            count += (history[i].hash == hash);
+            count += history[i].hash == hash;
         }
         return count >= 2;
     }
