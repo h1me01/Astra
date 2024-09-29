@@ -3,7 +3,7 @@
 #include "uci.h"
 
 int main() {
-    const std::string version = "2.0";
+    const std::string version = "2.1";
     std::cout << "Astra " << version << " Chess Engine by Semih Oezalp" << std::endl;
 
     initLookUpTables();
@@ -14,7 +14,7 @@ int main() {
     //saveNetInput(fenToInput(loadDataset()));
 
     // test performance and correctness of move generation
-    testPerft(5);
+    //testPerft(5);
 
     UCI::Uci uci;
     uci.loop();
