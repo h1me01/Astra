@@ -2,6 +2,7 @@
 #define DATAGEN_H
 
 #include <fstream>
+#include <climits>
 #include "chess/board.h"
 
 using namespace Chess;
