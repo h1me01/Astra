@@ -12,7 +12,7 @@ namespace Chess {
         std::vector<std::string> fen_parts = split(fen, ' ');
         if (fen_parts.size() != 6) {
             std::cerr << "Invalid FEN string!" << std::endl;
-            exit(1);
+            return;
         }
 
         stm = fen_parts[1] == "w" ? WHITE : BLACK;
