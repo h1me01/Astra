@@ -1,8 +1,13 @@
 cmake_minimum_required(VERSION 3.28)
 project(Astra)
 
-set(CMAKE_CXX_STANDARD 26)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static-libstdc++ -static-libgcc")
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+set(CMAKE_BUILD_TYPE Release)
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -DNDEBUG -funroll-loops -march=native -static-libstdc++ -static-libgcc")
 
 add_executable(Astra
         src/main.cpp
@@ -39,5 +44,4 @@ add_executable(Astra
         src/uci.h
         src/options.h
         src/search/moveordering.cpp
-
 )
