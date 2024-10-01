@@ -1,4 +1,5 @@
 #include "attacks.h"
+#include <cstring> // memcpy
 
 namespace Chess {
 
