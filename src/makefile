@@ -1,8 +1,8 @@
-# Define the compiler and flags
+# compiler and flags
 CXX ?= g++
 CXXFLAGS = -Wall -Wextra -O3 -DNDEBUG -funroll-loops -pthread -std=c++17 -march=native
 
-# Define the source files
+# source files
 SRC = main.cpp \
       chess/attacks.cpp \
       chess/board.cpp \
@@ -17,10 +17,10 @@ SRC = main.cpp \
       syzygy/tbprobe.cpp \
       uci.cpp
 
-# Define the target executable
+# target executable
 TARGET = astra
 
-# Detect Operating System
+# detect Operating System
 ifeq ($(OS), Windows_NT)
     SUFFIX := .exe
     LDFLAGS := -static -lstdc++ -lpthread
@@ -29,10 +29,10 @@ else
     LDFLAGS := -lpthread
 endif
 
-# Complete target name with suffix
+# complete target name with suffix
 EXE := $(TARGET)$(SUFFIX)
 
-# Default rule to build the executable
+# default rule to build the executable
 all: $(EXE)
 
 $(EXE): $(SRC)
