@@ -22,7 +22,8 @@ struct Dataset {
 
 struct NetInput {
     U64 pieces[NUM_COLORS][6]{};
-    int16_t target;
+    float target;
+    Color stm;
 
     NetInput() {
         target = 0;

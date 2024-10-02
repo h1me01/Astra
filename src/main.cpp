@@ -13,9 +13,6 @@ int main() {
     // generate data for neural network
     //saveNetInput(fenToInput(loadDataset()));
 
-    // test performance and correctness of move generation
-    //testPerft(5);
-
     UCI::Uci uci;
     uci.loop();
 

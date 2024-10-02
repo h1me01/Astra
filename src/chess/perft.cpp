@@ -12,7 +12,7 @@ namespace Chess {
             return moves.size();
         }
 
-        for (const Move& move : moves) {
+        for (const Move &move: moves) {
             board.makeMove(move);
             nodes += perft(board, depth - 1);
             board.unmakeMove(move);
@@ -22,33 +22,32 @@ namespace Chess {
     }
 
     void testPerft(int max_depth) {
-        if (max_depth < 1 || max_depth > std::size(test_cases)) {
-            std::cerr << "Invalid depth for Perft!" << std::endl;
-            return;
-        }
-
-        for (const auto& testCase : test_cases) {
+        for (const auto &testCase: test_cases) {
             Board board(testCase.fen);
 
             std::cout << "\nFen: " << testCase.fen << std::endl;
 
-            for (int depth = 1; depth <= max_depth; ++depth) {
+            for (int i = 0; i < testCase.nodes.size(); ++i) {
+                int depth = i + 1;
+
                 auto start = std::chrono::high_resolution_clock::now();
                 auto nodes = perft(board, depth);
                 auto end = std::chrono::high_resolution_clock::now();
 
-                if (nodes != testCase.results[depth - 1].second) {
-                    std::cerr << "Test failed! Expected Nodes: " << testCase.results[depth - 1].second << std::endl;
-                    std::cerr << "Actual Nodes: " << nodes << std::endl;
-                    std::exit(1);
+                std::chrono::duration<double, std::milli> diff = end - start;
+                std::cout << "Depth: " << depth << " | Nodes: " << nodes << " | Time: " << diff.count() << " | ";
+
+                if (nodes == testCase.nodes[i]) {
+                    std::cout << "Test passed!" << std::endl;
+                } else {
+                    std::cerr << "Test failed! Expected nodes: " << testCase.nodes[i] << std::endl;
                 }
 
-                std::chrono::duration<double, std::milli> diff = end - start;
-                std::cout << "Test passed | Depth: " << depth << " | Time: " << diff.count() << " ms\n";
+                if (depth >= max_depth) {
+                    break;
+                }
             }
         }
-
-        std::exit(0);
     }
 
 } // namespace Chess

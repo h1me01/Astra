@@ -47,6 +47,7 @@ std::vector<NetInput> fenToInput(const std::vector<Dataset> &dataset) {
          input.pieces[BLACK][pt] = board.getPieceBB(BLACK, pt);
       }
 
+      input.stm = board.getTurn();
       net_inputs.push_back(input);
    }
 

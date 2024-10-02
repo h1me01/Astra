@@ -1,4 +1,7 @@
 #include "uci.h"
+
+#include "chess/perft.h"
+#include "eval/eval.h"
 #include "syzygy/tbprobe.h"
 
 namespace UCI {
@@ -43,7 +46,15 @@ namespace UCI {
     void Uci::go(std::istringstream& is) {
         std::string token;
         while (is >> token) {
-            if (token == "wtime") {
+            if (token == "perft") {
+                int depth;
+                if (!(is >> depth)) {
+                    std::cout << "No depth value provided.\n";
+                } else {
+                    testPerft(depth);
+                }
+                return;
+            } else if (token == "wtime") {
                 is >> w_time;
             } else if (token == "btime") {
                 is >> b_time;
@@ -65,6 +76,9 @@ namespace UCI {
                 engine.limit.nodes = nodes;
             } else if (token == "infinite") {
                 engine.limit.infinite = true;
+            } else {
+                std::cout << "Unknown command" << std::endl;
+                return;
             }
         }
 
@@ -110,6 +124,8 @@ namespace UCI {
                 engine.reset();
             } else if (token == "position") {
                 updatePosition(is);
+            } else if(token == "eval") {
+                std::cout << Eval::evaluate(board) << std::endl;
             } else if (token == "go") {
                 go(is);
             } else if (token == "setoption") {
