@@ -6,6 +6,7 @@
 #include "board.h"
 
 namespace Chess {
+
     struct TestCase {
         std::string fen;
         std::vector<uint64_t> nodes;
@@ -29,6 +30,7 @@ namespace Chess {
     };
 
     void testPerft(int max_depth = 9);
+
 } // namespace Chess
 
 #endif //PERFT_H
