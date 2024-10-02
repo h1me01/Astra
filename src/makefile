@@ -1,6 +1,6 @@
-# Define compiler and flags
+# Define the compiler and flags
 CXX ?= g++
-CXXFLAGS = -Wall -Wextra -O3 -DNDEBUG -funroll-loops -pthread -static -std=c++17 -march=native
+CXXFLAGS = -Wall -Wextra -O3 -DNDEBUG -funroll-loops -pthread -std=c++17 -march=native
 
 # Define the source files
 SRC = main.cpp \
@@ -17,38 +17,29 @@ SRC = main.cpp \
       syzygy/tbprobe.cpp \
       uci.cpp
 
-# Define the header files (not directly used for compilation)
-HDR = chess/types.h \
-      chess/misc.h \
-      chess/bitboard.h \
-      chess/attacks.h \
-      chess/board.h \
-      chess/movegen.h \
-      chess/perft.h \
-      search/search.h \
-      search/moveordering.h \
-      search/pvTable.h \
-      search/timemanager.h \
-      datagen.h \
-      eval/eval.h \
-      eval/nnue.h \
-      eval/accumulator.h \
-      syzygy/tbconfig.h \
-      syzygy/stdendian.h \
-      syzygy/tbprobe.h \
-      options.h
-
 # Define the target executable
 TARGET = astra
 
-# Default rule to build the executable
-all: $(TARGET)
+# Detect Operating System
+ifeq ($(OS), Windows_NT)
+    SUFFIX := .exe
+    LDFLAGS := -static -lstdc++ -lpthread
+else
+    SUFFIX :=
+    LDFLAGS := -lpthread
+endif
 
-$(TARGET): $(SRC)
-	$(CXX) $(CXXFLAGS) -o $@ $^
+# Complete target name with suffix
+EXE := $(TARGET)$(SUFFIX)
+
+# Default rule to build the executable
+all: $(EXE)
+
+$(EXE): $(SRC)
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
 
 # Clean rule to remove the executable
 clean:
-	$(RM) $(TARGET)
+	$(RM) $(EXE)
 
 .PHONY: all clean
