@@ -1,6 +1,6 @@
 # Define compiler and flags
-CXX = g++
-CXXFLAGS = -Wall -Wextra -O3 -DNDEBUG -funroll-loops -march=native -static-libstdc++ -static-libgcc -std=c++17
+CXX ?= g++
+CXXFLAGS = -Wall -Wextra -O3 -DNDEBUG -funroll-loops -pthread -static -std=c++17 -march=native
 
 # Define the source files
 SRC = main.cpp \
@@ -39,7 +39,7 @@ HDR = chess/types.h \
       options.h
 
 # Define the target executable
-TARGET = astra.exe
+TARGET = astra
 
 # Default rule to build the executable
 all: $(TARGET)
@@ -49,6 +49,6 @@ $(TARGET): $(SRC)
 
 # Clean rule to remove the executable
 clean:
-	rm -f $(TARGET)
+	$(RM) $(TARGET)
 
 .PHONY: all clean
