@@ -1,6 +1,6 @@
 # Define compiler and flags
 CXX = g++
-CXXFLAGS = -O3 -DNDEBUG -funroll-loops -march=native -static-libstdc++ -static-libgcc -std=c++17
+CXXFLAGS = -Wall -Wextra -O3 -DNDEBUG -funroll-loops -march=native -static-libstdc++ -static-libgcc -std=c++17
 
 # Define the source files
 SRC = main.cpp \
