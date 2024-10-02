@@ -35,6 +35,7 @@ Astra is a UCI chess engine written in C++.
 - [Pytorch Neural Network](https://github.com/h1me01/Pytorch-Neural-Network)
 
 ## Build
+Build the code yourself for better performance.
 ```
 git clone https://github.com/h1me01/Astra.git
 cd Astra/src
