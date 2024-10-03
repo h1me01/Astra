@@ -88,14 +88,11 @@ namespace UCI {
         const int time_left = stm == WHITE ? w_time : b_time;
         const int inc = stm == WHITE ? w_inc : b_inc;
 
-        unsigned int time_per_move;
         if (move_time != 0) {
-            time_per_move = move_time;
+             engine.limit.time = move_time;
         } else if (time_left != 0) {
-            time_per_move = engine.time_manager.getTime(time_left, inc, moves_to_go);
+             engine.limit.time = engine.time_manager.getOptimal(time_left, inc, moves_to_go);
         }
-
-        engine.limit.time = time_per_move;
 
         // start search
         Astra::SearchResult result = engine.bestMove(64);

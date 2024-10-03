@@ -19,16 +19,15 @@ namespace Astra {
         }
 
         // get time in ms
-        unsigned int getTime(int time, int inc, int moves_to_go) const {
-            unsigned int time_ms;
-
+        unsigned int getOptimal(int time, int inc, int moves_to_go) const {
+            unsigned int optimal;
             if (moves_to_go == 0) {
-                time_ms = inc + (time - time / divider) / divider;
+                optimal = inc + (time - time / divider) / divider;
             } else {
-                time_ms = inc + (time - time / (moves_to_go + 3)) / (0.7 * moves_to_go + 3);
+                optimal = inc + (time - time / (moves_to_go + 3)) / (0.7 * moves_to_go + 3);
             }
 
-            return time_ms;
+            return optimal;
         }
 
         void start() {
