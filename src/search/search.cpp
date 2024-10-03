@@ -80,7 +80,7 @@ namespace Astra {
             return VALUE_DRAW;
         }
 
-        // if none of them above happened, act as if the result failed.
+        // if none of them above happened, act as if the result failed
         return VALUE_NONE;
     }
 
@@ -268,6 +268,7 @@ namespace Astra {
                     break;
             }
 
+            // check for a cutoff
             if (alpha >= beta) {
                 return tt_score;
             }
@@ -326,9 +327,6 @@ namespace Astra {
         // only use pruning/reduction when not in check and root/pv node
         if (!in_check && !root_node) {
             // internal iterative reductions
-            if (pv_node && tt_entry.move == NO_MOVE) {
-                depth -= 3;
-            }
             if (depth >= 3 && !tt_hit) {
                 depth--;
             }

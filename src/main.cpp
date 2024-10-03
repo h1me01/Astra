@@ -1,5 +1,4 @@
 #include "datagen.h"
-#include "chess/perft.h"
 #include "uci.h"
 
 int main() {
