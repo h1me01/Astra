@@ -327,6 +327,9 @@ namespace Astra {
         // only use pruning/reduction when not in check and root/pv node
         if (!in_check && !root_node) {
             // internal iterative reductions
+            if(pv_node && tt_entry.move == NO_MOVE) {
+                depth -= 3;
+            }
             if (depth >= 3 && !tt_hit) {
                 depth--;
             }

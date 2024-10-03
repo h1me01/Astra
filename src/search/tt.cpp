@@ -4,7 +4,7 @@
 
 namespace Astra {
 
-    TTable::TTable(const int size_mb) {
+    TTable::TTable(const int size_mb) : entries(nullptr) {
         init(size_mb);
     }
 
@@ -14,7 +14,7 @@ namespace Astra {
 
     void TTable::init(int size_mb) {
         if (entries != nullptr) {
-            delete entries;
+            delete[] entries;
         }
 
         const U64 size_bytes = size_mb * 1024 * 1024;
