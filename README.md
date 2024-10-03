@@ -42,6 +42,9 @@ cd Astra/src
 make -j
 ```
 
+## Note
+I had to remove the versions prior to 3.0 due to inefficient compiling.
+
 ## Credits
 - [Stockfish](https://github.com/official-stockfish/Stockfish)
 - [Koivisto](https://github.com/Luecx/Koivisto)
