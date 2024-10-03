@@ -13,6 +13,10 @@ namespace Astra {
     }
 
     void TTable::init(int size_mb) {
+        if (entries != nullptr) {
+            delete entries;
+        }
+
         const U64 size_bytes = size_mb * 1024 * 1024;
         U64 max_entries = size_bytes / sizeof(TTEntry);
 
