@@ -25,7 +25,9 @@ namespace Astra {
     public:
         MoveOrdering();
 
-        void clear();
+        void clearHistory();
+        void clearCounters();
+        void clearKillers();
 
         void updateKiller(Move &move, int ply);
         void updateCounters(Move& move, Move &prev_move);

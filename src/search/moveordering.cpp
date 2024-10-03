@@ -91,23 +91,29 @@ namespace Astra {
     }
 
     MoveOrdering::MoveOrdering() {
-        for (int i = 0; i < MAX_PLY; ++i) {
-            killer1[i] = NO_MOVE;
-            killer2[i] = NO_MOVE;
-        }
-
-        clear();
+        clearHistory();
+        clearCounters();
+        clearKillers();
     }
 
-    void MoveOrdering::clear() {
-        for (auto &counter: counters)
-            for (auto &j: counter)
-                j = NO_MOVE;
-
+    void MoveOrdering::clearHistory() {
         for (auto &i: history)
             for (auto &j: i)
                 for (int &k: j)
                     k = 0;
+    }
+
+    void MoveOrdering::clearCounters() {
+        for (auto &counter: counters)
+            for (auto &j: counter)
+                j = NO_MOVE;
+    }
+
+    void MoveOrdering::clearKillers() {
+        for (int i = 0; i < MAX_PLY; ++i) {
+            killer1[i] = NO_MOVE;
+            killer2[i] = NO_MOVE;
+        }
     }
 
     void MoveOrdering::updateKiller(Move &move, int ply) {

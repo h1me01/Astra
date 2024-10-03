@@ -148,7 +148,8 @@ namespace Astra {
             if (best_score > VALUE_TB_LOSS_IN_MAX_PLY && !in_check) {
                 // delta pruning
                 PieceType captured = typeOf(board.pieceAt(move.to()));
-                if (best_score + DELTA_MARGIN + PIECE_VALUES[captured] < alpha
+                if (captured != NO_PIECE_TYPE &&
+                    best_score + DELTA_MARGIN + PIECE_VALUES[captured] < alpha
                     && !isPromotion(move)
                     && board.nonPawnMat(stm)) {
                     continue;
@@ -185,7 +186,7 @@ namespace Astra {
         }
 
         // store in transposition table
-        if (best_move != NO_MOVE) {
+        if(best_move != NO_MOVE) {
             Bound bound = best_score >= beta ? LOWER_BOUND : UPPER_BOUND;
             tt->store(hash, best_move, scoreToTT(best_score, ss->ply), 0, bound);
         }
@@ -239,7 +240,7 @@ namespace Astra {
             sel_depth = ss->ply;
         }
 
-        // Look up in the TT
+        // look up in transposition table
         TTEntry tt_entry;
         const U64 hash = board.getHash();
         const bool tt_hit = tt->lookup(tt_entry, hash);
@@ -247,10 +248,9 @@ namespace Astra {
 
         const Move excluded_move = ss->excluded_move;
 
-        // look up in transposition table
         if (!root_node
             && !pv_node
-            && excluded_move != NO_MOVE
+            && excluded_move == NO_MOVE
             && tt_hit
             && tt_score != VALUE_NONE
             && tt_entry.depth >= depth
@@ -318,7 +318,7 @@ namespace Astra {
         bool is_improving = false;
 
         if (in_check) {
-            ss->static_eval = (ss - 2)->static_eval;
+            ss->static_eval = VALUE_NONE;
         } else {
             ss->static_eval = tt_hit && tt_score != VALUE_NONE ? tt_score : Eval::evaluate(board);
             is_improving = ss->static_eval > (ss - 2)->static_eval;
@@ -346,20 +346,20 @@ namespace Astra {
 
             // reverse futility pruning
             int rfp_margin = ss->static_eval - 62 * depth + 71 * is_improving;
-            if (!pv_node &&
-                depth < 7
+            if (!pv_node
+                && depth < 7
                 && rfp_margin >= beta
-                && abs(beta) < VALUE_TB_WIN_IN_MAX_PLY) {
+                && std::abs(beta) < VALUE_TB_WIN_IN_MAX_PLY) {
                 return beta;
             }
 
             // null move pruning
-            if (!pv_node &&
-                board.nonPawnMat(stm) &&
-                excluded_move != NO_MOVE &&
-                (ss - 1)->current_move != NULL_MOVE &&
-                depth >= 3 &&
-                ss->static_eval >= beta) {
+            if (!pv_node
+                && board.nonPawnMat(stm)
+                && excluded_move == NO_MOVE
+                && (ss - 1)->current_move != NULL_MOVE
+                && depth >= 3
+                && ss->static_eval >= beta) {
                 constexpr int R = 5;
 
                 ss->current_move = NULL_MOVE;
@@ -422,7 +422,7 @@ namespace Astra {
             if (!root_node && best_score > VALUE_TB_LOSS_IN_MAX_PLY) {
                 if (is_capture) {
                     // see pruning
-                    if (depth < 6 && !see(board, move, -90 * depth)) {
+                    if (depth < 6 && !see(board, move, -100 * depth)) {
                         continue;
                     }
                 } else {
@@ -448,7 +448,7 @@ namespace Astra {
                 && tt_hit
                 && tt_score != VALUE_NONE
                 && tt_entry.move == move
-                && excluded_move != NO_MOVE
+                && excluded_move == NO_MOVE
                 && std::abs(tt_score) < VALUE_TB_WIN_IN_MAX_PLY
                 && tt_entry.bound & LOWER_BOUND
                 && tt_entry.depth >= depth - 3) {
@@ -534,19 +534,23 @@ namespace Astra {
             }
         }
 
+        ss->move_count = made_moves;
+
         // check for mate and stalemate
         if (moves.size() == 0) {
-            best_score = in_check ? -VALUE_MATE + ss->ply : 0;
+            if (excluded_move != NO_MOVE) {
+                best_score = alpha;
+            } else {
+                best_score = in_check ? -VALUE_MATE + ss->ply : VALUE_DRAW;
+            }
         }
-
-        ss->move_count = made_moves;
 
         if (pv_node) {
             best_score = std::min(best_score, max_score);
         }
 
         // store in transposition table
-        if (excluded_move != NULL_MOVE && best_move != NO_MOVE) {
+        if (excluded_move == NO_MOVE) {
             Bound bound;
             if (best_score >= beta) {
                 bound = LOWER_BOUND;
@@ -630,7 +634,8 @@ namespace Astra {
         time_manager.setTimePerMove(limit.time);
         time_manager.start();
 
-        move_ordering.clear();
+        move_ordering.clearHistory();
+        move_ordering.clearCounters();
 
         int depth = 1;
         for (; depth <= max_depth; depth++) {
@@ -690,7 +695,9 @@ namespace Astra {
         nodes = 0;
         tt->clear();
         pv_table.reset();
-        move_ordering.clear();
+        move_ordering.clearHistory();
+        move_ordering.clearCounters();
+        move_ordering.clearKillers();
     }
 
     std::string Search::getPv() {

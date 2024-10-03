@@ -6,6 +6,8 @@
 
 namespace UCI {
 
+    const std::string version = "3.1";
+
     Uci::Uci() : w_time(0), b_time(0), w_inc(0), b_inc(0), moves_to_go(0), move_time(0), engine(STARTING_FEN), board(STARTING_FEN) {
         options["Hash"] = Option("spin", "64", "64", 1, 2048);
         options["EvalFile"] = Option("string", "nn-768-2x256-1.nnue", "nn-768-2x256-1.nnue", 0, 0);
@@ -43,7 +45,7 @@ namespace UCI {
         engine.board.refreshAccumulator();
     }
 
-    void Uci::go(std::istringstream& is) {
+    void Uci::go(std::istringstream &is) {
         std::string token;
         while (is >> token) {
             if (token == "perft") {
@@ -66,11 +68,11 @@ namespace UCI {
                 is >> moves_to_go;
             } else if (token == "movetime") {
                 is >> move_time;
-            } else if(token == "depth") {
+            } else if (token == "depth") {
                 int depth;
                 is >> depth;
                 engine.limit.depth = depth;
-            } else if(token == "nodes") {
+            } else if (token == "nodes") {
                 U64 nodes;
                 is >> nodes;
                 engine.limit.nodes = nodes;
@@ -87,7 +89,7 @@ namespace UCI {
         const int inc = stm == WHITE ? w_inc : b_inc;
 
         unsigned int time_per_move;
-        if(move_time != 0) {
+        if (move_time != 0) {
             time_per_move = move_time;
         } else if (time_left != 0) {
             time_per_move = engine.time_manager.getTime(time_left, inc, moves_to_go);
@@ -114,7 +116,7 @@ namespace UCI {
             is >> std::skipws >> token;
 
             if (token == "uci") {
-                std::cout << "id name Astra" << std::endl;
+                std::cout << "id name Astra v" << version << std::endl;
                 std::cout << "id author Semih Oezalp" << std::endl;
                 printOptions();
                 std::cout << "uciok" << std::endl;
@@ -124,7 +126,7 @@ namespace UCI {
                 engine.reset();
             } else if (token == "position") {
                 updatePosition(is);
-            } else if(token == "eval") {
+            } else if (token == "eval") {
                 std::cout << Eval::evaluate(board) << std::endl;
             } else if (token == "go") {
                 go(is);
@@ -133,8 +135,7 @@ namespace UCI {
                 applyOptions();
             } else if (token == "d") {
                 engine.board.print(engine.board.getTurn());
-            } else if(token == "stop") {
-
+            } else if (token == "stop") {
             } else if (token == "quit") {
                 tb_free();
                 break;
@@ -159,7 +160,7 @@ namespace UCI {
         }
 
         path = getOption("EvalFile");
-        if(!path.empty()) {
+        if (!path.empty()) {
             NNUE::nnue.init(path);
         }
 
@@ -194,7 +195,7 @@ namespace UCI {
         }
     }
 
-    std::string Uci::getOption(const std::string& str) const {
+    std::string Uci::getOption(const std::string &str) const {
         auto it = options.find(str);
         if (it != options.end()) {
             return it->second.getValue();
@@ -205,13 +206,18 @@ namespace UCI {
     void Uci::printOptions() const {
         for (const auto &elem: options) {
             Option option = elem.second;
-            const std::string& value = option.getDefaultValue();
+            const std::string &value = option.getDefaultValue();
 
             std::cout << "option name " << elem.first
                     << " type " << option.getType()
-                    << " default " << (value.empty() ? "<empty>" : value)
-                    << " min " << option.getMin()
-                    << " max " << option.getMax() << std::endl;
+                    << " default " << (value.empty() ? "<empty>" : value);
+
+            if (option.getMin() != 0 && option.getMax() != 0) {
+                std::cout << " min " << option.getMin()
+                        << " max " << option.getMax() << std::endl;
+            } else {
+                std::cout << std::endl;
+            }
         }
     }
 
