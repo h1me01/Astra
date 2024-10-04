@@ -186,10 +186,8 @@ namespace Astra {
         }
 
         // store in transposition table
-        if(best_move != NO_MOVE) {
-            Bound bound = best_score >= beta ? LOWER_BOUND : UPPER_BOUND;
-            tt->store(hash, best_move, scoreToTT(best_score, ss->ply), 0, bound);
-        }
+        Bound bound = best_score >= beta ? LOWER_BOUND : UPPER_BOUND;
+        tt->store(hash, best_move, scoreToTT(best_score, ss->ply), 0, bound);
 
         assert(best_score > -VALUE_INFINITE && best_score < VALUE_INFINITE);
         return best_score;
