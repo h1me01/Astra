@@ -6,7 +6,7 @@
 
 namespace UCI {
 
-    const std::string version = "3.1";
+    const std::string version = "3.2";
 
     Uci::Uci() : board(STARTING_FEN), engine(STARTING_FEN) {
         options["Hash"] = Option("spin", "64", "64", 1, 2048);
@@ -31,8 +31,6 @@ namespace UCI {
             std::cout << "Unknown command" << std::endl;
             return;
         }
-
-        std::string p_str[6] = {"P", "N", "B", "R", "Q", "K"};
 
         board = Board(fen);
         while (is >> token) {
