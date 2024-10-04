@@ -3,6 +3,7 @@
 
 #include <chrono>
 #include "../chess/types.h"
+#include <iostream>
 
 using namespace Chess;
 
@@ -17,16 +18,22 @@ namespace Astra {
 
     class TimeManager {
     public:
-        int divider = 50;
-
         using Clock = std::chrono::steady_clock;
         using TimePoint = Clock::time_point;
+
+        Limits limit;
 
         TimeManager() : start_time(Clock::now()) {
         }
 
         void init(const Limits& limit) {
-            this->limit = limit;
+            this->limit.depth = limit.depth;
+            this->limit.nodes = limit.nodes;
+            this->limit.infinite = limit.infinite;
+
+            if (limit.time != 0) {
+                this->limit.time = limit.time;
+            }
         }
 
         void start() {
@@ -38,16 +45,20 @@ namespace Astra {
             return std::chrono::duration_cast<std::chrono::milliseconds>(current_time - start_time).count();
         }
 
-        // get time in ms
-        int64_t getOptimal(int64_t time, int inc, int moves_to_go) const {
-            int64_t optimal;
+        void setOptimum(int64_t time, int inc, int moves_to_go) {
+            double optimum;
+
+            int overhead = inc ? 0 : 10;
+            int mtg = moves_to_go ? std::min(moves_to_go, 50) : 50;
+
+            int64_t timeLeft = std::max<int64_t>(1, time + inc * (mtg - 1) - overhead * (2 + mtg));
             if (moves_to_go == 0) {
-                optimal = inc + (time - time / divider) / divider;
+                optimum = std::min(0.025, 0.214 * time / timeLeft);
             } else {
-                optimal = inc + (time - time / (moves_to_go + 3)) / (0.7 * moves_to_go + 3);
+                optimum = std::min(0.95 / mtg, 0.88 * time / timeLeft);
             }
 
-            return optimal;
+            limit.time = optimum * timeLeft;
         }
 
         bool isLimitReached(int depth, U64 nodes) const {
@@ -63,7 +74,7 @@ namespace Astra {
                 return true;
             }
 
-            if (limit.depth != 0 && depth > limit.depth) {
+            if (depth > limit.depth) {
                 return true;
             }
 
@@ -72,7 +83,6 @@ namespace Astra {
 
     private:
         TimePoint start_time;
-        Limits limit;
 
     };
 

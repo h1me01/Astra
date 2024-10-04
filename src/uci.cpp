@@ -98,7 +98,7 @@ namespace UCI {
         if (move_time != 0) {
              limit.time = move_time;
         } else if (time_left != 0) {
-             limit.time = engine.time_manager.getOptimal(time_left, inc, moves_to_go);
+             engine.time_manager.setOptimum(time_left, inc, moves_to_go);
         }
 
         engine.time_manager.init(limit);

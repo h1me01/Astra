@@ -657,13 +657,12 @@ namespace Astra {
                     << " seldepth " << static_cast<int>(sel_depth)
                     << " score ";
 
-            Score best_score = search_result.score;
-            if (best_score >= VALUE_MIN_MATE) {
-                std::cout << "mate " << (VALUE_MATE - best_score) / 2 + ((VALUE_MATE - best_score) & 1);
-            } else if (best_score <= -VALUE_MIN_MATE) {
-                std::cout << "mate " << -((VALUE_MATE + best_score) / 2) + ((VALUE_MATE + best_score) & 1);
+            if (result >= VALUE_MIN_MATE) {
+                std::cout << "mate " << (VALUE_MATE - result) / 2 + ((VALUE_MATE - result) & 1);
+            } else if (result <= -VALUE_MIN_MATE) {
+                std::cout << "mate " << -((VALUE_MATE + result) / 2) + ((VALUE_MATE + result) & 1);
             } else {
-                std::cout << "cp " << best_score;
+                std::cout << "cp " << result;
             }
 
             int elapsed_time = time_manager.elapsedTime();
@@ -675,7 +674,7 @@ namespace Astra {
             std::string pv = getPv();
             std::cout << " pv";
             if (pv == "") {
-                std::cout << " " << search_result.best_move;
+                std::cout << " " << pv_table(0)(0);
             } else {
                 std::cout << pv;
             }
