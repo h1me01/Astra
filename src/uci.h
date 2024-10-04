@@ -14,8 +14,6 @@ namespace UCI {
         void loop();
 
     private:
-        int w_time, b_time, w_inc, b_inc, moves_to_go, move_time;
-
         Board board;
         Astra::Search engine;
 

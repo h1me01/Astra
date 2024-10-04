@@ -8,9 +8,16 @@ using namespace Chess;
 
 namespace Astra {
 
+    struct Limits {
+        int64_t time = 0;
+        U64 nodes = 0;
+        int depth = MAX_PLY - 1;
+        bool infinite = false;
+    };
+
     class TimeManager {
     public:
-        unsigned int divider = 50;
+        int divider = 50;
 
         using Clock = std::chrono::steady_clock;
         using TimePoint = Clock::time_point;
@@ -18,9 +25,22 @@ namespace Astra {
         TimeManager() : start_time(Clock::now()) {
         }
 
+        void init(const Limits& limit) {
+            this->limit = limit;
+        }
+
+        void start() {
+            start_time = Clock::now();
+        }
+
+        int64_t elapsedTime() const {
+            const auto current_time = Clock::now();
+            return std::chrono::duration_cast<std::chrono::milliseconds>(current_time - start_time).count();
+        }
+
         // get time in ms
-        unsigned int getOptimal(int time, int inc, int moves_to_go) const {
-            unsigned int optimal;
+        int64_t getOptimal(int64_t time, int inc, int moves_to_go) const {
+            int64_t optimal;
             if (moves_to_go == 0) {
                 optimal = inc + (time - time / divider) / divider;
             } else {
@@ -30,27 +50,30 @@ namespace Astra {
             return optimal;
         }
 
-        void start() {
-            start_time = Clock::now();
-        }
+        bool isLimitReached(int depth, U64 nodes) const {
+            if (limit.infinite) {
+                return false;
+            }
 
-        // set total time allowed for a game (in ms)
-        void setTimePerMove(const unsigned int ms) {
-            tpm = ms;
-        }
+            if (limit.time != 0 && elapsedTime() > limit.time) {
+                return true;
+            }
 
-        bool isTimeExceeded() const {
-            return elapsedTime() > tpm;
-        }
+            if (limit.nodes != 0 && nodes >= limit.nodes) {
+                return true;
+            }
 
-        int elapsedTime() const {
-            const auto current_time = Clock::now();
-            return std::chrono::duration_cast<std::chrono::milliseconds>(current_time - start_time).count();
+            if (limit.depth != 0 && depth > limit.depth) {
+                return true;
+            }
+
+            return false;
         }
 
     private:
         TimePoint start_time;
-        unsigned int tpm{};
+        Limits limit;
+
     };
 
 } // namespace Astra

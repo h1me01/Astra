@@ -8,7 +8,7 @@ namespace UCI {
 
     const std::string version = "3.1";
 
-    Uci::Uci() : w_time(0), b_time(0), w_inc(0), b_inc(0), moves_to_go(0), move_time(0), engine(STARTING_FEN), board(STARTING_FEN) {
+    Uci::Uci() : board(STARTING_FEN), engine(STARTING_FEN) {
         options["Hash"] = Option("spin", "64", "64", 1, 2048);
         options["EvalFile"] = Option("string", "nn-768-2x256-1.nnue", "nn-768-2x256-1.nnue", 0, 0);
         options["SyzygyPath"] = Option("string", "", "", 0, 0);
@@ -46,6 +46,11 @@ namespace UCI {
     }
 
     void Uci::go(std::istringstream &is) {
+        Astra::Limits limit;
+
+        int64_t w_time = 0, b_time = 0, move_time = 0;
+        int w_inc = 0, b_inc = 0, moves_to_go = 0;
+
         std::string token;
         while (is >> token) {
             if (token == "perft") {
@@ -56,7 +61,9 @@ namespace UCI {
                     testPerft(depth);
                 }
                 return;
-            } else if (token == "wtime") {
+            }
+
+            if (token == "wtime") {
                 is >> w_time;
             } else if (token == "btime") {
                 is >> b_time;
@@ -71,13 +78,13 @@ namespace UCI {
             } else if (token == "depth") {
                 int depth;
                 is >> depth;
-                engine.limit.depth = depth;
+                limit.depth = depth;
             } else if (token == "nodes") {
                 U64 nodes;
                 is >> nodes;
-                engine.limit.nodes = nodes;
+                limit.nodes = nodes;
             } else if (token == "infinite") {
-                engine.limit.infinite = true;
+                limit.infinite = true;
             } else {
                 std::cout << "Unknown command" << std::endl;
                 return;
@@ -85,22 +92,20 @@ namespace UCI {
         }
 
         Color stm = engine.board.getTurn();
-        const int time_left = stm == WHITE ? w_time : b_time;
+        const int64_t time_left = stm == WHITE ? w_time : b_time;
         const int inc = stm == WHITE ? w_inc : b_inc;
 
         if (move_time != 0) {
-             engine.limit.time = move_time;
+             limit.time = move_time;
         } else if (time_left != 0) {
-             engine.limit.time = engine.time_manager.getOptimal(time_left, inc, moves_to_go);
+             limit.time = engine.time_manager.getOptimal(time_left, inc, moves_to_go);
         }
+
+        engine.time_manager.init(limit);
 
         // start search
         Astra::SearchResult result = engine.bestMove(64);
         std::cout << "bestmove " << result.best_move << std::endl;
-
-        // important to reset
-        move_time = 0;
-        w_time = b_time = w_inc = b_inc = moves_to_go = 0;
     }
 
     void Uci::loop() {

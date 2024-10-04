@@ -196,16 +196,12 @@ namespace Astra {
     }
 
     Score Search::abSearch(int depth, Score alpha, Score beta, Node node, Stack *ss) {
-        if (isLimitReached(depth)) {
+        if (time_manager.isLimitReached(depth, nodes)) {
             return beta;
         }
 
         if (ss->ply >= MAX_PLY) {
             return Eval::evaluate(board);
-        }
-
-        if (board.isDraw()) {
-            return VALUE_DRAW;
         }
 
         pv_table(ss->ply).length = ss->ply;
@@ -215,6 +211,10 @@ namespace Astra {
 
         const bool root_node = node == ROOT;
         const bool pv_node = node != NON_PV;
+
+        if (!root_node && board.isDraw()) {
+            return VALUE_DRAW;
+        }
 
         // check extension
         if (in_check) {
@@ -590,7 +590,7 @@ namespace Astra {
 
             result = abSearch(depth, alpha, beta, ROOT, ss);
 
-            if (isLimitReached(depth)) {
+            if (time_manager.isLimitReached(depth, nodes)) {
                 return result;
             }
 
@@ -610,6 +610,8 @@ namespace Astra {
     }
 
     SearchResult Search::bestMove(int max_depth) {
+        time_manager.start();
+
         SearchResult search_result;
 
         Stack stack[MAX_PLY + 4];
@@ -631,9 +633,6 @@ namespace Astra {
             (ss + i)->excluded_move = NO_MOVE;
         }
 
-        time_manager.setTimePerMove(limit.time);
-        time_manager.start();
-
         move_ordering.clearHistory();
         move_ordering.clearCounters();
 
@@ -646,7 +645,7 @@ namespace Astra {
             const Score previous_result = search_result.score;
             const Score result = aspSearch(depth, previous_result, ss);
 
-            if (isLimitReached(depth)) {
+            if (time_manager.isLimitReached(depth, nodes)) {
                 break;
             }
 
@@ -708,26 +707,6 @@ namespace Astra {
         }
 
         return pv.str();
-    }
-
-    bool Search::isLimitReached(int depth) const {
-        if (limit.infinite) {
-            return false;
-        }
-
-        if (limit.time != 0 && time_manager.isTimeExceeded()) {
-            return true;
-        }
-
-        if (limit.nodes != 0 && nodes >= limit.nodes) {
-            return true;
-        }
-
-        if (limit.depth != 0 && depth > limit.depth) {
-            return true;
-        }
-
-        return false;
     }
 
 } // namespace Astra
