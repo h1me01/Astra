@@ -282,6 +282,7 @@ namespace Astra {
             Score tb_score = probeWDL(board);
 
             if (tb_score != VALUE_NONE) {
+                std::cout << "F" << std::endl;
                 Bound bound = NO_BOUND;
 
                 switch (tb_score) {
