@@ -37,7 +37,6 @@ add_executable(Astra
         src/datagen.cpp
         src/syzygy/tbprobe.h
         src/syzygy/tbconfig.h
-        src/syzygy/tbchess.cpp
         src/syzygy/stdendian.h
         src/syzygy/tbprobe.cpp
         src/uci.cpp
