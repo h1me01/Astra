@@ -14,7 +14,6 @@ SRC = main.cpp \
       search/tt.cpp \
       datagen.cpp \
       syzygy/tbprobe.cpp \
-      syzygy/tbchess.cpp \
       uci.cpp
 
 # target executable
