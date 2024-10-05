@@ -27,8 +27,8 @@ namespace Chess {
 
             std::cout << "\nFen: " << testCase.fen << std::endl;
 
-            for (int i = 0; i < testCase.nodes.size(); ++i) {
-                int depth = i + 1;
+            for (size_t i = 0; i < testCase.nodes.size(); ++i) {
+                const int depth = static_cast<int>(i) + 1;
 
                 auto start = std::chrono::high_resolution_clock::now();
                 auto nodes = perft(board, depth);

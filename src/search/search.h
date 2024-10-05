@@ -24,7 +24,7 @@ namespace Astra {
     };
 
     struct SearchResult {
-        Move best_move = NULL_MOVE;
+        Move best_move = NO_MOVE;
         Score score = -VALUE_INFINITE;
     };
 

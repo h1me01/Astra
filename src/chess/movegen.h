@@ -102,8 +102,8 @@ namespace Chess {
         checkers |= getAttacks(KNIGHT, king_sq, our_occ | their_occ) & board.getPieceBB(them, KNIGHT);
 
         // potential enemy bishop, rook and queen attacks at our king
-        U64 candidates = getAttacks(ROOK, king_sq, their_occ) & board.orthSliders(them)
-                         | getAttacks(BISHOP, king_sq, their_occ) & board.diagSliders(them);
+        U64 candidates = (getAttacks(ROOK, king_sq, their_occ) & board.orthSliders(them))
+                        | (getAttacks(BISHOP, king_sq, their_occ) & board.diagSliders(them));
 
         pinned = 0;
         while (candidates) {
@@ -113,7 +113,7 @@ namespace Chess {
             // add the enemy piece to the checkers bitboard
             if (blockers == 0) {
                 checkers ^= SQUARE_BB[s];
-            } else if ((blockers & blockers - 1) == 0) {
+            } else if ((blockers & (blockers - 1)) == 0) {
                 // if there is only one of our piece between them, add our piece to the pinned
                 pinned ^= blockers;
             }
@@ -136,7 +136,8 @@ namespace Chess {
         }
 
         // ignoreLongCastlingDanger is used to get rid of the danger on the possibleChecks or b8 square
-        possible_checks = (occ | board.danger & ~ignoreOOODanger(Us)) & oooBlockersMask(Us);
+        possible_checks = ((occ | (board.danger & ~ignoreOOODanger(Us))) & oooBlockersMask(Us));
+
         is_allowed = castleMask & oooMask(Us);
 
         if (!(possible_checks | is_allowed)) {
@@ -415,15 +416,6 @@ namespace Chess {
                 last = is_w ? genLegalMoves<WHITE, ALL_MOVES>(board, list) :
                               genLegalMoves<BLACK, ALL_MOVES>(board, list);
             }
-        }
-
-        int find(const Move& m) const {
-            for (int i = 0; i < size(); i++) {
-                if (list[i] == m) {
-                    return i;
-                }
-            }
-            return -1;
         }
 
         constexpr Move &operator[](int i) {

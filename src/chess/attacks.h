@@ -97,7 +97,7 @@ namespace Chess {
     inline U64 slidingAttacks(Square s, const U64 occ, const U64 mask) {
         // uses hyperbola quintessence algorithm
         const U64 mask_occ = mask & occ;
-        return (mask_occ - SQUARE_BB[s] * 2 ^ reverse(reverse(mask_occ) - reverse(SQUARE_BB[s]) * 2)) & mask;
+        return ((mask_occ - SQUARE_BB[s] * 2) ^ (reverse(reverse(mask_occ) - reverse(SQUARE_BB[s]) * 2))) & mask;
     }
 
     inline U64 getRookAttacks(Square s, const U64 occ) {

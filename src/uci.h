@@ -3,7 +3,7 @@
 
 #include <unordered_map>
 #include "search/search.h"
-#include "options.h"
+#include "ucioptions.h"
 
 namespace UCI {
 

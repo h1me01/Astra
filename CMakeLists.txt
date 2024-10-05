@@ -41,6 +41,6 @@ add_executable(Astra
         src/syzygy/tbprobe.cpp
         src/uci.cpp
         src/uci.h
-        src/options.h
+        src/ucioptions.h
         src/search/moveordering.cpp
 )

@@ -102,7 +102,7 @@ namespace UCI {
         engine.time_manager.init(limit);
 
         // start search
-        Astra::SearchResult result = engine.bestMove(64);
+        Astra::SearchResult result = engine.bestMove(99);
         std::cout << "bestmove " << result.best_move << std::endl;
     }
 
@@ -148,7 +148,7 @@ namespace UCI {
     // options functions
     void Uci::applyOptions() {
         auto path = getOption("SyzygyPath");
-        if (!path.empty() && path != "<empty>") {
+        if (!path.empty()) {
             bool success = tb_init(path.c_str());
 
             if (success && TB_LARGEST > 0) {

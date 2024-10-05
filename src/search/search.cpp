@@ -17,7 +17,7 @@ namespace Astra {
 
         for (int depth = 1; depth < MAX_PLY; depth++) {
             for (int moves = 1; moves < MAX_MOVES; moves++) {
-                REDUCTIONS[depth][moves] = 1 + log(depth) * log(moves) / 1.75;
+                REDUCTIONS[depth][moves] = 1.0 + log(depth) * log(moves) / 1.75;
             }
         }
     }
@@ -113,7 +113,7 @@ namespace Astra {
         TTEntry tt_entry;
         const U64 hash = board.getHash();
         const bool tt_hit = tt->lookup(tt_entry, hash);
-        const Score tt_score = tt_hit ? scoreFromTT(tt_entry.score, ss->ply) : VALUE_NONE;
+        const Score tt_score = tt_hit ? scoreFromTT(tt_entry.score, ss->ply) : static_cast<Score>(VALUE_NONE);
         Bound tt_bound = tt_entry.bound;
 
         if (tt_hit
@@ -242,7 +242,7 @@ namespace Astra {
         TTEntry tt_entry;
         const U64 hash = board.getHash();
         const bool tt_hit = tt->lookup(tt_entry, hash);
-        const Score tt_score = tt_hit ? scoreFromTT(tt_entry.score, ss->ply) : VALUE_NONE;
+        const Score tt_score = tt_hit ? scoreFromTT(tt_entry.score, ss->ply) : static_cast<Score>(VALUE_NONE);
 
         const Move excluded_move = ss->excluded_move;
 
@@ -338,7 +338,7 @@ namespace Astra {
 
             // razoring
             if (!pv_node
-                && depth < 3
+                && depth <= 3
                 && ss->static_eval + RAZOR_MARGIN < alpha) {
                 return qSearch(alpha, beta, NON_PV, ss);
             }

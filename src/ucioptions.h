@@ -11,7 +11,11 @@ namespace UCI {
         Option() : min(0), max(0) {}
 
         Option(std::string type, std::string default_val, std::string val, int min, int max) :
-        type(std::move(type)), default_val(std::move(val)), val(std::move(default_val)), min(min), max(max) {};
+            type(std::move(type)),
+            default_val(std::move(default_val)),
+            val(std::move(val)),
+            min(min),
+            max(max) {};
 
         Option &operator=(const std::string &v) {
             val = v;
@@ -39,7 +43,7 @@ namespace UCI {
         }
 
     private:
-        std::string type, val, default_val;
+        std::string type, default_val, val;
         int min, max;
     };
 

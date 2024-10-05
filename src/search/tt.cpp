@@ -39,7 +39,7 @@ namespace Astra {
     }
 
     void TTable::clear() const {
-        for (int i = 0; i < tt_size; i++) {
+        for (U64 i = 0; i < tt_size; i++) {
             entries[i] = TTEntry();
         }
     }
