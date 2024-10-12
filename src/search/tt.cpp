@@ -57,6 +57,7 @@ namespace Astra {
         U64 idx = hash & mask;
 
         if(entries[idx].hash == 0) {
+            // save if no entry is present
             entries[idx] = TTEntry(hash, depth, move, score, bound);
         } else {
             bool first = bound == EXACT_BOUND; // store if exact bound
