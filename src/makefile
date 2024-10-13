@@ -12,7 +12,6 @@ SRC = main.cpp \
       search/search.cpp \
       search/moveordering.cpp \
       search/tt.cpp \
-      datagen.cpp \
       syzygy/tbprobe.cpp \
       uci.cpp
 
