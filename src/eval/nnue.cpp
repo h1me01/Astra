@@ -23,7 +23,6 @@ namespace NNUE {
             loadParameters(filename);
         } catch (const std::exception &e) {
             std::cerr << "Failed to initialize NNUE: " << e.what() << std::endl;
-            exit(1);
         }
     }
 
@@ -84,7 +83,7 @@ namespace NNUE {
 
         if(f == nullptr) {
             std::cerr << "Failed to open file: " << filename << std::endl;
-            exit(1);
+            return;
         }
 
         std::size_t readElements = 0;
@@ -96,6 +95,7 @@ namespace NNUE {
         std::size_t expectedElements = INPUT_SIZE * HIDDEN_SIZE + HIDDEN_SIZE + 2 * HIDDEN_SIZE + OUTPUT_SIZE;
         if (readElements != expectedElements) {
             std::cerr << "Error loading network: Expected " << expectedElements << " elements, got " << readElements << " elements." << std::endl;
+            fclose(f);
             exit(1);
         }
 
