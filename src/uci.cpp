@@ -10,7 +10,6 @@ namespace UCI {
 
     Uci::Uci() : board(STARTING_FEN), engine(STARTING_FEN) {
         options["Hash"] = Option("spin", "64", "64", 1, 2048);
-        options["EvalFile"] = Option("string", "nn-768-2x256-1.nnue", "nn-768-2x256-1.nnue", 0, 0);
         options["SyzygyPath"] = Option("string", "", "", 0, 0);
 
         applyOptions();
@@ -116,7 +115,7 @@ namespace UCI {
             is >> std::skipws >> token;
 
             if (token == "uci") {
-                std::cout << "id name Astra v" << version << std::endl;
+                std::cout << "id name Astra " << version << std::endl;
                 std::cout << "id author Semih Oezalp" << std::endl;
                 printOptions();
                 std::cout << "uciok" << std::endl;
