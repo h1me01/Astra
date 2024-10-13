@@ -39,8 +39,8 @@ namespace Astra {
 
         bool use_TB = false;
 
-        // time_per_move in ms
         explicit Search(const std::string& fen);
+
         ~Search();
 
         SearchResult bestMove(int max_depth);

@@ -3,7 +3,7 @@
 
 namespace Astra {
 
-    // static exchange evaluation
+    // static exchange evaluation from Weiss
     bool see(const Board &board, Move move, int threshold) {
         Square from = move.from();
         Square to = move.to();
