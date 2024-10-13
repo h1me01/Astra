@@ -5,8 +5,8 @@ Astra is a UCI chess engine written in C++.
 ## Strength
 - Unknown
 
-## Build
-Build the code yourself for better performance.
+## Compiling
+Compile the code yourself for better performance.
 ```
 git clone https://github.com/h1me01/Astra.git
 cd Astra/src
