@@ -22,7 +22,7 @@ namespace NNUE {
         int16_t fc2_weights[2 * HIDDEN_SIZE];
         int32_t fc2_biases[OUTPUT_SIZE];
 
-        void init(std::string path);
+        void init(const std::string& filename);
 
         int32_t forward(const Accumulator &acc, Color stm) const;
 
@@ -31,7 +31,7 @@ namespace NNUE {
         void movePiece(Accumulator &acc, Piece p, Square from, Square to) const;
 
     private:
-        void loadParameters(const std::string &filename);
+        void loadParameters(const std::string& filename);
     };
 
     inline NNUE nnue;

@@ -18,9 +18,9 @@ namespace NNUE {
     }
 
     // NNUE
-    void NNUE::init(std::string path) {
+    void NNUE::init(const std::string& filename) {
         try {
-            loadParameters(path);
+            loadParameters(filename);
         } catch (const std::exception &e) {
             std::cerr << "Failed to initialize NNUE: " << e.what() << std::endl;
             exit(1);
@@ -79,19 +79,27 @@ namespace NNUE {
         }
     }
 
-    void NNUE::loadParameters(const std::string &filename) {
-        std::ifstream file(filename, std::ios::binary);
-        if (!file.is_open()) {
-            std::cerr << "Error opening NNUE file: " << filename << std::endl;
+    void NNUE::loadParameters(const std::string& filename) {
+        FILE *f = fopen(filename.c_str(), "rb");
+
+        if(f == nullptr) {
+            std::cerr << "Failed to open file: " << filename << std::endl;
+            exit(1);
         }
 
-        file.read(reinterpret_cast<char *>(fc1_weights), sizeof(int16_t) * INPUT_SIZE * HIDDEN_SIZE);
-        file.read(reinterpret_cast<char *>(fc1_biases), sizeof(int16_t) * HIDDEN_SIZE);
+        std::size_t readElements = 0;
+        readElements += fread(fc1_weights, sizeof(int16_t), INPUT_SIZE * HIDDEN_SIZE, f);
+        readElements += fread(fc1_biases, sizeof(int16_t), HIDDEN_SIZE, f);
+        readElements += fread(fc2_weights, sizeof(int16_t), 2 * HIDDEN_SIZE, f);
+        readElements += fread(fc2_biases, sizeof(int32_t), OUTPUT_SIZE, f);
 
-        file.read(reinterpret_cast<char *>(fc2_weights), sizeof(int16_t) * 2 * HIDDEN_SIZE);
-        file.read(reinterpret_cast<char *>(fc2_biases), sizeof(int32_t) * OUTPUT_SIZE);
+        std::size_t expectedElements = INPUT_SIZE * HIDDEN_SIZE + HIDDEN_SIZE + 2 * HIDDEN_SIZE + OUTPUT_SIZE;
+        if (readElements != expectedElements) {
+            std::cerr << "Error loading network: Expected " << expectedElements << " elements, got " << readElements << " elements." << std::endl;
+            exit(1);
+        }
 
-        file.close();
+        fclose(f);
     }
 
 } // namespace NNUE
