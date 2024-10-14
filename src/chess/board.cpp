@@ -11,7 +11,7 @@ namespace Chess {
 
         std::vector<std::string> fen_parts = split(fen, ' ');
         if (fen_parts.size() != 6) {
-            std::cerr << "Invalid FEN string!" << std::endl;
+            std::cerr << "Invalid fen string" << std::endl;
             return;
         }
 
@@ -130,7 +130,7 @@ namespace Chess {
 
     void Board::refreshAccumulator() {
         accumulators.clear();
-       NNUE::Accumulator acc = accumulators.back();
+        NNUE::Accumulator acc = accumulators.back();
 
         for (int j = 0; j < NNUE::HIDDEN_SIZE; j++) {
             acc[WHITE][j] = NNUE::nnue.fc1_biases[j];
@@ -138,7 +138,7 @@ namespace Chess {
         }
 
         for(int i = WHITE_PAWN; i <= BLACK_KING; i++) {
-            uint64_t bb = piece_bb[i];
+            U64 bb = piece_bb[i];
             while(bb) {
                 const Square s = popLsb(bb);
                 NNUE::nnue.putPiece(acc, static_cast<Piece>(i), s);

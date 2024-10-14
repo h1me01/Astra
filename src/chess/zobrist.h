@@ -29,7 +29,6 @@ namespace Chess {
     };
 
     namespace Zobrist {
-        // used to incrementally update the hash key of a position
         inline U64 psq[NUM_PIECES][NUM_SQUARES];
         inline U64 castle[16];
         inline U64 ep[8];
@@ -50,7 +49,7 @@ namespace Chess {
 
             side = rng.rand<U64>();
         }
-    } // namespace zobrist
+    } // namespace Zobrist
 
 } // namespace Chess
 

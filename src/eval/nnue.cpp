@@ -72,7 +72,6 @@ namespace NNUE {
 
         for (int i = 0; i < HIDDEN_SIZE; i++) {
             const int idx = i * INPUT_SIZE;
-
             acc[WHITE][i] += fc1_weights[idx + w_to_idx] - fc1_weights[idx + w_from_idx];
             acc[BLACK][i] += fc1_weights[idx + b_to_idx] - fc1_weights[idx + b_from_idx];
         }
@@ -81,20 +80,20 @@ namespace NNUE {
     void NNUE::loadParameters(const std::string& filename) {
         FILE *f = fopen(filename.c_str(), "rb");
 
-        if(f == nullptr) {
+        if(!f) {
             std::cerr << "Failed to open file: " << filename << std::endl;
             return;
         }
 
-        std::size_t readElements = 0;
-        readElements += fread(fc1_weights, sizeof(int16_t), INPUT_SIZE * HIDDEN_SIZE, f);
-        readElements += fread(fc1_biases, sizeof(int16_t), HIDDEN_SIZE, f);
-        readElements += fread(fc2_weights, sizeof(int16_t), 2 * HIDDEN_SIZE, f);
-        readElements += fread(fc2_biases, sizeof(int32_t), OUTPUT_SIZE, f);
+        std::size_t elements_size = 0;
+        elements_size += fread(fc1_weights, sizeof(int16_t), INPUT_SIZE * HIDDEN_SIZE, f);
+        elements_size += fread(fc1_biases, sizeof(int16_t), HIDDEN_SIZE, f);
+        elements_size += fread(fc2_weights, sizeof(int16_t), 2 * HIDDEN_SIZE, f);
+        elements_size += fread(fc2_biases, sizeof(int32_t), OUTPUT_SIZE, f);
 
-        std::size_t expectedElements = INPUT_SIZE * HIDDEN_SIZE + HIDDEN_SIZE + 2 * HIDDEN_SIZE + OUTPUT_SIZE;
-        if (readElements != expectedElements) {
-            std::cerr << "Error loading network: Expected " << expectedElements << " elements, got " << readElements << " elements." << std::endl;
+        std::size_t expected_size = INPUT_SIZE * HIDDEN_SIZE + HIDDEN_SIZE + 2 * HIDDEN_SIZE + OUTPUT_SIZE;
+        if (elements_size != expected_size) {
+            std::cerr << "Error loading network: Expected " << expected_size << " elements, got " << elements_size << " elements." << std::endl;
             fclose(f);
             exit(1);
         }

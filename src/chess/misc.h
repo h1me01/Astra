@@ -12,8 +12,8 @@ namespace Chess {
     inline void printBitboard(const U64 b) {
         for (int rank = 7; rank >= 0; --rank) {
             for (int file = 0; file < 8; ++file) {
-                int square = rank * 8 + file;
-                U64 mask = 1ULL << square;
+                int s = rank * 8 + file;
+                U64 mask = 1ULL << s;
                 std::cout << ((b & mask) ? "1 " : "0 ");
             }
             std::cout << std::endl;
@@ -23,20 +23,19 @@ namespace Chess {
 
     // helper to find square from string
     inline Square findSquare(std::string_view square_str) {
-        char letter = square_str[0];
-        int file = letter - 96;
-        int rank = square_str[1] - 48;
-        int index = (rank - 1) * 8 + file - 1;
+        int file = square_str[0] - 97;
+        int rank = square_str[1] - 49;
+        int index = rank * 8 + file;
         return static_cast<Square>(index);
     }
 
     // helper to split the fen
-    inline std::vector<std::string> split(const std::string &str, const char delimiter) {
+    inline std::vector<std::string> split(const std::string &str, char del) {
         std::vector<std::string> parts;
         std::string current;
 
         for (const char c: str) {
-            if (c == delimiter) {
+            if (c == del) {
                 if (!current.empty()) {
                     parts.push_back(current);
                     current.clear();
@@ -46,7 +45,10 @@ namespace Chess {
             }
         }
 
-        if (!current.empty()) parts.push_back(current);
+        if (!current.empty()) {
+            parts.push_back(current);
+        }
+
         return parts;
     }
 
@@ -66,7 +68,7 @@ namespace Chess {
         return rights.find_first_of("kqKQ") != std::string::npos;
     }
 
-    inline PieceType typeOfPromotion(MoveFlags mf) {
+    inline PieceType typeOfPromotion(const MoveFlags mf) {
         switch (mf) {
             case PR_KNIGHT:
             case PC_KNIGHT:
@@ -111,13 +113,15 @@ namespace Chess {
         return os;
     }
 
-    // operator to get the opposite color
+    // gets the opposite color
     constexpr Color operator~(Color c) {
         return static_cast<Color>(c ^ BLACK);
     }
 
     constexpr Piece makePiece(Color c, PieceType pt) {
-        if (pt == NO_PIECE_TYPE) return NO_PIECE;
+        if (pt == NO_PIECE_TYPE) {
+            return NO_PIECE;
+        }
         return static_cast<Piece>(pt + 6 * c);
     }
 
@@ -129,28 +133,23 @@ namespace Chess {
         return p < 6 ? WHITE : BLACK;
     }
 
-    // increases the square by one
     inline Square &operator++(Square &s) {
         s = static_cast<Square>(static_cast<int>(s) + 1);
         return s;
     }
 
-    // adds squares
     constexpr Square operator+(Square s, Direction d) {
         return static_cast<Square>(static_cast<int>(s) + static_cast<int>(d));
     }
 
-    // subtracts squares
     constexpr Square operator-(Square s, Direction d) {
         return static_cast<Square>(static_cast<int>(s) - static_cast<int>(d));
     }
 
-    // adds squares
     inline Square &operator+=(Square &s, Direction d) {
         return s = s + d;
     }
 
-    // subtracts squares
     inline Square &operator-=(Square &s, Direction d) {
         return s = s - d;
     }
