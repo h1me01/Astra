@@ -36,8 +36,4 @@ all: $(EXE)
 $(EXE): $(SRC)
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
 
-# clean rule to remove the executable
-clean:
-	$(RM) $(EXE)
-
 .PHONY: all clean
