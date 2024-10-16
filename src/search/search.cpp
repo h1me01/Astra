@@ -1,6 +1,7 @@
 #include <cmath>
 #include <algorithm>
 #include "search.h"
+//#include "searchparams.h"
 #include "../eval/eval.h"
 #include "../chess/movegen.h"
 #include "../syzygy/tbprobe.h"
@@ -134,6 +135,7 @@ namespace Astra {
         if (best_score >= beta) {
             return best_score;
         }
+
         if (best_score > alpha) {
             alpha = best_score;
         }
@@ -143,7 +145,7 @@ namespace Astra {
 
         Move best_move = NO_MOVE;
         for (Move move: moves) {
-            //assert(isCapture(move));
+            assert(isCapture(move));
 
             if (best_score > VALUE_TB_LOSS_IN_MAX_PLY && !in_check) {
                 // delta pruning
@@ -418,25 +420,22 @@ namespace Astra {
             const bool is_promotion = isPromotion(move);
 
             if (!root_node && best_score > VALUE_TB_LOSS_IN_MAX_PLY) {
-                if (is_capture) {
-                    // see pruning
-                    if (depth < 6 && !see(board, move, -100 * depth)) {
-                        continue;
-                    }
-                } else {
-                    // late move pruning
-                    if (!in_check
-                        && !pv_node
-                        && !is_promotion
-                        && depth <= 5
-                        && quiet_count > (4 + depth * depth)) {
-                        continue;
-                    }
+                int see_depth = is_capture ? 6 : 7;
+                int see_margin = is_capture ? 100 : 40;
 
-                    // see pruning
-                    if (depth < 7 && !see(board, move, -40 * depth)) {
-                        continue;
-                    }
+                // late move pruning
+                if (!is_capture
+                    && !in_check
+                    && !pv_node
+                    && !is_promotion
+                    && depth <= 5
+                    && quiet_count > (4 + depth * depth)) {
+                    continue;
+                }
+
+                // see pruning
+                if (depth < see_depth && !see(board, move, -see_margin * depth)) {
+                    continue;
                 }
             }
 
@@ -672,7 +671,7 @@ namespace Astra {
 
             std::string pv = getPv();
             std::cout << " pv";
-            if (pv == "") {
+            if (pv.empty()) {
                 std::cout << " " << pv_table(0)(0);
             } else {
                 std::cout << pv;

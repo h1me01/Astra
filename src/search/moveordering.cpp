@@ -75,7 +75,7 @@ namespace Astra {
     }
 
     // most valuable victim / least valuable attacker
-    constexpr int mvvlvaTable[7][7] = {
+    constexpr int mvvlva_table[7][7] = {
         {205, 204, 203, 202, 201, 200, 0},
         {305, 304, 303, 302, 301, 300, 0},
         {405, 404, 403, 402, 401, 400, 0},
@@ -87,7 +87,7 @@ namespace Astra {
     int mvvlva(const Board &board, const Move &move) {
         const int attacker = typeOf(board.pieceAt(move.from()));
         const int victim = typeOf(board.pieceAt(move.to()));
-        return mvvlvaTable[victim][attacker];
+        return mvvlva_table[victim][attacker];
     }
 
     MoveOrdering::MoveOrdering() {
