@@ -24,6 +24,5 @@ Some parts of the code were inspired by:
 - [Smallbrain](https://github.com/Disservin/Smallbrain)
 
 Resources:
-- [CudAD](https://github.com/Luecx/CudAD) - Used for training the NNUE
 - [Fathom](https://github.com/jdart1/Fathom) - Syzygy tablebase probe tool
 - [Chess Programming Wiki](https://www.chessprogramming.org/Main_Page)
