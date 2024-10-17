@@ -20,4 +20,5 @@ I had to remove the versions prior to 3.0 due to inefficient compiling.
 - [Stockfish](https://github.com/official-stockfish/Stockfish)
 - [Koivisto](https://github.com/Luecx/Koivisto)
 - [Smallbrain](https://github.com/Disservin/Smallbrain)
+- [Fathom](https://github.com/jdart1/Fathom)
 - [Chess Programming Wiki](https://www.chessprogramming.org/Main_Page)
