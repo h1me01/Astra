@@ -414,6 +414,13 @@ namespace Astra {
 
             made_moves++;
 
+            // print current move information
+            if (root_node && time_manager.elapsedTime() > 3000) {
+                std::cout << "info depth " << depth
+                          << " currmove " << move
+                          << " currmovenumber " << static_cast<int>(made_moves) << std::endl;
+            }
+
             int extension = 0;
 
             const bool is_capture = isCapture(move);

@@ -180,10 +180,10 @@ namespace Chess {
         return static_cast<Direction>(c == WHITE ? d : -d);
     }
 
-    constexpr Square relativeSquare(Color c, Square s) {
+    constexpr Square mirrorVertically(Color c, Square s) {
         return c == WHITE ? s : static_cast<Square>(s ^ 56);
     }
 
-} //namespace Chess
+} // namespace Chess
 
 #endif //MISC_H

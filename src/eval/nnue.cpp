@@ -11,9 +11,8 @@ namespace NNUE {
 
         Color pc = colorOf(p);
         PieceType pt = typeOf(p);
-        s = relativeSquare(view, s);
+        s = mirrorVertically(view, s);
         const int idx = static_cast<int>(s) + static_cast<int>(pt) * 64 + (pc != view) * 64 * 6;
-        assert(idx >= 0 && idx < INPUT_SIZE);
         return idx;
     }
 
