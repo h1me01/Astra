@@ -17,7 +17,12 @@ make -j
 I had to remove the versions prior to 3.0 due to inefficient compiling.
 
 ## Credits
+
+Some parts of the code were inspired by:
 - [Stockfish](https://github.com/official-stockfish/Stockfish)
 - [Koivisto](https://github.com/Luecx/Koivisto)
 - [Smallbrain](https://github.com/Disservin/Smallbrain)
+
+Resources:
+- [Fathom](https://github.com/jdart1/Fathom) - Syzygy tablebase probe tool
 - [Chess Programming Wiki](https://www.chessprogramming.org/Main_Page)
