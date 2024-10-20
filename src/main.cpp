@@ -1,9 +1,12 @@
 #include "uci.h"
+#include "eval/nnue.h"
 
 int main() {
     initLookUpTables();
     Zobrist::init();
     Astra::initReductions();
+
+    NNUE::nnue.init();
 
     UCI::Uci uci;
     uci.loop();

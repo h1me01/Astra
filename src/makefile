@@ -1,6 +1,11 @@
+# variables
+ROOT := $(realpath $(dir $(abspath $(lastword $(MAKEFILE_LIST)))))
+EvalFile = $(ROOT)/nn-768-2x256-1.nnue
+
 # compiler and flags
 CXX ?= g++
 CXXFLAGS = -Wall -Wextra -O3 -DNDEBUG -funroll-loops -pthread -std=c++17 -march=native
+CXXFLAGS += -DNNUE_PATH=\"$(EvalFile)\" # add nnue file path
 
 # source files
 SRC = main.cpp \
@@ -35,5 +40,9 @@ all: $(EXE)
 
 $(EXE): $(SRC)
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
+
+# clean target
+clean:
+	rm -f $(EXE)
 
 .PHONY: all clean

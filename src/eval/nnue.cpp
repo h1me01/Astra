@@ -2,9 +2,15 @@
 #include "accumulator.h"
 #include "../chess/misc.h"
 
+#define INCBIN_STYLE INCBIN_STYLE_CAMEL
+
+#include "../incbin.h"
+
+INCBIN(Weights, NNUE_PATH);
+
 namespace NNUE {
 
-    // HELPER
+    // helper
     int index(Square s, Piece p, Color view) {
         assert(p != NO_PIECE);
         assert(s != NO_SQUARE);
@@ -16,13 +22,21 @@ namespace NNUE {
         return idx;
     }
 
-    // NNUE
-    void NNUE::init(const std::string& filename) {
-        try {
-            loadParameters(filename);
-        } catch (const std::exception &e) {
-            std::cerr << "Failed to initialize NNUE: " << e.what() << std::endl;
-        }
+    // nnue
+    void NNUE::init() {
+            const unsigned char* data = gWeightsData;
+            std::size_t offset = 0;
+
+            memcpy(fc1_weights, data + offset, INPUT_SIZE * HIDDEN_SIZE * sizeof(int16_t));
+            offset += INPUT_SIZE * HIDDEN_SIZE * sizeof(int16_t);
+
+            memcpy(fc1_biases, data + offset, HIDDEN_SIZE * sizeof(int16_t));
+            offset += HIDDEN_SIZE * sizeof(int16_t);
+
+            memcpy(fc2_weights, data + offset, 2 * HIDDEN_SIZE * sizeof(int16_t));
+            offset += 2 * HIDDEN_SIZE * sizeof(int16_t);
+
+            memcpy(fc2_biases, data + offset, OUTPUT_SIZE * sizeof(int32_t));
     }
 
     int32_t NNUE::forward(const Accumulator &acc, Color stm) const {
@@ -74,30 +88,6 @@ namespace NNUE {
             acc[WHITE][i] += fc1_weights[idx + w_to_idx] - fc1_weights[idx + w_from_idx];
             acc[BLACK][i] += fc1_weights[idx + b_to_idx] - fc1_weights[idx + b_from_idx];
         }
-    }
-
-    void NNUE::loadParameters(const std::string& filename) {
-        FILE *f = fopen(filename.c_str(), "rb");
-
-        if(!f) {
-            std::cerr << "Failed to open file: " << filename << std::endl;
-            return;
-        }
-
-        std::size_t elements_size = 0;
-        elements_size += fread(fc1_weights, sizeof(int16_t), INPUT_SIZE * HIDDEN_SIZE, f);
-        elements_size += fread(fc1_biases, sizeof(int16_t), HIDDEN_SIZE, f);
-        elements_size += fread(fc2_weights, sizeof(int16_t), 2 * HIDDEN_SIZE, f);
-        elements_size += fread(fc2_biases, sizeof(int32_t), OUTPUT_SIZE, f);
-
-        std::size_t expected_size = INPUT_SIZE * HIDDEN_SIZE + HIDDEN_SIZE + 2 * HIDDEN_SIZE + OUTPUT_SIZE;
-        if (elements_size != expected_size) {
-            std::cerr << "Error loading network: Expected " << expected_size << " elements, got " << elements_size << " elements." << std::endl;
-            fclose(f);
-            exit(1);
-        }
-
-        fclose(f);
     }
 
 } // namespace NNUE

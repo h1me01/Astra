@@ -1,5 +1,4 @@
 #include "uci.h"
-
 #include "chess/perft.h"
 #include "eval/eval.h"
 #include "syzygy/tbprobe.h"
@@ -10,7 +9,6 @@ namespace UCI {
 
     Uci::Uci() : board(STARTING_FEN), engine(STARTING_FEN) {
         options["Hash"] = Option("spin", "64", "64", 1, 2048);
-        options["EvalFile"] = Option("string", "nn-768-2x256-1.nnue", "nn-768-2x256-1.nnue", 0, 0);
         options["SyzygyPath"] = Option("string", "", "", 0, 0);
 
         applyOptions();
@@ -158,11 +156,6 @@ namespace UCI {
             }
         }
 
-        path = getOption("EvalFile");
-        if (!path.empty() && path != "<empty>") {
-            NNUE::nnue.init(path);
-        }
-
         engine.tt->init(std::stoi(getOption("Hash")));
         engine.reset();
     }
@@ -190,7 +183,7 @@ namespace UCI {
         if (options.count(name)) {
             options[name] = value;
         } else {
-            std::cout << "Unrecognized option: " << name << std::endl;
+            std::cout << "Unknown option: " << name << std::endl;
         }
     }
 
