@@ -1,6 +1,6 @@
 #include "uci.h"
-#include "chess/perft.h"
 #include "eval/eval.h"
+#include "chess/perft.h"
 #include "syzygy/tbprobe.h"
 
 namespace UCI {
@@ -9,6 +9,7 @@ namespace UCI {
 
     Uci::Uci() : board(STARTING_FEN), engine(STARTING_FEN) {
         options["Hash"] = Option("spin", "64", "64", 1, 2048);
+        options["Threads"] = Option("spin", "1", "1", 1, 256);
         options["SyzygyPath"] = Option("string", "", "", 0, 0);
 
         applyOptions();
@@ -94,13 +95,11 @@ namespace UCI {
         if (move_time != 0) {
              limit.time = move_time;
         } else if (time_left != 0) {
-             engine.time_manager.setOptimum(time_left, inc, moves_to_go);
+             limit.time = Astra::TimeManager::getOptimum(time_left, inc, moves_to_go);
         }
 
-        engine.time_manager.init(limit);
-
         // start search
-        Astra::SearchResult result = engine.bestMove(99);
+        Astra::SearchResult result = engine.start(limit, 99);
         std::cout << "bestmove " << result.best_move << std::endl;
     }
 

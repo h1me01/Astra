@@ -3,7 +3,6 @@
 
 #include <chrono>
 #include "../chess/types.h"
-#include <iostream>
 
 using namespace Chess;
 
@@ -21,19 +20,7 @@ namespace Astra {
         using Clock = std::chrono::steady_clock;
         using TimePoint = Clock::time_point;
 
-        Limits limit;
-
         TimeManager() : start_time(Clock::now()) {
-        }
-
-        void init(const Limits& limit) {
-            this->limit.depth = limit.depth;
-            this->limit.nodes = limit.nodes;
-            this->limit.infinite = limit.infinite;
-
-            if (limit.time != 0) {
-                this->limit.time = limit.time;
-            }
         }
 
         void start() {
@@ -45,7 +32,7 @@ namespace Astra {
             return std::chrono::duration_cast<std::chrono::milliseconds>(current_time - start_time).count();
         }
 
-        void setOptimum(int64_t time, int inc, int moves_to_go) {
+        static int64_t getOptimum(int64_t time, int inc, int moves_to_go) {
             double optimum;
 
             int overhead = inc ? 0 : 10;
@@ -58,27 +45,7 @@ namespace Astra {
                 optimum = std::min(0.95 / mtg, 0.88 * time / timeLeft);
             }
 
-            limit.time = optimum * timeLeft;
-        }
-
-        bool isLimitReached(int depth, U64 nodes) const {
-            if (limit.infinite) {
-                return false;
-            }
-
-            if (limit.time != 0 && elapsedTime() > limit.time) {
-                return true;
-            }
-
-            if (limit.nodes != 0 && nodes >= limit.nodes) {
-                return true;
-            }
-
-            if (depth > limit.depth) {
-                return true;
-            }
-
-            return false;
+            return optimum * timeLeft;
         }
 
     private:

@@ -32,6 +32,8 @@ namespace Astra {
 
     class Search {
     public:
+        Limits limit;
+
         Board board;
         TTable* tt;
         MoveOrdering move_ordering;
@@ -43,7 +45,7 @@ namespace Astra {
 
         ~Search();
 
-        SearchResult bestMove(int max_depth);
+        SearchResult start(const Limits& limit, int max_depth);
 
         std::string getPv();
 
@@ -55,6 +57,9 @@ namespace Astra {
         uint8_t sel_depth = 0;
 
         PVTable pv_table;
+
+        void printUciInfo(Score result, int depth);
+        bool isLimitReached(int depth) const;
 
         Score qSearch(Score alpha, Score beta, Node node, Stack *ss);
         Score abSearch(int depth, Score alpha, Score beta, Node node, Stack *ss);

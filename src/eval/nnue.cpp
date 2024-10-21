@@ -6,7 +6,8 @@
 
 #include "../incbin.h"
 
-INCBIN(Weights, NNUE_PATH);
+//INCBIN(Weights, NNUE_PATH);
+INCBIN(Weights, "C:/Users/semio/Documents/programming/Astra-Chess-Engine/Astra/src/nn-768-2x256-1.nnue");
 
 namespace NNUE {
 

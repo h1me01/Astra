@@ -196,7 +196,7 @@ namespace Astra {
     }
 
     Score Search::abSearch(int depth, Score alpha, Score beta, Node node, Stack *ss) {
-        if (time_manager.isLimitReached(depth, nodes)) {
+        if (isLimitReached(depth)) {
             return beta;
         }
 
@@ -594,7 +594,7 @@ namespace Astra {
 
             result = abSearch(depth, alpha, beta, ROOT, ss);
 
-            if (time_manager.isLimitReached(depth, nodes)) {
+            if (isLimitReached(depth)) {
                 return result;
             }
 
@@ -613,7 +613,8 @@ namespace Astra {
         return result;
     }
 
-    SearchResult Search::bestMove(int max_depth) {
+    SearchResult Search::start(const Limits& limit, const int max_depth) {
+        this->limit = limit;
         time_manager.start();
 
         SearchResult search_result;
@@ -649,41 +650,14 @@ namespace Astra {
             const Score previous_result = search_result.score;
             const Score result = aspSearch(depth, previous_result, ss);
 
-            if (time_manager.isLimitReached(depth, nodes)) {
+            if (isLimitReached(depth)) {
                 break;
             }
 
             search_result.best_move = pv_table(0)(0);
             search_result.score = result;
 
-            // info for uci
-            std::cout << "info depth " << depth
-                    << " seldepth " << static_cast<int>(sel_depth)
-                    << " score ";
-
-            if (result >= VALUE_MIN_MATE) {
-                std::cout << "mate " << (VALUE_MATE - result) / 2 + ((VALUE_MATE - result) & 1);
-            } else if (result <= -VALUE_MIN_MATE) {
-                std::cout << "mate " << -((VALUE_MATE + result) / 2) + ((VALUE_MATE + result) & 1);
-            } else {
-                std::cout << "cp " << result;
-            }
-
-            int elapsed_time = time_manager.elapsedTime();
-
-            std::cout << " nodes " << nodes
-                    << " nps " << nodes * 1000 / (elapsed_time + 1)
-                    << " tbhits " << tb_hits
-                    << " time " << elapsed_time;
-
-            std::string pv = getPv();
-            std::cout << " pv";
-            if (pv.empty()) {
-                std::cout << " " << pv_table(0)(0);
-            } else {
-                std::cout << pv;
-            }
-            std::cout << std::endl;
+            printUciInfo(result, depth);
         }
 
         if (depth == 1) {
@@ -691,6 +665,57 @@ namespace Astra {
         }
 
         return search_result;
+    }
+
+    void Search::printUciInfo(Score result, int depth) {
+        // info for uci
+        std::cout << "info depth " << depth
+                << " seldepth " << static_cast<int>(sel_depth)
+                << " score ";
+
+        if (result >= VALUE_MIN_MATE) {
+            std::cout << "mate " << (VALUE_MATE - result) / 2 + ((VALUE_MATE - result) & 1);
+        } else if (result <= -VALUE_MIN_MATE) {
+            std::cout << "mate " << -((VALUE_MATE + result) / 2) + ((VALUE_MATE + result) & 1);
+        } else {
+            std::cout << "cp " << result;
+        }
+
+        int elapsed_time = time_manager.elapsedTime();
+
+        std::cout << " nodes " << nodes
+                << " nps " << nodes * 1000 / (elapsed_time + 1)
+                << " tbhits " << tb_hits
+                << " time " << elapsed_time;
+
+        std::string pv = getPv();
+        std::cout << " pv";
+        if (pv.empty()) {
+            std::cout << " " << pv_table(0)(0);
+        } else {
+            std::cout << pv;
+        }
+        std::cout << std::endl;
+    }
+
+    bool Search::isLimitReached(int depth) const {
+        if (limit.infinite) {
+            return false;
+        }
+
+        if (limit.time != 0 && time_manager.elapsedTime() > limit.time) {
+            return true;
+        }
+
+        if (limit.nodes != 0 && nodes >= limit.nodes) {
+            return true;
+        }
+
+        if (depth > limit.depth) {
+            return true;
+        }
+
+        return false;
     }
 
     void Search::reset() {

@@ -11,8 +11,8 @@ namespace Astra {
 
     struct Param {
         std::string name;
-        int max, min;
         int value;
+        int min, max;
 
         Param(std::string name, int value, int min, int max) :
         name(std::move(name)), value(value), min(min), max(max) {}

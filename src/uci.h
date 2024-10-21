@@ -2,8 +2,8 @@
 #define UCI_H
 
 #include <unordered_map>
-#include "search/search.h"
 #include "ucioptions.h"
+#include "search/search.h"
 
 namespace UCI {
 
