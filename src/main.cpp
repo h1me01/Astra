@@ -1,5 +1,4 @@
 #include "uci.h"
-#include "eval/nnue.h"
 
 int main() {
     initLookUpTables();
