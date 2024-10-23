@@ -1,5 +1,4 @@
 #include "uci.h"
-#include "eval/eval.h"
 #include "chess/perft.h"
 #include "syzygy/tbprobe.h"
 
@@ -7,13 +6,51 @@ namespace UCI {
 
     const std::string version = "3.2";
 
-    Uci::Uci() : board(STARTING_FEN), engine(STARTING_FEN) {
+    Uci::Uci() : board(STARTING_FEN) {
         options["Hash"] = Option("spin", "64", "64", 1, 2048);
         options["Threads"] = Option("spin", "1", "1", 1, 256);
         options["SyzygyPath"] = Option("string", "", "", 0, 0);
-
         applyOptions();
-        engine.reset();
+    }
+
+    void Uci::loop() {
+        std::string line;
+        std::string token;
+
+        while (std::getline(std::cin, line)) {
+            std::istringstream is(line);
+            token.clear();
+            is >> std::skipws >> token;
+
+            if (token == "uci") {
+                std::cout << "id name Astra " << version << std::endl;
+                std::cout << "id author Semih Oezalp" << std::endl;
+                printOptions();
+                std::cout << "uciok" << std::endl;
+            } else if (token == "isready") {
+                std::cout << "readyok" << std::endl;
+            } else if (token == "ucinewgame") {
+                Astra::threads.kill();
+                Astra::tt.clear();
+            } else if (token == "position") {
+                updatePosition(is);
+            } else if (token == "go") {
+                go(is);
+            } else if (token == "setoption") {
+                setOption(is);
+                applyOptions();
+            } else if (token == "d") {
+                board.print(board.getTurn());
+            } else if (token == "stop") {
+                Astra::threads.kill();
+            } else if (token == "quit") {
+                Astra::threads.kill();
+                tb_free();
+                break;
+            } else {
+                std::cout << "Unknown Command" << std::endl;
+            }
+        }
     }
 
     void Uci::updatePosition(std::istringstream &is) {
@@ -38,11 +75,11 @@ namespace UCI {
             }
         }
 
-        engine.board = board;
-        engine.board.refreshAccumulator();
+        board.refreshAccumulator();
     }
 
     void Uci::go(std::istringstream &is) {
+        Astra::threads.kill();
         Astra::Limits limit;
 
         int64_t w_time = 0, b_time = 0, move_time = 0;
@@ -60,35 +97,22 @@ namespace UCI {
                 return;
             }
 
-            if (token == "wtime") {
-                is >> w_time;
-            } else if (token == "btime") {
-                is >> b_time;
-            } else if (token == "winc") {
-                is >> w_inc;
-            } else if (token == "binc") {
-                is >> b_inc;
-            } else if (token == "movestogo") {
-                is >> moves_to_go;
-            } else if (token == "movetime") {
-                is >> move_time;
-            } else if (token == "depth") {
-                int depth;
-                is >> depth;
-                limit.depth = depth;
-            } else if (token == "nodes") {
-                U64 nodes;
-                is >> nodes;
-                limit.nodes = nodes;
-            } else if (token == "infinite") {
-                limit.infinite = true;
-            } else {
-                std::cout << "Unknown command" << std::endl;
+            if (token == "wtime") is >> w_time;
+            else if (token == "btime") is >> b_time;
+            else if (token == "winc") is >> w_inc;
+            else if (token == "binc") is >> b_inc;
+            else if (token == "movestogo") is >> moves_to_go;
+            else if (token == "movetime") is >> move_time;
+            else if (token == "depth") is >> limit.depth;
+            else if (token == "nodes") is >> limit.nodes;
+            else if (token == "infinite") limit.infinite = true;
+            else {
+                std::cout << "Unknown command\n";
                 return;
             }
         }
 
-        Color stm = engine.board.getTurn();
+        Color stm = board.getTurn();
         const int64_t time_left = stm == WHITE ? w_time : b_time;
         const int inc = stm == WHITE ? w_inc : b_inc;
 
@@ -99,46 +123,7 @@ namespace UCI {
         }
 
         // start search
-        Astra::SearchResult result = engine.start(limit, 99);
-        std::cout << "bestmove " << result.best_move << std::endl;
-    }
-
-    void Uci::loop() {
-        std::string line;
-        std::string token;
-
-        while (std::getline(std::cin, line)) {
-            std::istringstream is(line);
-            token.clear();
-            is >> std::skipws >> token;
-
-            if (token == "uci") {
-                std::cout << "id name Astra " << version << std::endl;
-                std::cout << "id author Semih Oezalp" << std::endl;
-                printOptions();
-                std::cout << "uciok" << std::endl;
-            } else if (token == "isready") {
-                std::cout << "readyok" << std::endl;
-            } else if (token == "ucinewgame") {
-                engine.reset();
-            } else if (token == "position") {
-                updatePosition(is);
-            } else if (token == "eval") {
-                std::cout << Eval::evaluate(board) << std::endl;
-            } else if (token == "go") {
-                go(is);
-            } else if (token == "setoption") {
-                setOption(is);
-                applyOptions();
-            } else if (token == "d") {
-                engine.board.print(engine.board.getTurn());
-            } else if (token == "quit") {
-                tb_free();
-                break;
-            } else {
-                std::cout << "Unknown Command" << std::endl;
-            }
-        }
+        Astra::threads.start(board, limit, num_workers, use_tb);
     }
 
     // options functions
@@ -148,21 +133,21 @@ namespace UCI {
             bool success = tb_init(path.c_str());
 
             if (success && TB_LARGEST > 0) {
-                engine.use_TB = true;
+                use_tb = true;
                 std::cout << "info string successfully loaded syzygy path" << std::endl;
             } else {
                 std::cout << "info string failed to load syzygy path " << path << std::endl;
             }
         }
 
-        engine.tt->init(std::stoi(getOption("Hash")));
-        engine.reset();
+        Astra::tt.init(std::stoi(getOption("Hash")));
+        num_workers = std::stoi(getOption("Threads"));
     }
 
     void Uci::setOption(std::istringstream &is) {
         std::vector<std::string> tokens = split(is.str(), ' ');
-        const std::string name = tokens[2];
-        const std::string value = tokens[4];
+        const std::string& name = tokens[2];
+        const std::string& value = tokens[4];
 
         if (tokens.size() < 5) {
             std::cout << "Invalid option command" << std::endl;

@@ -1,9 +1,10 @@
-#include "board.h"
 #include <cassert>
+#include "board.h"
+#include "../search/search.h"
 
 namespace Chess {
 
-    Board::Board(const std::string &fen) : checkers(0), pinned(0), danger(0), capture_mask(0), quiet_mask(0), piece_bb{0}, board{}, stm(WHITE), game_ply(0) {
+    Board::Board(const std::string &fen) : checkers(0), pinned(0), danger(0), capture_mask(0), quiet_mask(0), piece_bb{}, board{}, stm(WHITE), game_ply(0) {
         for (auto &i: board) {
             i = NO_PIECE;
         }
@@ -56,6 +57,8 @@ namespace Chess {
         hash ^= stm == WHITE ? Zobrist::side : 0;
         hash ^= history[game_ply].ep_sq == NO_SQUARE ? 0 : Zobrist::ep[fileOf(history[game_ply].ep_sq)];
         history[game_ply].hash = hash;
+
+        refreshAccumulator();
     }
 
     Board &Board::operator=(const Board &other) {
@@ -79,6 +82,8 @@ namespace Chess {
     }
 
     void Board::print(Color c) const {
+        std::cout << "\n +---+---+---+---+---+---+---+---+\n";
+
         for (int r = RANK_8; r >= RANK_1; --r) {
             for (int f = FILE_A; f <= FILE_H; ++f) {
                 int s;
@@ -87,12 +92,13 @@ namespace Chess {
                 } else {
                     s = (7 - r) * 8 + (7 - f);
                 }
-                std::cout << PIECE_STR[board[s]] << " ";
+                std::cout << " | " << PIECE_STR[board[s]];
             }
-            std::cout << std::endl;
+            std::cout << " | " << (1 + r) << "\n +---+---+---+---+---+---+---+---+\n";
         }
 
-        std::cout << "Fen: " << getFen() << std::endl;
+        std::cout << "   a   b   c   d   e   f   g   h\n";
+        std::cout << "\nFen: " << getFen() << std::endl;
         std::cout << "Hash key: " << std::hex << hash << "\n\n";
     }
 
@@ -130,7 +136,7 @@ namespace Chess {
 
     void Board::refreshAccumulator() {
         accumulators.clear();
-        NNUE::Accumulator acc = accumulators.back();
+        NNUE::Accumulator& acc = accumulators.back();
 
         for (int j = 0; j < NNUE::HIDDEN_SIZE; j++) {
             acc[WHITE][j] = NNUE::nnue.fc1_biases[j];
@@ -165,6 +171,7 @@ namespace Chess {
         for (int i = start_idx; i < start_idx + NUM_PIECE_TYPES; i++) {
             occ |= piece_bb[i];
         }
+
         return occ;
     }
 
@@ -197,7 +204,7 @@ namespace Chess {
         return piece_bb[knight] | piece_bb[bishop] | piece_bb[rook] | piece_bb[queen];
     }
 
-    void Board::makeMove(const Move &m, Astra::TTable* tt, bool update_nnue) {
+    void Board::makeMove(const Move &m, bool update_nnue) {
         const MoveFlags mf = m.flag();
         const Square from = m.from();
         const Square to = m.to();
@@ -217,14 +224,15 @@ namespace Chess {
 
         if (history[game_ply].ep_sq != NO_SQUARE) {
             hash ^= Zobrist::ep[fileOf(history[game_ply].ep_sq)];
+            history[game_ply].ep_sq = NO_SQUARE;
         }
-        history[game_ply].ep_sq = NO_SQUARE;
 
         hash ^= Zobrist::castle[getCastleHashIndex(history[game_ply].castle_mask)];
 
         // update castling rights
         history[game_ply].castle_mask |= mask;
 
+        // reset half move clock if pawn move or capture
         if (pt == PAWN || pc_to != NO_PIECE) {
             history[game_ply].half_move_clock = 0;
         }
@@ -260,21 +268,22 @@ namespace Chess {
                 rook_to = stm == WHITE ? d1 : d8;
             }
 
-            movePiece(from, to, update_nnue);
+            movePiece(from, to, update_nnue); // move king
             movePiece(rook_from, rook_to, update_nnue);
         } else if (mf >= PR_KNIGHT && mf <= PC_QUEEN) {
             const PieceType prom_type = typeOfPromotion(mf);
+
+            hash ^= Zobrist::psq[pc_from][from];
             removePiece(from, update_nnue);
 
             if (mf >= PC_KNIGHT) {
                 history[game_ply].captured = pc_to;
+
                 hash ^= Zobrist::psq[pc_to][to];
                 removePiece(to, update_nnue);
             }
 
-            hash ^= Zobrist::psq[pc_from][from];
             hash ^= Zobrist::psq[makePiece(stm, prom_type)][to];
-
             putPiece(makePiece(stm, prom_type), to, update_nnue);
         } else if (mf == CAPTURE) {
             history[game_ply].captured = pc_to;
@@ -287,12 +296,9 @@ namespace Chess {
         hash ^= Zobrist::castle[getCastleHashIndex(history[game_ply].castle_mask)];
 
         history[game_ply].hash = hash;
-
         stm = ~stm;
 
-        if (tt != nullptr) {
-            tt->prefetch(hash);
-        }
+        Astra::tt.prefetch(hash);
     }
 
     void Board::unmakeMove(const Move &m) {
@@ -323,7 +329,7 @@ namespace Chess {
                 rook_to = stm == WHITE ? a1 : a8;
             }
 
-            movePiece(to, from, false);
+            movePiece(to, from, false); // move king
             movePiece(rook_from, rook_to, false);
         } else if (mf >= PR_KNIGHT && mf <= PC_QUEEN) {
             removePiece(to, false);

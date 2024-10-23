@@ -14,18 +14,19 @@ namespace UCI {
         void loop();
 
     private:
+        int num_workers = 1; // default number of threads
+        bool use_tb = false;
         Board board;
-        Astra::Search engine;
 
         std::unordered_map<std::string, Option> options;
+
+        void updatePosition(std::istringstream &is);
+        void go(std::istringstream &is);
 
         void printOptions() const;
         void applyOptions();
         void setOption(std::istringstream &is);
         std::string getOption(const std::string& str) const;
-
-        void updatePosition(std::istringstream &is);
-        void go(std::istringstream &is);
 
         Move getMove(const std::string &str_move) const;
     };
@@ -33,10 +34,10 @@ namespace UCI {
     inline Move Uci::getMove(const std::string &str_move) const {
         const Square from = findSquare(str_move.substr(0, 2));
         const Square to = findSquare(str_move.substr(2, 2));
-        MoveFlags mf = QUIET;
-
         const Piece p_from = board.pieceAt(from);
         const Piece p_to = board.pieceAt(to);
+
+        MoveFlags mf = QUIET;
 
         const bool is_capture = p_to != NO_PIECE;
 

@@ -6,7 +6,6 @@
 #include "attacks.h"
 #include "../eval/accumulator.h"
 #include "../eval/nnue.h"
-#include "../search/tt.h"
 
 namespace Chess {
 
@@ -56,7 +55,7 @@ namespace Chess {
         int getPly() const { return game_ply; }
         U64 getHash() const { return hash; }
         Square kingSq(Color c) const { return bsf(getPieceBB(c, KING)); }
-        NNUE::Accumulator getAccumulator() const { return accumulators.back(); }
+        NNUE::Accumulator& getAccumulator() { return accumulators.back(); }
         void refreshAccumulator();
 
         U64 occupancy(Color c) const;
@@ -64,7 +63,7 @@ namespace Chess {
         U64 diagSliders(Color c) const;
         U64 orthSliders(Color c) const;
 
-        void makeMove(const Move &m, Astra::TTable* tt = nullptr, bool update_nnue = false);
+        void makeMove(const Move &m, bool update_nnue = false);
         void unmakeMove(const Move &m);
 
         void makeNullMove();
@@ -95,8 +94,7 @@ namespace Chess {
         piece_bb[p] |= SQUARE_BB[s];
 
         if (update_nnue) {
-            NNUE::Accumulator acc = accumulators.back();
-            NNUE::nnue.putPiece(acc, p, s);
+            NNUE::nnue.putPiece(getAccumulator(), p, s);
         }
     }
 
@@ -106,8 +104,7 @@ namespace Chess {
         board[s] = NO_PIECE;
 
         if (update_nnue) {
-            NNUE::Accumulator acc = accumulators.back();
-            NNUE::nnue.removePiece(acc, p, s);
+            NNUE::nnue.removePiece(getAccumulator(), p, s);
         }
     }
 
@@ -122,8 +119,7 @@ namespace Chess {
         hash ^= Zobrist::psq[p][to];
 
         if (update_nnue) {
-            NNUE::Accumulator acc = accumulators.back();
-            NNUE::nnue.movePiece(acc, p, from, to);
+            NNUE::nnue.movePiece(getAccumulator(), p, from, to);
         }
     }
 

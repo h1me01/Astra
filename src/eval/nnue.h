@@ -1,7 +1,6 @@
 #ifndef NNUE_H
 #define NNUE_H
 
-#include <fstream>
 #include <array>
 #include "../chess/types.h"
 
@@ -13,7 +12,7 @@ namespace NNUE {
     constexpr int HIDDEN_SIZE = 256;
     constexpr int OUTPUT_SIZE = 1;
 
-    using Accumulator = std::array<int16_t *, 2>;
+    using Accumulator = std::array<std::array<int16_t, HIDDEN_SIZE>, 2>;
 
     struct NNUE {
         int16_t fc1_weights[INPUT_SIZE * HIDDEN_SIZE];

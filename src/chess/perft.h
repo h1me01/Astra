@@ -3,7 +3,7 @@
 
 #include <vector>
 #include <string>
-#include "board.h"
+#include "types.h"
 
 namespace Chess {
 

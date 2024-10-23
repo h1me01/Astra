@@ -4,9 +4,10 @@
 
 namespace Eval {
 
-    Score evaluate(const Board& board) {
+    Score evaluate(Board& board) {
         Color stm = board.getTurn();
-        const int32_t eval = NNUE::nnue.forward(board.getAccumulator(), stm);
+        NNUE::Accumulator acc = board.getAccumulator();
+        const int32_t eval = NNUE::nnue.forward(acc, stm);
         Score score = std::clamp(eval, -VALUE_MIN_MATE + 1, VALUE_MIN_MATE - 1);
         return score;
     }

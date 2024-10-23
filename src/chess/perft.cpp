@@ -1,5 +1,5 @@
-#include "perft.h"
 #include <chrono>
+#include "perft.h"
 #include "movegen.h"
 
 namespace Chess {

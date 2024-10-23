@@ -1,15 +1,12 @@
 #include <cmath>
 #include <algorithm>
 #include "search.h"
-//#include "searchparams.h"
+#include "searchparams.h"
 #include "../eval/eval.h"
 #include "../chess/movegen.h"
 #include "../syzygy/tbprobe.h"
 
 namespace Astra {
-
-    constexpr int RAZOR_MARGIN = 130;
-    constexpr int DELTA_MARGIN = 400;
 
     int REDUCTIONS[MAX_PLY][MAX_MOVES];
 
@@ -85,13 +82,68 @@ namespace Astra {
         return VALUE_NONE;
     }
 
-    Search::Search(const std::string &fen) : board(fen) {
-        tt = new TTable(16);
-        reset();
+    std::pair<Score, Move> probeDTZ(Board& board) {
+        U64 w_occ = board.occupancy(WHITE);
+        U64 b_occ = board.occupancy(BLACK);
+        U64 occ = w_occ | b_occ;
+
+        // can't probe if there are more pieces than supported
+        if (popCount(occ) > static_cast<signed>(TB_LARGEST)) {
+            return {VALUE_NONE, NO_MOVE};
+        }
+
+        U64 pawns = board.getPieceBB(WHITE, PAWN) | board.getPieceBB(BLACK, PAWN);
+        U64 knights = board.getPieceBB(WHITE, KNIGHT) | board.getPieceBB(BLACK, KNIGHT);
+        U64 bishops = board.getPieceBB(WHITE, BISHOP) | board.getPieceBB(BLACK, BISHOP);
+        U64 rooks = board.getPieceBB(WHITE, ROOK) | board.getPieceBB(BLACK, ROOK);
+        U64 queens = board.getPieceBB(WHITE, QUEEN) | board.getPieceBB(BLACK, QUEEN);
+        U64 kings = board.getPieceBB(WHITE, KING) | board.getPieceBB(BLACK, KING);
+
+        int fifty_move_counter = board.history[board.getPly()].half_move_clock;
+        bool any_castling = popCount(board.history[board.getPly()].castle_mask) != 6;
+        Square ep_sq = board.history[board.getPly()].ep_sq;
+        bool stm = board.getTurn() == WHITE;
+
+        unsigned result = tb_probe_root(
+          w_occ, b_occ, kings, queens, rooks, bishops, knights,  pawns, fifty_move_counter, any_castling, ep_sq == NO_SQUARE ? 0 : ep_sq, stm, NULL);
+
+        // if the result failed don't do anything
+        if (result == TB_RESULT_FAILED || result == TB_RESULT_CHECKMATE || result == TB_RESULT_STALEMATE) {
+            return {VALUE_NONE, NO_MOVE};
+        }
+
+        int wdl = TB_GET_WDL(result);
+
+        Score s = 0;
+        if (wdl == TB_LOSS) {
+            s = VALUE_TB_LOSS_IN_MAX_PLY;
+        }
+        if (wdl == TB_WIN) {
+            s = VALUE_TB_WIN_IN_MAX_PLY;
+        }
+        if (wdl == TB_BLESSED_LOSS || wdl == TB_CURSED_WIN || wdl == TB_DRAW) {
+            s = VALUE_DRAW;
+        }
+
+        const int promotion_type = TB_GET_PROMOTES(result);
+
+        const auto from = static_cast<Square>(TB_GET_FROM(result));
+        const auto to =  static_cast<Square>(TB_GET_TO(result));
+
+        MoveList moves(board);
+        for (auto m : moves) {
+            bool is_promotion = isPromotion(m) && typeOfPromotion(m.flag()) == promotion_type;
+
+            if (from == m.from() && to == m.to() && (is_promotion || !isPromotion(m))) {
+                return {s, m};
+            }
+        }
+
+        return {s, NO_MOVE};
     }
 
-    Search::~Search() {
-        delete tt;
+    Search::Search(const std::string fen) : board(fen) {
+        reset();
     }
 
     Score Search::qSearch(Score alpha, Score beta, Node node, Stack *ss) {
@@ -113,7 +165,7 @@ namespace Astra {
         // look up in transposition table
         TTEntry tt_entry;
         const U64 hash = board.getHash();
-        const bool tt_hit = tt->lookup(tt_entry, hash);
+        const bool tt_hit = tt.lookup(tt_entry, hash);
         const Score tt_score = tt_hit ? scoreFromTT(tt_entry.score, ss->ply) : static_cast<Score>(VALUE_NONE);
         Bound tt_bound = tt_entry.bound;
 
@@ -151,7 +203,7 @@ namespace Astra {
                 // delta pruning
                 PieceType captured = typeOf(board.pieceAt(move.to()));
                 if (captured != NO_PIECE_TYPE &&
-                    best_score + DELTA_MARGIN + PIECE_VALUES[captured] < alpha
+                    best_score + 400 + PIECE_VALUES[captured] < alpha
                     && !isPromotion(move)
                     && board.nonPawnMat(stm)) {
                     continue;
@@ -165,7 +217,7 @@ namespace Astra {
 
             nodes++;
 
-            board.makeMove(move, tt, true);
+            board.makeMove(move, true);
             Score score = -qSearch(-beta, -alpha, node, ss + 1);
             board.unmakeMove(move);
 
@@ -188,8 +240,10 @@ namespace Astra {
         }
 
         // store in transposition table
-        Bound bound = best_score >= beta ? LOWER_BOUND : UPPER_BOUND;
-        tt->store(hash, best_move, scoreToTT(best_score, ss->ply), 0, bound);
+        if (!threads.stop) {
+            Bound bound = best_score >= beta ? LOWER_BOUND : UPPER_BOUND;
+            tt.store(hash, best_move, scoreToTT(best_score, ss->ply), 0, bound);
+        }
 
         assert(best_score > -VALUE_INFINITE && best_score < VALUE_INFINITE);
         return best_score;
@@ -243,7 +297,7 @@ namespace Astra {
         // look up in transposition table
         TTEntry tt_entry;
         const U64 hash = board.getHash();
-        const bool tt_hit = tt->lookup(tt_entry, hash);
+        const bool tt_hit = tt.lookup(tt_entry, hash);
         const Score tt_score = tt_hit ? scoreFromTT(tt_entry.score, ss->ply) : static_cast<Score>(VALUE_NONE);
 
         const Move excluded_move = ss->excluded_move;
@@ -278,7 +332,7 @@ namespace Astra {
         Score best_score = -VALUE_INFINITE;
 
         // tablebase probing
-        if (use_TB && !root_node) {
+        if (use_tb && !root_node) {
             Score tb_score = probeWDL(board);
 
             if (tb_score != VALUE_NONE) {
@@ -300,8 +354,10 @@ namespace Astra {
                         break;
                 }
 
-                if (bound == EXACT_BOUND || (bound == LOWER_BOUND && tb_score >= beta) || (bound == UPPER_BOUND && tb_score <= alpha)) {
-                    tt->store(hash, NO_MOVE, scoreToTT(tb_score, ss->ply), depth + 6, bound);
+                if (bound == EXACT_BOUND ||
+                    (bound == LOWER_BOUND && tb_score >= beta) ||
+                    (bound == UPPER_BOUND && tb_score <= alpha)) {
+                    tt.store(hash, NO_MOVE, scoreToTT(tb_score, ss->ply), depth + 6, bound);
                     return tb_score;
                 }
 
@@ -331,9 +387,11 @@ namespace Astra {
             if (depth >= 3 && !tt_hit) {
                 depth--;
             }
+
             if (pv_node && !tt_hit) {
                 depth--;
             }
+
             if (depth <= 0) {
                 return qSearch(alpha, beta, PV, ss);
             }
@@ -341,7 +399,7 @@ namespace Astra {
             // razoring
             if (!pv_node
                 && depth <= 3
-                && ss->static_eval + RAZOR_MARGIN < alpha) {
+                && ss->static_eval + 130 < alpha) {
                 return qSearch(alpha, beta, NON_PV, ss);
             }
 
@@ -401,7 +459,6 @@ namespace Astra {
         move_ordering.sortMoves(board, moves, tt_entry.move, (ss - 1)->current_move, ss->ply);
 
         Score score = VALUE_NONE;
-
         Move best_move = NO_MOVE;
 
         ss->move_count = moves.size();
@@ -415,7 +472,10 @@ namespace Astra {
             made_moves++;
 
             // print current move information
-            if (root_node && time_manager.elapsedTime() > 3000) {
+            if (id == 0
+                && root_node
+                && time_manager.elapsedTime() > 3000
+                && !threads.stop) {
                 std::cout << "info depth " << depth
                           << " currmove " << move
                           << " currmovenumber " << static_cast<int>(made_moves) << std::endl;
@@ -478,7 +538,7 @@ namespace Astra {
             const int newDepth = depth - 1 + extension;
 
             nodes++;
-            board.makeMove(move, tt, true);
+            board.makeMove(move, true);
 
             ss->current_move = move;
 
@@ -554,7 +614,7 @@ namespace Astra {
         }
 
         // store in transposition table
-        if (excluded_move == NO_MOVE) {
+        if (excluded_move == NO_MOVE && !threads.stop) {
             Bound bound;
             if (best_score >= beta) {
                 bound = LOWER_BOUND;
@@ -564,7 +624,7 @@ namespace Astra {
                 bound = UPPER_BOUND;
             }
 
-            tt->store(hash, best_move, scoreToTT(best_score, ss->ply), depth, bound);
+            tt.store(hash, best_move, scoreToTT(best_score, ss->ply), depth, bound);
         }
 
         assert(best_score > -VALUE_INFINITE && best_score < VALUE_INFINITE);
@@ -600,7 +660,7 @@ namespace Astra {
 
             if (result <= alpha) {
                 beta = (alpha + beta) / 2;
-                alpha = std::max(alpha - delta, -(static_cast<int>(VALUE_INFINITE)));
+                alpha = std::max(alpha - delta, -static_cast<int>(VALUE_INFINITE));
                 delta += delta / 2;
             } else if (result >= beta) {
                 beta = std::min(beta + delta, static_cast<int>(VALUE_INFINITE));
@@ -613,15 +673,19 @@ namespace Astra {
         return result;
     }
 
-    SearchResult Search::start(const Limits& limit, const int max_depth) {
-        this->limit = limit;
-        time_manager.start();
-
-        SearchResult search_result;
+    SearchResult Search::start() {
+        if (use_tb) {
+            const auto dtz = probeDTZ(board);
+            if (dtz.second != NO_MOVE) {
+                threads.stop = true;
+                return {dtz.second, dtz.first};
+            }
+        }
 
         Stack stack[MAX_PLY + 4];
         Stack *ss = stack + 2;
 
+        // init stack
         for (int i = 2; i > 0; --i) {
             (ss - i)->ply = i;
             (ss - i)->move_count = 0;
@@ -638,17 +702,19 @@ namespace Astra {
             (ss + i)->excluded_move = NO_MOVE;
         }
 
+        time_manager.start();
+
         move_ordering.clearHistory();
         move_ordering.clearCounters();
 
-        int depth = 1;
-        for (; depth <= max_depth; depth++) {
+        Score previous_result = VALUE_NONE;
+
+        SearchResult search_result;
+        for (int depth = 1; depth <= MAX_PLY; depth++) {
             pv_table.reset();
 
-            sel_depth = 0;
-
-            const Score previous_result = search_result.score;
             const Score result = aspSearch(depth, previous_result, ss);
+            previous_result = result;
 
             if (isLimitReached(depth)) {
                 break;
@@ -657,48 +723,19 @@ namespace Astra {
             search_result.best_move = pv_table(0)(0);
             search_result.score = result;
 
-            printUciInfo(result, depth);
-        }
-
-        if (depth == 1) {
-            search_result.best_move = pv_table(0)(0);
+            if (id == 0) {
+                printUciInfo(result, depth, pv_table(0));
+            }
         }
 
         return search_result;
     }
 
-    void Search::printUciInfo(Score result, int depth) {
-        // info for uci
-        std::cout << "info depth " << depth
-                << " seldepth " << static_cast<int>(sel_depth)
-                << " score ";
-
-        if (result >= VALUE_MIN_MATE) {
-            std::cout << "mate " << (VALUE_MATE - result) / 2 + ((VALUE_MATE - result) & 1);
-        } else if (result <= -VALUE_MIN_MATE) {
-            std::cout << "mate " << -((VALUE_MATE + result) / 2) + ((VALUE_MATE + result) & 1);
-        } else {
-            std::cout << "cp " << result;
+    bool Search::isLimitReached(const int depth) const {
+        if (threads.stop) {
+            return true;
         }
 
-        int elapsed_time = time_manager.elapsedTime();
-
-        std::cout << " nodes " << nodes
-                << " nps " << nodes * 1000 / (elapsed_time + 1)
-                << " tbhits " << tb_hits
-                << " time " << elapsed_time;
-
-        std::string pv = getPv();
-        std::cout << " pv";
-        if (pv.empty()) {
-            std::cout << " " << pv_table(0)(0);
-        } else {
-            std::cout << pv;
-        }
-        std::cout << std::endl;
-    }
-
-    bool Search::isLimitReached(int depth) const {
         if (limit.infinite) {
             return false;
         }
@@ -722,21 +759,105 @@ namespace Astra {
         board = Board(STARTING_FEN);
         nodes = 0;
         tb_hits = 0;
-        tt->clear();
+        tt.clear();
         pv_table.reset();
         move_ordering.clearHistory();
         move_ordering.clearCounters();
         move_ordering.clearKillers();
     }
 
-    std::string Search::getPv() {
-        std::ostringstream pv;
+    void Search::stop() {
+        limit.depth = 0;
+        limit.nodes = 0;
+        limit.time = 0;
+        limit.infinite = false;
+    }
 
-        for (int i = 0; i < pv_table(0).length; i++) {
-            pv << " " << pv_table(0)(i);
+    void Search::printUciInfo(Score result, int depth, PVLine& pv_line) const {
+        // info for uci
+        std::cout << "info depth " << depth
+                  << " seldepth " << static_cast<int>(threads.getSelDepth())
+                  << " score ";
+
+        if (abs(result) >= VALUE_MIN_MATE) {
+            std::cout << "mate " << (VALUE_MATE - abs(result) + 1) / 2 * (result > 0 ? 1 : -1);
+        } else {
+            std::cout << "cp " << result;
         }
 
-        return pv.str();
+        const U64 elapsed_time = time_manager.elapsedTime();
+        const U64 total_nodes = threads.getTotalNodes();
+        const U64 nps = total_nodes * 1000 / (elapsed_time + 1);
+
+        std::cout << " nodes " << total_nodes
+                  << " nps " << nps
+                  << " tbhits " << threads.getTotalTbHits()
+                  << " time " << elapsed_time
+                  << " pv";
+
+        // print the rest of the pv
+        for (int i = 0; i < pv_line.length; i++) {
+            std::cout << " " << pv_line(i);
+        }
+
+        std::cout << std::endl;
+    }
+
+    // class ThreadPool
+    void ThreadPool::start(const Board &board, const Limits &limit, int worker_count, bool use_tb) {
+        stop = false;
+
+        Thread thread;
+        thread.search.board = board;
+        thread.search.limit = limit;
+        thread.search.use_tb = use_tb;
+
+        pool.clear();
+        for (int i = 0; i < worker_count; i++) {
+            thread.search.id = i;
+            pool.emplace_back(thread);
+        }
+
+        for (int i = 0; i < worker_count; i++) {
+            running_threads.emplace_back(&Thread::start, std::ref(pool[i]));
+        }
+    }
+
+    void ThreadPool::kill() {
+        stop = true;
+
+        for (auto &th : running_threads) {
+            if (th.joinable()) {
+                th.join();
+            }
+        }
+
+        pool.clear();
+        running_threads.clear();
+    }
+
+    U64 ThreadPool::getTotalNodes() const {
+        U64 total_nodes = 0;
+        for (const auto & [search] : pool) {
+            total_nodes += search.nodes;
+        }
+        return total_nodes;
+    }
+
+    U64 ThreadPool::getTotalTbHits() const {
+        U64 total_tb_hits = 0;
+        for (const auto & [search] : pool) {
+            total_tb_hits += search.tb_hits;
+        }
+        return total_tb_hits;
+    }
+
+    uint8_t ThreadPool::getSelDepth() const {
+        uint8_t max_sel_depth = 0;
+        for (const auto & [search] : pool) {
+            max_sel_depth = std::max(max_sel_depth, search.sel_depth);
+        }
+        return max_sel_depth;
     }
 
 } // namespace Astra

@@ -7,7 +7,7 @@ using namespace Chess;
 
 namespace Eval {
 
-   Score evaluate(const Board& board);
+   Score evaluate(Board& board);
 
 } // namespace Eval
 

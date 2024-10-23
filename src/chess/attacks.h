@@ -2,7 +2,6 @@
 #define ATTACKS_H
 
 #include "bitboard.h"
-#include "misc.h"
 
 namespace Chess {
     constexpr U64 KING_ATTACKS[NUM_SQUARES] = {
