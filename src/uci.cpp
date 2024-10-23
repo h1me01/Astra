@@ -5,7 +5,7 @@
 
 namespace UCI {
 
-    const std::string version = "3.2";
+    const std::string version = "3.3";
 
     Uci::Uci() : board(STARTING_FEN) {
         options["Hash"] = Option("spin", "64", "64", 1, 2048);
