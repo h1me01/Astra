@@ -1,21 +1,59 @@
 #include <cmath>
 #include <algorithm>
 #include "search.h"
-#include "searchparams.h"
+#include "tune.h"
 #include "../eval/eval.h"
 #include "../chess/movegen.h"
 #include "../syzygy/tbprobe.h"
 
 namespace Astra {
 
+    // search parameters
+
+    PARAM(lmr_base, 100, 50, 150);
+    PARAM(lmr_div, 175, 150, 250);
+    PARAM(lmr_depth, 2, 1, 4);
+    PARAM(lmr_min_moves, 3, 1, 5);
+
+    PARAM(delta_margin, 400, 400, 900);
+
+    PARAM(iir_depth, 3, 2, 4);
+
+    PARAM(razor_margin, 130, 60, 200);
+    PARAM(rzr_depth, 3, 2, 7);
+
+    PARAM(rfp_depth_mult, 62, 20, 80);
+    PARAM(rfp_impr_bonus, 71, 30, 100);
+    PARAM(rfp_depth, 7, 3, 9);
+
+    PARAM(nmp_depth, 3, 2, 5);
+
+    PARAM(pv_see_cap_margin, 100, 90, 110);
+    PARAM(pv_see_cap_depth, 6, 5, 8);
+
+    PARAM(pv_see_quiet_margin, 40, 30, 95);
+    PARAM(pv_see_quiet_depth, 7, 6, 9);
+
+    PARAM(lmp_depth, 5, 4, 7);
+    PARAM(lmp_count_base, 4, 3, 6);
+
+    PARAM(history_bonus, 155, 100, 200);
+
+    PARAM(asp_window, 30, 10, 50);
+
+    // search class
+
     int REDUCTIONS[MAX_PLY][MAX_MOVES];
 
     void initReductions() {
         REDUCTIONS[0][0] = 0;
 
+        double base = lmr_base / 100;
+        double div = lmr_div / 100;
+
         for (int depth = 1; depth < MAX_PLY; depth++) {
             for (int moves = 1; moves < MAX_MOVES; moves++) {
-                REDUCTIONS[depth][moves] = 1.0 + log(depth) * log(moves) / 1.75;
+                REDUCTIONS[depth][moves] = base + log(depth) * log(moves) / div;
             }
         }
     }
@@ -203,7 +241,7 @@ namespace Astra {
                 // delta pruning
                 PieceType captured = typeOf(board.pieceAt(move.to()));
                 if (captured != NO_PIECE_TYPE &&
-                    best_score + 400 + PIECE_VALUES[captured] < alpha
+                    best_score + delta_margin + PIECE_VALUES[captured] < alpha
                     && !isPromotion(move)
                     && board.nonPawnMat(stm)) {
                     continue;
@@ -384,7 +422,7 @@ namespace Astra {
         // only use pruning/reduction when not in check and root/pv node
         if (!in_check && !root_node) {
             // internal iterative reductions
-            if (depth >= 3 && !tt_hit) {
+            if (depth >= iir_depth && !tt_hit) {
                 depth--;
             }
 
@@ -398,15 +436,15 @@ namespace Astra {
 
             // razoring
             if (!pv_node
-                && depth <= 3
-                && ss->static_eval + 130 < alpha) {
+                && depth <= rzr_depth
+                && ss->static_eval + razor_margin < alpha) {
                 return qSearch(alpha, beta, NON_PV, ss);
             }
 
             // reverse futility pruning
-            int rfp_margin = ss->static_eval - 62 * depth + 71 * is_improving;
+            int rfp_margin = ss->static_eval - rfp_depth_mult * depth + rfp_impr_bonus * is_improving;
             if (!pv_node
-                && depth < 7
+                && depth < rfp_depth
                 && rfp_margin >= beta
                 && std::abs(beta) < VALUE_TB_WIN_IN_MAX_PLY) {
                 return beta;
@@ -417,7 +455,7 @@ namespace Astra {
                 && board.nonPawnMat(stm)
                 && excluded_move == NO_MOVE
                 && (ss - 1)->current_move != NULL_MOVE
-                && depth >= 3
+                && depth >= nmp_depth
                 && ss->static_eval >= beta) {
                 constexpr int R = 5;
 
@@ -487,16 +525,16 @@ namespace Astra {
             const bool is_promotion = isPromotion(move);
 
             if (!root_node && best_score > VALUE_TB_LOSS_IN_MAX_PLY) {
-                int see_depth = is_capture ? 6 : 7;
-                int see_margin = is_capture ? 100 : 40;
+                int see_depth = is_capture ? pv_see_cap_depth : pv_see_quiet_depth;
+                int see_margin = is_capture ? pv_see_cap_margin : pv_see_quiet_margin;
 
                 // late move pruning
                 if (!is_capture
                     && !in_check
                     && !pv_node
                     && !is_promotion
-                    && depth <= 5
-                    && quiet_count > (4 + depth * depth)) {
+                    && depth <= lmp_depth
+                    && quiet_count > (lmp_count_base + depth * depth)) {
                     continue;
                 }
 
@@ -543,7 +581,7 @@ namespace Astra {
             ss->current_move = move;
 
             // late move reduction
-            if (depth >= 2 && !in_check && made_moves > 3) {
+            if (depth >= lmr_depth && !in_check && made_moves > lmr_min_moves) {
                 int rdepth = REDUCTIONS[depth][made_moves];
                 rdepth += is_improving;
                 rdepth -= pv_node;
@@ -584,7 +622,7 @@ namespace Astra {
                         if (!is_capture && !is_promotion) {
                             move_ordering.updateKiller(move, ss->ply);
                             move_ordering.updateCounters(move, (ss - 1)->current_move);
-                            move_ordering.updateHistory(board, move, std::min(2000, depth * 155));
+                            move_ordering.updateHistory(board, move, std::min(2000, depth * history_bonus));
                         }
 
                         // beta cutoff
@@ -636,7 +674,7 @@ namespace Astra {
         Score beta = VALUE_INFINITE;
 
         // only use aspiration window when depth is higher or equal to 9
-        int delta = 30;
+        int delta = asp_window;
         if (depth >= 9) {
             alpha = prev_eval - delta;
             beta = prev_eval + delta;

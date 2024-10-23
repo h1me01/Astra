@@ -1,6 +1,7 @@
 #include "uci.h"
 #include "chess/perft.h"
 #include "syzygy/tbprobe.h"
+#include "search/tune.h"
 
 namespace UCI {
 
@@ -36,6 +37,8 @@ namespace UCI {
                 updatePosition(is);
             } else if (token == "go") {
                 go(is);
+            } else if (token == "tune") {
+                Astra::paramsToSpsa();
             } else if (token == "setoption") {
                 setOption(is);
                 applyOptions();
@@ -164,6 +167,12 @@ namespace UCI {
             return;
         }
 
+#ifdef TUNE
+        Astra::setParam(name, std::stoi(value));
+        Astra::initReductions();
+        return;
+#endif
+
         if (options.count(name)) {
             options[name] = value;
         } else {
@@ -195,6 +204,10 @@ namespace UCI {
                 std::cout << std::endl;
             }
         }
+
+#ifdef TUNE
+        Astra::paramsToUCI();
+#endif
     }
 
 } // namespace UCI

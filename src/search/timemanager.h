@@ -40,7 +40,7 @@ namespace Astra {
 
             int64_t timeLeft = std::max<int64_t>(1, time + inc * (mtg - 1) - overhead * (2 + mtg));
             if (moves_to_go == 0) {
-                optimum = std::min(0.025, 0.214 * time / timeLeft);
+                optimum = std::min(0.025, 0.2 * time / timeLeft);
             } else {
                 optimum = std::min(0.95 / mtg, 0.88 * time / timeLeft);
             }
