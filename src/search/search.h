@@ -34,7 +34,6 @@ namespace Astra {
 
     class Search {
     public:
-        int num_workers = 1; // default number of threads
         int id = 0; // main thread
 
         U64 nodes = 0;
