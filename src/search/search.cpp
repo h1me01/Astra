@@ -304,8 +304,28 @@ namespace Astra {
         const bool root_node = node == ROOT;
         const bool pv_node = node != NON_PV;
 
-        if (!root_node && board.isDraw()) {
-            return VALUE_DRAW;
+        if (!root_node) {
+            // mate distance pruning
+            Score mating_value = VALUE_MATE - ss->ply;
+            if (mating_value < beta) {
+                beta = mating_value;
+                if (alpha >= mating_value) {
+                    return mating_value; // beta cutoff
+                }
+            }
+            // check for alpha cutoff from a theoretical mate position
+            mating_value = -VALUE_MATE + ss->ply;
+            if (mating_value > alpha) {
+                alpha = mating_value;
+                if (beta <= mating_value) {
+                    return mating_value; // alpha cutoff
+                }
+            }
+
+            // check for draw
+            if (board.isDraw()) {
+                return VALUE_DRAW;
+            }
         }
 
         // check extension
@@ -473,23 +493,6 @@ namespace Astra {
 
                     return score;
                 }
-            }
-        }
-
-        // mate distance pruning
-        Score mating_value = VALUE_MATE - ss->ply;
-        if (mating_value < beta) {
-            beta = mating_value;
-            if (alpha >= mating_value) {
-                return mating_value; // beta cutoff
-            }
-        }
-        // check for alpha cutoff from a theoretical mate position
-        mating_value = -VALUE_MATE + ss->ply;
-        if (mating_value > alpha) {
-            alpha = mating_value;
-            if (beta <= mating_value) {
-                return mating_value; // alpha cutoff
             }
         }
 
