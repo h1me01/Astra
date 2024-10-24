@@ -81,6 +81,22 @@ namespace Chess {
         return *this;
     }
 
+    Board::Board(const Board& other) {
+        checkers = other.checkers;
+        pinned = other.pinned;
+        danger = other.danger;
+        capture_mask = other.capture_mask;
+        quiet_mask = other.quiet_mask;
+        game_ply = other.game_ply;
+        stm = other.stm;
+        hash = other.hash;
+
+        std::copy(std::begin(other.piece_bb), std::end(other.piece_bb), std::begin(piece_bb));
+        std::copy(std::begin(other.board), std::end(other.board), std::begin(board));
+        std::copy(std::begin(other.history), std::end(other.history), std::begin(history));
+        accumulators = other.accumulators;
+    }
+
     void Board::print(Color c) const {
         std::cout << "\n +---+---+---+---+---+---+---+---+\n";
 

@@ -25,6 +25,17 @@ namespace Chess {
             castle_mask = prev.castle_mask;
             half_move_clock = prev.half_move_clock;
         }
+
+        StateInfo& operator=(const StateInfo& other) {
+            if (this != &other) {
+                hash = other.hash;
+                captured = other.captured;
+                ep_sq = other.ep_sq;
+                castle_mask = other.castle_mask;
+                half_move_clock = other.half_move_clock;
+            }
+            return *this;
+        }
     };
 
     class Board {
@@ -42,6 +53,8 @@ namespace Chess {
         U64 quiet_mask;
 
         explicit Board(const std::string &fen);
+
+        Board(const Board& other);
 
         Board &operator=(const Board &other);
 

@@ -114,6 +114,8 @@ namespace Chess {
 
         explicit Move(uint16_t m) { move = m; }
 
+        Move(const Move &other) : move(other.move) {}
+
         Move(Square from, Square to) : move(0) {
             move = from << 6 | to;
         }

@@ -48,7 +48,7 @@ namespace Astra {
 
         bool use_tb = false;
 
-        explicit Search(std::string fen);
+        explicit Search(const std::string& fen);
 
         SearchResult start();
 

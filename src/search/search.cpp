@@ -180,7 +180,7 @@ namespace Astra {
         return {s, NO_MOVE};
     }
 
-    Search::Search(const std::string fen) : board(fen) {
+    Search::Search(const std::string& fen) : board(fen) {
         reset();
     }
 
