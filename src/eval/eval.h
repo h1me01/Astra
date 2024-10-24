@@ -5,7 +5,7 @@
 
 using namespace Chess;
 
-namespace Eval {
+namespace NNUE {
 
    Score evaluate(Board& board);
 

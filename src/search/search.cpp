@@ -190,7 +190,7 @@ namespace Astra {
         }
 
         if (ss->ply >= MAX_PLY) {
-            return Eval::evaluate(board);
+            return NNUE::evaluate(board);
         }
 
         const bool pv_node = node == PV;
@@ -220,7 +220,7 @@ namespace Astra {
             }
         }
 
-        Score best_score = Eval::evaluate(board);
+        Score best_score = NNUE::evaluate(board);
 
         if (best_score >= beta) {
             return best_score;
@@ -293,7 +293,7 @@ namespace Astra {
         }
 
         if (ss->ply >= MAX_PLY) {
-            return Eval::evaluate(board);
+            return NNUE::evaluate(board);
         }
 
         pv_table(ss->ply).length = ss->ply;
@@ -435,7 +435,7 @@ namespace Astra {
         if (in_check) {
             ss->static_eval = VALUE_NONE;
         } else {
-            ss->static_eval = tt_hit && tt_score != VALUE_NONE ? tt_score : Eval::evaluate(board);
+            ss->static_eval = tt_hit && tt_score != VALUE_NONE ? tt_score : NNUE::evaluate(board);
             is_improving = ss->static_eval > (ss - 2)->static_eval;
         }
 

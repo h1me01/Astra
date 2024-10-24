@@ -11,10 +11,6 @@ namespace NNUE {
     class Accumulators {
     public:
         Accumulators() : index(0) {
-            for (int j = 0; j < HIDDEN_SIZE; j++) {
-                accumulators[0][WHITE][j] = nnue.fc1_biases[j];
-                accumulators[0][BLACK][j] = nnue.fc1_biases[j];
-            }
         }
 
         int size() const {
