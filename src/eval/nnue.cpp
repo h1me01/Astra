@@ -7,7 +7,6 @@
 #include "../incbin.h"
 
 INCBIN(Weights, NNUE_PATH);
-//INCBIN(Weights, "C:/Users/semio/Documents/programming/Astra-Chess-Engine/Astra/src/nn-768-2x256-1.nnue");
 
 namespace NNUE {
 
@@ -25,19 +24,19 @@ namespace NNUE {
 
     // nnue
     void NNUE::init() {
-            const unsigned char* data = gWeightsData;
-            std::size_t offset = 0;
+        const unsigned char* data = gWeightsData;
+        std::size_t offset = 0;
 
-            memcpy(fc1_weights, data + offset, INPUT_SIZE * HIDDEN_SIZE * sizeof(int16_t));
-            offset += INPUT_SIZE * HIDDEN_SIZE * sizeof(int16_t);
+        memcpy(fc1_weights, data + offset, INPUT_SIZE * HIDDEN_SIZE * sizeof(int16_t));
+        offset += INPUT_SIZE * HIDDEN_SIZE * sizeof(int16_t);
 
-            memcpy(fc1_biases, data + offset, HIDDEN_SIZE * sizeof(int16_t));
-            offset += HIDDEN_SIZE * sizeof(int16_t);
+        memcpy(fc1_biases, data + offset, HIDDEN_SIZE * sizeof(int16_t));
+        offset += HIDDEN_SIZE * sizeof(int16_t);
 
-            memcpy(fc2_weights, data + offset, 2 * HIDDEN_SIZE * sizeof(int16_t));
-            offset += 2 * HIDDEN_SIZE * sizeof(int16_t);
+        memcpy(fc2_weights, data + offset, 2 * HIDDEN_SIZE * sizeof(int16_t));
+        offset += 2 * HIDDEN_SIZE * sizeof(int16_t);
 
-            memcpy(fc2_biases, data + offset, OUTPUT_SIZE * sizeof(int32_t));
+        memcpy(fc2_biases, data + offset, OUTPUT_SIZE * sizeof(int32_t));
     }
 
     int32_t NNUE::forward(const Accumulator &acc, Color stm) const {
@@ -45,7 +44,7 @@ namespace NNUE {
 
         for (int j = 0; j < HIDDEN_SIZE; j++) {
             if (acc[stm][j] > 0) {
-                prediction += fc2_weights[j] * acc[stm][j];
+               prediction += fc2_weights[j] * acc[stm][j];
             }
 
             if (acc[~stm][j] > 0) {
@@ -53,7 +52,7 @@ namespace NNUE {
             }
         }
 
-        return prediction / (512 * 16);
+        return prediction / (1024 * 64);
     }
 
     void NNUE::putPiece(Accumulator &acc, Piece p, Square s) const {
@@ -61,9 +60,8 @@ namespace NNUE {
         const int b_idx = index(s, p, BLACK);
 
         for (int i = 0; i < HIDDEN_SIZE; i++) {
-            const int idx = i * INPUT_SIZE;
-            acc[WHITE][i] += fc1_weights[idx + w_idx];
-            acc[BLACK][i] += fc1_weights[idx + b_idx];
+            acc[WHITE][i] += fc1_weights[w_idx * HIDDEN_SIZE + i];
+            acc[BLACK][i] += fc1_weights[b_idx * HIDDEN_SIZE + i];
         }
     }
 
@@ -72,9 +70,8 @@ namespace NNUE {
         const int b_idx = index(s, p, BLACK);
 
         for (int i = 0; i < HIDDEN_SIZE; i++) {
-            const int idx = i * INPUT_SIZE;
-            acc[WHITE][i] -= fc1_weights[idx + w_idx];
-            acc[BLACK][i] -= fc1_weights[idx + b_idx];
+            acc[WHITE][i] -= fc1_weights[w_idx * HIDDEN_SIZE + i];
+            acc[BLACK][i] -= fc1_weights[b_idx * HIDDEN_SIZE + i];
         }
     }
 
@@ -85,9 +82,8 @@ namespace NNUE {
         const int b_to_idx = index(to, p, BLACK);
 
         for (int i = 0; i < HIDDEN_SIZE; i++) {
-            const int idx = i * INPUT_SIZE;
-            acc[WHITE][i] += fc1_weights[idx + w_to_idx] - fc1_weights[idx + w_from_idx];
-            acc[BLACK][i] += fc1_weights[idx + b_to_idx] - fc1_weights[idx + b_from_idx];
+            acc[WHITE][i] += fc1_weights[w_to_idx * HIDDEN_SIZE + i] - fc1_weights[w_from_idx * HIDDEN_SIZE + i];
+            acc[BLACK][i] += fc1_weights[b_to_idx * HIDDEN_SIZE + i] - fc1_weights[b_from_idx * HIDDEN_SIZE + i];
         }
     }
 

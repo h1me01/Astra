@@ -1,6 +1,6 @@
 # variables
 ROOT := $(realpath $(dir $(abspath $(lastword $(MAKEFILE_LIST)))))
-EvalFile = $(ROOT)/nn-768-2x256-1.nnue
+EvalFile = $(ROOT)/nn-768-2x512-1.nnue
 
 # compiler and flags
 CXX ?= g++

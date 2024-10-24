@@ -9,7 +9,7 @@ using namespace Chess;
 namespace NNUE {
 
     constexpr int INPUT_SIZE = 768;
-    constexpr int HIDDEN_SIZE = 256;
+    constexpr int HIDDEN_SIZE = 512;
     constexpr int OUTPUT_SIZE = 1;
 
     using Accumulator = std::array<std::array<int16_t, HIDDEN_SIZE>, 2>;
