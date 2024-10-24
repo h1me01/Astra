@@ -29,7 +29,7 @@ namespace Chess {
             }
         }
 
-        history[game_ply].ep_sq = fen_parts[3] == "-" ? NO_SQUARE : findSquare(fen_parts[3]);
+        history[game_ply].ep_sq = fen_parts[3] == "-" ? NO_SQUARE : squareFromString(fen_parts[3]);
         history[game_ply].half_move_clock = std::stoi(fen_parts[4]);
 
         // place pieces to board

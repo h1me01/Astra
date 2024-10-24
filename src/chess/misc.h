@@ -22,7 +22,7 @@ namespace Chess {
     }
 
     // helper to find square from string
-    inline Square findSquare(std::string_view square_str) {
+    inline Square squareFromString(std::string_view square_str) {
         int file = square_str[0] - 97;
         int rank = square_str[1] - 49;
         int index = rank * 8 + file;
