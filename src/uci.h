@@ -32,8 +32,8 @@ namespace UCI {
     };
 
     inline Move Uci::getMove(const std::string &str_move) const {
-        const Square from = findSquare(str_move.substr(0, 2));
-        const Square to = findSquare(str_move.substr(2, 2));
+        const Square from = squareFromString(str_move.substr(0, 2));
+        const Square to = squareFromString(str_move.substr(2, 2));
         const Piece p_from = board.pieceAt(from);
         const Piece p_to = board.pieceAt(to);
 

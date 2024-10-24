@@ -15,10 +15,10 @@ namespace NNUE {
         assert(p != NO_PIECE);
         assert(s != NO_SQUARE);
 
-        Color pc = colorOf(p);
-        PieceType pt = typeOf(p);
+        const Color pc = colorOf(p);
+        const int pt = typeOf(p);
         s = mirrorVertically(view, s);
-        const int idx = static_cast<int>(s) + static_cast<int>(pt) * 64 + (pc != view) * 64 * 6;
+        const int idx = static_cast<int>(s) + pt * 64 + (pc != view) * 64 * 6;
         return idx;
     }
 
