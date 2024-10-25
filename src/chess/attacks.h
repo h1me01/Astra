@@ -93,23 +93,9 @@ namespace Chess {
     extern int BISHOP_ATTACK_SHIFTS[NUM_SQUARES];
     extern U64 BISHOP_ATTACKS[NUM_SQUARES][512];
 
-    inline U64 slidingAttacks(Square s, const U64 occ, const U64 mask) {
-        // uses hyperbola quintessence algorithm
-        const U64 mask_occ = mask & occ;
-        return ((mask_occ - SQUARE_BB[s] * 2) ^ (reverse(reverse(mask_occ) - reverse(SQUARE_BB[s]) * 2))) & mask;
-    }
-
-    inline U64 getRookAttacks(Square s, const U64 occ) {
-        const U64 max_occ = occ & ROOK_ATTACK_MASKS[s];
-        const U64 idx = max_occ * ROOK_MAGICS[s] >> ROOK_ATTACK_SHIFTS[s];
-        return ROOK_ATTACKS[s][idx];
-    }
-
-    inline U64 getBishopAttacks(Square s, const U64 occ) {
-        const U64 mask_occ = occ & BISHOP_ATTACK_MASKS[s];
-        const U64 idx = mask_occ * BISHOP_MAGICS[s] >> BISHOP_ATTACK_SHIFTS[s];
-        return BISHOP_ATTACKS[s][idx];
-    }
+    U64 slidingAttacks(Square s, U64 occ, U64 mask);
+    U64 getRookAttacks(Square s, U64 occ);
+    U64 getBishopAttacks(Square s, U64 occ);
 
     void initLookUpTables();
 
