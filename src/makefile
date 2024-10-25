@@ -13,6 +13,7 @@ SRC = main.cpp \
       chess/board.cpp \
       chess/perft.cpp \
       chess/bitboard.cpp \
+      chess/misc.cpp \
       chess/zobrist.cpp \
       eval/nnue.cpp \
       eval/eval.cpp \

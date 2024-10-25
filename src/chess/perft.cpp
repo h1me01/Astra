@@ -1,3 +1,4 @@
+#include <iostream>
 #include <chrono>
 #include "perft.h"
 #include "movegen.h"

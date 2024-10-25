@@ -3,7 +3,7 @@
 
 namespace Astra {
 
-    TTable::TTable(const int size_mb) : entries(nullptr) {
+    TTable::TTable(const int size_mb) : current_age(0), entries(nullptr) {
         init(size_mb);
     }
 
@@ -12,6 +12,8 @@ namespace Astra {
     }
 
     void TTable::init(int size_mb) {
+        current_age = 0;
+
         if (entries != nullptr) {
             delete[] entries;
         }
@@ -58,14 +60,28 @@ namespace Astra {
         if(entries[idx].hash == 0) {
             // save if no entry is present
             entries[idx] = TTEntry(hash, depth, move, score, bound);
+            entries[idx].age = current_age;
         } else {
-            bool first = bound == EXACT_BOUND; // store if exact bound
-            bool second = bound != EXACT_BOUND && entries[idx].depth <= depth; // store if not exact bound but depth is greater or equal
-            bool third = entries[idx].hash == hash && entries[idx].depth <= depth + 3; // store if key is equal and depth is greater
+            // store if age is different then current age
+            bool first = entries[idx].getAge() != current_age;
+            // store if exact bound
+            bool second = bound == EXACT_BOUND;
+            // store if not exact bound but depth is greater or equal
+            bool third = bound != EXACT_BOUND && entries[idx].depth <= depth;
+            // store if key is equal and depth is greater
+            bool fourth =  entries[idx].hash == hash && entries[idx].depth <= depth + 3;
 
-            if (first || second || third) {
+            if (first || second || third || fourth) {
                 entries[idx] = TTEntry(hash, depth, move, score, bound);
+                entries[idx].age = current_age;
             }
+        }
+    }
+
+    void TTable::incrementAge() {
+        current_age++;
+        if (current_age == 255) {
+            current_age = 0;
         }
     }
 

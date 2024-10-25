@@ -7,6 +7,8 @@ int main() {
 
     NNUE::nnue.init();
 
+
+
     UCI::Uci uci;
     uci.loop();
 

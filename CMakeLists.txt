@@ -28,4 +28,5 @@ add_executable(Astra
         src/chess/bitboard.cpp
         src/chess/zobrist.cpp
         src/bench.cpp
+        src/chess/misc.cpp
 )

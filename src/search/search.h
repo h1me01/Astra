@@ -1,6 +1,7 @@
 #ifndef SEARCH_H
 #define SEARCH_H
 
+#include <iostream>
 #include <thread>
 #include "tt.h"
 #include "pvtable.h"

@@ -17,14 +17,23 @@ namespace Astra {
     struct TTEntry {
         U64 hash;
         int depth;
+        uint8_t age;
         Move move;
         Score score;
         Bound bound;
 
-        TTEntry() : hash(0), depth(0), move(NO_MOVE), score(VALUE_NONE), bound(NO_BOUND) {}
+        TTEntry() : hash(0), depth(0), age(0), move(NO_MOVE), score(VALUE_NONE), bound(NO_BOUND) {}
 
         TTEntry(U64 hash, int depth, Move move, Score score, Bound bound) :
                 hash(hash), depth(depth), move(move), score(score), bound(bound) {}
+
+        uint8_t getAge() const {
+            return age;
+        }
+
+        void setAge(const uint8_t age) {
+            this->age = age;
+        }
     };
 
     class TTable {
@@ -38,9 +47,11 @@ namespace Astra {
         bool lookup(TTEntry& entry, U64 hash) const;
         void store(U64 hash, Move move, Score score, int depth, Bound bound) const;
 
+        void incrementAge();
         void prefetch(U64 hash) const;
 
     private:
+        uint8_t current_age;
         U64 tt_size{};
         U64 mask{};
         TTEntry *entries;

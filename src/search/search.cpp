@@ -723,6 +723,10 @@ namespace Astra {
             }
         }
 
+        if (id == 0){
+            tt.incrementAge();
+        }
+
         Stack stack[MAX_PLY + 4];
         Stack *ss = stack + 2;
 

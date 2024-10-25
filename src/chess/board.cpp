@@ -4,6 +4,26 @@
 
 namespace Chess {
 
+    // helper
+
+    // get castling hash index for the zobrist key
+    int getCastleHashIndex(const U64 castle_mask) {
+        bool wks = castle_mask & WHITE_OO_MASK;
+        bool wqs = castle_mask & WHITE_OOO_MASK;
+        bool bks = castle_mask & BLACK_OO_MASK;
+        bool bqs = castle_mask & BLACK_OOO_MASK;
+        return !wks + 2 * !wqs + 4 * !bks + 8 * !bqs;
+    }
+
+    // represent castle rights correctly in fen notation
+    bool castleNotationHelper(const std::ostringstream &fen_stream) {
+        const std::string fen = fen_stream.str();
+        const std::string rights = fen.substr(fen.find(' ') + 1);
+        return rights.find_first_of("kqKQ") != std::string::npos;
+    }
+
+    // board class
+
     Board::Board(const std::string &fen) :
     checkers(0), pinned(0), danger(0), capture_mask(0), quiet_mask(0), piece_bb{}, board{}, stm(WHITE), game_ply(0) {
         for (auto &i: board) {
@@ -55,9 +75,11 @@ namespace Chess {
             }
         }
 
+        if (history[game_ply].ep_sq == NO_SQUARE) {
+            hash ^= Zobrist::ep[fileOf(history[game_ply].ep_sq)];
+        }
+        hash ^= Zobrist::side;
         hash ^= Zobrist::castle[getCastleHashIndex(history[game_ply].castle_mask)];
-        hash ^= stm == WHITE ? Zobrist::side : 0;
-        hash ^= history[game_ply].ep_sq == NO_SQUARE ? 0 : Zobrist::ep[fileOf(history[game_ply].ep_sq)];
         history[game_ply].hash = hash;
 
         refreshAccumulator();

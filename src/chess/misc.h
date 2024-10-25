@@ -1,89 +1,36 @@
 #ifndef MISC_H
 #define MISC_H
 
-#include <iostream>
 #include <vector>
 #include <sstream>
-#include "bitboard.h"
 #include "types.h"
 
 namespace Chess {
     // helper to print bitboards for debugging
-    inline void printBitboard(const U64 b) {
-        for (int rank = 7; rank >= 0; --rank) {
-            for (int file = 0; file < 8; ++file) {
-                int s = rank * 8 + file;
-                U64 mask = 1ULL << s;
-                std::cout << ((b & mask) ? "1 " : "0 ");
-            }
-            std::cout << std::endl;
-        }
-        std::cout << std::endl;
-    }
+    void printBitboard(U64 b);
 
-    // helper to find square from string
-    inline Square squareFromString(std::string_view square_str) {
-        int file = square_str[0] - 97;
-        int rank = square_str[1] - 49;
-        int index = rank * 8 + file;
-        return static_cast<Square>(index);
-    }
+    // helper to get square from string
+    Square squareFromString(std::string_view square_str);
 
     // helper to split the fen
-    inline std::vector<std::string> split(const std::string &str, char del) {
-        std::vector<std::string> parts;
-        std::string current;
-
-        for (const char c: str) {
-            if (c == del) {
-                if (!current.empty()) {
-                    parts.push_back(current);
-                    current.clear();
-                }
-            } else {
-                current += c;
-            }
-        }
-
-        if (!current.empty()) {
-            parts.push_back(current);
-        }
-
-        return parts;
-    }
-
-    // helper to get the castling hash index for the zobrist key
-    inline int getCastleHashIndex(const U64 castle_mask) {
-        bool wks = castle_mask & WHITE_OO_MASK;
-        bool wqs = castle_mask & WHITE_OOO_MASK;
-        bool bks = castle_mask & BLACK_OO_MASK;
-        bool bqs = castle_mask & BLACK_OOO_MASK;
-        return !wks + 2 * !wqs + 4 * !bks + 8 * !bqs;
-    }
-
-    // helper to represent the castle rights in the fen notation
-    inline bool castleNotationHelper(const std::ostringstream &fen_stream) {
-        const std::string fen = fen_stream.str();
-        const std::string rights = fen.substr(fen.find(' ') + 1);
-        return rights.find_first_of("kqKQ") != std::string::npos;
-    }
+    std::vector<std::string> split(const std::string &str, char del);
 
     inline PieceType typeOfPromotion(const MoveFlags mf) {
         switch (mf) {
-            case PR_KNIGHT:
-            case PC_KNIGHT:
-                return KNIGHT;
-            case PR_BISHOP:
-            case PC_BISHOP:
-                return BISHOP;
-            case PR_ROOK:
-            case PC_ROOK:
-                return ROOK;
-            case PR_QUEEN:
-            case PC_QUEEN:
-                return QUEEN;
-            default:
-                return NO_PIECE_TYPE;
+        case PR_KNIGHT:
+        case PC_KNIGHT:
+            return KNIGHT;
+        case PR_BISHOP:
+        case PC_BISHOP:
+            return BISHOP;
+        case PR_ROOK:
+        case PC_ROOK:
+            return ROOK;
+        case PR_QUEEN:
+        case PC_QUEEN:
+            return QUEEN;
+        default:
+            return NO_PIECE_TYPE;
         }
     }
 
@@ -98,20 +45,7 @@ namespace Chess {
     }
 
     // prints the move
-    inline std::ostream &operator<<(std::ostream &os, const Move &m) {
-        if (SQSTR[m.from()] == "a1" && SQSTR[m.to()] == "a1") {
-            os << "NULL MOVE";
-        } else {
-            os << SQSTR[m.from()] << SQSTR[m.to()];
-        }
-
-        if(isPromotion(m)) {
-            const PieceType pt = typeOfPromotion(m.flag());
-            os << PIECE_STR[pt + 6];
-        }
-
-        return os;
-    }
+    std::ostream &operator<<(std::ostream &os, const Move &m);
 
     // gets the opposite color
     constexpr Color operator~(Color c) {
