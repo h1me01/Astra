@@ -66,6 +66,7 @@ namespace Chess {
         Piece pieceAt(Square s) const;
         Color getTurn() const;
         int getPly() const;
+        int halfMoveClock() const;
         U64 getHash() const;
         Square kingSq(Color c) const;
         NNUE::Accumulator& getAccumulator();
@@ -116,6 +117,10 @@ namespace Chess {
 
     inline int Board::getPly() const {
         return game_ply;
+    }
+
+    inline int Board::halfMoveClock() const {
+        return history[game_ply].half_move_clock;
     }
 
     inline U64 Board::getHash() const {
