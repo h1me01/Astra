@@ -5,11 +5,7 @@
 namespace Eval {
 
     Score evaluate(Board& board) {
-        Color stm = board.getTurn();
-        NNUE::Accumulator acc = board.getAccumulator();
-
-        int32_t eval = NNUE::nnue.forward(acc, stm);
-
+        int32_t eval = NNUE::nnue.forward(board.getAccumulator(), board.getTurn());
         return std::clamp(eval, -VALUE_MIN_MATE + 1, VALUE_MIN_MATE - 1);
     }
 
