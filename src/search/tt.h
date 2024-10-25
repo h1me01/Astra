@@ -41,8 +41,8 @@ namespace Astra {
         void prefetch(U64 hash) const;
 
     private:
-        U64 tt_size;
-        U64 mask;
+        U64 tt_size{};
+        U64 mask{};
         TTEntry *entries;
 
     };

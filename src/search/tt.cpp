@@ -1,5 +1,4 @@
 #include <iostream>
-#include <cassert>
 #include "tt.h"
 
 namespace Astra {

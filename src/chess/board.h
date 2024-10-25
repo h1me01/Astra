@@ -4,8 +4,8 @@
 #include "misc.h"
 #include "zobrist.h"
 #include "attacks.h"
-#include "../eval/accumulator.h"
 #include "../eval/nnue.h"
+#include "../eval/accumulator.h"
 
 namespace Chess {
 
@@ -62,13 +62,13 @@ namespace Chess {
 
         std::string getFen() const;
 
-        U64 getPieceBB(Color c, PieceType pt) const { return piece_bb[makePiece(c, pt)]; }
-        Piece pieceAt(Square s) const { return board[s]; }
-        Color getTurn() const { return stm; }
-        int getPly() const { return game_ply; }
-        U64 getHash() const { return hash; }
-        Square kingSq(Color c) const { return bsf(getPieceBB(c, KING)); }
-        NNUE::Accumulator& getAccumulator() { return accumulators.back(); }
+        U64 getPieceBB(Color c, PieceType pt) const;
+        Piece pieceAt(Square s) const;
+        Color getTurn() const;
+        int getPly() const;
+        U64 getHash() const;
+        Square kingSq(Color c) const;
+        NNUE::Accumulator& getAccumulator();
         void refreshAccumulator();
 
         U64 occupancy(Color c) const;
@@ -101,6 +101,34 @@ namespace Chess {
         void removePiece(Square s, bool update_nnue);
         void movePiece(Square from, Square to, bool update_nnue);
     };
+
+    inline U64 Board::getPieceBB(Color c, PieceType pt) const{
+        return piece_bb[makePiece(c, pt)];
+    }
+
+    inline Piece Board::pieceAt(Square s) const {
+        return board[s];
+    }
+
+    inline Color Board::getTurn() const {
+        return stm;
+    }
+
+    inline int Board::getPly() const {
+        return game_ply;
+    }
+
+    inline U64 Board::getHash() const {
+        return hash;
+    }
+
+    inline Square Board::kingSq(Color c) const {
+        return bsf(getPieceBB(c, KING));
+    }
+
+    inline NNUE::Accumulator& Board::getAccumulator() {
+        return accumulators.back();
+    }
 
     inline void Board::putPiece(Piece p, Square s, bool update_nnue) {
         board[s] = p;

@@ -4,7 +4,8 @@
 
 namespace Chess {
 
-    Board::Board(const std::string &fen) : checkers(0), pinned(0), danger(0), capture_mask(0), quiet_mask(0), piece_bb{}, board{}, stm(WHITE), game_ply(0) {
+    Board::Board(const std::string &fen) :
+    checkers(0), pinned(0), danger(0), capture_mask(0), quiet_mask(0), piece_bb{}, board{}, stm(WHITE), game_ply(0) {
         for (auto &i: board) {
             i = NO_PIECE;
         }
@@ -35,15 +36,16 @@ namespace Chess {
         // place pieces to board
         int sqr = a8;
         for (const char c: fen_parts[0]) {
-            if (isdigit(c))
+            if (isdigit(c)) {
                 sqr += c - '0';
-            else if (c == '/')
+            } else if (c == '/') {
                 sqr -= 16;
-            else
+            } else {
                 putPiece(static_cast<Piece>(PIECE_STR.find(c)), static_cast<Square>(sqr++), true);
+            }
         }
 
-        // calculate hash
+        // initialize hash
         hash = 0ULL;
         for (int p = WHITE_PAWN; p <= BLACK_KING; p++) {
             U64 bb = piece_bb[p];

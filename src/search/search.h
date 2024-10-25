@@ -2,7 +2,6 @@
 #define SEARCH_H
 
 #include <thread>
-#include <atomic>
 #include "tt.h"
 #include "pvtable.h"
 #include "timemanager.h"
