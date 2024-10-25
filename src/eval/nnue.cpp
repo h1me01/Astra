@@ -1,3 +1,4 @@
+#include <cstring> // std::memcpy
 #include "nnue.h"
 #include "accumulator.h"
 #include "../chess/misc.h"
