@@ -4,7 +4,7 @@ EvalFile = $(ROOT)/nn-768-2x512-1.nnue
 
 # compiler and flags
 CXX ?= g++
-CXXFLAGS = -Wall -Wextra -O3 -DNDEBUG -funroll-loops -pthread -std=c++17 -march=native
+CXXFLAGS = -s -Wall -Wextra -O3 -DNDEBUG -funroll-loops -pthread -std=c++17 -march=native
 CXXFLAGS += -DNNUE_PATH=\"$(EvalFile)\" # add nnue file path
 
 # source files
@@ -32,7 +32,7 @@ ifeq ($(OS), Windows_NT)
     LDFLAGS := -static -lstdc++ -lpthread
 else
     SUFFIX :=
-    LDFLAGS := -lpthread
+    LDFLAGS := -lpthread -lstdc++
 endif
 
 # complete target name with suffix
