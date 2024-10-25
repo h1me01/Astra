@@ -1,8 +1,8 @@
 #include "uci.h"
 #include "bench.h"
 #include "chess/perft.h"
-#include "syzygy/tbprobe.h"
 #include "search/tune.h"
+#include "syzygy/tbprobe.h"
 
 namespace UCI {
 

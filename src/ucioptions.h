@@ -2,7 +2,6 @@
 #define OPTIONS_H
 
 #include <string>
-#include <utility>
 
 namespace UCI {
 
