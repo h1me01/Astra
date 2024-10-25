@@ -27,4 +27,5 @@ add_executable(Astra
         src/search/tune.cpp
         src/chess/bitboard.cpp
         src/chess/zobrist.cpp
+        src/bench.cpp
 )

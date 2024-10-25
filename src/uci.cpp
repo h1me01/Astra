@@ -1,4 +1,5 @@
 #include "uci.h"
+#include "bench.h"
 #include "chess/perft.h"
 #include "syzygy/tbprobe.h"
 #include "search/tune.h"
@@ -37,6 +38,9 @@ namespace UCI {
                 updatePosition(is);
             } else if (token == "go") {
                 go(is);
+            } else if (token == "bench") {
+                Astra::threads.stop = false;
+                Bench::bench(13);
             } else if (token == "tune") {
                 Astra::paramsToSpsa();
             } else if (token == "setoption") {

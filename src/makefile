@@ -21,6 +21,7 @@ SRC = main.cpp \
       search/tt.cpp \
       search/tune.cpp \
       syzygy/tbprobe.cpp \
+      bench.cpp \
       uci.cpp
 
 # target executable
