@@ -2,9 +2,7 @@
 #define SEARCHPARAMS_H
 
 #include <iostream>
-#include <sstream>
 #include <string>
-#include <vector>
 
 //#define TUNE
 
