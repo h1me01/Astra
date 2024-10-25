@@ -4,6 +4,16 @@
 
 namespace Chess {
 
+    U64 PSEUDO_LEGAL_ATTACKS[NUM_PIECE_TYPES][NUM_SQUARES];
+
+    U64 ROOK_ATTACK_MASKS[NUM_SQUARES];
+    int ROOK_ATTACK_SHIFTS[NUM_SQUARES];
+    U64 ROOK_ATTACKS[NUM_SQUARES][4096];
+
+    U64 BISHOP_ATTACK_MASKS[NUM_SQUARES];
+    int BISHOP_ATTACK_SHIFTS[NUM_SQUARES];
+    U64 BISHOP_ATTACKS[NUM_SQUARES][512];
+
     void initRookAttacks() {
         for (Square s = a1; s <= h8; ++s) {
             const U64 edges = ((MASK_RANK[FILE_A] | MASK_RANK[FILE_H]) & ~MASK_RANK[rankOf(s)]) |

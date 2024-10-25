@@ -29,7 +29,8 @@ namespace NNUE {
         void movePiece(Accumulator &acc, Piece p, Square from, Square to) const;
     };
 
-    inline NNUE nnue;
+    // global variable
+    extern NNUE nnue;
 
 } // namespace NNUE
 

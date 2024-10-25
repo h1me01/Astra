@@ -83,15 +83,15 @@ namespace Chess {
         }
     };
 
-    inline U64 PSEUDO_LEGAL_ATTACKS[NUM_PIECE_TYPES][NUM_SQUARES];
+    extern U64 PSEUDO_LEGAL_ATTACKS[NUM_PIECE_TYPES][NUM_SQUARES];
 
-    inline U64 ROOK_ATTACK_MASKS[NUM_SQUARES];
-    inline int ROOK_ATTACK_SHIFTS[NUM_SQUARES];
-    inline U64 ROOK_ATTACKS[NUM_SQUARES][4096];
+    extern U64 ROOK_ATTACK_MASKS[NUM_SQUARES];
+    extern int ROOK_ATTACK_SHIFTS[NUM_SQUARES];
+    extern U64 ROOK_ATTACKS[NUM_SQUARES][4096];
 
-    inline U64 BISHOP_ATTACK_MASKS[NUM_SQUARES];
-    inline int BISHOP_ATTACK_SHIFTS[NUM_SQUARES];
-    inline U64 BISHOP_ATTACKS[NUM_SQUARES][512];
+    extern U64 BISHOP_ATTACK_MASKS[NUM_SQUARES];
+    extern int BISHOP_ATTACK_SHIFTS[NUM_SQUARES];
+    extern U64 BISHOP_ATTACKS[NUM_SQUARES][512];
 
     inline U64 slidingAttacks(Square s, const U64 occ, const U64 mask) {
         // uses hyperbola quintessence algorithm

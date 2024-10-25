@@ -24,4 +24,7 @@ add_executable(Astra
         src/syzygy/tbprobe.cpp
         src/uci.cpp
         src/search/moveordering.cpp
+        src/search/tune.cpp
+        src/chess/bitboard.cpp
+        src/chess/zobrist.cpp
 )

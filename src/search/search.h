@@ -81,6 +81,8 @@ namespace Astra {
 
     class ThreadPool {
     public:
+        ThreadPool() : stop(false) {}
+
         void start(const Board &board, const Limits &limit, int worker_count, bool use_tb);
         void kill();
 
@@ -89,14 +91,16 @@ namespace Astra {
         uint8_t getSelDepth() const;
 
         // stop running all threads
-        bool stop = false;
+        bool stop;
+
     private:
         std::vector<Thread> pool;
         std::vector<std::thread> running_threads;
     };
 
-    inline ThreadPool threads;
-    inline TTable tt(16);
+    // global variables
+    extern ThreadPool threads;
+    extern TTable tt;
 
 } // namespace Astra
 

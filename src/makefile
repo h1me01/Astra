@@ -12,11 +12,14 @@ SRC = main.cpp \
       chess/attacks.cpp \
       chess/board.cpp \
       chess/perft.cpp \
+      chess/bitboard.cpp \
+      chess/zobrist.cpp \
       eval/nnue.cpp \
       eval/eval.cpp \
       search/search.cpp \
       search/moveordering.cpp \
       search/tt.cpp \
+      search/tune.cpp \
       syzygy/tbprobe.cpp \
       uci.cpp
 

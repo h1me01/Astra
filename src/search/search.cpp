@@ -901,4 +901,8 @@ namespace Astra {
         return max_sel_depth;
     }
 
+    // global variables
+    ThreadPool threads;
+    TTable tt(16);
+
 } // namespace Astra

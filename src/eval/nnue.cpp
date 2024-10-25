@@ -85,4 +85,7 @@ namespace NNUE {
         }
     }
 
+    // global variable
+    NNUE nnue;
+
 } // namespace NNUE

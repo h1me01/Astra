@@ -12,58 +12,21 @@ namespace Astra {
 
     struct Param;
 
-    // holds all the tuning parameters for search
-    inline std::vector<Param*> params;
-
     struct Param {
         std::string name;
         int value;
         int min, max;
 
-        Param(std::string name, int value, int min, int max) :
-        name(std::move(name)), value(value), min(min), max(max)
-        {
-            params.push_back(this);
-        }
+        Param(std::string name, int value, int min, int max);
 
-        operator int() const {
-            return value;
-        }
+        operator int() const;
     };
 
-    inline void paramsToUCI() {
-        for (const auto& param : params) {
-            std::cout << "option name " << param->name
-                    << " type spin default " << param->value
-                    << " min " << param->min
-                    << " max " << param->max << std::endl;
-        }
-    }
+    void paramsToUCI();
 
-    inline void setParam(const std::string& name, int value) {
-        for (auto* param : params) {
-            if (param->name == name) {
-                param->value = value;
-                return;
-            }
-        }
-    }
+    void setParam(const std::string& name, int value);
 
-    inline std::string paramsToSpsa() {
-        std::ostringstream ss;
-
-        for (auto& param : params) {
-            ss << param->name
-              << ", " << "int"
-              << ", " << param->value
-              << ", " << param->min
-              << ", " << param->max
-              << ", " << std::max(0.5, static_cast<double>(param->max - param->min) / 20.0)
-              << ", " << 0.002 << "\n";
-        }
-
-        return ss.str();
-    }
+    std::string paramsToSpsa();
 
 #ifdef TUNE
 #define PARAM(name, value, min, max) Param name(#name, value, min, max)
