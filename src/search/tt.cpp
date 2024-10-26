@@ -29,14 +29,8 @@ namespace Astra {
         tt_size /= 2;
         mask = tt_size - 1;
 
-        try {
-            entries = new TTEntry[tt_size];
-            clear();
-        } catch (const std::bad_alloc &e) {
-            std::cerr << "Failed to allocate transposition table" << std::endl;
-            std::cerr << "Error: " << e.what() << std::endl;
-            exit(1);
-        }
+        entries = new TTEntry[tt_size];
+        clear();
     }
 
     void TTable::clear() const {

@@ -4,7 +4,7 @@ EvalFile = $(ROOT)/nn-768-2x512-1.nnue
 
 # compiler and flags
 CXX ?= g++
-CXXFLAGS = -s -Wall -Wextra -O3 -DNDEBUG -funroll-loops -pthread -std=c++17 -march=native
+CXXFLAGS = -s -Wall -Wextra -O3 -DNDEBUG -funroll-loops -fno-exceptions -pthread -std=c++17 -march=native -flto
 CXXFLAGS += -DNNUE_PATH=\"$(EvalFile)\" # add nnue file path
 
 # source files

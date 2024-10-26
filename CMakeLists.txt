@@ -8,7 +8,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(NNUE_FILE_PATH "${CMAKE_SOURCE_DIR}/src/nn-768-2x512-1.nnue")
 
 set(CMAKE_BUILD_TYPE Debug)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -s -O3 -Wall -Wextra -DNDEBUG -funroll-loops -march=native -static -lstdc++ -pthread")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -s -O3 -Wall -Wextra -DNDEBUG -funroll-loops -march=native -static -lstdc++ -pthread -flto")
 
 add_definitions(-DNNUE_PATH="${NNUE_FILE_PATH}")
 

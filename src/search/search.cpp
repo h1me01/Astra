@@ -515,7 +515,7 @@ namespace Astra {
             // print current move information
             if (id == 0
                 && root_node
-                && time_manager.elapsedTime() > 3000
+                && time_manager.elapsedTime() > 5000
                 && !threads.stop) {
                 std::cout << "info depth " << depth
                           << " currmove " << move
