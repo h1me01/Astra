@@ -2,10 +2,28 @@
 #define UCI_H
 
 #include <unordered_map>
-#include "ucioptions.h"
 #include "search/search.h"
 
 namespace UCI {
+
+    struct Option {
+        std::string type, default_val, val;
+        int min, max;
+
+        Option() : min(0), max(0) {}
+
+        Option(std::string type, std::string default_val, std::string val, int min, int max) :
+            type(std::move(type)),
+            default_val(std::move(default_val)),
+            val(std::move(val)),
+            min(min),
+            max(max) {};
+
+        Option &operator=(const std::string &v) {
+            val = v;
+            return *this;
+        }
+    };
 
     class Uci {
     public :

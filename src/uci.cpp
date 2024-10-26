@@ -187,7 +187,7 @@ namespace UCI {
     std::string Uci::getOption(const std::string &str) const {
         auto it = options.find(str);
         if (it != options.end()) {
-            return it->second.getValue();
+            return it->second.val;
         }
         return "";
     }
@@ -195,15 +195,15 @@ namespace UCI {
     void Uci::printOptions() const {
         for (const auto &elem: options) {
             Option option = elem.second;
-            const std::string &value = option.getDefaultValue();
+            const std::string &value = option.default_val;
 
             std::cout << "option name " << elem.first
-                    << " type " << option.getType()
+                    << " type " << option.type
                     << " default " << (value.empty() ? "<empty>" : value);
 
-            if (option.getMin() != 0 && option.getMax() != 0) {
-                std::cout << " min " << option.getMin()
-                        << " max " << option.getMax() << std::endl;
+            if (option.min != 0 && option.max != 0) {
+                std::cout << " min " << option.min
+                        << " max " << option.max << std::endl;
             } else {
                 std::cout << std::endl;
             }
