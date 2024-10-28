@@ -719,6 +719,10 @@ namespace Astra
             if (dtz.second != NO_MOVE)
             {
                 threads.stop = true;
+
+                if (id == 0)
+                    std::cout << "bestmove " << dtz.second << std::endl;
+                
                 return {dtz.second, dtz.first};
             }
         }
