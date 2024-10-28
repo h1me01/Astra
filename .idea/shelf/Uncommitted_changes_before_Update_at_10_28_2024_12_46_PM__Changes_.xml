@@ -1,0 +1,14 @@
+<changelist name="Uncommitted_changes_before_Update_at_10_28_2024_12_46_PM_[Changes]" date="1730115990748" recycled="false" toDelete="true">
+  <option name="PATH" value="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Update_at_10_28_2024_12_46_PM_[Changes]/shelved.patch" />
+  <option name="DESCRIPTION" value="Uncommitted changes before Update at 10/28/2024 12:46 PM [Changes]" />
+  <binary>
+    <option name="BEFORE_PATH" value="cmake-build-debug-mingw/.ninja_deps" />
+    <option name="AFTER_PATH" value="cmake-build-debug-mingw/.ninja_deps" />
+    <option name="SHELVED_PATH" value="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Update_at_10_28_2024_12_46_PM_[Changes]/.ninja_deps" />
+  </binary>
+  <binary>
+    <option name="BEFORE_PATH" value="cmake-build-debug-mingw/Astra.exe" />
+    <option name="AFTER_PATH" value="cmake-build-debug-mingw/Astra.exe" />
+    <option name="SHELVED_PATH" value="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Update_at_10_28_2024_12_46_PM_[Changes]/Astra.exe" />
+  </binary>
+</changelist>

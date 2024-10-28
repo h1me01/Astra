@@ -1,0 +1,97 @@
+Index: cmake-build-debug-mingw/Testing/Temporary/LastTest.log
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>Start testing: Oct 28 08:45 W. Europe Standard Time\r\n----------------------------------------------------------\r\nEnd testing: Oct 28 08:45 W. Europe Standard Time\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/cmake-build-debug-mingw/Testing/Temporary/LastTest.log b/cmake-build-debug-mingw/Testing/Temporary/LastTest.log
+--- a/cmake-build-debug-mingw/Testing/Temporary/LastTest.log	(revision eb500c32d2e5f614759cd93c396bb211757e7e58)
++++ b/cmake-build-debug-mingw/Testing/Temporary/LastTest.log	(date 1730115945104)
+@@ -1,3 +1,3 @@
+-Start testing: Oct 28 08:45 W. Europe Standard Time
++Start testing: Oct 28 12:45 W. Europe Standard Time
+ ----------------------------------------------------------
+-End testing: Oct 28 08:45 W. Europe Standard Time
++End testing: Oct 28 12:45 W. Europe Standard Time
+Index: cmake-build-debug-mingw/.ninja_log
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+># ninja log v6\r\n73\t768\t7517560829130423\tCMakeFiles/Astra.dir/src/chess/zobrist.cpp.obj\t4f0fff65436fc504\r\n64\t792\t7517560829047964\tCMakeFiles/Astra.dir/src/search/tune.cpp.obj\tb328ec8f55d5c748\r\n16\t537\t7517662783368476\tCMakeFiles/Astra.dir/src/main.cpp.obj\t9724ae0a0df0157c\r\n69\t542\t7517560829089894\tCMakeFiles/Astra.dir/src/chess/bitboard.cpp.obj\t7d68534b87e0fdf8\r\n34\t686\t7517584913929063\tCMakeFiles/Astra.dir/src/eval/eval.cpp.obj\tdfc611414b541004\r\n39\t570\t7517560828794243\tCMakeFiles/Astra.dir/src/search/tt.cpp.obj\tf2dc6dc7eff04dfc\r\n31\t738\t7517584913899053\tCMakeFiles/Astra.dir/src/eval/nnue.cpp.obj\t91b4f4f8bf8c0dc3\r\n26\t767\t7517560828673664\tCMakeFiles/Astra.dir/src/chess/attacks.cpp.obj\tb4eb89cd79d2ac42\r\n47\t950\t7517584914053580\tCMakeFiles/Astra.dir/src/search/moveordering.cpp.obj\t1822f7ba6dab278b\r\n20\t965\t7517662783408863\tCMakeFiles/Astra.dir/src/chess/board.cpp.obj\t2e612a1276d04f96\r\n26\t1279\t7517662783459532\tCMakeFiles/Astra.dir/src/uci.cpp.obj\td7fbe13635f3b39a\r\n38\t1428\t7517584913968291\tCMakeFiles/Astra.dir/src/chess/perft.cpp.obj\te13c8bd12d5dc526\r\n23\t1859\t7517662783429541\tCMakeFiles/Astra.dir/src/search/search.cpp.obj\t50bccd1c7290ecde\r\n570\t1318\t7517560834100943\tCMakeFiles/Astra.dir/src/chess/misc.cpp.obj\tf9a6a3ea0ab7bae\r\n28\t657\t7517662783490056\tCMakeFiles/Astra.dir/src/bench.cpp.obj\tc8e89d0230b0565c\r\n54\t3533\t7517560828936551\tCMakeFiles/Astra.dir/src/syzygy/tbprobe.cpp.obj\t10901b01f9c6ed28\r\n1859\t2052\t7517662801791845\tAstra.exe\t3192d285969a4b5f\r\n2\t209\t7517672607430612\tbuild.ninja\tcf27bc62e1916c21\r\n34\t743\t7518044258858769\tCMakeFiles/Astra.dir/src/main.cpp.obj\t9724ae0a0df0157c\r\n38\t1243\t7518044258899515\tCMakeFiles/Astra.dir/src/uci.cpp.obj\td7fbe13635f3b39a\r\n1243\t1630\t7518044270949636\tAstra.exe\t3192d285969a4b5f\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/cmake-build-debug-mingw/.ninja_log b/cmake-build-debug-mingw/.ninja_log
+--- a/cmake-build-debug-mingw/.ninja_log	(revision eb500c32d2e5f614759cd93c396bb211757e7e58)
++++ b/cmake-build-debug-mingw/.ninja_log	(date 1730115936208)
+@@ -1,22 +1,24 @@
+ # ninja log v6
+-73	768	7517560829130423	CMakeFiles/Astra.dir/src/chess/zobrist.cpp.obj	4f0fff65436fc504
+-64	792	7517560829047964	CMakeFiles/Astra.dir/src/search/tune.cpp.obj	b328ec8f55d5c748
+-16	537	7517662783368476	CMakeFiles/Astra.dir/src/main.cpp.obj	9724ae0a0df0157c
+-69	542	7517560829089894	CMakeFiles/Astra.dir/src/chess/bitboard.cpp.obj	7d68534b87e0fdf8
+-34	686	7517584913929063	CMakeFiles/Astra.dir/src/eval/eval.cpp.obj	dfc611414b541004
+-39	570	7517560828794243	CMakeFiles/Astra.dir/src/search/tt.cpp.obj	f2dc6dc7eff04dfc
+-31	738	7517584913899053	CMakeFiles/Astra.dir/src/eval/nnue.cpp.obj	91b4f4f8bf8c0dc3
+-26	767	7517560828673664	CMakeFiles/Astra.dir/src/chess/attacks.cpp.obj	b4eb89cd79d2ac42
+-47	950	7517584914053580	CMakeFiles/Astra.dir/src/search/moveordering.cpp.obj	1822f7ba6dab278b
+-20	965	7517662783408863	CMakeFiles/Astra.dir/src/chess/board.cpp.obj	2e612a1276d04f96
+-26	1279	7517662783459532	CMakeFiles/Astra.dir/src/uci.cpp.obj	d7fbe13635f3b39a
+-38	1428	7517584913968291	CMakeFiles/Astra.dir/src/chess/perft.cpp.obj	e13c8bd12d5dc526
+-23	1859	7517662783429541	CMakeFiles/Astra.dir/src/search/search.cpp.obj	50bccd1c7290ecde
+-570	1318	7517560834100943	CMakeFiles/Astra.dir/src/chess/misc.cpp.obj	f9a6a3ea0ab7bae
+-28	657	7517662783490056	CMakeFiles/Astra.dir/src/bench.cpp.obj	c8e89d0230b0565c
+-54	3533	7517560828936551	CMakeFiles/Astra.dir/src/syzygy/tbprobe.cpp.obj	10901b01f9c6ed28
+-1859	2052	7517662801791845	Astra.exe	3192d285969a4b5f
+-2	209	7517672607430612	build.ninja	cf27bc62e1916c21
+-34	743	7518044258858769	CMakeFiles/Astra.dir/src/main.cpp.obj	9724ae0a0df0157c
+-38	1243	7518044258899515	CMakeFiles/Astra.dir/src/uci.cpp.obj	d7fbe13635f3b39a
+-1243	1630	7518044270949636	Astra.exe	3192d285969a4b5f
++65	673	7518052489689744	CMakeFiles/Astra.dir/src/chess/bitboard.cpp.obj	7d68534b87e0fdf8
++20	823	7518052489230363	CMakeFiles/Astra.dir/src/search/tt.cpp.obj	f2dc6dc7eff04dfc
++69	938	7518052489730706	CMakeFiles/Astra.dir/src/chess/zobrist.cpp.obj	4f0fff65436fc504
++9	939	7518052489129837	CMakeFiles/Astra.dir/src/chess/attacks.cpp.obj	b4eb89cd79d2ac42
++24	977	7518052489282546	CMakeFiles/Astra.dir/src/eval/nnue.cpp.obj	91b4f4f8bf8c0dc3
++28	979	7518052489313038	CMakeFiles/Astra.dir/src/eval/eval.cpp.obj	dfc611414b541004
++49	1138	7518052489536113	CMakeFiles/Astra.dir/src/search/moveordering.cpp.obj	1822f7ba6dab278b
++4	1163	7518052489079127	CMakeFiles/Astra.dir/src/main.cpp.obj	9724ae0a0df0157c
++61	1204	7518052489638953	CMakeFiles/Astra.dir/src/search/tune.cpp.obj	b328ec8f55d5c748
++823	1874	7518052497266027	CMakeFiles/Astra.dir/src/chess/misc.cpp.obj	f9a6a3ea0ab7bae
++32	1970	7518052489353661	CMakeFiles/Astra.dir/src/chess/perft.cpp.obj	e13c8bd12d5dc526
++12	2029	7518052489159832	CMakeFiles/Astra.dir/src/chess/board.cpp.obj	2e612a1276d04f96
++675	2044	7518052495783448	CMakeFiles/Astra.dir/src/bench.cpp.obj	c8e89d0230b0565c
++45	2288	7518052489485265	CMakeFiles/Astra.dir/src/uci.cpp.obj	d7fbe13635f3b39a
++16	3099	7518052489199841	CMakeFiles/Astra.dir/src/search/search.cpp.obj	50bccd1c7290ecde
++38	4437	7518052489414429	CMakeFiles/Astra.dir/src/syzygy/tbprobe.cpp.obj	10901b01f9c6ed28
++4439	4638	7518052533424315	Astra.exe	3192d285969a4b5f
++37	1014	7518191335713725	CMakeFiles/Astra.dir/src/main.cpp.obj	9724ae0a0df0157c
++53	1102	7518191335885372	CMakeFiles/Astra.dir/src/bench.cpp.obj	c8e89d0230b0565c
++42	1429	7518191335763734	CMakeFiles/Astra.dir/src/chess/board.cpp.obj	2e612a1276d04f96
++50	1602	7518191335844707	CMakeFiles/Astra.dir/src/uci.cpp.obj	d7fbe13635f3b39a
++46	2304	7518191335804648	CMakeFiles/Astra.dir/src/search/search.cpp.obj	50bccd1c7290ecde
++2304	2674	7518191358394198	Astra.exe	3192d285969a4b5f
+Index: cmake-build-debug-mingw/CMakeFiles/clion-Debug-MinGW-log.txt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/cmake-build-debug-mingw/CMakeFiles/clion-Debug-MinGW-log.txt b/cmake-build-debug-mingw/CMakeFiles/clion-Debug-MinGW-log.txt
+--- a/cmake-build-debug-mingw/CMakeFiles/clion-Debug-MinGW-log.txt	(revision eb500c32d2e5f614759cd93c396bb211757e7e58)
++++ b/cmake-build-debug-mingw/CMakeFiles/clion-Debug-MinGW-log.txt	(date 1730102040445)
+@@ -1,0 +1,16 @@
++"C:\Program Files\JetBrains\CLion 2024.2.2\bin\cmake\win\x64\bin\cmake.exe" -DCMAKE_BUILD_TYPE=Debug "-DCMAKE_MAKE_PROGRAM=C:/Program Files/JetBrains/CLion 2024.2.2/bin/ninja/win/x64/ninja.exe" -G Ninja -S C:\Users\semio\Documents\programming\Astra-Chess-Engine\Astra -B C:\Users\semio\Documents\programming\Astra-Chess-Engine\Astra\cmake-build-debug-mingw
++-- The C compiler identification is GNU 14.2.0
++-- The CXX compiler identification is GNU 14.2.0
++-- Detecting C compiler ABI info
++-- Detecting C compiler ABI info - done
++-- Check for working C compiler: C:/msys64/mingw64/bin/cc.exe - skipped
++-- Detecting C compile features
++-- Detecting C compile features - done
++-- Detecting CXX compiler ABI info
++-- Detecting CXX compiler ABI info - done
++-- Check for working CXX compiler: C:/msys64/mingw64/bin/c++.exe - skipped
++-- Detecting CXX compile features
++-- Detecting CXX compile features - done
++-- Configuring done (3.4s)
++-- Generating done (0.0s)
++-- Build files have been written to: C:/Users/semio/Documents/programming/Astra-Chess-Engine/Astra/cmake-build-debug-mingw
