@@ -1,0 +1,98 @@
+[
+{
+  "directory": "C:/Users/semio/Documents/programming/Astra-Chess-Engine/Astra/build",
+  "command": "C:/msys64/mingw64/bin/g++.exe -DNNUE_PATH=\\\"C:/Users/semio/Documents/programming/Astra-Chess-Engine/Astra/src/nn-768-2x1024-1.nnue\\\"   -s -O3 -Wall -Wextra -DNDEBUG -funroll-loops -march=native -static -lstdc++ -pthread -g -std=c++17 -o CMakeFiles/Astra.dir/src/main.cpp.obj -c C:/Users/semio/Documents/programming/Astra-Chess-Engine/Astra/src/main.cpp",
+  "file": "C:/Users/semio/Documents/programming/Astra-Chess-Engine/Astra/src/main.cpp",
+  "output": "CMakeFiles/Astra.dir/src/main.cpp.obj"
+},
+{
+  "directory": "C:/Users/semio/Documents/programming/Astra-Chess-Engine/Astra/build",
+  "command": "C:/msys64/mingw64/bin/g++.exe -DNNUE_PATH=\\\"C:/Users/semio/Documents/programming/Astra-Chess-Engine/Astra/src/nn-768-2x1024-1.nnue\\\"   -s -O3 -Wall -Wextra -DNDEBUG -funroll-loops -march=native -static -lstdc++ -pthread -g -std=c++17 -o CMakeFiles/Astra.dir/src/chess/attacks.cpp.obj -c C:/Users/semio/Documents/programming/Astra-Chess-Engine/Astra/src/chess/attacks.cpp",
+  "file": "C:/Users/semio/Documents/programming/Astra-Chess-Engine/Astra/src/chess/attacks.cpp",
+  "output": "CMakeFiles/Astra.dir/src/chess/attacks.cpp.obj"
+},
+{
+  "directory": "C:/Users/semio/Documents/programming/Astra-Chess-Engine/Astra/build",
+  "command": "C:/msys64/mingw64/bin/g++.exe -DNNUE_PATH=\\\"C:/Users/semio/Documents/programming/Astra-Chess-Engine/Astra/src/nn-768-2x1024-1.nnue\\\"   -s -O3 -Wall -Wextra -DNDEBUG -funroll-loops -march=native -static -lstdc++ -pthread -g -std=c++17 -o CMakeFiles/Astra.dir/src/chess/board.cpp.obj -c C:/Users/semio/Documents/programming/Astra-Chess-Engine/Astra/src/chess/board.cpp",
+  "file": "C:/Users/semio/Documents/programming/Astra-Chess-Engine/Astra/src/chess/board.cpp",
+  "output": "CMakeFiles/Astra.dir/src/chess/board.cpp.obj"
+},
+{
+  "directory": "C:/Users/semio/Documents/programming/Astra-Chess-Engine/Astra/build",
+  "command": "C:/msys64/mingw64/bin/g++.exe -DNNUE_PATH=\\\"C:/Users/semio/Documents/programming/Astra-Chess-Engine/Astra/src/nn-768-2x1024-1.nnue\\\"   -s -O3 -Wall -Wextra -DNDEBUG -funroll-loops -march=native -static -lstdc++ -pthread -g -std=c++17 -o CMakeFiles/Astra.dir/src/search/search.cpp.obj -c C:/Users/semio/Documents/programming/Astra-Chess-Engine/Astra/src/search/search.cpp",
+  "file": "C:/Users/semio/Documents/programming/Astra-Chess-Engine/Astra/src/search/search.cpp",
+  "output": "CMakeFiles/Astra.dir/src/search/search.cpp.obj"
+},
+{
+  "directory": "C:/Users/semio/Documents/programming/Astra-Chess-Engine/Astra/build",
+  "command": "C:/msys64/mingw64/bin/g++.exe -DNNUE_PATH=\\\"C:/Users/semio/Documents/programming/Astra-Chess-Engine/Astra/src/nn-768-2x1024-1.nnue\\\"   -s -O3 -Wall -Wextra -DNDEBUG -funroll-loops -march=native -static -lstdc++ -pthread -g -std=c++17 -o CMakeFiles/Astra.dir/src/search/tt.cpp.obj -c C:/Users/semio/Documents/programming/Astra-Chess-Engine/Astra/src/search/tt.cpp",
+  "file": "C:/Users/semio/Documents/programming/Astra-Chess-Engine/Astra/src/search/tt.cpp",
+  "output": "CMakeFiles/Astra.dir/src/search/tt.cpp.obj"
+},
+{
+  "directory": "C:/Users/semio/Documents/programming/Astra-Chess-Engine/Astra/build",
+  "command": "C:/msys64/mingw64/bin/g++.exe -DNNUE_PATH=\\\"C:/Users/semio/Documents/programming/Astra-Chess-Engine/Astra/src/nn-768-2x1024-1.nnue\\\"   -s -O3 -Wall -Wextra -DNDEBUG -funroll-loops -march=native -static -lstdc++ -pthread -g -std=c++17 -o CMakeFiles/Astra.dir/src/eval/nnue.cpp.obj -c C:/Users/semio/Documents/programming/Astra-Chess-Engine/Astra/src/eval/nnue.cpp",
+  "file": "C:/Users/semio/Documents/programming/Astra-Chess-Engine/Astra/src/eval/nnue.cpp",
+  "output": "CMakeFiles/Astra.dir/src/eval/nnue.cpp.obj"
+},
+{
+  "directory": "C:/Users/semio/Documents/programming/Astra-Chess-Engine/Astra/build",
+  "command": "C:/msys64/mingw64/bin/g++.exe -DNNUE_PATH=\\\"C:/Users/semio/Documents/programming/Astra-Chess-Engine/Astra/src/nn-768-2x1024-1.nnue\\\"   -s -O3 -Wall -Wextra -DNDEBUG -funroll-loops -march=native -static -lstdc++ -pthread -g -std=c++17 -o CMakeFiles/Astra.dir/src/eval/eval.cpp.obj -c C:/Users/semio/Documents/programming/Astra-Chess-Engine/Astra/src/eval/eval.cpp",
+  "file": "C:/Users/semio/Documents/programming/Astra-Chess-Engine/Astra/src/eval/eval.cpp",
+  "output": "CMakeFiles/Astra.dir/src/eval/eval.cpp.obj"
+},
+{
+  "directory": "C:/Users/semio/Documents/programming/Astra-Chess-Engine/Astra/build",
+  "command": "C:/msys64/mingw64/bin/g++.exe -DNNUE_PATH=\\\"C:/Users/semio/Documents/programming/Astra-Chess-Engine/Astra/src/nn-768-2x1024-1.nnue\\\"   -s -O3 -Wall -Wextra -DNDEBUG -funroll-loops -march=native -static -lstdc++ -pthread -g -std=c++17 -o CMakeFiles/Astra.dir/src/chess/perft.cpp.obj -c C:/Users/semio/Documents/programming/Astra-Chess-Engine/Astra/src/chess/perft.cpp",
+  "file": "C:/Users/semio/Documents/programming/Astra-Chess-Engine/Astra/src/chess/perft.cpp",
+  "output": "CMakeFiles/Astra.dir/src/chess/perft.cpp.obj"
+},
+{
+  "directory": "C:/Users/semio/Documents/programming/Astra-Chess-Engine/Astra/build",
+  "command": "C:/msys64/mingw64/bin/g++.exe -DNNUE_PATH=\\\"C:/Users/semio/Documents/programming/Astra-Chess-Engine/Astra/src/nn-768-2x1024-1.nnue\\\"   -s -O3 -Wall -Wextra -DNDEBUG -funroll-loops -march=native -static -lstdc++ -pthread -g -std=c++17 -o CMakeFiles/Astra.dir/src/syzygy/tbprobe.cpp.obj -c C:/Users/semio/Documents/programming/Astra-Chess-Engine/Astra/src/syzygy/tbprobe.cpp",
+  "file": "C:/Users/semio/Documents/programming/Astra-Chess-Engine/Astra/src/syzygy/tbprobe.cpp",
+  "output": "CMakeFiles/Astra.dir/src/syzygy/tbprobe.cpp.obj"
+},
+{
+  "directory": "C:/Users/semio/Documents/programming/Astra-Chess-Engine/Astra/build",
+  "command": "C:/msys64/mingw64/bin/g++.exe -DNNUE_PATH=\\\"C:/Users/semio/Documents/programming/Astra-Chess-Engine/Astra/src/nn-768-2x1024-1.nnue\\\"   -s -O3 -Wall -Wextra -DNDEBUG -funroll-loops -march=native -static -lstdc++ -pthread -g -std=c++17 -o CMakeFiles/Astra.dir/src/uci.cpp.obj -c C:/Users/semio/Documents/programming/Astra-Chess-Engine/Astra/src/uci.cpp",
+  "file": "C:/Users/semio/Documents/programming/Astra-Chess-Engine/Astra/src/uci.cpp",
+  "output": "CMakeFiles/Astra.dir/src/uci.cpp.obj"
+},
+{
+  "directory": "C:/Users/semio/Documents/programming/Astra-Chess-Engine/Astra/build",
+  "command": "C:/msys64/mingw64/bin/g++.exe -DNNUE_PATH=\\\"C:/Users/semio/Documents/programming/Astra-Chess-Engine/Astra/src/nn-768-2x1024-1.nnue\\\"   -s -O3 -Wall -Wextra -DNDEBUG -funroll-loops -march=native -static -lstdc++ -pthread -g -std=c++17 -o CMakeFiles/Astra.dir/src/search/moveordering.cpp.obj -c C:/Users/semio/Documents/programming/Astra-Chess-Engine/Astra/src/search/moveordering.cpp",
+  "file": "C:/Users/semio/Documents/programming/Astra-Chess-Engine/Astra/src/search/moveordering.cpp",
+  "output": "CMakeFiles/Astra.dir/src/search/moveordering.cpp.obj"
+},
+{
+  "directory": "C:/Users/semio/Documents/programming/Astra-Chess-Engine/Astra/build",
+  "command": "C:/msys64/mingw64/bin/g++.exe -DNNUE_PATH=\\\"C:/Users/semio/Documents/programming/Astra-Chess-Engine/Astra/src/nn-768-2x1024-1.nnue\\\"   -s -O3 -Wall -Wextra -DNDEBUG -funroll-loops -march=native -static -lstdc++ -pthread -g -std=c++17 -o CMakeFiles/Astra.dir/src/search/tune.cpp.obj -c C:/Users/semio/Documents/programming/Astra-Chess-Engine/Astra/src/search/tune.cpp",
+  "file": "C:/Users/semio/Documents/programming/Astra-Chess-Engine/Astra/src/search/tune.cpp",
+  "output": "CMakeFiles/Astra.dir/src/search/tune.cpp.obj"
+},
+{
+  "directory": "C:/Users/semio/Documents/programming/Astra-Chess-Engine/Astra/build",
+  "command": "C:/msys64/mingw64/bin/g++.exe -DNNUE_PATH=\\\"C:/Users/semio/Documents/programming/Astra-Chess-Engine/Astra/src/nn-768-2x1024-1.nnue\\\"   -s -O3 -Wall -Wextra -DNDEBUG -funroll-loops -march=native -static -lstdc++ -pthread -g -std=c++17 -o CMakeFiles/Astra.dir/src/chess/bitboard.cpp.obj -c C:/Users/semio/Documents/programming/Astra-Chess-Engine/Astra/src/chess/bitboard.cpp",
+  "file": "C:/Users/semio/Documents/programming/Astra-Chess-Engine/Astra/src/chess/bitboard.cpp",
+  "output": "CMakeFiles/Astra.dir/src/chess/bitboard.cpp.obj"
+},
+{
+  "directory": "C:/Users/semio/Documents/programming/Astra-Chess-Engine/Astra/build",
+  "command": "C:/msys64/mingw64/bin/g++.exe -DNNUE_PATH=\\\"C:/Users/semio/Documents/programming/Astra-Chess-Engine/Astra/src/nn-768-2x1024-1.nnue\\\"   -s -O3 -Wall -Wextra -DNDEBUG -funroll-loops -march=native -static -lstdc++ -pthread -g -std=c++17 -o CMakeFiles/Astra.dir/src/chess/zobrist.cpp.obj -c C:/Users/semio/Documents/programming/Astra-Chess-Engine/Astra/src/chess/zobrist.cpp",
+  "file": "C:/Users/semio/Documents/programming/Astra-Chess-Engine/Astra/src/chess/zobrist.cpp",
+  "output": "CMakeFiles/Astra.dir/src/chess/zobrist.cpp.obj"
+},
+{
+  "directory": "C:/Users/semio/Documents/programming/Astra-Chess-Engine/Astra/build",
+  "command": "C:/msys64/mingw64/bin/g++.exe -DNNUE_PATH=\\\"C:/Users/semio/Documents/programming/Astra-Chess-Engine/Astra/src/nn-768-2x1024-1.nnue\\\"   -s -O3 -Wall -Wextra -DNDEBUG -funroll-loops -march=native -static -lstdc++ -pthread -g -std=c++17 -o CMakeFiles/Astra.dir/src/bench.cpp.obj -c C:/Users/semio/Documents/programming/Astra-Chess-Engine/Astra/src/bench.cpp",
+  "file": "C:/Users/semio/Documents/programming/Astra-Chess-Engine/Astra/src/bench.cpp",
+  "output": "CMakeFiles/Astra.dir/src/bench.cpp.obj"
+},
+{
+  "directory": "C:/Users/semio/Documents/programming/Astra-Chess-Engine/Astra/build",
+  "command": "C:/msys64/mingw64/bin/g++.exe -DNNUE_PATH=\\\"C:/Users/semio/Documents/programming/Astra-Chess-Engine/Astra/src/nn-768-2x1024-1.nnue\\\"   -s -O3 -Wall -Wextra -DNDEBUG -funroll-loops -march=native -static -lstdc++ -pthread -g -std=c++17 -o CMakeFiles/Astra.dir/src/chess/misc.cpp.obj -c C:/Users/semio/Documents/programming/Astra-Chess-Engine/Astra/src/chess/misc.cpp",
+  "file": "C:/Users/semio/Documents/programming/Astra-Chess-Engine/Astra/src/chess/misc.cpp",
+  "output": "CMakeFiles/Astra.dir/src/chess/misc.cpp.obj"
+}
+]
