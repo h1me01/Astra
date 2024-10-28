@@ -8,7 +8,7 @@ namespace Astra
 {
     const int PIECE_VALUES[] = {100, 325, 325, 500, 1000, 0, 0};
 
-    // static exchange evaluation
+    // static exchange evaluation from Weiss
     bool see(const Board& board, Move move, int threshold);
 
     enum MoveScores : int
@@ -25,9 +25,7 @@ namespace Astra
     public:
         MoveOrdering();
 
-        void clearHistory();
-        void clearCounters();
-        void clearKillers();
+        void clear();
 
         void updateKiller(Move& move, int ply);
         void updateCounters(Move& move, Move& prev_move);

@@ -4,7 +4,7 @@
 namespace Astra
 {
     // static exchange evaluation from Weiss
-    bool see(const Board& board, Move move, int threshold)
+    bool see(const Board &board, Move move, int threshold)
     {
         Square from = move.from();
         Square to = move.to();
@@ -79,10 +79,9 @@ namespace Astra
         {405, 404, 403, 402, 401, 400, 0},
         {505, 504, 503, 502, 501, 500, 0},
         {605, 604, 603, 602, 601, 600, 0},
-        {705, 704, 703, 702, 701, 700, 0}
-    };
+        {705, 704, 703, 702, 701, 700, 0}};
 
-    int mvvlva(const Board& board, const Move& move)
+    int mvvlva(const Board &board, const Move &move)
     {
         const int attacker = typeOf(board.pieceAt(move.from()));
         const int victim = typeOf(board.pieceAt(move.to()));
@@ -91,28 +90,20 @@ namespace Astra
 
     MoveOrdering::MoveOrdering()
     {
-        clearHistory();
-        clearCounters();
-        clearKillers();
+        clear();
     }
 
-    void MoveOrdering::clearHistory()
+    void MoveOrdering::clear()
     {
-        for (auto& i : history)
-            for (auto& j : i)
-                for (int& k : j)
+        for (auto &i : history)
+            for (auto &j : i)
+                for (int &k : j)
                     k = 0;
-    }
 
-    void MoveOrdering::clearCounters()
-    {
-        for (auto& counter : counters)
-            for (auto& j : counter)
+        for (auto &counter : counters)
+            for (auto &j : counter)
                 j = NO_MOVE;
-    }
 
-    void MoveOrdering::clearKillers()
-    {
         for (int i = 0; i < MAX_PLY; ++i)
         {
             killer1[i] = NO_MOVE;
@@ -120,18 +111,18 @@ namespace Astra
         }
     }
 
-    void MoveOrdering::updateKiller(Move& move, int ply)
+    void MoveOrdering::updateKiller(Move &move, int ply)
     {
         killer2[ply] = killer1[ply];
         killer1[ply] = move;
     }
 
-    void MoveOrdering::updateCounters(Move& move, Move& prev_move)
+    void MoveOrdering::updateCounters(Move &move, Move &prev_move)
     {
         counters[prev_move.from()][prev_move.to()] = move;
     }
 
-    void MoveOrdering::updateHistory(Board& board, Move& move, int bonus)
+    void MoveOrdering::updateHistory(Board &board, Move &move, int bonus)
     {
         Color c = board.getTurn();
         Square from = move.from();
@@ -141,7 +132,7 @@ namespace Astra
         history[c][from][to] += score;
     }
 
-    void MoveOrdering::sortMoves(Board& board, MoveList& moves, Move& tt_move, Move& prev_move, int ply) const
+    void MoveOrdering::sortMoves(Board &board, MoveList &moves, Move &tt_move, Move &prev_move, int ply) const
     {
         std::vector<int> scores(moves.size(), 0);
 
@@ -191,18 +182,17 @@ namespace Astra
             }
 
             n--;
-        }
-        while (swapped);
+        } while (swapped);
     }
 
     // private member
 
-    int MoveOrdering::getHistoryScore(Board& board, Move& move) const
+    int MoveOrdering::getHistoryScore(Board &board, Move &move) const
     {
         return history[board.getTurn()][move.from()][move.to()];
     }
 
-    Move MoveOrdering::getCounterMove(Move& move) const
+    Move MoveOrdering::getCounterMove(Move &move) const
     {
         return counters[move.from()][move.to()];
     }

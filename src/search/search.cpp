@@ -633,15 +633,14 @@ namespace Astra
 
         time_manager.start();
 
-        move_ordering.clearHistory();
-        move_ordering.clearCounters();
+        move_ordering.clear();
 
         Score previous_result = VALUE_NONE;
 
         SearchResult search_result;
         for (int depth = 1; depth <= MAX_PLY; depth++)
         {
-            pv_table.reset();
+            pv_table.clear();
 
             const Score result = aspSearch(depth, previous_result, ss);
             previous_result = result;
@@ -688,10 +687,8 @@ namespace Astra
         nodes = 0;
         tb_hits = 0;
         tt.clear();
-        pv_table.reset();
-        move_ordering.clearHistory();
-        move_ordering.clearCounters();
-        move_ordering.clearKillers();
+        pv_table.clear();
+        move_ordering.clear();
     }
 
     void Search::stop()
@@ -704,7 +701,6 @@ namespace Astra
 
     void Search::printUciInfo(Score result, int depth, PVLine& pv_line) const
     {
-        // info for uci
         std::cout << "info depth " << depth
             << " seldepth " << static_cast<int>(threads.getSelDepth())
             << " score ";
