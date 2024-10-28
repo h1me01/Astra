@@ -1,0 +1,798 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="CMakePresetLoader">{
+  &quot;useNewFormat&quot;: true
+}</component>
+  <component name="CMakeProjectFlavorService">
+    <option name="flavorId" value="CMakePlainProjectFlavor" />
+  </component>
+  <component name="CMakeReloadState">
+    <option name="reloaded" value="true" />
+  </component>
+  <component name="CMakeRunConfigurationManager">
+    <generated />
+  </component>
+  <component name="CMakeSettings">
+    <configurations>
+      <configuration PROFILE_NAME="Debug-MinGW" ENABLED="true" CONFIG_NAME="Debug" TOOLCHAIN_NAME="MinGW" />
+    </configurations>
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="8b0ad24e-70a7-427c-a11f-e219f04487fd" name="Changes" comment="update" />
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="ClangdSettings">
+    <option name="formatViaClangd" value="false" />
+  </component>
+  <component name="ExecutionTargetManager" SELECTED_TARGET="CMakeBuildProfile:Debug-MinGW" />
+  <component name="Git.Settings">
+    <option name="PUSH_AUTO_UPDATE" value="true" />
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;h1me01&quot;
+  }
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/h1me01/Astra.git&quot;,
+    &quot;accountId&quot;: &quot;d591d6d5-1f0e-4823-ac74-c212b77438ff&quot;
+  }
+}</component>
+  <component name="HighlightingSettingsPerFile">
+    <setting file="file://$APPLICATION_HOME_DIR$/bin/mingw/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/fstream" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/src/eval/nnue.cpp" root0="FORCE_HIGHLIGHTING" />
+    <setting file="mock://C:/Users/semio/Documents/programming/Astra-Chess-Engine/Astra/src/eval/nnue.cpp" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/src/main.cpp" root0="FORCE_HIGHLIGHTING" />
+  </component>
+  <component name="Make.Settings">
+    <option name="path" value="C:\msys64\mingw64\bin\make.exe" />
+  </component>
+  <component name="ProjectApplicationVersion">
+    <option name="ide" value="CLion" />
+    <option name="majorVersion" value="2024" />
+    <option name="minorVersion" value="1.4" />
+    <option name="productBranch" value="Classic" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 8
+}</component>
+  <component name="ProjectId" id="2mHaCdd61GpgG3xrLkALszIIF1R" />
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true">
+    <ConfirmationsSetting value="2" id="Add" />
+  </component>
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;CMake Application.Astra.executor&quot;: &quot;Run&quot;,
+    &quot;Makefile Target.%.o.executor&quot;: &quot;Run&quot;,
+    &quot;Makefile Target.all.executor&quot;: &quot;Run&quot;,
+    &quot;Makefile Target.clean.executor&quot;: &quot;Run&quot;,
+    &quot;Makefile Target.make.executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.RadMigrateCodeStyle&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.cidr.known.project.marker&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.readMode.enableVisualFormatting&quot;: &quot;true&quot;,
+    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
+    &quot;cf.advertisement.text.has.clang-format&quot;: &quot;true&quot;,
+    &quot;cf.advertisement.text.overridden&quot;: &quot;true&quot;,
+    &quot;cf.first.check.clang-format&quot;: &quot;false&quot;,
+    &quot;cidr.known.project.marker&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/semio/Documents/programming/Astra-Chess-Engine/Astra/src&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;run.code.analysis.last.selected.profile&quot;: &quot;pProject Default&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;reference.settingsdialog.project.make&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  }
+}</component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="C:\Users\semio\Documents\programming\Astra-Chess-Engine\Astra\src" />
+      <recent name="C:\Users\semio\Documents\programming\Astra" />
+      <recent name="C:\Users\semio\Documents\programming\Astra\src\syzygy" />
+      <recent name="C:\Users\semio\Documents\programming\Astra\src" />
+      <recent name="C:\Users\semio\Downloads\Astra\src" />
+    </key>
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\semio\Documents\programming\Astra-Chess-Engine\Astra\src\eval" />
+      <recent name="C:\Users\semio\Documents\programming\Astra-Chess-Engine\Astra\src" />
+      <recent name="C:\Users\semio\Documents\programming\Astra-Chess-Engine\Astra\src\search" />
+      <recent name="C:\Users\semio\Documents\programming\Astra\src" />
+    </key>
+  </component>
+  <component name="RunManager" selected="CMake Application.Astra">
+    <configuration name="Astra" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" WORKING_DIR="file://$PROJECT_DIR$/src" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Project" TARGET_NAME="Astra" CONFIG_NAME="Debug-MinGW" RUN_TARGET_PROJECT_NAME="Project" RUN_TARGET_NAME="Astra">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration default="true" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="all" type="MAKEFILE_TARGET_RUN_CONFIGURATION" factoryName="Makefile" temporary="true">
+      <makefile filename="$PROJECT_DIR$/src/makefile" target="all" workingDirectory="" arguments="">
+        <envs>
+          <env name="MinGW" value="C:\msys64\mingw64\bin" />
+        </envs>
+      </makefile>
+      <method v="2" />
+    </configuration>
+    <list>
+      <item itemvalue="CMake Application.Astra" />
+      <item itemvalue="Makefile Target.all" />
+    </list>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Makefile Target.all" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="8b0ad24e-70a7-427c-a11f-e219f04487fd" name="Changes" comment="" />
+      <created>1726735829166</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1726735829166</updated>
+      <workItem from="1726735830349" duration="177000" />
+      <workItem from="1726736053871" duration="1479000" />
+      <workItem from="1726739650828" duration="197000" />
+      <workItem from="1726740077267" duration="5098000" />
+      <workItem from="1726753122849" duration="3054000" />
+      <workItem from="1726811977793" duration="364000" />
+      <workItem from="1726815483036" duration="706000" />
+      <workItem from="1726835616612" duration="9878000" />
+      <workItem from="1726846496507" duration="20000" />
+      <workItem from="1726860681186" duration="155000" />
+      <workItem from="1726860985322" duration="664000" />
+      <workItem from="1726864658506" duration="3656000" />
+      <workItem from="1726921820519" duration="106000" />
+      <workItem from="1726922383994" duration="38000" />
+      <workItem from="1726923852591" duration="6300000" />
+      <workItem from="1726936734125" duration="3973000" />
+      <workItem from="1726991889361" duration="9787000" />
+      <workItem from="1727003894696" duration="168000" />
+      <workItem from="1727004350153" duration="47000" />
+      <workItem from="1727007440569" duration="457000" />
+      <workItem from="1727008648447" duration="1000" />
+      <workItem from="1727009806763" duration="80000" />
+      <workItem from="1727012186449" duration="406000" />
+      <workItem from="1727021521627" duration="1302000" />
+      <workItem from="1727026602499" duration="132000" />
+      <workItem from="1727028381733" duration="107000" />
+      <workItem from="1727074455035" duration="4029000" />
+      <workItem from="1727087130541" duration="2189000" />
+      <workItem from="1727105592344" duration="745000" />
+      <workItem from="1727107082831" duration="1688000" />
+      <workItem from="1727108860803" duration="169000" />
+      <workItem from="1727114612784" duration="149000" />
+      <workItem from="1727115073722" duration="95000" />
+      <workItem from="1727115199390" duration="943000" />
+      <workItem from="1727118020557" duration="439000" />
+      <workItem from="1727121080125" duration="154000" />
+      <workItem from="1727162833693" duration="139000" />
+      <workItem from="1727173514910" duration="837000" />
+      <workItem from="1727174949791" duration="1179000" />
+      <workItem from="1727181686291" duration="18000" />
+      <workItem from="1727181792293" duration="13000" />
+      <workItem from="1727181885845" duration="31000" />
+      <workItem from="1727186315191" duration="155000" />
+      <workItem from="1727249779846" duration="417000" />
+      <workItem from="1727271864365" duration="14983000" />
+      <workItem from="1727344894592" duration="2100000" />
+      <workItem from="1727458464107" duration="1255000" />
+      <workItem from="1727460104045" duration="7069000" />
+      <workItem from="1727515081600" duration="1744000" />
+      <workItem from="1727518556490" duration="205000" />
+      <workItem from="1727520264089" duration="251000" />
+      <workItem from="1727525440595" duration="1141000" />
+      <workItem from="1727538549958" duration="7394000" />
+      <workItem from="1727560054827" duration="5858000" />
+      <workItem from="1727566137954" duration="44000" />
+      <workItem from="1727615196328" duration="26000" />
+      <workItem from="1727627665508" duration="5708000" />
+      <workItem from="1727634981283" duration="401000" />
+      <workItem from="1727637345890" duration="15000" />
+      <workItem from="1727637466484" duration="8000" />
+      <workItem from="1727689526318" duration="85000" />
+      <workItem from="1727699114660" duration="1793000" />
+      <workItem from="1727710752550" duration="135000" />
+      <workItem from="1727710917551" duration="103000" />
+      <workItem from="1727716255144" duration="412000" />
+      <workItem from="1727730038784" duration="32000" />
+      <workItem from="1727731405237" duration="933000" />
+      <workItem from="1727768821820" duration="610000" />
+      <workItem from="1727771592656" duration="10015000" />
+      <workItem from="1727790503953" duration="2501000" />
+      <workItem from="1727794672227" duration="373000" />
+      <workItem from="1727795925253" duration="649000" />
+      <workItem from="1727804353598" duration="3186000" />
+      <workItem from="1727816061339" duration="1391000" />
+      <workItem from="1727817731270" duration="44000" />
+      <workItem from="1727853450737" duration="2131000" />
+      <workItem from="1727856397485" duration="386000" />
+      <workItem from="1727857043705" duration="96000" />
+      <workItem from="1727857405661" duration="7000" />
+      <workItem from="1727859142990" duration="4634000" />
+      <workItem from="1727882384476" duration="375000" />
+      <workItem from="1727884387882" duration="46000" />
+      <workItem from="1727886812970" duration="1393000" />
+      <workItem from="1727889336617" duration="899000" />
+      <workItem from="1727940622446" duration="732000" />
+      <workItem from="1727943629132" duration="621000" />
+      <workItem from="1727946291795" duration="169000" />
+      <workItem from="1727953035009" duration="9494000" />
+      <workItem from="1727964654356" duration="7000" />
+      <workItem from="1727964906832" duration="636000" />
+      <workItem from="1727965579177" duration="776000" />
+      <workItem from="1727967900121" duration="883000" />
+      <workItem from="1727978101988" duration="477000" />
+      <workItem from="1727981739597" duration="826000" />
+      <workItem from="1727984128586" duration="5546000" />
+      <workItem from="1728049303510" duration="8789000" />
+      <workItem from="1728059196924" duration="250000" />
+      <workItem from="1728060191695" duration="7216000" />
+      <workItem from="1728073096618" duration="690000" />
+      <workItem from="1728117967027" duration="5436000" />
+      <workItem from="1728131177500" duration="841000" />
+      <workItem from="1728134547895" duration="3860000" />
+      <workItem from="1728162295640" duration="575000" />
+      <workItem from="1728204109451" duration="182000" />
+      <workItem from="1728216282524" duration="12000" />
+      <workItem from="1728243374780" duration="94000" />
+      <workItem from="1728243742808" duration="168000" />
+      <workItem from="1728245110054" duration="106000" />
+      <workItem from="1728297200403" duration="7698000" />
+      <workItem from="1728318303649" duration="25000" />
+      <workItem from="1728318483135" duration="61000" />
+      <workItem from="1728318597572" duration="16000" />
+      <workItem from="1728321721108" duration="152000" />
+      <workItem from="1728322925412" duration="379000" />
+      <workItem from="1728327372253" duration="213000" />
+      <workItem from="1728394010190" duration="1832000" />
+      <workItem from="1728397414416" duration="1291000" />
+      <workItem from="1728398801460" duration="595000" />
+      <workItem from="1728400302524" duration="253000" />
+      <workItem from="1728402463415" duration="79000" />
+      <workItem from="1728403174952" duration="119000" />
+      <workItem from="1728405881821" duration="37000" />
+      <workItem from="1728459952365" duration="1126000" />
+      <workItem from="1728465038120" duration="6000" />
+      <workItem from="1728465665963" duration="72000" />
+      <workItem from="1728467853888" duration="1047000" />
+      <workItem from="1728480155878" duration="414000" />
+      <workItem from="1728486749780" duration="1000" />
+      <workItem from="1728499982550" duration="493000" />
+      <workItem from="1728544532827" duration="472000" />
+      <workItem from="1728557950776" duration="249000" />
+      <workItem from="1728559156492" duration="70000" />
+      <workItem from="1728562819371" duration="131000" />
+      <workItem from="1728566943198" duration="97000" />
+      <workItem from="1728643873656" duration="652000" />
+      <workItem from="1728645831336" duration="131000" />
+      <workItem from="1728670284943" duration="4066000" />
+      <workItem from="1728733231764" duration="2000" />
+      <workItem from="1728744917149" duration="75000" />
+      <workItem from="1728753822395" duration="2638000" />
+      <workItem from="1728759507562" duration="674000" />
+      <workItem from="1728760241950" duration="117000" />
+      <workItem from="1728807043876" duration="10254000" />
+      <workItem from="1728819559318" duration="2565000" />
+      <workItem from="1728822245990" duration="880000" />
+      <workItem from="1728823475030" duration="17000" />
+      <workItem from="1728823968549" duration="165000" />
+      <workItem from="1728824737804" duration="4000" />
+      <workItem from="1728829763517" duration="16000" />
+      <workItem from="1728833432902" duration="36000" />
+      <workItem from="1728833754657" duration="38000" />
+      <workItem from="1728838918164" duration="271000" />
+      <workItem from="1728841711771" duration="502000" />
+      <workItem from="1728842566243" duration="300000" />
+      <workItem from="1728889283226" duration="2449000" />
+      <workItem from="1728901290465" duration="1853000" />
+      <workItem from="1728913961403" duration="8000" />
+      <workItem from="1729001598421" duration="55000" />
+      <workItem from="1729004368684" duration="849000" />
+      <workItem from="1729010398561" duration="1157000" />
+      <workItem from="1729085301745" duration="3169000" />
+      <workItem from="1729101897537" duration="2165000" />
+      <workItem from="1729157026122" duration="1895000" />
+      <workItem from="1729161206434" duration="619000" />
+      <workItem from="1729245060946" duration="76000" />
+      <workItem from="1729252730025" duration="8577000" />
+      <workItem from="1729262637742" duration="30000" />
+      <workItem from="1729263291030" duration="34000" />
+      <workItem from="1729342206154" duration="696000" />
+      <workItem from="1729342926628" duration="31000" />
+      <workItem from="1729374528663" duration="75000" />
+      <workItem from="1729374615278" duration="92000" />
+      <workItem from="1729418769590" duration="578000" />
+      <workItem from="1729424884811" duration="10000" />
+      <workItem from="1729447117719" duration="5232000" />
+      <workItem from="1729495698689" duration="502000" />
+      <workItem from="1729497926608" duration="3807000" />
+      <workItem from="1729533223444" duration="7141000" />
+      <workItem from="1729577525783" duration="16737000" />
+      <workItem from="1729607791626" duration="1915000" />
+      <workItem from="1729610726630" duration="10646000" />
+      <workItem from="1729663787268" duration="11742000" />
+      <workItem from="1729680985827" duration="1443000" />
+      <workItem from="1729691222994" duration="7593000" />
+      <workItem from="1729704318378" duration="49000" />
+      <workItem from="1729704929510" duration="46000" />
+      <workItem from="1729708368257" duration="645000" />
+      <workItem from="1729713776185" duration="609000" />
+      <workItem from="1729750081239" duration="2184000" />
+      <workItem from="1729753379096" duration="10000" />
+      <workItem from="1729753571505" duration="6351000" />
+      <workItem from="1729765289697" duration="3550000" />
+      <workItem from="1729773140986" duration="2276000" />
+      <workItem from="1729776957746" duration="90000" />
+      <workItem from="1729777969328" duration="193000" />
+      <workItem from="1729786381955" duration="1596000" />
+      <workItem from="1729791318172" duration="625000" />
+      <workItem from="1729792458421" duration="451000" />
+      <workItem from="1729792946718" duration="249000" />
+      <workItem from="1729799800293" duration="42000" />
+      <workItem from="1729800222316" duration="712000" />
+      <workItem from="1729841522941" duration="2620000" />
+      <workItem from="1729859617529" duration="2950000" />
+      <workItem from="1729864013229" duration="2371000" />
+      <workItem from="1729867832439" duration="271000" />
+      <workItem from="1729877159306" duration="6409000" />
+      <workItem from="1729886946870" duration="2791000" />
+      <workItem from="1729894405753" duration="60000" />
+      <workItem from="1729933845152" duration="1092000" />
+      <workItem from="1729934962715" duration="1193000" />
+      <workItem from="1729936178348" duration="912000" />
+      <workItem from="1729937186867" duration="9017000" />
+      <workItem from="1729962117382" duration="424000" />
+      <workItem from="1729965323698" duration="4477000" />
+      <workItem from="1730020347992" duration="294000" />
+      <workItem from="1730021153351" duration="167000" />
+      <workItem from="1730027072816" duration="304000" />
+      <workItem from="1730052251199" duration="2468000" />
+      <workItem from="1730061756704" duration="1313000" />
+      <workItem from="1730064059800" duration="1693000" />
+      <workItem from="1730100764192" duration="891000" />
+    </task>
+    <task id="LOCAL-00073" summary="update">
+      <option name="closed" value="true" />
+      <created>1729011281980</created>
+      <option name="number" value="00073" />
+      <option name="presentableId" value="LOCAL-00073" />
+      <option name="project" value="LOCAL" />
+      <updated>1729011281980</updated>
+    </task>
+    <task id="LOCAL-00074" summary="update">
+      <option name="closed" value="true" />
+      <created>1729011401696</created>
+      <option name="number" value="00074" />
+      <option name="presentableId" value="LOCAL-00074" />
+      <option name="project" value="LOCAL" />
+      <updated>1729011401696</updated>
+    </task>
+    <task id="LOCAL-00075" summary="update">
+      <option name="closed" value="true" />
+      <created>1729104042903</created>
+      <option name="number" value="00075" />
+      <option name="presentableId" value="LOCAL-00075" />
+      <option name="project" value="LOCAL" />
+      <updated>1729104042903</updated>
+    </task>
+    <task id="LOCAL-00076" summary="update">
+      <option name="closed" value="true" />
+      <created>1729342876352</created>
+      <option name="number" value="00076" />
+      <option name="presentableId" value="LOCAL-00076" />
+      <option name="project" value="LOCAL" />
+      <updated>1729342876352</updated>
+    </task>
+    <task id="LOCAL-00077" summary="update">
+      <option name="closed" value="true" />
+      <created>1729342902238</created>
+      <option name="number" value="00077" />
+      <option name="presentableId" value="LOCAL-00077" />
+      <option name="project" value="LOCAL" />
+      <updated>1729342902238</updated>
+    </task>
+    <task id="LOCAL-00078" summary="update">
+      <option name="closed" value="true" />
+      <created>1729451953220</created>
+      <option name="number" value="00078" />
+      <option name="presentableId" value="LOCAL-00078" />
+      <option name="project" value="LOCAL" />
+      <updated>1729451953220</updated>
+    </task>
+    <task id="LOCAL-00079" summary="update">
+      <option name="closed" value="true" />
+      <created>1729535733979</created>
+      <option name="number" value="00079" />
+      <option name="presentableId" value="LOCAL-00079" />
+      <option name="project" value="LOCAL" />
+      <updated>1729535733979</updated>
+    </task>
+    <task id="LOCAL-00080" summary="update">
+      <option name="closed" value="true" />
+      <created>1729536061571</created>
+      <option name="number" value="00080" />
+      <option name="presentableId" value="LOCAL-00080" />
+      <option name="project" value="LOCAL" />
+      <updated>1729536061571</updated>
+    </task>
+    <task id="LOCAL-00081" summary="update">
+      <option name="closed" value="true" />
+      <created>1729673190089</created>
+      <option name="number" value="00081" />
+      <option name="presentableId" value="LOCAL-00081" />
+      <option name="project" value="LOCAL" />
+      <updated>1729673190089</updated>
+    </task>
+    <task id="LOCAL-00082" summary="update">
+      <option name="closed" value="true" />
+      <created>1729673224641</created>
+      <option name="number" value="00082" />
+      <option name="presentableId" value="LOCAL-00082" />
+      <option name="project" value="LOCAL" />
+      <updated>1729673224641</updated>
+    </task>
+    <task id="LOCAL-00083" summary="update">
+      <option name="closed" value="true" />
+      <created>1729673591397</created>
+      <option name="number" value="00083" />
+      <option name="presentableId" value="LOCAL-00083" />
+      <option name="project" value="LOCAL" />
+      <updated>1729673591397</updated>
+    </task>
+    <task id="LOCAL-00084" summary="update">
+      <option name="closed" value="true" />
+      <created>1729703820137</created>
+      <option name="number" value="00084" />
+      <option name="presentableId" value="LOCAL-00084" />
+      <option name="project" value="LOCAL" />
+      <updated>1729703820137</updated>
+    </task>
+    <task id="LOCAL-00085" summary="update">
+      <option name="closed" value="true" />
+      <created>1729704340422</created>
+      <option name="number" value="00085" />
+      <option name="presentableId" value="LOCAL-00085" />
+      <option name="project" value="LOCAL" />
+      <updated>1729704340422</updated>
+    </task>
+    <task id="LOCAL-00086" summary="update">
+      <option name="closed" value="true" />
+      <created>1729704968983</created>
+      <option name="number" value="00086" />
+      <option name="presentableId" value="LOCAL-00086" />
+      <option name="project" value="LOCAL" />
+      <updated>1729704968983</updated>
+    </task>
+    <task id="LOCAL-00087" summary="update">
+      <option name="closed" value="true" />
+      <created>1729752309085</created>
+      <option name="number" value="00087" />
+      <option name="presentableId" value="LOCAL-00087" />
+      <option name="project" value="LOCAL" />
+      <updated>1729752309086</updated>
+    </task>
+    <task id="LOCAL-00088" summary="update">
+      <option name="closed" value="true" />
+      <created>1729791916580</created>
+      <option name="number" value="00088" />
+      <option name="presentableId" value="LOCAL-00088" />
+      <option name="project" value="LOCAL" />
+      <updated>1729791916580</updated>
+    </task>
+    <task id="LOCAL-00089" summary="update">
+      <option name="closed" value="true" />
+      <created>1729792874284</created>
+      <option name="number" value="00089" />
+      <option name="presentableId" value="LOCAL-00089" />
+      <option name="project" value="LOCAL" />
+      <updated>1729792874284</updated>
+    </task>
+    <task id="LOCAL-00090" summary="update">
+      <option name="closed" value="true" />
+      <created>1729799828417</created>
+      <option name="number" value="00090" />
+      <option name="presentableId" value="LOCAL-00090" />
+      <option name="project" value="LOCAL" />
+      <updated>1729799828417</updated>
+    </task>
+    <task id="LOCAL-00091" summary="update">
+      <option name="closed" value="true" />
+      <created>1729800336761</created>
+      <option name="number" value="00091" />
+      <option name="presentableId" value="LOCAL-00091" />
+      <option name="project" value="LOCAL" />
+      <updated>1729800336761</updated>
+    </task>
+    <task id="LOCAL-00092" summary="update">
+      <option name="closed" value="true" />
+      <created>1729800421196</created>
+      <option name="number" value="00092" />
+      <option name="presentableId" value="LOCAL-00092" />
+      <option name="project" value="LOCAL" />
+      <updated>1729800421196</updated>
+    </task>
+    <task id="LOCAL-00093" summary="update">
+      <option name="closed" value="true" />
+      <created>1729800842854</created>
+      <option name="number" value="00093" />
+      <option name="presentableId" value="LOCAL-00093" />
+      <option name="project" value="LOCAL" />
+      <updated>1729800842854</updated>
+    </task>
+    <task id="LOCAL-00094" summary="update">
+      <option name="closed" value="true" />
+      <created>1729841996493</created>
+      <option name="number" value="00094" />
+      <option name="presentableId" value="LOCAL-00094" />
+      <option name="project" value="LOCAL" />
+      <updated>1729841996493</updated>
+    </task>
+    <task id="LOCAL-00095" summary="update">
+      <option name="closed" value="true" />
+      <created>1729862184659</created>
+      <option name="number" value="00095" />
+      <option name="presentableId" value="LOCAL-00095" />
+      <option name="project" value="LOCAL" />
+      <updated>1729862184659</updated>
+    </task>
+    <task id="LOCAL-00096" summary="update">
+      <option name="closed" value="true" />
+      <created>1729865446183</created>
+      <option name="number" value="00096" />
+      <option name="presentableId" value="LOCAL-00096" />
+      <option name="project" value="LOCAL" />
+      <updated>1729865446183</updated>
+    </task>
+    <task id="LOCAL-00097" summary="update">
+      <option name="closed" value="true" />
+      <created>1729865831954</created>
+      <option name="number" value="00097" />
+      <option name="presentableId" value="LOCAL-00097" />
+      <option name="project" value="LOCAL" />
+      <updated>1729865831954</updated>
+    </task>
+    <task id="LOCAL-00098" summary="update">
+      <option name="closed" value="true" />
+      <created>1729866213598</created>
+      <option name="number" value="00098" />
+      <option name="presentableId" value="LOCAL-00098" />
+      <option name="project" value="LOCAL" />
+      <updated>1729866213598</updated>
+    </task>
+    <task id="LOCAL-00099" summary="update">
+      <option name="closed" value="true" />
+      <created>1729868094049</created>
+      <option name="number" value="00099" />
+      <option name="presentableId" value="LOCAL-00099" />
+      <option name="project" value="LOCAL" />
+      <updated>1729868094049</updated>
+    </task>
+    <task id="LOCAL-00100" summary="update">
+      <option name="closed" value="true" />
+      <created>1729877712730</created>
+      <option name="number" value="00100" />
+      <option name="presentableId" value="LOCAL-00100" />
+      <option name="project" value="LOCAL" />
+      <updated>1729877712730</updated>
+    </task>
+    <task id="LOCAL-00101" summary="update">
+      <option name="closed" value="true" />
+      <created>1729879709639</created>
+      <option name="number" value="00101" />
+      <option name="presentableId" value="LOCAL-00101" />
+      <option name="project" value="LOCAL" />
+      <updated>1729879709639</updated>
+    </task>
+    <task id="LOCAL-00102" summary="update">
+      <option name="closed" value="true" />
+      <created>1729883363820</created>
+      <option name="number" value="00102" />
+      <option name="presentableId" value="LOCAL-00102" />
+      <option name="project" value="LOCAL" />
+      <updated>1729883363820</updated>
+    </task>
+    <task id="LOCAL-00103" summary="update">
+      <option name="closed" value="true" />
+      <created>1729883423392</created>
+      <option name="number" value="00103" />
+      <option name="presentableId" value="LOCAL-00103" />
+      <option name="project" value="LOCAL" />
+      <updated>1729883423392</updated>
+    </task>
+    <task id="LOCAL-00104" summary="update">
+      <option name="closed" value="true" />
+      <created>1729883649527</created>
+      <option name="number" value="00104" />
+      <option name="presentableId" value="LOCAL-00104" />
+      <option name="project" value="LOCAL" />
+      <updated>1729883649533</updated>
+    </task>
+    <task id="LOCAL-00105" summary="update">
+      <option name="closed" value="true" />
+      <created>1729889608512</created>
+      <option name="number" value="00105" />
+      <option name="presentableId" value="LOCAL-00105" />
+      <option name="project" value="LOCAL" />
+      <updated>1729889608512</updated>
+    </task>
+    <task id="LOCAL-00106" summary="update">
+      <option name="closed" value="true" />
+      <created>1729889719388</created>
+      <option name="number" value="00106" />
+      <option name="presentableId" value="LOCAL-00106" />
+      <option name="project" value="LOCAL" />
+      <updated>1729889719388</updated>
+    </task>
+    <task id="LOCAL-00107" summary="update">
+      <option name="closed" value="true" />
+      <created>1729934139826</created>
+      <option name="number" value="00107" />
+      <option name="presentableId" value="LOCAL-00107" />
+      <option name="project" value="LOCAL" />
+      <updated>1729934139826</updated>
+    </task>
+    <task id="LOCAL-00108" summary="update">
+      <option name="closed" value="true" />
+      <created>1729937739507</created>
+      <option name="number" value="00108" />
+      <option name="presentableId" value="LOCAL-00108" />
+      <option name="project" value="LOCAL" />
+      <updated>1729937739507</updated>
+    </task>
+    <task id="LOCAL-00109" summary="update">
+      <option name="closed" value="true" />
+      <created>1729949364925</created>
+      <option name="number" value="00109" />
+      <option name="presentableId" value="LOCAL-00109" />
+      <option name="project" value="LOCAL" />
+      <updated>1729949364925</updated>
+    </task>
+    <task id="LOCAL-00110" summary="update">
+      <option name="closed" value="true" />
+      <created>1729950481967</created>
+      <option name="number" value="00110" />
+      <option name="presentableId" value="LOCAL-00110" />
+      <option name="project" value="LOCAL" />
+      <updated>1729950481967</updated>
+    </task>
+    <task id="LOCAL-00111" summary="update">
+      <option name="closed" value="true" />
+      <created>1729953668502</created>
+      <option name="number" value="00111" />
+      <option name="presentableId" value="LOCAL-00111" />
+      <option name="project" value="LOCAL" />
+      <updated>1729953668502</updated>
+    </task>
+    <task id="LOCAL-00112" summary="update">
+      <option name="closed" value="true" />
+      <created>1729962446964</created>
+      <option name="number" value="00112" />
+      <option name="presentableId" value="LOCAL-00112" />
+      <option name="project" value="LOCAL" />
+      <updated>1729962446964</updated>
+    </task>
+    <task id="LOCAL-00113" summary="update">
+      <option name="closed" value="true" />
+      <created>1729968154575</created>
+      <option name="number" value="00113" />
+      <option name="presentableId" value="LOCAL-00113" />
+      <option name="project" value="LOCAL" />
+      <updated>1729968154575</updated>
+    </task>
+    <task id="LOCAL-00114" summary="update">
+      <option name="closed" value="true" />
+      <created>1730021173798</created>
+      <option name="number" value="00114" />
+      <option name="presentableId" value="LOCAL-00114" />
+      <option name="project" value="LOCAL" />
+      <updated>1730021173798</updated>
+    </task>
+    <task id="LOCAL-00115" summary="update">
+      <option name="closed" value="true" />
+      <created>1730027260753</created>
+      <option name="number" value="00115" />
+      <option name="presentableId" value="LOCAL-00115" />
+      <option name="project" value="LOCAL" />
+      <updated>1730027260753</updated>
+    </task>
+    <task id="LOCAL-00116" summary="update">
+      <option name="closed" value="true" />
+      <created>1730052267713</created>
+      <option name="number" value="00116" />
+      <option name="presentableId" value="LOCAL-00116" />
+      <option name="project" value="LOCAL" />
+      <updated>1730052267713</updated>
+    </task>
+    <task id="LOCAL-00117" summary="update">
+      <option name="closed" value="true" />
+      <created>1730055443979</created>
+      <option name="number" value="00117" />
+      <option name="presentableId" value="LOCAL-00117" />
+      <option name="project" value="LOCAL" />
+      <updated>1730055443979</updated>
+    </task>
+    <task id="LOCAL-00118" summary="update">
+      <option name="closed" value="true" />
+      <created>1730055452350</created>
+      <option name="number" value="00118" />
+      <option name="presentableId" value="LOCAL-00118" />
+      <option name="project" value="LOCAL" />
+      <updated>1730055452350</updated>
+    </task>
+    <task id="LOCAL-00119" summary="update">
+      <option name="closed" value="true" />
+      <created>1730064303816</created>
+      <option name="number" value="00119" />
+      <option name="presentableId" value="LOCAL-00119" />
+      <option name="project" value="LOCAL" />
+      <updated>1730064303816</updated>
+    </task>
+    <task id="LOCAL-00120" summary="update">
+      <option name="closed" value="true" />
+      <created>1730064335203</created>
+      <option name="number" value="00120" />
+      <option name="presentableId" value="LOCAL-00120" />
+      <option name="project" value="LOCAL" />
+      <updated>1730064335203</updated>
+    </task>
+    <task id="LOCAL-00121" summary="update">
+      <option name="closed" value="true" />
+      <created>1730101317876</created>
+      <option name="number" value="00121" />
+      <option name="presentableId" value="LOCAL-00121" />
+      <option name="project" value="LOCAL" />
+      <updated>1730101317876</updated>
+    </task>
+    <option name="localTasksCounter" value="122" />
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="VCPKGProject">
+    <isAutomaticCheckingOnLaunch value="false" />
+    <isAutomaticFoundErrors value="true" />
+    <isAutomaticReloadCMake value="true" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="issues #1" />
+    <MESSAGE value="add makefile" />
+    <MESSAGE value="update" />
+    <option name="LAST_COMMIT_MESSAGE" value="update" />
+  </component>
+</project>

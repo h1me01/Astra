@@ -1,0 +1,22 @@
+# ninja log v6
+73	768	7517560829130423	CMakeFiles/Astra.dir/src/chess/zobrist.cpp.obj	4f0fff65436fc504
+64	792	7517560829047964	CMakeFiles/Astra.dir/src/search/tune.cpp.obj	b328ec8f55d5c748
+16	537	7517662783368476	CMakeFiles/Astra.dir/src/main.cpp.obj	9724ae0a0df0157c
+69	542	7517560829089894	CMakeFiles/Astra.dir/src/chess/bitboard.cpp.obj	7d68534b87e0fdf8
+34	686	7517584913929063	CMakeFiles/Astra.dir/src/eval/eval.cpp.obj	dfc611414b541004
+39	570	7517560828794243	CMakeFiles/Astra.dir/src/search/tt.cpp.obj	f2dc6dc7eff04dfc
+31	738	7517584913899053	CMakeFiles/Astra.dir/src/eval/nnue.cpp.obj	91b4f4f8bf8c0dc3
+26	767	7517560828673664	CMakeFiles/Astra.dir/src/chess/attacks.cpp.obj	b4eb89cd79d2ac42
+47	950	7517584914053580	CMakeFiles/Astra.dir/src/search/moveordering.cpp.obj	1822f7ba6dab278b
+20	965	7517662783408863	CMakeFiles/Astra.dir/src/chess/board.cpp.obj	2e612a1276d04f96
+26	1279	7517662783459532	CMakeFiles/Astra.dir/src/uci.cpp.obj	d7fbe13635f3b39a
+38	1428	7517584913968291	CMakeFiles/Astra.dir/src/chess/perft.cpp.obj	e13c8bd12d5dc526
+23	1859	7517662783429541	CMakeFiles/Astra.dir/src/search/search.cpp.obj	50bccd1c7290ecde
+570	1318	7517560834100943	CMakeFiles/Astra.dir/src/chess/misc.cpp.obj	f9a6a3ea0ab7bae
+28	657	7517662783490056	CMakeFiles/Astra.dir/src/bench.cpp.obj	c8e89d0230b0565c
+54	3533	7517560828936551	CMakeFiles/Astra.dir/src/syzygy/tbprobe.cpp.obj	10901b01f9c6ed28
+1859	2052	7517662801791845	Astra.exe	3192d285969a4b5f
+2	209	7517672607430612	build.ninja	cf27bc62e1916c21
+34	743	7518044258858769	CMakeFiles/Astra.dir/src/main.cpp.obj	9724ae0a0df0157c
+38	1243	7518044258899515	CMakeFiles/Astra.dir/src/uci.cpp.obj	d7fbe13635f3b39a
+1243	1630	7518044270949636	Astra.exe	3192d285969a4b5f
