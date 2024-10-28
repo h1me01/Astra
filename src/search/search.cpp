@@ -87,10 +87,10 @@ namespace Astra
             && tt_bound != NO_BOUND)
         {
             bool is_exact = tt_bound == EXACT_BOUND;
-            bool is_lower_bound = tt_bound == LOWER_BOUND && tt_score >= beta;
-            bool is_upper_bound = tt_bound == UPPER_BOUND && tt_score <= alpha;
+            bool is_lower = tt_bound == LOWER_BOUND && tt_score >= beta;
+            bool is_upper = tt_bound == UPPER_BOUND && tt_score <= alpha;
 
-            if (is_exact || is_lower_bound || is_upper_bound)
+            if (is_exact || is_lower || is_upper)
                 return tt_score;
         }
 
@@ -252,7 +252,7 @@ namespace Astra
                 break;
             }
 
-            // check for a cutoff
+            // check for a cut-off
             if (alpha >= beta)
                 return tt_score;
         }
@@ -522,7 +522,7 @@ namespace Astra
         ss->move_count = made_moves;
 
         // check for mate and stalemate
-        if (moves.size() == 0)
+        if (moves.size() == 0) 
         {
             if (excluded_move != NO_MOVE)
                 best_score = alpha;
@@ -567,12 +567,6 @@ namespace Astra
         Score result = VALUE_NONE;
         while (true)
         {
-            if (alpha < -3500)
-                alpha = -VALUE_INFINITE;
-
-            if (beta > 3500)
-                beta = VALUE_INFINITE;
-
             result = abSearch(depth, alpha, beta, ROOT, ss);
 
             if (isLimitReached(depth))
