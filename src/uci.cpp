@@ -5,7 +5,7 @@
 #include "syzygy/tbprobe.h"
 
 namespace UCI
-{
+{ 
     const std::string version = "3.4";
 
     // options class

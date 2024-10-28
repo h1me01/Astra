@@ -13,7 +13,7 @@ namespace Astra
 {
     enum Node
     {
-        NON_PV, PV, ROOT
+        NON_PV, PV, ROOT 
     };
 
     struct Stack
