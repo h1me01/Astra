@@ -27,6 +27,22 @@ namespace UCI
         }
     };
 
+    class Options
+    {
+    public:
+        int num_workers = 1;  // default number of threads
+        bool use_tb = false;
+
+        void add(const std::string& name, const Option& option);
+        void print() const;
+        void apply();
+        void set(std::istringstream& is);
+        std::string get(const std::string& str) const;
+    private:
+        std::unordered_map<std::string, Option> options;
+
+    };
+
     class Uci
     {
     public :
@@ -35,19 +51,12 @@ namespace UCI
         void loop();
 
     private:
-        int num_workers = 1; // default number of threads
-        bool use_tb = false;
         Board board;
 
-        std::unordered_map<std::string, Option> options;
+        Options options;
 
         void updatePosition(std::istringstream& is);
         void go(std::istringstream& is);
-
-        void printOptions() const;
-        void applyOptions();
-        void setOption(std::istringstream& is);
-        std::string getOption(const std::string& str) const;
 
         Move getMove(const std::string& str_move) const;
     };

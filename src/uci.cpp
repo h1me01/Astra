@@ -8,12 +8,106 @@ namespace UCI
 {
     const std::string version = "3.4";
 
+    // options class
+    void Options::add(const std::string& name, const Option& option)
+    {
+        options[name] = option;
+    }
+
+    void Options::apply()
+    {
+        auto path = get("SyzygyPath");
+        if (!path.empty() && path != "<empty>")
+        {
+            bool success = tb_init(path.c_str());
+
+            if (success && TB_LARGEST > 0)
+            {
+                use_tb = true;
+                std::cout << "info string successfully loaded syzygy path" << std::endl;
+            }
+            else
+                std::cout << "info string failed to load syzygy path " << path << std::endl;
+        }
+
+        Astra::tt.init(std::stoi(get("Hash")));
+        num_workers = std::stoi(get("Threads"));
+    }
+
+    void Options::set(std::istringstream& is)
+    {
+        std::vector<std::string> tokens = split(is.str(), ' ');
+        const std::string& name = tokens[2];
+        const std::string& value = tokens[4];
+
+        if (tokens.size() < 5)
+        {
+            std::cout << "Invalid option command" << std::endl;
+            return;
+        }
+
+        if (tokens[1] != "name")
+        {
+            std::cout << "Invalid option command";
+            return;
+        }
+
+        if (tokens[3] != "value")
+        {
+            std::cout << "Invalid option command";
+            return;
+        }
+
+#ifdef TUNE
+        Astra::setParam(name, std::stoi(value));
+        Astra::initReductions();
+        return;
+#endif
+
+        if (options.count(name))
+            options[name] = value;
+        else
+            std::cout << "Unknown option: " << name << std::endl;
+    }
+
+    std::string Options::get(const std::string& str) const
+    {
+        auto it = options.find(str);
+        if (it != options.end())
+            return it->second.val;
+        return "";
+    }
+
+    void Options::print() const
+    {
+        for (const auto& elem : options)
+        {
+            Option option = elem.second;
+            const std::string& value = option.default_val;
+
+            std::cout << "option name " << elem.first
+                << " type " << option.type
+                << " default " << (value.empty() ? "<empty>" : value);
+
+            if (option.min != 0 && option.max != 0)
+                std::cout << " min " << option.min << " max " << option.max << std::endl;
+            else
+                std::cout << std::endl;
+        }
+
+#ifdef TUNE
+        Astra::paramsToUCI();
+#endif
+    }
+
+    // uci class
+
     Uci::Uci() : board(STARTING_FEN)
     {
-        options["Hash"] = Option("spin", "64", "64", 1, 2048);
-        options["Threads"] = Option("spin", "1", "1", 1, 256);
-        options["SyzygyPath"] = Option("string", "", "", 0, 0);
-        applyOptions();
+        options.add("Hash", Option("spin", "64", "64", 1, 2048));
+        options.add("Threads", Option("spin", "1", "1", 1, 256));
+        options.add("SyzygyPath", Option("string", "", "", 0, 0));
+        options.apply();
     }
 
     void Uci::loop()
@@ -31,7 +125,7 @@ namespace UCI
             {
                 std::cout << "id name Astra " << version << std::endl;
                 std::cout << "id author Semih Oezalp" << std::endl;
-                printOptions();
+                options.print();
                 std::cout << "uciok" << std::endl;
             }
             else if (token == "isready")
@@ -54,8 +148,8 @@ namespace UCI
                 Astra::paramsToSpsa();
             else if (token == "setoption")
             {
-                setOption(is);
-                applyOptions();
+                options.set(is);
+                options.apply();
             }
             else if (token == "d")
                 board.print(board.getTurn());
@@ -143,94 +237,7 @@ namespace UCI
             limit.time = Astra::TimeManager::getOptimum(time_left, inc, moves_to_go);
 
         // start search
-        Astra::threads.start(board, limit, num_workers, use_tb);
-    }
-
-    // options functions
-    void Uci::applyOptions()
-    {
-        auto path = getOption("SyzygyPath");
-        if (!path.empty() && path != "<empty>")
-        {
-            bool success = tb_init(path.c_str());
-
-            if (success && TB_LARGEST > 0)
-            {
-                use_tb = true;
-                std::cout << "info string successfully loaded syzygy path" << std::endl;
-            }
-            else
-                std::cout << "info string failed to load syzygy path " << path << std::endl;
-        }
-
-        Astra::tt.init(std::stoi(getOption("Hash")));
-        num_workers = std::stoi(getOption("Threads"));
-    }
-
-    void Uci::setOption(std::istringstream& is)
-    {
-        std::vector<std::string> tokens = split(is.str(), ' ');
-        const std::string& name = tokens[2];
-        const std::string& value = tokens[4];
-
-        if (tokens.size() < 5)
-        {
-            std::cout << "Invalid option command" << std::endl;
-            return;
-        }
-
-        if (tokens[1] != "name")
-        {
-            std::cout << "Invalid option command";
-            return;
-        }
-
-        if (tokens[3] != "value")
-        {
-            std::cout << "Invalid option command";
-            return;
-        }
-
-#ifdef TUNE
-        Astra::setParam(name, std::stoi(value));
-        Astra::initReductions();
-        return;
-#endif
-
-        if (options.count(name))
-            options[name] = value;
-        else
-            std::cout << "Unknown option: " << name << std::endl;
-    }
-
-    std::string Uci::getOption(const std::string& str) const
-    {
-        auto it = options.find(str);
-        if (it != options.end())
-            return it->second.val;
-        return "";
-    }
-
-    void Uci::printOptions() const
-    {
-        for (const auto& elem : options)
-        {
-            Option option = elem.second;
-            const std::string& value = option.default_val;
-
-            std::cout << "option name " << elem.first
-                << " type " << option.type
-                << " default " << (value.empty() ? "<empty>" : value);
-
-            if (option.min != 0 && option.max != 0)
-                std::cout << " min " << option.min << " max " << option.max << std::endl;
-            else
-                std::cout << std::endl;
-        }
-
-#ifdef TUNE
-        Astra::paramsToUCI();
-#endif
+        Astra::threads.start(board, limit, options.num_workers, options.use_tb);
     }
 
     Move Uci::getMove(const std::string& str_move) const
