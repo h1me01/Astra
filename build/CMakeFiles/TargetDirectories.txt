@@ -1,3 +1,0 @@
-C:/Users/semio/Documents/programming/Astra-Chess-Engine/Astra/build/CMakeFiles/Astra.dir
-C:/Users/semio/Documents/programming/Astra-Chess-Engine/Astra/build/CMakeFiles/edit_cache.dir
-C:/Users/semio/Documents/programming/Astra-Chess-Engine/Astra/build/CMakeFiles/rebuild_cache.dir
