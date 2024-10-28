@@ -849,11 +849,11 @@ namespace Astra
     }
 
     // class ThreadPool
-    void ThreadPool::start(const Board& board, const Limits& limit, int worker_count, bool use_tb)
+    void ThreadPool::launchWorkers(const Board& board, const Limits& limit, int worker_count, bool use_tb)
     {
         stop = false;
 
-        pool.clear();
+        threads.clear();
         for (int i = 0; i < worker_count; i++)
         {
             Search thread(STARTING_FEN);
@@ -861,14 +861,14 @@ namespace Astra
             thread.board = board;
             thread.limit = limit;
             thread.use_tb = use_tb;
-            pool.emplace_back(thread);
+            threads.emplace_back(thread);
         }
 
         for (int i = 0; i < worker_count; i++)
-            running_threads.emplace_back(&Search::start, std::ref(pool[i]));
+            running_threads.emplace_back(&Search::start, std::ref(threads[i]));
     }
 
-    void ThreadPool::kill()
+    void ThreadPool::stopAll()
     {
         stop = true;
 
@@ -876,14 +876,14 @@ namespace Astra
             if (th.joinable())
                 th.join();
 
-        pool.clear();
+        threads.clear();
         running_threads.clear();
     }
 
     U64 ThreadPool::getTotalNodes() const
     {
         U64 total_nodes = 0;
-        for (const auto& t : pool)
+        for (const auto& t : threads)
             total_nodes += t.nodes;
         return total_nodes;
     }
@@ -891,7 +891,7 @@ namespace Astra
     U64 ThreadPool::getTotalTbHits() const
     {
         U64 total_tb_hits = 0;
-        for (const auto& t : pool)
+        for (const auto& t : threads)
             total_tb_hits += t.tb_hits;
         return total_tb_hits;
     }
@@ -899,7 +899,7 @@ namespace Astra
     uint8_t ThreadPool::getSelDepth() const
     {
         uint8_t max_sel_depth = 0;
-        for (const auto& t : pool)
+        for (const auto& t : threads)
             max_sel_depth = std::max(max_sel_depth, t.sel_depth);
         return max_sel_depth;
     }

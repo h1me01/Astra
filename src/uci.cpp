@@ -101,7 +101,6 @@ namespace UCI
     }
 
     // uci class
-
     Uci::Uci() : board(STARTING_FEN)
     {
         options.add("Hash", Option("spin", "64", "64", 1, 2048));
@@ -132,7 +131,7 @@ namespace UCI
                 std::cout << "readyok" << std::endl;
             else if (token == "ucinewgame")
             {
-                Astra::threads.kill();
+                Astra::threads.stopAll();
                 Astra::tt.clear();
             }
             else if (token == "position")
@@ -154,10 +153,10 @@ namespace UCI
             else if (token == "d")
                 board.print(board.getTurn());
             else if (token == "stop")
-                Astra::threads.kill();
+                Astra::threads.stopAll();
             else if (token == "quit")
             {
-                Astra::threads.kill();
+                Astra::threads.stopAll();
                 tb_free();
                 break;
             }
@@ -192,7 +191,7 @@ namespace UCI
 
     void Uci::go(std::istringstream& is)
     {
-        Astra::threads.kill();
+        Astra::threads.stopAll();
         Astra::Limits limit;
 
         int64_t w_time = 0, b_time = 0, move_time = 0;
@@ -237,7 +236,7 @@ namespace UCI
             limit.time = Astra::TimeManager::getOptimum(time_left, inc, moves_to_go);
 
         // start search
-        Astra::threads.start(board, limit, options.num_workers, options.use_tb);
+        Astra::threads.launchWorkers(board, limit, options.num_workers, options.use_tb);
     }
 
     Move Uci::getMove(const std::string& str_move) const

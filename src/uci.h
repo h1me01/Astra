@@ -34,13 +34,15 @@ namespace UCI
         bool use_tb = false;
 
         void add(const std::string& name, const Option& option);
+        
         void print() const;
         void apply();
+        
         void set(std::istringstream& is);
         std::string get(const std::string& str) const;
+
     private:
         std::unordered_map<std::string, Option> options;
-
     };
 
     class Uci
@@ -52,7 +54,6 @@ namespace UCI
 
     private:
         Board board;
-
         Options options;
 
         void updatePosition(std::istringstream& is);

@@ -73,8 +73,8 @@ namespace Astra
     public:
         ThreadPool() : stop(false) {}
 
-        void start(const Board& board, const Limits& limit, int worker_count, bool use_tb);
-        void kill();
+        void launchWorkers(const Board& board, const Limits& limit, int worker_count, bool use_tb);
+        void stopAll();
 
         U64 getTotalNodes() const;
         U64 getTotalTbHits() const;
@@ -84,7 +84,7 @@ namespace Astra
         bool stop;
 
     private:
-        std::vector<Search> pool;
+        std::vector<Search> threads;
         std::vector<std::thread> running_threads;
     };
 
