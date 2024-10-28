@@ -115,40 +115,19 @@ namespace Chess
         return piece_bb[makePiece(c, pt)];
     }
 
-    inline Piece Board::pieceAt(Square s) const
-    {
-        return board[s];
-    }
+    inline Piece Board::pieceAt(Square s) const { return board[s]; }
 
-    inline Color Board::getTurn() const
-    {
-        return stm;
-    }
+    inline Color Board::getTurn() const { return stm; }
 
-    inline int Board::getPly() const
-    {
-        return game_ply;
-    }
+    inline int Board::getPly() const { return game_ply; }
 
-    inline int Board::halfMoveClock() const
-    {
-        return history[game_ply].half_move_clock;
-    }
+    inline int Board::halfMoveClock() const { return history[game_ply].half_move_clock; }
 
-    inline U64 Board::getHash() const
-    {
-        return hash;
-    }
+    inline U64 Board::getHash() const { return hash; }
 
-    inline Square Board::kingSq(Color c) const
-    {
-        return bsf(getPieceBB(c, KING));
-    }
+    inline Square Board::kingSq(Color c) const { return bsf(getPieceBB(c, KING)); }
 
-    inline NNUE::Accumulator& Board::getAccumulator()
-    {
-        return accumulators.back();
-    }
+    inline NNUE::Accumulator& Board::getAccumulator() { return accumulators.back(); }
 
     inline void Board::putPiece(Piece p, Square s, bool update_nnue)
     {

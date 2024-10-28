@@ -114,6 +114,7 @@ namespace Chess
     };
 
     // max number of possible legal moves in chess are 218
+    // use 128 for faster move generation
     constexpr int MAX_MOVES = 128;
 
     class Move
