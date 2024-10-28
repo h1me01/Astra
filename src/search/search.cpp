@@ -1,15 +1,13 @@
 #include <cmath>
 #include <algorithm>
 #include "search.h"
+#include "syzygy.h"
 #include "tune.h"
 #include "../eval/eval.h"
-#include "../chess/movegen.h"
-#include "../syzygy/tbprobe.h"
 
 namespace Astra
 {
     // search parameters
-
     PARAM(lmr_base, 132, 50, 150);
     PARAM(lmr_div, 219, 150, 250);
     PARAM(lmr_depth, 2, 1, 4);
@@ -42,131 +40,18 @@ namespace Astra
     PARAM(asp_window, 13, 10, 50);
 
     // search class
-
     int REDUCTIONS[MAX_PLY][MAX_MOVES];
 
     void initReductions()
     {
         REDUCTIONS[0][0] = 0;
 
-        double base = lmr_base / 100;
-        double div = lmr_div / 100;
+        double base = lmr_base / 100.0;
+        double div = lmr_div / 100.0;
 
         for (int depth = 1; depth < MAX_PLY; depth++)
             for (int moves = 1; moves < MAX_MOVES; moves++)
                 REDUCTIONS[depth][moves] = base + log(depth) * log(moves) / div;
-    }
-
-    Score scoreToTT(Score s, int ply)
-    {
-        if (s >= VALUE_TB_WIN_IN_MAX_PLY)
-            return s + ply;
-        if (s <= VALUE_TB_LOSS_IN_MAX_PLY)
-            return s - ply;
-        return s;
-    }
-
-    Score scoreFromTT(Score s, int ply)
-    {
-        if (s == VALUE_NONE)
-            return VALUE_NONE;
-        if (s >= VALUE_TB_WIN_IN_MAX_PLY)
-            return s - ply;
-        if (s <= VALUE_TB_LOSS_IN_MAX_PLY)
-            return s + ply;
-        return s;
-    }
-
-    Score probeWDL(Board& board)
-    {
-        U64 w_occ = board.occupancy(WHITE);
-        U64 b_occ = board.occupancy(BLACK);
-        U64 occ = w_occ | b_occ;
-
-        // can't probe if there are more pieces than supported
-        if (popCount(occ) > static_cast<signed>(TB_LARGEST))
-            return VALUE_NONE;
-
-        U64 pawns = board.getPieceBB(WHITE, PAWN) | board.getPieceBB(BLACK, PAWN);
-        U64 knights = board.getPieceBB(WHITE, KNIGHT) | board.getPieceBB(BLACK, KNIGHT);
-        U64 bishops = board.getPieceBB(WHITE, BISHOP) | board.getPieceBB(BLACK, BISHOP);
-        U64 rooks = board.getPieceBB(WHITE, ROOK) | board.getPieceBB(BLACK, ROOK);
-        U64 queens = board.getPieceBB(WHITE, QUEEN) | board.getPieceBB(BLACK, QUEEN);
-        U64 kings = board.getPieceBB(WHITE, KING) | board.getPieceBB(BLACK, KING);
-
-        int fifty_move_counter = board.history[board.getPly()].half_move_clock;
-        bool any_castling = popCount(board.history[board.getPly()].castle_mask) != 6;
-        Square ep_sq = board.history[board.getPly()].ep_sq;
-        bool stm = board.getTurn() == WHITE;
-
-        unsigned result = tb_probe_wdl(
-            w_occ, b_occ, kings, queens, rooks, bishops, knights, pawns, fifty_move_counter, any_castling, ep_sq == NO_SQUARE ? 0 : ep_sq, stm);
-
-        if (result == TB_LOSS)
-            return VALUE_TB_LOSS;
-        if (result == TB_WIN)
-            return VALUE_TB_WIN;
-        if (result == TB_DRAW || result == TB_BLESSED_LOSS || result == TB_CURSED_WIN)
-            return VALUE_DRAW;
-
-        // if none of them above happened, act as if the result failed
-        return VALUE_NONE;
-    }
-
-    std::pair<Score, Move> probeDTZ(Board& board)
-    {
-        U64 w_occ = board.occupancy(WHITE);
-        U64 b_occ = board.occupancy(BLACK);
-        U64 occ = w_occ | b_occ;
-
-        // can't probe if there are more pieces than supported
-        if (popCount(occ) > static_cast<signed>(TB_LARGEST))
-            return {VALUE_NONE, NO_MOVE};
-
-        U64 pawns = board.getPieceBB(WHITE, PAWN) | board.getPieceBB(BLACK, PAWN);
-        U64 knights = board.getPieceBB(WHITE, KNIGHT) | board.getPieceBB(BLACK, KNIGHT);
-        U64 bishops = board.getPieceBB(WHITE, BISHOP) | board.getPieceBB(BLACK, BISHOP);
-        U64 rooks = board.getPieceBB(WHITE, ROOK) | board.getPieceBB(BLACK, ROOK);
-        U64 queens = board.getPieceBB(WHITE, QUEEN) | board.getPieceBB(BLACK, QUEEN);
-        U64 kings = board.getPieceBB(WHITE, KING) | board.getPieceBB(BLACK, KING);
-
-        int fifty_move_counter = board.history[board.getPly()].half_move_clock;
-        bool any_castling = popCount(board.history[board.getPly()].castle_mask) != 6;
-        Square ep_sq = board.history[board.getPly()].ep_sq;
-        bool stm = board.getTurn() == WHITE;
-
-        unsigned result = tb_probe_root(
-            w_occ, b_occ, kings, queens, rooks, bishops, knights, pawns, fifty_move_counter, any_castling, ep_sq == NO_SQUARE ? 0 : ep_sq, stm, NULL);
-
-        // if the result failed don't do anything
-        if (result == TB_RESULT_FAILED || result == TB_RESULT_CHECKMATE || result == TB_RESULT_STALEMATE)
-            return {VALUE_NONE, NO_MOVE};
-
-        int wdl = TB_GET_WDL(result);
-
-        Score s = 0;
-        if (wdl == TB_LOSS)
-            s = VALUE_TB_LOSS_IN_MAX_PLY;
-        if (wdl == TB_WIN)
-            s = VALUE_TB_WIN_IN_MAX_PLY;
-        if (wdl == TB_BLESSED_LOSS || wdl == TB_CURSED_WIN || wdl == TB_DRAW)
-            s = VALUE_DRAW;
-
-        const int promotion_type = TB_GET_PROMOTES(result);
-
-        const auto from = static_cast<Square>(TB_GET_FROM(result));
-        const auto to = static_cast<Square>(TB_GET_TO(result));
-
-        MoveList moves(board);
-        for (auto m : moves)
-        {
-            bool is_promotion = isPromotion(m) && typeOfPromotion(m.flag()) == promotion_type;
-
-            if (from == m.from() && to == m.to() && (is_promotion || !isPromotion(m)))
-                return {s, m};
-        }
-
-        return {s, NO_MOVE};
     }
 
     Search::Search(const std::string& fen) : board(fen)

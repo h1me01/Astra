@@ -12,21 +12,26 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -s -O3 -Wall -Wextra -DNDEBUG -funroll-l
 
 add_definitions(-DNNUE_PATH="${NNUE_FILE_PATH}")
 
-add_executable(Astra
-        src/main.cpp
+add_executable(Astra        
+        src/chess/misc.cpp
         src/chess/attacks.cpp
+        src/chess/bitboard.cpp
         src/chess/board.cpp
+        src/chess/perft.cpp
+        src/chess/zobrist.cpp
+
         src/search/search.cpp
         src/search/tt.cpp
-        src/eval/nnue.cpp
-        src/eval/eval.cpp
-        src/chess/perft.cpp
-        src/syzygy/tbprobe.cpp
-        src/uci.cpp
+        src/search/syzygy.cpp
         src/search/moveordering.cpp
         src/search/tune.cpp
-        src/chess/bitboard.cpp
-        src/chess/zobrist.cpp
+
+        src/eval/nnue.cpp
+        src/eval/eval.cpp
+      
+        src/syzygy/tbprobe.cpp
+      
+        src/uci.cpp
         src/bench.cpp
-        src/chess/misc.cpp
+        src/main.cpp
 )

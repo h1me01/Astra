@@ -55,6 +55,10 @@ namespace Astra
         TTEntry* entries;
     };
 
+    Score scoreToTT(Score s, int ply);
+
+    Score scoreFromTT(Score s, int ply);
+
 } // namespace Astra
 
 #endif //TT_H

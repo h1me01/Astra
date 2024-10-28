@@ -111,6 +111,7 @@ namespace Chess
 
     inline U64 Board::getPieceBB(Color c, PieceType pt) const
     {
+        assert(pt != NO_PIECE_TYPE);
         return piece_bb[makePiece(c, pt)];
     }
 
