@@ -68,20 +68,6 @@ namespace Astra
         Score aspSearch(int depth, Score prev_eval, Stack* ss);
     };
 
-    struct Thread
-    {
-        Search search;
-
-        Thread() : search(STARTING_FEN) { }
-
-        void start()
-        {
-            SearchResult result = search.start();
-            if (search.id == 0)
-                std::cout << "bestmove " << result.best_move << std::endl;
-        }
-    };
-
     class ThreadPool
     {
     public:
@@ -98,7 +84,7 @@ namespace Astra
         bool stop;
 
     private:
-        std::vector<Thread> pool;
+        std::vector<Search> pool;
         std::vector<std::thread> running_threads;
     };
 

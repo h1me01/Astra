@@ -13,7 +13,9 @@
     <option name="reloaded" value="true" />
   </component>
   <component name="CMakeRunConfigurationManager">
-    <generated />
+    <generated>
+      <config projectName="Astra" targetName="Astra" />
+    </generated>
   </component>
   <component name="CMakeSettings">
     <configurations>
@@ -21,7 +23,18 @@
     </configurations>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="8b0ad24e-70a7-427c-a11f-e219f04487fd" name="Changes" comment="update" />
+    <list default="true" id="8b0ad24e-70a7-427c-a11f-e219f04487fd" name="Changes" comment="update">
+      <change beforePath="$PROJECT_DIR$/.idea/editor.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/editor.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-debug-mingw/.ninja_deps" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug-mingw/.ninja_deps" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-debug-mingw/.ninja_log" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug-mingw/.ninja_log" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-debug-mingw/Astra.exe" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug-mingw/Astra.exe" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-debug-mingw/CMakeFiles/clion-Debug-MinGW-log.txt" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug-mingw/CMakeFiles/clion-Debug-MinGW-log.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-debug-mingw/Testing/Temporary/LastTest.log" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug-mingw/Testing/Temporary/LastTest.log" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/search/search.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/search/search.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/search/search.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/search/search.h" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -43,15 +56,16 @@
 }</component>
   <component name="GithubPullRequestsUISettings">{
   &quot;selectedUrlAndAccountId&quot;: {
-    &quot;url&quot;: &quot;https://github.com/h1me01/Astra.git&quot;,
+    &quot;url&quot;: &quot;https://github.com/h1me01/Astra&quot;,
     &quot;accountId&quot;: &quot;d591d6d5-1f0e-4823-ac74-c212b77438ff&quot;
   }
 }</component>
   <component name="HighlightingSettingsPerFile">
     <setting file="file://$APPLICATION_HOME_DIR$/bin/mingw/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/fstream" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/src/eval/nnue.cpp" root0="FORCE_HIGHLIGHTING" />
-    <setting file="mock://C:/Users/semio/Documents/programming/Astra-Chess-Engine/Astra/src/eval/nnue.cpp" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/src/main.cpp" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/src/search/search.cpp" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/src/uci.cpp" root0="FORCE_HIGHLIGHTING" />
   </component>
   <component name="Make.Settings">
     <option name="path" value="C:\msys64\mingw64\bin\make.exe" />
@@ -80,6 +94,7 @@
     &quot;Makefile Target.all.executor&quot;: &quot;Run&quot;,
     &quot;Makefile Target.clean.executor&quot;: &quot;Run&quot;,
     &quot;Makefile Target.make.executor&quot;: &quot;Run&quot;,
+    &quot;Native Application.Unnamed.executor&quot;: &quot;Run&quot;,
     &quot;RunOnceActivity.RadMigrateCodeStyle&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.cidr.known.project.marker&quot;: &quot;true&quot;,
@@ -90,7 +105,7 @@
     &quot;cf.first.check.clang-format&quot;: &quot;false&quot;,
     &quot;cidr.known.project.marker&quot;: &quot;true&quot;,
     &quot;git-widget-placeholder&quot;: &quot;master&quot;,
-    &quot;last_opened_file_path&quot;: &quot;C:/Users/semio/Documents/programming/Astra-Chess-Engine/Astra/src&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/semio/Documents/programming/Astra-Chess-Engine/Astra/CMakeLists.txt&quot;,
     &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
     &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
     &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
@@ -117,12 +132,7 @@
     </key>
   </component>
   <component name="RunManager" selected="CMake Application.Astra">
-    <configuration name="Astra" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" WORKING_DIR="file://$PROJECT_DIR$/src" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Project" TARGET_NAME="Astra" CONFIG_NAME="Debug-MinGW" RUN_TARGET_PROJECT_NAME="Project" RUN_TARGET_NAME="Astra">
-      <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
-      </method>
-    </configuration>
-    <configuration default="true" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true">
+    <configuration name="Astra" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Astra" TARGET_NAME="Astra" CONFIG_NAME="Debug-MinGW" RUN_TARGET_PROJECT_NAME="Astra" RUN_TARGET_NAME="Astra">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
@@ -373,7 +383,10 @@
       <workItem from="1730052251199" duration="2468000" />
       <workItem from="1730061756704" duration="1313000" />
       <workItem from="1730064059800" duration="1693000" />
-      <workItem from="1730100764192" duration="891000" />
+      <workItem from="1730100764192" duration="1192000" />
+      <workItem from="1730101981043" duration="287000" />
+      <workItem from="1730102275470" duration="17000" />
+      <workItem from="1730115724899" duration="245000" />
     </task>
     <task id="LOCAL-00073" summary="update">
       <option name="closed" value="true" />
