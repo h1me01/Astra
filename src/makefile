@@ -18,6 +18,7 @@ SRC = main.cpp \
       eval/nnue.cpp \
       eval/eval.cpp \
       search/search.cpp \
+      search/syzygy.cpp \
       search/moveordering.cpp \
       search/tt.cpp \
       search/tune.cpp \
