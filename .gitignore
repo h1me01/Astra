@@ -2,4 +2,4 @@ build/
 
 src/astra.exe
 
-CMakeLists.txt.user
+CMakeLists.txt
