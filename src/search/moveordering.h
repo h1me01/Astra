@@ -27,9 +27,7 @@ namespace Astra
 
         void clear();
 
-        void updateKiller(Move& move, int ply);
-        void updateCounters(Move& move, Move& prev_move);
-        void updateHistory(Board& board, Move& move, int bonus);
+        void update(Board& board, Move& move, Move& prev_move, int bonus, int ply);
 
         void sortMoves(Board& board, MoveList& moves, Move& tt_move, Move& prev_move, int ply) const;
 

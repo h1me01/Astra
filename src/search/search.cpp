@@ -61,6 +61,9 @@ namespace Astra
 
     Score Search::qSearch(Score alpha, Score beta, Node node, Stack* ss)
     {
+        if (isLimitReached(1))
+            return beta;
+
         if (board.isDraw())
             return VALUE_DRAW;
 
@@ -144,10 +147,11 @@ namespace Astra
                 {
                     alpha = score;
                     best_move = move;
-
-                    if (score >= beta)
-                        break;
                 }
+
+                if (score >= beta)
+                    // cut-off
+                    break;
             }
         }
 
@@ -186,15 +190,15 @@ namespace Astra
             {
                 beta = mating_value;
                 if (alpha >= mating_value)
-                    return mating_value; // beta cutoff
+                    return mating_value; // beta cut-off
             }
-            // check for alpha cutoff from a theoretical mate position
+            // check for alpha cut-off from a theoretical mate position
             mating_value = -VALUE_MATE + ss->ply;
             if (mating_value > alpha)
             {
                 alpha = mating_value;
                 if (beta <= mating_value)
-                    return mating_value; // alpha cutoff
+                    return mating_value; // alpha cut-off
             }
 
             // check for draw
@@ -499,19 +503,13 @@ namespace Astra
 
                     // don't forget to update pv table
                     pv_table.updatePV(ss->ply, move);
+                }
 
-                    if (score >= beta)
-                    {
-                        if (!is_capture && !is_promotion)
-                        {
-                            move_ordering.updateKiller(move, ss->ply);
-                            move_ordering.updateCounters(move, (ss - 1)->current_move);
-                            move_ordering.updateHistory(board, move, std::min(2000, depth * history_bonus));
-                        }
-
-                        // beta cutoff
-                        break;
-                    }
+                if (score >= beta)
+                {
+                    move_ordering.update(board, move, (ss - 1)->current_move, std::min(2000, depth * history_bonus), ss->ply);
+                    // cut-off
+                    break;
                 }
             }
 

@@ -8,8 +8,7 @@ CXXFLAGS = -s -Wall -Wextra -O3 -DNDEBUG -funroll-loops -fno-exceptions -pthread
 CXXFLAGS += -DNNUE_PATH=\"$(EvalFile)\" # add nnue file path
 
 # source files
-SRC = main.cpp \
-      chess/attacks.cpp \
+SRC = chess/attacks.cpp \
       chess/board.cpp \
       chess/perft.cpp \
       chess/bitboard.cpp \
@@ -23,6 +22,7 @@ SRC = main.cpp \
       search/tt.cpp \
       search/tune.cpp \
       syzygy/tbprobe.cpp \
+      main.cpp \
       bench.cpp \
       uci.cpp
 

@@ -51,7 +51,7 @@ namespace NNUE
                 prediction += fc2_weights[HIDDEN_SIZE + j] * acc[~stm][j];
         }
 
-        return prediction / (1024 * 64);
+        return prediction / (512 * 16);
     }
 
     void NNUE::putPiece(Accumulator& acc, Piece p, Square s) const

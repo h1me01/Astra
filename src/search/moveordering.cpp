@@ -111,25 +111,21 @@ namespace Astra
         }
     }
 
-    void MoveOrdering::updateKiller(Move &move, int ply)
-    {
-        killer2[ply] = killer1[ply];
-        killer1[ply] = move;
-    }
-
-    void MoveOrdering::updateCounters(Move &move, Move &prev_move)
+    void MoveOrdering::update(Board &board, Move &move, Move &prev_move, int bonus, int ply)
     {
         counters[prev_move.from()][prev_move.to()] = move;
-    }
 
-    void MoveOrdering::updateHistory(Board &board, Move &move, int bonus)
-    {
-        Color c = board.getTurn();
-        Square from = move.from();
-        Square to = move.to();
+        if (!isCapture(move)) {
+            killer2[ply] = killer1[ply];
+            killer1[ply] = move;
 
-        int score = bonus - history[c][from][to] * std::abs(bonus) / 16384;
-        history[c][from][to] += score;
+            Color c = board.getTurn();
+            Square from = move.from();
+            Square to = move.to();
+
+            int score = bonus - history[c][from][to] * std::abs(bonus) / 16384;
+            history[c][from][to] += score;
+        }
     }
 
     void MoveOrdering::sortMoves(Board &board, MoveList &moves, Move &tt_move, Move &prev_move, int ply) const
