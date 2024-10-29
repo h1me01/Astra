@@ -10,6 +10,12 @@ namespace Astra
     Param::Param(std::string name, int value, int min, int max) :
         name(std::move(name)), value(value), min(min), max(max)
     {
+        if (value < min || value > max)
+        {
+            std::cerr << "Error: value out of range for parameter " << name << std::endl;
+            return;
+        }
+
         params.push_back(this);
     }
 
@@ -32,6 +38,12 @@ namespace Astra
         {
             if (param->name == name)
             {
+                if (value < param->min || value > param->max)
+                {
+                    std::cerr << "Error: value out of range for parameter " << name << std::endl;
+                    return;
+                }
+
                 param->value = value;
                 return;
             }

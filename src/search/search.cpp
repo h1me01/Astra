@@ -7,7 +7,7 @@
 
 namespace Astra
 {
-    // search parameters
+   // search parameters
     PARAM(lmr_base, 132, 50, 150);
     PARAM(lmr_div, 219, 150, 250);
     PARAM(lmr_depth, 2, 1, 4);
