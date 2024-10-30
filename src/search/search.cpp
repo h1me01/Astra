@@ -64,6 +64,8 @@ namespace Astra
 
     Score Search::qSearch(Score alpha, Score beta, Node node, Stack* ss)
     {
+        assert(alpha < beta);
+
         if (isLimitReached(1))
             return beta;
 
@@ -76,9 +78,6 @@ namespace Astra
         const bool pv_node = node == PV;
         const Color stm = board.getTurn();
         const bool in_check = board.inCheck();
-
-        assert(alpha >= -VALUE_INFINITE && alpha < beta && beta <= VALUE_INFINITE);
-        assert(pv_node || (alpha == beta - 1));
 
         // look up in transposition table
         TTEntry tt_entry;
@@ -114,8 +113,6 @@ namespace Astra
         Move best_move = NO_MOVE;
         for (Move move : moves)
         {
-            assert(isCapture(move));
-
             if (best_score > VALUE_TB_LOSS_IN_MAX_PLY && !in_check)
             {
                 // delta pruning
@@ -166,12 +163,14 @@ namespace Astra
             tt.store(hash, best_move, scoreToTT(best_score, ss->ply), 0, bound);
         }
 
-        assert(best_score > -VALUE_INFINITE && best_score < VALUE_INFINITE);
         return best_score;
     }
 
     Score Search::abSearch(int depth, Score alpha, Score beta, Node node, Stack* ss)
     {
+        assert(alpha && alpha);
+        assert(ss->ply >= 0);
+        
         if (isLimitReached(depth))
             return beta;
 
@@ -217,12 +216,6 @@ namespace Astra
         // quiescence search
         if (depth <= 0)
             return qSearch(alpha, beta, node, ss);
-
-        // safety checks
-        assert(-VALUE_INFINITE <= alpha && alpha < beta && beta <= VALUE_INFINITE);
-        assert(pv_node || (alpha == beta - 1));
-        assert(0 < depth && depth < MAX_PLY);
-        assert(ss->ply < MAX_PLY);
 
         (ss + 1)->excluded_move = NO_MOVE;
 
@@ -558,7 +551,6 @@ namespace Astra
             tt.store(hash, best_move, scoreToTT(best_score, ss->ply), depth, bound);
         }
 
-        assert(best_score > -VALUE_INFINITE && best_score < VALUE_INFINITE);
         return best_score;
     }
 
