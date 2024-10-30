@@ -2,6 +2,7 @@
 #define NNUE_H
 
 #include <array>
+#include <cassert>
 #include "../chess/types.h"
 
 using namespace Chess;
@@ -13,6 +14,35 @@ namespace NNUE
     constexpr int OUTPUT_SIZE = 1;
 
     using Accumulator = std::array<std::array<int16_t, HIDDEN_SIZE>, 2>;
+
+    class Accumulators
+    {
+    public:
+        Accumulators() : index(0) {}
+
+        int size() const { return index; }
+
+        void clear() { index = 0; }
+
+        void push()
+        {
+            index++;
+            assert(index < MAX_PLY);
+            accumulators[index] = accumulators[index - 1];
+        }
+
+        void pop()
+        {
+            assert(index > 0);
+            index--;
+        }
+
+        Accumulator& back() { return accumulators[index]; }
+
+    private:
+        int index;
+        std::array<Accumulator, MAX_PLY> accumulators{};
+    };
 
     struct NNUE
     {

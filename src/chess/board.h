@@ -5,7 +5,6 @@
 #include "zobrist.h"
 #include "attacks.h"
 #include "../eval/nnue.h"
-#include "../eval/accumulator.h"
 
 namespace Chess
 {
