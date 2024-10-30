@@ -4,6 +4,4 @@ build/
 
 src/astra.exe
 
-src/main.cpp
-
 CMakeLists.txt
