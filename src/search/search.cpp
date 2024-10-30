@@ -24,6 +24,9 @@ namespace Astra
     PARAM(rfp_impr_bonus, 50, 30, 100);
     PARAM(rfp_depth, 5, 3, 9);
 
+    PARAM(snmp_margin, 100, 50, 150);
+    PARAM(snmp_depth, 5, 2, 9);
+
     PARAM(nmp_depth, 3, 2, 5);
 
     PARAM(pv_see_cap_margin, 97, 90, 110);
@@ -158,6 +161,7 @@ namespace Astra
         // store in transposition table
         if (!threads.stop)
         {
+            // exact bounds can only be stored in pv search
             Bound bound = best_score >= beta ? LOWER_BOUND : UPPER_BOUND;
             tt.store(hash, best_move, scoreToTT(best_score, ss->ply), 0, bound);
         }
@@ -350,6 +354,14 @@ namespace Astra
                 return beta;
             }
 
+            // static null move pruning
+            /*
+            if (depth <= snmp_depth 
+                && ss->static_eval >= beta + depth * snmp_margin
+                && ss->static_eval < VALUE_MIN_MATE)
+                return ss->static_eval;
+            */
+
             // null move pruning
             if (!pv_node
                 && board.nonPawnMat(stm)
@@ -380,7 +392,7 @@ namespace Astra
         MoveList moves(board);
         move_ordering.sortMoves(board, moves, tt_entry.move, (ss - 1)->current_move, ss->ply);
 
-        Score score = VALUE_NONE;
+        Score score;
         Move best_move = NO_MOVE;
 
         ss->move_count = moves.size();
@@ -458,35 +470,42 @@ namespace Astra
             if (in_check && (ss - 1)->move_count == 1 && ss->move_count == 1)
                 extension += 1;
 
-            const int newDepth = depth - 1 + extension;
+            const int new_depth = depth - 1 + extension;
 
             nodes++;
             board.makeMove(move, true);
 
             ss->current_move = move;
 
-            // late move reduction
-            if (depth >= lmr_depth && !in_check && made_moves > lmr_min_moves)
+            if (made_moves == 1) 
             {
-                int rdepth = REDUCTIONS[depth][made_moves];
-                rdepth += is_improving;
-                rdepth -= pv_node;
-                rdepth -= is_capture;
-                rdepth = std::clamp(newDepth - rdepth, 1, newDepth + 1);
-
-                score = -abSearch(rdepth, -alpha - 1, -alpha, NON_PV, ss + 1);
-
-                // if late move reduction failed high, research
-                if (score > alpha && rdepth < newDepth)
-                    score = -abSearch(newDepth, -alpha - 1, -alpha, NON_PV, ss + 1);
+                score = -abSearch(new_depth, -beta, -alpha, PV, ss + 1);
             }
-            else if (!pv_node || made_moves > 1)
-                // full-depth search if lmr was skipped
-                score = -abSearch(newDepth, -alpha - 1, -alpha, NON_PV, ss + 1);
+            else
+            {
+                // late move reduction
+                if (depth >= lmr_depth && !in_check && made_moves > lmr_min_moves)
+                {
+                    int rdepth = REDUCTIONS[depth][made_moves];
+                    rdepth += is_improving;
+                    rdepth -= pv_node;
+                    rdepth -= is_capture;
+                    rdepth = std::clamp(new_depth - rdepth, 1, new_depth + 1);
 
-            // principal variation search
-            if (pv_node && ((score > alpha && score < beta) || made_moves == 1))
-                score = -abSearch(newDepth, -beta, -alpha, PV, ss + 1);
+                    score = -abSearch(rdepth, -alpha - 1, -alpha, NON_PV, ss + 1);
+
+                    // if late move reduction failed high, re-search
+                    if (score > alpha && rdepth < new_depth)
+                        score = -abSearch(new_depth, -alpha - 1, -alpha, PV, ss + 1);
+                }
+                else if (!pv_node || made_moves > 1)
+                    // full-depth search if lmr was skipped
+                    score = -abSearch(new_depth, -alpha - 1, -alpha, NON_PV, ss + 1);
+
+                // re-search
+                if (score > alpha && score < beta)
+                    score = -abSearch(new_depth, -beta, -alpha, PV, ss + 1);
+            }
 
             board.unmakeMove(move);
 
