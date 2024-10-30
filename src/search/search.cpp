@@ -7,13 +7,13 @@
 
 namespace Astra
 {
-   // search parameters
+    // search parameters
     PARAM(lmr_base, 100, 50, 150);
     PARAM(lmr_div, 175, 150, 250);
     PARAM(lmr_depth, 2, 1, 4);
     PARAM(lmr_min_moves, 3, 1, 5);
 
-    PARAM(delta_margin, 450, 400, 900);
+    PARAM(delta_margin, 500, 400, 900);
 
     PARAM(iir_depth, 3, 2, 4);
 
@@ -23,9 +23,6 @@ namespace Astra
     PARAM(rfp_depth_mult, 46, 20, 80);
     PARAM(rfp_impr_bonus, 50, 30, 100);
     PARAM(rfp_depth, 5, 3, 9);
-
-    PARAM(snmp_margin, 100, 50, 150);
-    PARAM(snmp_depth, 5, 2, 9);
 
     PARAM(nmp_depth, 3, 2, 5);
 
@@ -119,8 +116,7 @@ namespace Astra
             {
                 // delta pruning
                 PieceType captured = typeOf(board.pieceAt(move.to()));
-                if (captured != NO_PIECE_TYPE &&
-                    best_score + delta_margin + PIECE_VALUES[captured] < alpha
+                if (best_score + delta_margin + PIECE_VALUES[captured] < alpha
                     && !isPromotion(move)
                     && board.nonPawnMat(stm))
                 {
@@ -348,14 +344,6 @@ namespace Astra
             {
                 return ss->static_eval - rfp_margin;
             }
-
-            // static null move pruning
-            /*
-            if (depth <= snmp_depth 
-                && ss->static_eval >= beta + depth * snmp_margin
-                && ss->static_eval < VALUE_MIN_MATE)
-                return ss->static_eval;
-            */
 
             // null move pruning
             if (!pv_node
