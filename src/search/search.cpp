@@ -57,6 +57,8 @@ namespace Astra
                 REDUCTIONS[depth][moves] = base + log(depth) * log(moves) / div;
     }
 
+    int historyBonus(int depth) { return std::min(1600, depth * history_bonus); }
+
     Search::Search(const std::string& fen) : board(fen)
     {
         reset();
@@ -513,7 +515,7 @@ namespace Astra
 
                 if (score >= beta)
                 {
-                    move_ordering.update(board, move, (ss - 1)->current_move, std::min(2000, depth * history_bonus), ss->ply);
+                    move_ordering.update(board, move, (ss - 1)->current_move, historyBonus(depth), ss->ply);
                     // cut-off
                     break;
                 }
