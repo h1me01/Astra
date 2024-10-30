@@ -471,7 +471,7 @@ namespace Astra
 
             ss->current_move = move;
 
-            Score score;
+            Score score = VALUE_NONE;
 
             // late move reduction
             if (depth >= lmr_depth && !in_check && made_moves > lmr_min_moves)
