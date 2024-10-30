@@ -8,20 +8,17 @@ namespace Astra
     {
         Square from = move.from();
         Square to = move.to();
+        
         PieceType attacker = typeOf(board.pieceAt(from));
         PieceType victim = typeOf(board.pieceAt(to));
+        
         int swap = PIECE_VALUES[victim] - threshold;
-
-        if (swap < 0)
-            return false;
-
+        if (swap < 0) return false;
         swap -= PIECE_VALUES[attacker];
-
-        if (swap >= 0)
-            return true;
+        if (swap >= 0) return true;
 
         U64 occ = board.occupancy(WHITE) | board.occupancy(BLACK);
-        occ = occ ^ (1ULL << from) ^ (1ULL << to);
+        occ = (occ ^ (1ULL << from)) | (1ULL << to);
         U64 attackers = (board.attackers(WHITE, to, occ) | board.attackers(BLACK, to, occ)) & occ;
 
         U64 queens = board.getPieceBB(WHITE, QUEEN) | board.getPieceBB(BLACK, QUEEN);
@@ -74,12 +71,12 @@ namespace Astra
 
     // most valuable victim / least valuable attacker
     constexpr int mvvlva_table[7][7] = {
-        {205, 204, 203, 202, 201, 200, 0},
-        {305, 304, 303, 302, 301, 300, 0},
-        {405, 404, 403, 402, 401, 400, 0},
-        {505, 504, 503, 502, 501, 500, 0},
-        {605, 604, 603, 602, 601, 600, 0},
-        {705, 704, 703, 702, 701, 700, 0}};
+        {5, 4, 3, 2, 1, 0, 0},
+        {15, 14, 13, 12, 11, 10, 0},
+        {25, 24, 23, 22, 21, 20, 0},
+        {35, 34, 33, 32, 31, 30, 0},
+        {45, 44, 43, 42, 41, 40, 0},
+        {55, 54, 53, 52, 51, 50, 0}};
 
     int mvvlva(const Board &board, const Move &move)
     {

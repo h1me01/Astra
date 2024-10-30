@@ -331,8 +331,6 @@ namespace Astra
             // internal iterative reductions
             if (depth >= iir_depth && !tt_hit)
                 depth--;
-            if (pv_node && !tt_hit)
-                depth--;
             if (depth <= 0)
                 return qSearch(alpha, beta, PV, ss);
 
@@ -341,17 +339,19 @@ namespace Astra
                 && depth <= rzr_depth
                 && ss->static_eval + razor_margin < alpha)
             {
-                return qSearch(alpha, beta, NON_PV, ss);
+                Score score = qSearch(alpha, beta, NON_PV, ss);
+                if (score < alpha && std::abs(score) < VALUE_TB_WIN_IN_MAX_PLY)
+                    return score;
             }
 
             // reverse futility pruning
-            int rfp_margin = ss->static_eval - rfp_depth_mult * depth + rfp_impr_bonus * is_improving;
+            int rfp_margin = rfp_depth_mult * depth + rfp_impr_bonus * is_improving;
             if (!pv_node
                 && depth < rfp_depth
-                && rfp_margin >= beta
+                && ss->static_eval - rfp_margin >= beta
                 && std::abs(beta) < VALUE_TB_WIN_IN_MAX_PLY)
             {
-                return beta;
+                return ss->static_eval - rfp_margin;
             }
 
             // static null move pruning
@@ -392,7 +392,6 @@ namespace Astra
         MoveList moves(board);
         move_ordering.sortMoves(board, moves, tt_entry.move, (ss - 1)->current_move, ss->ply);
 
-        Score score;
         Move best_move = NO_MOVE;
 
         ss->move_count = moves.size();
@@ -477,35 +476,30 @@ namespace Astra
 
             ss->current_move = move;
 
-            if (made_moves == 1) 
-            {
-                score = -abSearch(new_depth, -beta, -alpha, PV, ss + 1);
-            }
-            else
-            {
-                // late move reduction
-                if (depth >= lmr_depth && !in_check && made_moves > lmr_min_moves)
-                {
-                    int rdepth = REDUCTIONS[depth][made_moves];
-                    rdepth += is_improving;
-                    rdepth -= pv_node;
-                    rdepth -= is_capture;
-                    rdepth = std::clamp(new_depth - rdepth, 1, new_depth + 1);
+            Score score;
 
-                    score = -abSearch(rdepth, -alpha - 1, -alpha, NON_PV, ss + 1);
+            // late move reduction
+            if (depth >= lmr_depth && !in_check && made_moves > lmr_min_moves)
+            {
+                int rdepth = REDUCTIONS[depth][made_moves];
+                rdepth += is_improving;
+                rdepth -= pv_node;
+                rdepth -= is_capture;
+                rdepth = std::clamp(new_depth - rdepth, 1, new_depth + 1);
 
-                    // if late move reduction failed high, re-search
-                    if (score > alpha && rdepth < new_depth)
-                        score = -abSearch(new_depth, -alpha - 1, -alpha, PV, ss + 1);
-                }
-                else if (!pv_node || made_moves > 1)
-                    // full-depth search if lmr was skipped
+                score = -abSearch(rdepth, -alpha - 1, -alpha, NON_PV, ss + 1);
+
+                // if late move reduction failed high, research
+                if (score > alpha && rdepth < new_depth)
                     score = -abSearch(new_depth, -alpha - 1, -alpha, NON_PV, ss + 1);
-
-                // re-search
-                if (score > alpha && score < beta)
-                    score = -abSearch(new_depth, -beta, -alpha, PV, ss + 1);
             }
+            else if (!pv_node || made_moves > 1)
+                // full-depth search if lmr was skipped
+                score = -abSearch(new_depth, -alpha - 1, -alpha, NON_PV, ss + 1);
+
+            // principal variation search
+            if (pv_node && ((score > alpha && score < beta) || made_moves == 1))
+                score = -abSearch(new_depth, -beta, -alpha, PV, ss + 1);
 
             board.unmakeMove(move);
 
@@ -626,19 +620,10 @@ namespace Astra
         if (id == 0)
             tt.incrementAge();
 
-        Stack stack[MAX_PLY + 4];
-        Stack* ss = stack + 2;
+        Stack stack[MAX_PLY + 2];
+        Stack* ss = stack + 1;
 
         // init stack
-        for (int i = 2; i > 0; --i)
-        {
-            (ss - i)->ply = i;
-            (ss - i)->move_count = 0;
-            (ss - i)->current_move = NO_MOVE;
-            (ss - i)->static_eval = 0;
-            (ss - i)->excluded_move = NO_MOVE;
-        }
-
         for (int i = 0; i <= MAX_PLY + 1; ++i)
         {
             (ss + i)->ply = i;

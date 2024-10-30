@@ -249,12 +249,14 @@ namespace Chess
         const int bishop = c == WHITE ? WHITE_BISHOP : BLACK_BISHOP;
         const int rook = c == WHITE ? WHITE_ROOK : BLACK_ROOK;
         const int queen = c == WHITE ? WHITE_QUEEN : BLACK_QUEEN;
+        const int king = c == WHITE ? WHITE_KING : BLACK_KING;
         const Color opp_color = c == WHITE ? BLACK : WHITE;
 
         U64 attacks = pawnAttacks(opp_color, s) & piece_bb[pawn];
         attacks |= getAttacks(KNIGHT, s, occ) & piece_bb[knight];
         attacks |= getAttacks(BISHOP, s, occ) & (piece_bb[bishop] | piece_bb[queen]);
         attacks |= getAttacks(ROOK, s, occ) & (piece_bb[rook] | piece_bb[queen]);
+        attacks |= getAttacks(KING, s, occ) & piece_bb[king];
 
         return attacks;
     }
@@ -451,6 +453,8 @@ namespace Chess
 
         history[game_ply].hash = hash;
         stm = ~stm;
+
+        Astra::tt.prefetch(hash);
     }
 
     void Board::unmakeNullMove()
