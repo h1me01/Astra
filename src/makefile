@@ -1,13 +1,13 @@
-# variables
+# Root directory
 ROOT := $(realpath $(dir $(abspath $(lastword $(MAKEFILE_LIST)))))
 EvalFile = $(ROOT)/nn-768-2x1024-1.nnue
 
-# compiler and flags
+# Compiler and flags
 CXX ?= g++
 CXXFLAGS = -s -Wall -Wextra -O3 -DNDEBUG -funroll-loops -fno-exceptions -pthread -std=c++17 -march=native
 CXXFLAGS += -DNNUE_PATH=\"$(EvalFile)\" # add nnue file path
 
-# source files
+# Source files
 SRC = chess/attacks.cpp \
       chess/board.cpp \
       chess/perft.cpp \
@@ -18,18 +18,19 @@ SRC = chess/attacks.cpp \
       eval/eval.cpp \
       search/search.cpp \
       search/syzygy.cpp \
-      search/moveordering.cpp \
+      search/movepicker.cpp \
       search/tt.cpp \
       search/tune.cpp \
+      search/history.cpp \
       syzygy/tbprobe.cpp \
       main.cpp \
       bench.cpp \
       uci.cpp
 
-# target executable
+# Default target executable (if EXE is not provided)
 TARGET = astra
 
-# detect Operating System
+# Detect Operating System
 ifeq ($(OS), Windows_NT)
     SUFFIX := .exe
     LDFLAGS := -static -lstdc++ -lpthread
@@ -38,16 +39,17 @@ else
     LDFLAGS := -lpthread -lstdc++
 endif
 
-# complete target name with suffix
-EXE := $(TARGET)$(SUFFIX)
+# Allow overriding EXE with a custom name
+EXE ?= $(TARGET)
+EXE := $(EXE)$(SUFFIX)
 
-# default rule to build the executable
+# Default rule to build the executable
 all: $(EXE)
 
 $(EXE): $(SRC)
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
 
-# clean target
+# Clean target
 clean:
 	rm -f $(EXE)
 

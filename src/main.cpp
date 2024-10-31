@@ -1,6 +1,7 @@
 #include "uci.h"
 
-int main() {
+int main()
+{
     initLookUpTables();
     Zobrist::init();
     Astra::initReductions();
@@ -9,6 +10,6 @@ int main() {
 
     UCI::Uci uci;
     uci.loop();
-    
+
     return 0;
 }

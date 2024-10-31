@@ -1,6 +1,7 @@
 #ifndef BOARD_H
 #define BOARD_H
 
+#include <iostream>
 #include "misc.h"
 #include "zobrist.h"
 #include "attacks.h"
@@ -110,8 +111,13 @@ namespace Chess
 
     inline U64 Board::getPieceBB(Color c, PieceType pt) const
     {
-        assert(pt != NO_PIECE_TYPE);
-        return piece_bb[makePiece(c, pt)];
+        Piece piece = makePiece(c, pt);
+        if (piece == NO_PIECE)
+        {
+            std::cerr << "Invalid piece type" << std::endl;
+            return 0;
+        }
+        return piece_bb[piece];
     }
 
     inline Piece Board::pieceAt(Square s) const { return board[s]; }

@@ -14,6 +14,8 @@ namespace Chess
 
     constexpr int MAX_PLY = 128;
 
+    const int PIECE_VALUES[] = {100, 325, 325, 500, 1000, 0, 0};
+
     enum Color : int
     {
         WHITE, BLACK, NUM_COLORS = 2
@@ -146,6 +148,7 @@ namespace Chess
         bool operator==(const Move& m) const { return move == m.move; }
         bool operator!=(const Move& m) const { return move != m.move; }
 
+        int score = 0;
     private:
         // first 4 bits represent the move flag
         // next 6 bits represent the to square

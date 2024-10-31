@@ -5,15 +5,16 @@
 #include <thread>
 #include "tt.h"
 #include "pvtable.h"
+#include "history.h"
 #include "timemanager.h"
-#include "moveordering.h"
-#include "../chess/board.h"
 
 namespace Astra
 {
     enum Node
     {
-        NON_PV, PV, ROOT 
+        NON_PV,
+        PV,
+        ROOT
     };
 
     struct Stack
@@ -38,6 +39,8 @@ namespace Astra
     public:
         int id = 0; // main thread
 
+        bool use_tb = false;
+
         U64 nodes = 0;
         U64 tb_hits = 0;
         uint8_t sel_depth = 0;
@@ -45,12 +48,11 @@ namespace Astra
         Limits limit;
 
         Board board;
-        MoveOrdering move_ordering;
         TimeManager time_manager;
 
-        bool use_tb = false;
+        History history;
 
-        explicit Search(const std::string& fen);
+        Search(const std::string &fen);
 
         SearchResult start();
 
@@ -61,11 +63,11 @@ namespace Astra
         PVTable pv_table;
 
         bool isLimitReached(int depth) const;
-        void printUciInfo(Score result, int depth, PVLine& pv_line) const;
+        void printUciInfo(Score result, int depth, PVLine &pv_line) const;
 
-        Score qSearch(Score alpha, Score beta, Node node, Stack* ss);
-        Score abSearch(int depth, Score alpha, Score beta, Node node, Stack* ss);
-        Score aspSearch(int depth, Score prev_eval, Stack* ss);
+        Score qSearch(Score alpha, Score beta, Node node, Stack *ss);
+        Score abSearch(int depth, Score alpha, Score beta, Node node, Stack *ss);
+        Score aspSearch(int depth, Score prev_eval, Stack *ss);
     };
 
     class ThreadPool
@@ -73,7 +75,7 @@ namespace Astra
     public:
         ThreadPool() : stop(false) {}
 
-        void launchWorkers(const Board& board, const Limits& limit, int worker_count, bool use_tb);
+        void launchWorkers(const Board &board, const Limits &limit, int worker_count, bool use_tb);
         void stopAll();
 
         U64 getTotalNodes() const;
@@ -94,4 +96,4 @@ namespace Astra
 
 } // namespace Astra
 
-#endif //SEARCH_H
+#endif // SEARCH_H

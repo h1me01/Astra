@@ -2,6 +2,7 @@
 #include <algorithm>
 #include "search.h"
 #include "syzygy.h"
+#include "movepicker.h"
 #include "tune.h"
 #include "../eval/eval.h"
 
@@ -54,14 +55,12 @@ namespace Astra
                 REDUCTIONS[depth][moves] = base + log(depth) * log(moves) / div;
     }
 
-    int historyBonus(int depth) { return std::min(1600, depth * history_bonus); }
-
-    Search::Search(const std::string& fen) : board(fen)
+    Search::Search(const std::string &fen) : board(fen)
     {
         reset();
     }
 
-    Score Search::qSearch(Score alpha, Score beta, Node node, Stack* ss)
+    Score Search::qSearch(Score alpha, Score beta, Node node, Stack *ss)
     {
         assert(alpha < beta);
 
@@ -85,10 +84,7 @@ namespace Astra
         const Score tt_score = tt_hit ? scoreFromTT(tt_entry.score, ss->ply) : static_cast<Score>(VALUE_NONE);
         Bound tt_bound = tt_entry.bound;
 
-        if (tt_hit
-            && !pv_node
-            && tt_score != VALUE_NONE
-            && tt_bound != NO_BOUND)
+        if (tt_hit && !pv_node && tt_score != VALUE_NONE && tt_bound != NO_BOUND)
         {
             bool is_exact = tt_bound == EXACT_BOUND;
             bool is_lower = tt_bound == LOWER_BOUND && tt_score >= beta;
@@ -106,18 +102,19 @@ namespace Astra
         if (best_score > alpha)
             alpha = best_score;
 
-        MoveList moves(board, CAPTURE_MOVES);
-        move_ordering.sortMoves(board, moves, tt_entry.move, (ss - 1)->current_move, ss->ply);
+        MovePicker movepicker(CAPTURE_MOVES, *this, ss, tt_entry.move);
 
         Move best_move = NO_MOVE;
-        for (Move move : moves)
+        Move move = NO_MOVE;
+
+        while ((move = movepicker.nextMove()) != NO_MOVE)
         {
             if (best_score > VALUE_TB_LOSS_IN_MAX_PLY && !in_check)
             {
                 // delta pruning
                 PieceType captured = typeOf(board.pieceAt(move.to()));
-                if (best_score + delta_margin + PIECE_VALUES[captured] < alpha
-                    && !isPromotion(move)
+                if (best_score + delta_margin + PIECE_VALUES[captured] < alpha 
+                    && !isPromotion(move) 
                     && board.nonPawnMat(stm))
                 {
                     continue;
@@ -164,11 +161,11 @@ namespace Astra
         return best_score;
     }
 
-    Score Search::abSearch(int depth, Score alpha, Score beta, Node node, Stack* ss)
+    Score Search::abSearch(int depth, Score alpha, Score beta, Node node, Stack *ss)
     {
         assert(alpha && alpha);
         assert(ss->ply >= 0);
-        
+
         if (isLimitReached(depth))
             return beta;
 
@@ -229,12 +226,12 @@ namespace Astra
 
         const Move excluded_move = ss->excluded_move;
 
-        if (!root_node
-            && !pv_node
-            && excluded_move == NO_MOVE
-            && tt_hit
-            && tt_score != VALUE_NONE
-            && tt_entry.depth >= depth
+        if (!root_node 
+            && !pv_node 
+            && excluded_move == NO_MOVE 
+            && tt_hit 
+            && tt_score != VALUE_NONE 
+            && tt_entry.depth >= depth 
             && (ss - 1)->current_move != NULL_MOVE)
         {
             switch (tt_entry.bound)
@@ -326,31 +323,32 @@ namespace Astra
                 return qSearch(alpha, beta, PV, ss);
 
             // razoring
-            if (!pv_node
-                && depth <= rzr_depth
+            if (!pv_node 
+                && depth <= rzr_depth 
                 && ss->static_eval + razor_margin < alpha)
             {
                 Score score = qSearch(alpha, beta, NON_PV, ss);
-                if (score < alpha && std::abs(score) < VALUE_TB_WIN_IN_MAX_PLY)
+                if (score < alpha 
+                    && std::abs(score) < VALUE_TB_WIN_IN_MAX_PLY)
                     return score;
             }
 
             // reverse futility pruning
             int rfp_margin = rfp_depth_mult * depth + rfp_impr_bonus * is_improving;
-            if (!pv_node
-                && depth < rfp_depth
-                && ss->static_eval - rfp_margin >= beta
+            if (!pv_node 
+                && depth < rfp_depth 
+                && ss->static_eval - rfp_margin >= beta 
                 && std::abs(beta) < VALUE_TB_WIN_IN_MAX_PLY)
             {
                 return ss->static_eval - rfp_margin;
             }
 
             // null move pruning
-            if (!pv_node
+            if (!pv_node 
                 && board.nonPawnMat(stm)
-                && excluded_move == NO_MOVE
-                && (ss - 1)->current_move != NULL_MOVE
-                && depth >= nmp_depth
+                && excluded_move == NO_MOVE 
+                && (ss - 1)->current_move != NULL_MOVE 
+                && depth >= nmp_depth 
                 && ss->static_eval >= beta)
             {
                 constexpr int R = 5;
@@ -372,15 +370,17 @@ namespace Astra
             }
         }
 
-        MoveList moves(board);
-        move_ordering.sortMoves(board, moves, tt_entry.move, (ss - 1)->current_move, ss->ply);
-
-        Move best_move = NO_MOVE;
-
-        ss->move_count = moves.size();
+        MovePicker movepicker(ALL_MOVES, *this, ss, tt_entry.move);
+        ss->move_count = movepicker.getMoveCount();
 
         uint8_t made_moves = 0, quiet_count = 0;
-        for (Move move : moves)
+
+        Move quiet_moves[MAX_MOVES / 2];
+
+        Move best_move = NO_MOVE;
+        Move move = NO_MOVE;
+
+        while ((move = movepicker.nextMove()) != NO_MOVE)
         {
             if (move == excluded_move)
                 continue;
@@ -388,14 +388,14 @@ namespace Astra
             made_moves++;
 
             // print current move information
-            if (id == 0
-                && root_node
-                && time_manager.elapsedTime() > 5000
+            if (id == 0 
+                && root_node 
+                && time_manager.elapsedTime() > 5000 
                 && !threads.stop)
             {
                 std::cout << "info depth " << depth
-                    << " currmove " << move
-                    << " currmovenumber " << static_cast<int>(made_moves) << std::endl;
+                          << " currmove " << move
+                          << " currmovenumber " << static_cast<int>(made_moves) << std::endl;
             }
 
             int extension = 0;
@@ -409,11 +409,11 @@ namespace Astra
                 int see_margin = is_capture ? pv_see_cap_margin : pv_see_quiet_margin;
 
                 // late move pruning
-                if (!is_capture
-                    && !in_check
-                    && !pv_node
-                    && !is_promotion
-                    && depth <= lmp_depth
+                if (!is_capture 
+                    && !in_check 
+                    && !pv_node 
+                    && !is_promotion 
+                    && depth <= lmp_depth 
                     && quiet_count > (lmp_count_base + depth * depth))
                 {
                     continue;
@@ -425,14 +425,14 @@ namespace Astra
             }
 
             // singular extensions
-            if (!root_node
-                && depth >= 8
-                && tt_hit
-                && tt_score != VALUE_NONE
-                && tt_entry.move == move
-                && excluded_move == NO_MOVE
-                && std::abs(tt_score) < VALUE_TB_WIN_IN_MAX_PLY
-                && tt_entry.bound & LOWER_BOUND
+            if (!root_node 
+                && depth >= 8 
+                && tt_hit 
+                && tt_score != VALUE_NONE 
+                && tt_entry.move == move 
+                && excluded_move == NO_MOVE 
+                && std::abs(tt_score) < VALUE_TB_WIN_IN_MAX_PLY 
+                && tt_entry.bound & LOWER_BOUND 
                 && tt_entry.depth >= depth - 3)
             {
                 const Score singular_beta = tt_score - 3 * depth;
@@ -503,20 +503,22 @@ namespace Astra
 
                 if (score >= beta)
                 {
-                    move_ordering.update(board, move, (ss - 1)->current_move, historyBonus(depth), ss->ply);
+                    history.update(board, move, quiet_moves, ss, quiet_count, depth);
                     // cut-off
                     break;
                 }
             }
 
-            if (!is_capture && !is_promotion)
+            if (!is_capture) {
+                quiet_moves[quiet_count] = move;
                 quiet_count++;
+            }
         }
 
         ss->move_count = made_moves;
 
         // check for mate and stalemate
-        if (moves.size() == 0) 
+        if (movepicker.getMoveCount() == 0)
         {
             if (excluded_move != NO_MOVE)
                 best_score = alpha;
@@ -544,7 +546,7 @@ namespace Astra
         return best_score;
     }
 
-    Score Search::aspSearch(int depth, Score prev_eval, Stack* ss)
+    Score Search::aspSearch(int depth, Score prev_eval, Stack *ss)
     {
         Score alpha = -VALUE_INFINITE;
         Score beta = VALUE_INFINITE;
@@ -594,7 +596,7 @@ namespace Astra
 
                 if (id == 0)
                     std::cout << "bestmove " << dtz.second << std::endl;
-                
+
                 return {dtz.second, dtz.first};
             }
         }
@@ -602,10 +604,19 @@ namespace Astra
         if (id == 0)
             tt.incrementAge();
 
-        Stack stack[MAX_PLY + 2];
-        Stack* ss = stack + 1;
+        Stack stack[MAX_PLY + 4];
+        Stack *ss = stack + 2;
 
         // init stack
+        for (int i = 2; i > 0; --i)
+        {
+            (ss - i)->ply = i;
+            (ss - i)->move_count = 0;
+            (ss - i)->current_move = NO_MOVE;
+            (ss - i)->static_eval = 0;
+            (ss - i)->excluded_move = NO_MOVE;
+        }
+
         for (int i = 0; i <= MAX_PLY + 1; ++i)
         {
             (ss + i)->ply = i;
@@ -617,7 +628,8 @@ namespace Astra
 
         time_manager.start();
 
-        move_ordering.clear();
+        history.clear();
+        history.setHistoryBonus(history_bonus); 
 
         Score previous_result = VALUE_NONE;
 
@@ -672,7 +684,7 @@ namespace Astra
         tb_hits = 0;
         tt.clear();
         pv_table.clear();
-        move_ordering.clear();
+        history.clear();
     }
 
     void Search::stop()
@@ -683,11 +695,11 @@ namespace Astra
         limit.infinite = false;
     }
 
-    void Search::printUciInfo(Score result, int depth, PVLine& pv_line) const
+    void Search::printUciInfo(Score result, int depth, PVLine &pv_line) const
     {
         std::cout << "info depth " << depth
-            << " seldepth " << static_cast<int>(threads.getSelDepth())
-            << " score ";
+                  << " seldepth " << static_cast<int>(threads.getSelDepth())
+                  << " score ";
 
         if (abs(result) >= VALUE_MIN_MATE)
             std::cout << "mate " << (VALUE_MATE - abs(result) + 1) / 2 * (result > 0 ? 1 : -1);
@@ -699,10 +711,10 @@ namespace Astra
         const U64 nps = total_nodes * 1000 / (elapsed_time + 1);
 
         std::cout << " nodes " << total_nodes
-            << " nps " << nps
-            << " tbhits " << threads.getTotalTbHits()
-            << " time " << elapsed_time
-            << " pv";
+                  << " nps " << nps
+                  << " tbhits " << threads.getTotalTbHits()
+                  << " time " << elapsed_time
+                  << " pv";
 
         // print the rest of the pv
         for (int i = 0; i < pv_line.length; i++)
@@ -712,7 +724,7 @@ namespace Astra
     }
 
     // class ThreadPool
-    void ThreadPool::launchWorkers(const Board& board, const Limits& limit, int worker_count, bool use_tb)
+    void ThreadPool::launchWorkers(const Board &board, const Limits &limit, int worker_count, bool use_tb)
     {
         stop = false;
 
@@ -735,7 +747,7 @@ namespace Astra
     {
         stop = true;
 
-        for (auto& th : running_threads)
+        for (auto &th : running_threads)
             if (th.joinable())
                 th.join();
 
@@ -746,7 +758,7 @@ namespace Astra
     U64 ThreadPool::getTotalNodes() const
     {
         U64 total_nodes = 0;
-        for (const auto& t : threads)
+        for (const auto &t : threads)
             total_nodes += t.nodes;
         return total_nodes;
     }
@@ -754,7 +766,7 @@ namespace Astra
     U64 ThreadPool::getTotalTbHits() const
     {
         U64 total_tb_hits = 0;
-        for (const auto& t : threads)
+        for (const auto &t : threads)
             total_tb_hits += t.tb_hits;
         return total_tb_hits;
     }
@@ -762,7 +774,7 @@ namespace Astra
     uint8_t ThreadPool::getSelDepth() const
     {
         uint8_t max_sel_depth = 0;
-        for (const auto& t : threads)
+        for (const auto &t : threads)
             max_sel_depth = std::max(max_sel_depth, t.sel_depth);
         return max_sel_depth;
     }

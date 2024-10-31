@@ -415,7 +415,7 @@ namespace Chess
     class MoveList
     {
     public:
-        explicit MoveList(Board& board, MoveType mt = ALL_MOVES)
+        MoveList(Board board, MoveType mt = ALL_MOVES)
         {
             bool is_w = board.getTurn() == WHITE;
 
@@ -431,9 +431,18 @@ namespace Chess
             return list[i];
         }
 
+        int find(Move& m) {
+            for (int i = 0; i < size(); i++) {
+                if (list[i] == m) 
+                    return i;
+            }
+            return -1;
+        }
+
         const Move* begin() const { return list; }
         const Move* end() const { return last; }
-        size_t size() const { return last - list; }
+        
+        int size() { return last - list; }
 
     private:
         Move list[MAX_MOVES];
