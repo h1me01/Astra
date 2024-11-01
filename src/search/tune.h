@@ -4,7 +4,7 @@
 #include <iostream>
 #include <string>
 
-//#define TUNE
+#define TUNE
 
 namespace Astra
 {
@@ -25,7 +25,7 @@ namespace Astra
 
     void setParam(const std::string& name, int value);
 
-    std::string paramsToSpsa();
+    void paramsToSpsa();
 
 #ifdef TUNE
 #define PARAM(name, value, min, max) Param name(#name, value, min, max)

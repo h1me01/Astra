@@ -5,10 +5,9 @@
 namespace Astra
 {
     // holds all the tuning parameters for search
-    std::vector<Param*> params;
+    std::vector<Param *> params;
 
-    Param::Param(std::string name, int value, int min, int max) :
-        name(std::move(name)), value(value), min(min), max(max)
+    Param::Param(std::string name, int value, int min, int max) : name(std::move(name)), value(value), min(min), max(max)
     {
         if (value < min || value > max)
         {
@@ -23,18 +22,18 @@ namespace Astra
 
     void paramsToUCI()
     {
-        for (const auto& param : params)
+        for (const auto &param : params)
         {
             std::cout << "option name " << param->name
-                << " type spin default " << param->value
-                << " min " << param->min
-                << " max " << param->max << std::endl;
+                      << " type spin default " << param->value
+                      << " min " << param->min
+                      << " max " << param->max << std::endl;
         }
     }
 
-    void setParam(const std::string& name, int value)
+    void setParam(const std::string &name, int value)
     {
-        for (auto* param : params)
+        for (auto *param : params)
         {
             if (param->name == name)
             {
@@ -50,22 +49,18 @@ namespace Astra
         }
     }
 
-    std::string paramsToSpsa()
+    void paramsToSpsa()
     {
-        std::ostringstream ss;
-
-        for (auto& param : params)
+        for (auto &param : params)
         {
-            ss << param->name
-                << ", " << "int"
-                << ", " << param->value
-                << ", " << param->min
-                << ", " << param->max
-                << ", " << std::max(0.5, static_cast<double>(param->max - param->min) / 20.0)
-                << ", " << 0.002 << "\n";
+            std::cout << param->name
+                      << ", " << "int"
+                      << ", " << param->value
+                      << ", " << param->min
+                      << ", " << param->max
+                      << ", " << std::max(0.5, static_cast<double>(param->max - param->min) / 20.0)
+                      << ", " << 0.002 << "\n";
         }
-
-        return ss.str();
     }
 
 } // namespace Astra
