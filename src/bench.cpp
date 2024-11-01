@@ -69,10 +69,8 @@ namespace Bench
 
         for (const auto& fen : bench_positions)
         {
-            std::cout << "======================================================" << std::endl;
             std::cout << "Position: " << fen << std::endl;
-            std::cout << "======================================================" << std::endl;
-
+            
             Astra::Search search(fen);
             search.limit.depth = depth;
             search.start();
@@ -83,11 +81,7 @@ namespace Bench
         auto end = std::chrono::high_resolution_clock::now();
         auto total_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 
-        std::cout << "\n======================================================" << std::endl;
-        std::cout << "Total Time (ms): " << total_time << std::endl;
-        std::cout << "Total Nodes: " << nodes << std::endl;
-        std::cout << "Nodes per second: " << nodes * 1000 / total_time << std::endl;
-        std::cout << "======================================================" << std::endl;
+        std::cout << nodes << " nodes " <<  nodes * 1000 / total_time << " nps" << std::endl;
     }
 
 } // namespace Bench
