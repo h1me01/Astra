@@ -187,6 +187,8 @@ namespace Astra
     {
         for (int i = 0; i < ml.size(); i++)
         {
+            // no reason to evaluate tt move since we directly return it
+
             // in qsearch we don't want to reach BAD stage since we only return captures
             if (mt == CAPTURE_MOVES)
             {
@@ -222,6 +224,17 @@ namespace Astra
         }
     }
 
+    int MovePicker::partialInsertionSort(int start)
+    {
+        int best_idx = start;
+
+        for (int i = 1 + start; i < ml.size(); i++)
+            if (ml[i].score > ml[best_idx].score)
+                best_idx = i;
+
+        return best_idx;
+    }
+
     void MovePicker::swapMoves(int i, int j)
     {
         Move temp = ml[i];
@@ -232,17 +245,6 @@ namespace Astra
 
         ml[j] = temp;
         ml[j].score = temp_score;
-    }
-
-    int MovePicker::partialInsertionSort(int start)
-    {
-        int best_idx = start;
-
-        for (int i = 1 + start; i < ml.size(); i++)
-            if (ml[i].score > ml[best_idx].score)
-                best_idx = i;
-
-        return best_idx;
     }
 
 } // namespace Astra
