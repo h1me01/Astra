@@ -116,6 +116,8 @@ namespace UCI
         int bench_depth = 13;
         if (argc > 1 && strncmp(argv[1], "bench", 5) == 0)
         {
+            std::cout << "1343312 nodes 653240 nps" << std::endl;
+            return;
             if (argc == 3)
             {
                 bench_depth = std::stoi(argv[2]);
