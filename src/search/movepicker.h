@@ -41,7 +41,7 @@ namespace Astra
         int stage = TT;
 
         MoveType mt;
-        const Board& board;
+        Board& board;
         const History& history;
         const Stack *ss;
         MoveList ml;
