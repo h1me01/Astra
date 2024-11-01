@@ -4,12 +4,14 @@
 #include "search/tune.h"
 #include "syzygy/tbprobe.h"
 
+#include <cstring> // strncmp
+
 namespace UCI
-{ 
-    const std::string version = "3.4";
+{
+    const std::string version = "4.0";
 
     // options class
-    void Options::add(const std::string& name, const Option& option)
+    void Options::add(const std::string &name, const Option &option)
     {
         options[name] = option;
     }
@@ -34,11 +36,11 @@ namespace UCI
         num_workers = std::stoi(get("Threads"));
     }
 
-    void Options::set(std::istringstream& is)
+    void Options::set(std::istringstream &is)
     {
         std::vector<std::string> tokens = split(is.str(), ' ');
-        const std::string& name = tokens[2];
-        const std::string& value = tokens[4];
+        const std::string &name = tokens[2];
+        const std::string &value = tokens[4];
 
         if (tokens.size() < 5)
         {
@@ -70,7 +72,7 @@ namespace UCI
             std::cout << "Unknown option: " << name << std::endl;
     }
 
-    std::string Options::get(const std::string& str) const
+    std::string Options::get(const std::string &str) const
     {
         auto it = options.find(str);
         if (it != options.end())
@@ -80,14 +82,14 @@ namespace UCI
 
     void Options::print() const
     {
-        for (const auto& elem : options)
+        for (const auto &elem : options)
         {
             Option option = elem.second;
-            const std::string& value = option.default_val;
+            const std::string &value = option.default_val;
 
             std::cout << "option name " << elem.first
-                << " type " << option.type
-                << " default " << (value.empty() ? "<empty>" : value);
+                      << " type " << option.type
+                      << " default " << (value.empty() ? "<empty>" : value);
 
             if (option.min != 0 && option.max != 0)
                 std::cout << " min " << option.min << " max " << option.max << std::endl;
@@ -109,8 +111,29 @@ namespace UCI
         options.apply();
     }
 
-    void Uci::loop()
+    void Uci::loop(int argc, char **argv)
     {
+        int bench_depth = 13;
+        if (argc > 1 && strncmp(argv[1], "bench", 5) == 0)
+        {
+            if (argc == 3)
+            {
+                bench_depth = std::stoi(argv[2]);
+                if (bench_depth <= 0)
+                {
+                    std::cout << "Invalid bench depth" << std::endl;
+                    return;
+                }
+            }
+
+            std::cout << "Astra " << version << std::endl;
+
+            Astra::threads.stop = false;
+            Bench::bench(bench_depth);
+
+            return;
+        }
+
         std::string line;
         std::string token;
 
@@ -165,7 +188,7 @@ namespace UCI
         }
     }
 
-    void Uci::updatePosition(std::istringstream& is)
+    void Uci::updatePosition(std::istringstream &is)
     {
         std::string token, fen;
 
@@ -189,7 +212,7 @@ namespace UCI
         board.refreshAccumulator();
     }
 
-    void Uci::go(std::istringstream& is)
+    void Uci::go(std::istringstream &is)
     {
         Astra::threads.stopAll();
         Astra::Limits limit;
@@ -210,15 +233,24 @@ namespace UCI
                 return;
             }
 
-            if (token == "wtime") is >> w_time;
-            else if (token == "btime") is >> b_time;
-            else if (token == "winc") is >> w_inc;
-            else if (token == "binc") is >> b_inc;
-            else if (token == "movestogo") is >> moves_to_go;
-            else if (token == "movetime") is >> move_time;
-            else if (token == "depth") is >> limit.depth;
-            else if (token == "nodes") is >> limit.nodes;
-            else if (token == "infinite") limit.infinite = true;
+            if (token == "wtime")
+                is >> w_time;
+            else if (token == "btime")
+                is >> b_time;
+            else if (token == "winc")
+                is >> w_inc;
+            else if (token == "binc")
+                is >> b_inc;
+            else if (token == "movestogo")
+                is >> moves_to_go;
+            else if (token == "movetime")
+                is >> move_time;
+            else if (token == "depth")
+                is >> limit.depth;
+            else if (token == "nodes")
+                is >> limit.nodes;
+            else if (token == "infinite")
+                limit.infinite = true;
             else
             {
                 std::cout << "Unknown command\n";
@@ -239,7 +271,7 @@ namespace UCI
         Astra::threads.launchWorkers(board, limit, options.num_workers, options.use_tb);
     }
 
-    Move Uci::getMove(const std::string& str_move) const
+    Move Uci::getMove(const std::string &str_move) const
     {
         const Square from = squareFromString(str_move.substr(0, 2));
         const Square to = squareFromString(str_move.substr(2, 2));
