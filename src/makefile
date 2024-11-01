@@ -1,13 +1,12 @@
-# Root directory
 ROOT := $(realpath $(dir $(abspath $(lastword $(MAKEFILE_LIST)))))
 EvalFile = $(ROOT)/nn-768-2x1024-1.nnue
 
-# Compiler and flags
+# compiler and flags
 CXX ?= g++
 CXXFLAGS = -s -Wall -Wextra -O3 -DNDEBUG -funroll-loops -fno-exceptions -pthread -std=c++17 -march=native
 CXXFLAGS += -DNNUE_PATH=\"$(EvalFile)\" # add nnue file path
 
-# Source files
+# source files
 SRC = chess/attacks.cpp \
       chess/board.cpp \
       chess/perft.cpp \
@@ -27,7 +26,7 @@ SRC = chess/attacks.cpp \
       bench.cpp \
       uci.cpp
 
-# Default target executable (if EXE is not provided)
+# default target executable
 TARGET = astra
 
 # Detect Operating System
@@ -39,17 +38,17 @@ else
     LDFLAGS := -lpthread -lstdc++
 endif
 
-# Allow overriding EXE with a custom name
+# allow overriding exe name (used by openbench)
 EXE ?= $(TARGET)
 EXE := $(EXE)$(SUFFIX)
 
-# Default rule to build the executable
+# default rule to build exe
 all: $(EXE)
 
 $(EXE): $(SRC)
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
 
-# Clean target
+# clean target
 clean:
 	rm -f $(EXE)
 
