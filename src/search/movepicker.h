@@ -11,8 +11,8 @@ namespace Astra
         TT,
         EVAL,
         GOOD_CAPTURES,
-        KILLERS_1,
-        KILLERS_2,
+        KILLER_1,
+        KILLER_2,
         COUNTER,
         BAD
     };

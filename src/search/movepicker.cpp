@@ -89,7 +89,8 @@ namespace Astra
     // movepicker class
     MovePicker::MovePicker(MoveType mt, Board &board, const History &history, const Stack *ss, Move tt_move)
         : mt(mt), board(board), history(history), ss(ss), ml(board, mt), tt_move(tt_move)
-    {}
+    {
+    }
 
     Move MovePicker::nextMove()
     {
@@ -98,7 +99,7 @@ namespace Astra
         case TT:
             stage++;
 
-            if (tt_move != NO_MOVE && ml.find(tt_move) != -1) 
+            if (tt_move != NO_MOVE && ml.find(tt_move) != -1)
                 return tt_move;
 
             [[fallthrough]];
@@ -120,7 +121,7 @@ namespace Astra
                 swapMoves(best_idx, idx);
                 Move move = ml[idx];
                 idx++;
-                
+
                 // skip tt move since we already returned it
                 if (move == tt_move)
                     continue;
@@ -135,14 +136,14 @@ namespace Astra
             stage++;
             [[fallthrough]];
         }
-        case KILLERS_1:
+        case KILLER_1:
             stage++;
 
             if (killer1 != NO_MOVE)
                 return killer1;
 
             [[fallthrough]];
-        case KILLERS_2:
+        case KILLER_2:
             stage++;
 
             if (killer2 != NO_MOVE)
