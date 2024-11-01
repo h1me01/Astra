@@ -9,6 +9,12 @@ namespace Astra
         history_bonus = 0;
     }
 
+    void History::init(int max_bonus, int bonus_mult)
+    {
+        max_history_bonus = max_bonus;
+        history_bonus = bonus_mult;
+    }
+
     void History::clear()
     {
         for (auto &i : history)
@@ -20,7 +26,7 @@ namespace Astra
             for (auto &j : counter)
                 j = NO_MOVE;
 
-        for (int i = 0; i < MAX_PLY; ++i)
+        for (int i = 0; i < MAX_PLY; i++)
         {
             killer1[i] = NO_MOVE;
             killer2[i] = NO_MOVE;
@@ -61,7 +67,7 @@ namespace Astra
 
     int History::historyBonus(int depth)
     {
-        return std::min(1600, depth * history_bonus);
+        return std::min(max_history_bonus, depth * history_bonus);
     }
 
 } // namespace Astra

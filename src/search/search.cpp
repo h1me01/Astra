@@ -36,7 +36,8 @@ namespace Astra
     PARAM(lmp_depth, 6, 4, 7);
     PARAM(lmp_count_base, 4, 3, 6);
 
-    PARAM(history_bonus, 155, 100, 200);
+    PARAM(history_bonus_mult, 155, 100, 200);
+    PARAM(max_history_bonus, 2000, 1900, 2200);
 
     PARAM(asp_window, 30, 10, 50);
 
@@ -102,7 +103,7 @@ namespace Astra
         if (best_score > alpha)
             alpha = best_score;
 
-        MovePicker movepicker(CAPTURE_MOVES, *this, ss, tt_entry.move);
+        MovePicker movepicker(CAPTURE_MOVES, board, history, ss, tt_entry.move);
 
         Move best_move = NO_MOVE;
         Move move = NO_MOVE;
@@ -163,7 +164,7 @@ namespace Astra
 
     Score Search::abSearch(int depth, Score alpha, Score beta, Node node, Stack *ss)
     {
-        assert(alpha && alpha);
+        assert(alpha < beta);
         assert(ss->ply >= 0);
 
         if (isLimitReached(depth))
@@ -370,7 +371,7 @@ namespace Astra
             }
         }
 
-        MovePicker movepicker(ALL_MOVES, *this, ss, tt_entry.move);
+        MovePicker movepicker(ALL_MOVES, board, history, ss, tt_entry.move);
         ss->move_count = movepicker.getMoveCount();
 
         uint8_t made_moves = 0, quiet_count = 0;
@@ -629,7 +630,7 @@ namespace Astra
         time_manager.start();
 
         history.clear();
-        history.setHistoryBonus(history_bonus); 
+        history.init(max_history_bonus, history_bonus_mult); 
 
         Score previous_result = VALUE_NONE;
 
@@ -679,7 +680,6 @@ namespace Astra
 
     void Search::reset()
     {
-        board = Board(STARTING_FEN);
         nodes = 0;
         tb_hits = 0;
         tt.clear();

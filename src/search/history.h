@@ -12,10 +12,10 @@ namespace Astra
     public:
         History();
 
+        void init(int max_bonus, int bonus_mult);
+
         void clear();
         void update(Board &board, Move &move, Move *quiet_moves, Stack *ss, int quiet_count, int depth);
-
-        void setHistoryBonus(int bonus) { history_bonus = bonus; }
 
         int getHistoryScore(Color c, Move &move) const
         {
@@ -32,6 +32,7 @@ namespace Astra
 
     private:
         int history_bonus;
+        int max_history_bonus;
 
         Move killer1[MAX_PLY];
         Move killer2[MAX_PLY];

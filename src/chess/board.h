@@ -57,7 +57,7 @@ namespace Chess
         // contains all the possible squares that are not a capture
         U64 quiet_mask;
 
-        explicit Board(const std::string& fen);
+        Board(const std::string& fen);
 
         Board(const Board& other);
 
