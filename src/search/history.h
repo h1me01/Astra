@@ -22,11 +22,10 @@ namespace Astra
             return history[c][move.from()][move.to()];
         }
 
-        int getCHScore(Board& board, Move &move, const Move &prev_move) const
+        int getCHScore(Board &board, Move &move, const Move &prev_move) const
         {
             Piece p = board.pieceAt(move.from());
             Piece prev_p = board.pieceAt(prev_move.from());
-            assert(p != NO_PIECE && prev_p != NO_PIECE);
             return cont_history[prev_p][prev_move.to()][p][move.to()];
         }
 
@@ -46,8 +45,8 @@ namespace Astra
         Move killer2[MAX_PLY];
         Move counters[NUM_SQUARES][NUM_SQUARES];
 
-        int16_t history[NUM_COLORS][NUM_SQUARES][NUM_SQUARES]{};
-        int16_t cont_history[NUM_PIECES][NUM_SQUARES][NUM_PIECES][NUM_SQUARES]{};
+        static int16_t history[NUM_COLORS][NUM_SQUARES][NUM_SQUARES];
+        static int16_t cont_history[NUM_PIECES + 1][NUM_SQUARES][NUM_PIECES + 1][NUM_SQUARES];
 
         void updateHH(Move &move, Color c, int bonus);
         void updateCH(Board &board, Move &move, Stack *ss, int bonus);

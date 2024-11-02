@@ -20,11 +20,11 @@ namespace Astra
             for (auto &j : i)
                 for (int16_t &k : j)
                     k = 0;
-        
+
         for (auto &i : cont_history)
             for (auto &j : i)
                 for (auto &k : j)
-                    for (auto &l : k)
+                    for (int16_t &l : k)
                         l = 0;
 
         for (auto &counter : counters)
@@ -79,17 +79,19 @@ namespace Astra
     void History::updateCH(Board &board, Move &move, Stack *ss, int bonus)
     {
         Piece curr_piece = board.pieceAt(move.from());
-        assert(curr_piece != NO_PIECE);
 
         for (int i = 1; i <= 2 && ss->ply >= i; i++)
         {
             Move prev_move = (ss - i)->current_move;
             Piece prev_piece = board.pieceAt(prev_move.from());
-            assert(prev_piece != NO_PIECE);
 
             int16_t &score = cont_history[prev_piece][prev_move.to()][curr_piece][move.to()];
             score += bonus - score * std::abs(bonus) / 16384;
         }
     }
+
+    int16_t History::history[NUM_COLORS][NUM_SQUARES][NUM_SQUARES]{};
+
+    int16_t History::cont_history[NUM_PIECES + 1][NUM_SQUARES][NUM_PIECES + 1][NUM_SQUARES]{};
 
 } // namespace Astra
