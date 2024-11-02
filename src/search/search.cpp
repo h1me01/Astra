@@ -14,35 +14,35 @@ namespace Astra
     PARAM(lmr_depth, 2, 1, 4);
     PARAM(lmr_min_moves, 3, 1, 5);
 
-    PARAM(delta_margin, 580, 400, 900);
+    PARAM(delta_margin, 500, 400, 900);
 
     PARAM(iir_depth, 3, 2, 4);
 
-    PARAM(razor_margin, 123, 60, 200);
+    PARAM(razor_margin, 130, 60, 200);
     PARAM(rzr_depth, 3, 2, 7);
 
-    PARAM(rfp_depth_mult, 32, 20, 80);
-    PARAM(rfp_impr_bonus, 33, 30, 100);
-    PARAM(rfp_depth, 7, 3, 9);
+    PARAM(rfp_depth_mult, 46, 20, 80);
+    PARAM(rfp_impr_bonus, 50, 30, 100);
+    PARAM(rfp_depth, 5, 3, 9);
 
-    PARAM(nmp_depth, 2, 2, 5);
+    PARAM(nmp_depth, 3, 2, 5);
 
-    PARAM(pv_see_cap_margin, 93, 90, 110);
-    PARAM(pv_see_cap_depth, 5, 5, 8);
+    PARAM(pv_see_cap_margin, 97, 90, 110);
+    PARAM(pv_see_cap_depth, 5, 4, 8);
 
-    PARAM(pv_see_quiet_margin, 87, 30, 95);
+    PARAM(pv_see_quiet_margin, 69, 30, 95);
     PARAM(pv_see_quiet_depth, 7, 6, 9);
 
     PARAM(lmp_depth, 6, 4, 7);
-    PARAM(lmp_count_base, 5, 3, 6);
+    PARAM(lmp_count_base, 4, 3, 6);
 
-    PARAM(hh_bonus_mult, 127, 100, 200);
-    PARAM(max_hh_bonus, 1929, 1900, 2200);
+    PARAM(hh_bonus_mult, 155, 100, 200);
+    PARAM(max_hh_bonus, 2000, 1900, 2200);
 
     PARAM(ch_bonus_mult, 10, 5, 15);
     PARAM(max_ch_bonus, 1600, 1400, 1800);
 
-    PARAM(asp_window, 29, 10, 50);
+    PARAM(asp_window, 30, 10, 50);
 
     // search class
     int REDUCTIONS[MAX_PLY][MAX_MOVES];

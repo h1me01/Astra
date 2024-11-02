@@ -111,29 +111,8 @@ namespace UCI
         options.apply();
     }
 
-    void Uci::loop(int argc, char **argv)
+    void Uci::loop()
     {
-        int bench_depth = 13;
-        if (argc > 1 && strncmp(argv[1], "bench", 5) == 0)
-        {
-            if (argc == 3)
-            {
-                bench_depth = std::stoi(argv[2]);
-                if (bench_depth <= 0)
-                {
-                    std::cout << "Invalid bench depth" << std::endl;
-                    return;
-                }
-            }
-
-            std::cout << "Astra " << version << std::endl;
-
-            Astra::threads.stop = false;
-            Bench::bench(bench_depth);
-
-            return;
-        }
-
         std::string line;
         std::string token;
 

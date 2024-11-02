@@ -1,6 +1,6 @@
 #include "uci.h"
 
-int main(int argc, char** argv)
+int main()
 {
     initLookUpTables();
     Zobrist::init();
@@ -9,7 +9,7 @@ int main(int argc, char** argv)
     NNUE::nnue.init();
 
     UCI::Uci uci;
-    uci.loop(argc, argv);
+    uci.loop();
 
     return 0;
 }
