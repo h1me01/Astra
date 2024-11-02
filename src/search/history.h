@@ -12,7 +12,7 @@ namespace Astra
     public:
         History();
 
-        void init(int max_bonus, int bonus_mult);
+        void init(int max_hh_bonus, int hh_bonus_mult, int max_ch_bonus, int ch_bonus_mult);
 
         void clear();
         void update(Board &board, Move &move, Move *quiet_moves, Stack *ss, int quiet_count, int depth);
@@ -38,8 +38,8 @@ namespace Astra
         Move getKiller2(int ply) const { return killer2[ply]; }
 
     private:
-        int history_bonus;
-        int max_history_bonus;
+        int hh_bonus_mult, ch_bonus_mult;
+        int max_hh_bonus, max_ch_bonus;
 
         Move killer1[MAX_PLY];
         Move killer2[MAX_PLY];

@@ -36,8 +36,11 @@ namespace Astra
     PARAM(lmp_depth, 6, 4, 7);
     PARAM(lmp_count_base, 5, 3, 6);
 
-    PARAM(history_bonus_mult, 127, 100, 200);
-    PARAM(max_history_bonus, 1929, 1900, 2200);
+    PARAM(hh_bonus_mult, 127, 100, 200);
+    PARAM(max_hh_bonus, 1929, 1900, 2200);
+
+    PARAM(ch_bonus_mult, 10, 5, 15);
+    PARAM(max_ch_bonus, 1600, 1400, 1800);
 
     PARAM(asp_window, 29, 10, 50);
 
@@ -631,7 +634,7 @@ namespace Astra
         time_manager.start();
 
         history.clear();
-        history.init(max_history_bonus, history_bonus_mult); 
+        history.init(max_hh_bonus, hh_bonus_mult, max_ch_bonus, ch_bonus_mult); 
 
         Score previous_result = VALUE_NONE;
 
