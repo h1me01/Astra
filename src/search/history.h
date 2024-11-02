@@ -17,10 +17,18 @@ namespace Astra
         void clear();
         void update(Board &board, Move &move, Move *quiet_moves, Stack *ss, int quiet_count, int depth);
 
-        int getHistoryScore(Color c, Move &move) const
+        int getHHScore(Color c, Move &move) const
         {
             return history[c][move.from()][move.to()];
         }
+
+        /*
+        int getCHScore(Board& board, Move &move, const Move &prev_move) const
+        {
+            Piece p = board.pieceAt(move.from());
+            Piece prev_p = board.pieceAt(prev_move.from());
+            return cont_history[prev_p][prev_move.to()][p][move.to()];
+        }*/
 
         Move getCounterMove(Move move) const
         {
@@ -38,11 +46,11 @@ namespace Astra
         Move killer2[MAX_PLY];
         Move counters[NUM_SQUARES][NUM_SQUARES];
 
-        int history[NUM_COLORS][NUM_SQUARES][NUM_SQUARES]{};
+        int16_t history[NUM_COLORS][NUM_SQUARES][NUM_SQUARES]{};
+        //int16_t cont_history[NUM_PIECES + 1][NUM_SQUARES][NUM_PIECES + 1][NUM_SQUARES]{};
 
-        void updateBonus(Move &move, Color c, int bonus);
-
-        int historyBonus(int depth);
+        void updateHH(Move &move, Color c, int bonus);
+        void updateCH(Board &board, Move &move, Stack *ss, int bonus);
     };
 
 } // namespace Astra

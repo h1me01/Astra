@@ -58,7 +58,6 @@ namespace Chess
         U64 quiet_mask;
 
         Board(const std::string& fen);
-
         Board(const Board& other);
 
         Board& operator=(const Board& other);
@@ -95,6 +94,8 @@ namespace Chess
         bool isFiftyMoveRule() const;
         bool isInsufficientMaterial() const;
         bool isDraw() const;
+
+        bool see(Move& move, int threshold);
 
     private:
         U64 piece_bb[NUM_PIECES];

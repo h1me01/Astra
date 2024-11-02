@@ -6,7 +6,6 @@ namespace Astra
     History::History()
     {
         clear();
-        history_bonus = 0;
     }
 
     void History::init(int max_bonus, int bonus_mult)
@@ -19,9 +18,15 @@ namespace Astra
     {
         for (auto &i : history)
             for (auto &j : i)
-                for (int &k : j)
+                for (int16_t &k : j)
                     k = 0;
-
+        /*
+        for (auto &i : cont_history)
+            for (auto &j : i)
+                for (auto &k : j)
+                    for (auto &l : k)
+                        l = 0;
+*/
         for (auto &counter : counters)
             for (auto &j : counter)
                 j = NO_MOVE;
@@ -35,7 +40,8 @@ namespace Astra
 
     void History::update(Board &board, Move &move, Move *quiet_moves, Stack *ss, int quiet_count, int depth)
     {
-        int bonus = historyBonus(depth);
+        int hh_bonus = std::min(max_history_bonus, depth * history_bonus);
+        //int ch_bonus = std::min(1500, 4 * depth * depth * depth);
 
         Move prev_move = (ss - 1)->current_move;
         if (prev_move != NO_MOVE)
@@ -48,26 +54,41 @@ namespace Astra
 
             Color c = board.getTurn();
             if (depth > 1)
-                updateBonus(move, c, bonus);
+                updateHH(move, c, hh_bonus);
+
+            //updateCH(board, move, ss, ch_bonus);
 
             // history maluses
             for (int i = 0; i < quiet_count; i++)
-                updateBonus(quiet_moves[i], c, -bonus);
+            {
+                Move quiet = quiet_moves[i];
+                updateHH(quiet, c, -hh_bonus);
+                //updateCH(board, quiet, ss, -ch_bonus);
+            }
         }
     }
 
     // private member
 
-    void History::updateBonus(Move &move, Color c, int bonus)
+    void History::updateHH(Move &move, Color c, int bonus)
     {
-        Square from = move.from();
-        Square to = move.to();
-        history[c][from][to] += bonus - history[c][from][to] * std::abs(bonus) / 16384;
+        int16_t &score = history[c][move.from()][move.to()];
+        score += bonus - score * std::abs(bonus) / 16384;
     }
 
-    int History::historyBonus(int depth)
+/*
+    void History::updateCH(Board &board, Move &move, Stack *ss, int bonus)
     {
-        return std::min(max_history_bonus, depth * history_bonus);
-    }
+        Piece curr_piece = board.pieceAt(move.from());
 
+        for (int i = 1; i <= 2 && ss->ply >= i; i++)
+        {
+            Move prev_move = (ss - i)->current_move;
+            Piece prev_piece = board.pieceAt(prev_move.from());
+
+            int16_t &score = cont_history[prev_piece][prev_move.to()][curr_piece][move.to()];
+            score += bonus - score * std::abs(bonus) / 16384;
+        }
+    }
+*/
 } // namespace Astra

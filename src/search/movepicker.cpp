@@ -2,73 +2,6 @@
 
 namespace Astra
 {
-    // static exchange evaluation from Weiss
-    bool see(const Board &board, Move move, int threshold)
-    {
-        Square from = move.from();
-        Square to = move.to();
-
-        PieceType attacker = typeOf(board.pieceAt(from));
-        PieceType victim = typeOf(board.pieceAt(to));
-
-        int swap = PIECE_VALUES[victim] - threshold;
-        if (swap < 0)
-            return false;
-        swap -= PIECE_VALUES[attacker];
-        if (swap >= 0)
-            return true;
-
-        U64 occ = board.occupancy(WHITE) | board.occupancy(BLACK);
-        occ = (occ ^ (1ULL << from)) | (1ULL << to);
-        U64 attackers = (board.attackers(WHITE, to, occ) | board.attackers(BLACK, to, occ)) & occ;
-
-        U64 queens = board.getPieceBB(WHITE, QUEEN) | board.getPieceBB(BLACK, QUEEN);
-        U64 rooks = board.getPieceBB(WHITE, ROOK) | board.getPieceBB(BLACK, ROOK) | queens;
-        U64 bishops = board.getPieceBB(WHITE, BISHOP) | board.getPieceBB(BLACK, BISHOP) | queens;
-
-        Color c_from = colorOf(board.pieceAt(from));
-        Color c = ~c_from;
-
-        while (true)
-        {
-            attackers &= occ;
-
-            U64 my_attackers = attackers & board.occupancy(c);
-            if (!my_attackers)
-                break;
-
-            int pt;
-            for (pt = 0; pt <= 5; pt++)
-            {
-                U64 w_pieces = board.getPieceBB(WHITE, static_cast<PieceType>(pt));
-                U64 b_pieces = board.getPieceBB(BLACK, static_cast<PieceType>(pt));
-
-                if (my_attackers & (w_pieces | b_pieces))
-                    break;
-            }
-
-            c = ~c;
-
-            if ((swap = -swap - 1 - PIECE_VALUES[pt]) >= 0)
-            {
-                if (pt == KING && (attackers & board.occupancy(c)))
-                    c = ~c;
-                break;
-            }
-
-            U64 w_pieces = board.getPieceBB(WHITE, static_cast<PieceType>(pt));
-            U64 b_pieces = board.getPieceBB(BLACK, static_cast<PieceType>(pt));
-            occ ^= (1ULL << (bsf(my_attackers & (w_pieces | b_pieces))));
-
-            if (pt == PAWN || pt == BISHOP || pt == QUEEN)
-                attackers |= getBishopAttacks(to, occ) & bishops;
-
-            if (pt == ROOK || pt == QUEEN)
-                attackers |= getRookAttacks(to, occ) & rooks;
-        }
-
-        return c != c_from;
-    }
 
     // most valuable victim, least valuable attacker
     constexpr int mvvlva_table[7][7] = {
@@ -161,8 +94,8 @@ namespace Astra
             while (idx < ml.size())
             {
                 int best_idx = partialInsertionSort(idx);
+                
                 swapMoves(best_idx, idx);
-
                 Move move = ml[idx];
                 idx++;
 
@@ -200,7 +133,7 @@ namespace Astra
             if (isCapture(ml[i]))
             {
                 const int mvvlva_score = mvvlva(board, ml[i]);
-                ml[i].score = see(board, ml[i], 0) ? CAPTURE_SCORE + mvvlva_score : mvvlva_score;
+                ml[i].score = board.see(ml[i], 0) ? CAPTURE_SCORE + mvvlva_score : mvvlva_score;
             }
             else if (ml[i] == history.getKiller1(ss->ply))
             {
@@ -220,7 +153,9 @@ namespace Astra
             else
             {
                 assert(mt == ALL_MOVES); // qsearch should never reach this
-                ml[i].score = history.getHistoryScore(board.getTurn(), ml[i]);
+                ml[i].score = history.getHHScore(board.getTurn(), ml[i]);
+                //ml[i].score += 2 * history.getCHScore(board, ml[i], (ss - 1)->current_move);
+                //ml[i].score += history.getCHScore(board, ml[i], (ss - 2)->current_move);
             }
         }
     }

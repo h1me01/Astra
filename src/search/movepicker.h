@@ -25,9 +25,6 @@ namespace Astra
         COUNTER_SCORE = 4'000'000
     };
 
-    // static exchange evaluation from Weiss
-    bool see(const Board &board, Move move, int threshold);
-
     class MovePicker
     {
     public:

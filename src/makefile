@@ -2,9 +2,11 @@ ROOT := $(realpath $(dir $(abspath $(lastword $(MAKEFILE_LIST)))))
 EvalFile = $(ROOT)/nn-768-2x1024-1.nnue
 
 # compiler and flags
-CXX ?= g++
-CXXFLAGS = -s -Wall -Wextra -O3 -DNDEBUG -funroll-loops -fno-exceptions -pthread -std=c++17 -march=native
+CXX := g++
+CXXFLAGS := -s -Wall -Wextra -Wcast-qual -O3 -DNDEBUG -funroll-loops -fno-exceptions -pedantic -pthread -std=c++17 -march=native
 CXXFLAGS += -DNNUE_PATH=\"$(EvalFile)\" # add nnue file path
+
+LDFLAGS := -pthread -lstdc++ -static 
 
 # source files
 SRC = chess/attacks.cpp \
@@ -32,7 +34,6 @@ TARGET = astra
 # Detect Operating System
 ifeq ($(OS), Windows_NT)
     SUFFIX := .exe
-    LDFLAGS := -static -lstdc++ -lpthread
 else
     SUFFIX :=
     LDFLAGS := -lpthread -lstdc++

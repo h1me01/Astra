@@ -66,7 +66,7 @@ namespace Astra
         void printUciInfo(Score result, int depth, PVLine &pv_line) const;
 
         Score qSearch(Score alpha, Score beta, Node node, Stack *ss);
-        Score abSearch(int depth, Score alpha, Score beta, Node node, Stack *ss);
+        Score pvSearch(int depth, Score alpha, Score beta, Node node, Stack *ss);
         Score aspSearch(int depth, Score prev_eval, Stack *ss);
     };
 

@@ -493,4 +493,72 @@ namespace Chess
         return isFiftyMoveRule() || isThreefold() || isInsufficientMaterial();
     }
 
+    bool Board::see(Move& move, int threshold)
+    {
+        Square from = move.from();
+        Square to = move.to();
+        PieceType attacker = typeOf(pieceAt(from));
+        PieceType victim = typeOf(pieceAt(to));
+        int swap = PIECE_VALUES[victim] - threshold;
+
+        if (swap < 0)
+            return false;
+
+        swap -= PIECE_VALUES[attacker];
+
+        if (swap >= 0)
+            return true;
+
+        U64 occ = occupancy(WHITE) | occupancy(BLACK);
+        occ = occ ^ (1ULL << from) ^ (1ULL << to);
+        U64 all_attackers = (attackers(WHITE, to, occ) | attackers(BLACK, to, occ)) & occ;
+
+        U64 queens = getPieceBB(WHITE, QUEEN) | getPieceBB(BLACK, QUEEN);
+        U64 rooks = getPieceBB(WHITE, ROOK) | getPieceBB(BLACK, ROOK) | queens;
+        U64 bishops = getPieceBB(WHITE, BISHOP) | getPieceBB(BLACK, BISHOP) | queens;
+
+        Color c_from = colorOf(pieceAt(from));
+        Color c = ~c_from;
+
+        while (true)
+        {
+            all_attackers &= occ;
+
+            U64 my_attackers = all_attackers & occupancy(c);
+            if (!my_attackers)
+                break;
+
+            int pt;
+            for (pt = 0; pt <= 5; pt++)
+            {
+                U64 w_pieces = getPieceBB(WHITE, static_cast<PieceType>(pt));
+                U64 b_pieces = getPieceBB(BLACK, static_cast<PieceType>(pt));
+
+                if (my_attackers & (w_pieces | b_pieces))
+                    break;
+            }
+
+            c = ~c;
+
+            if ((swap = -swap - 1 - PIECE_VALUES[pt]) >= 0)
+            {
+                if (pt == KING && (all_attackers & occupancy(c)))
+                    c = ~c;
+                break;
+            }
+
+            U64 w_pieces = getPieceBB(WHITE, static_cast<PieceType>(pt));
+            U64 b_pieces = getPieceBB(BLACK, static_cast<PieceType>(pt));
+            occ ^= (1ULL << (bsf(my_attackers & (w_pieces | b_pieces))));
+
+            if (pt == PAWN || pt == BISHOP || pt == QUEEN)
+                all_attackers |= getBishopAttacks(to, occ) & bishops;
+
+            if (pt == ROOK || pt == QUEEN)
+                all_attackers |= getRookAttacks(to, occ) & rooks;
+        }
+
+        return c != c_from;
+    }
+
 } // namespace Chess

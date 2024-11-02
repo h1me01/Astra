@@ -6,40 +6,42 @@
 #include "tune.h"
 #include "../eval/eval.h"
 
+#include "moveordering.h"
+
 namespace Astra
 {
     // search parameters
     PARAM(lmr_base, 100, 50, 150);
-    PARAM(lmr_div, 175, 150, 250);
+    PARAM(lmr_div, 157, 150, 250);
     PARAM(lmr_depth, 2, 1, 4);
     PARAM(lmr_min_moves, 3, 1, 5);
 
-    PARAM(delta_margin, 500, 400, 900);
+    PARAM(delta_margin, 580, 400, 900);
 
     PARAM(iir_depth, 3, 2, 4);
 
-    PARAM(razor_margin, 130, 60, 200);
+    PARAM(razor_margin, 123, 60, 200);
     PARAM(rzr_depth, 3, 2, 7);
 
-    PARAM(rfp_depth_mult, 46, 20, 80);
-    PARAM(rfp_impr_bonus, 50, 30, 100);
-    PARAM(rfp_depth, 5, 3, 9);
+    PARAM(rfp_depth_mult, 32, 20, 80);
+    PARAM(rfp_impr_bonus, 33, 30, 100);
+    PARAM(rfp_depth, 7, 3, 9);
 
-    PARAM(nmp_depth, 3, 2, 5);
+    PARAM(nmp_depth, 2, 2, 5);
 
-    PARAM(pv_see_cap_margin, 97, 90, 110);
-    PARAM(pv_see_cap_depth, 6, 5, 8);
+    PARAM(pv_see_cap_margin, 93, 90, 110);
+    PARAM(pv_see_cap_depth, 5, 5, 8);
 
-    PARAM(pv_see_quiet_margin, 69, 30, 95);
+    PARAM(pv_see_quiet_margin, 87, 30, 95);
     PARAM(pv_see_quiet_depth, 7, 6, 9);
 
     PARAM(lmp_depth, 6, 4, 7);
-    PARAM(lmp_count_base, 4, 3, 6);
+    PARAM(lmp_count_base, 5, 3, 6);
 
-    PARAM(history_bonus_mult, 155, 100, 200);
-    PARAM(max_history_bonus, 2000, 1900, 2200);
+    PARAM(history_bonus_mult, 127, 100, 200);
+    PARAM(max_history_bonus, 1929, 1900, 2200);
 
-    PARAM(asp_window, 30, 10, 50);
+    PARAM(asp_window, 29, 10, 50);
 
     // search class
     int REDUCTIONS[MAX_PLY][MAX_MOVES];
@@ -85,7 +87,10 @@ namespace Astra
         const Score tt_score = tt_hit ? scoreFromTT(tt_entry.score, ss->ply) : static_cast<Score>(VALUE_NONE);
         Bound tt_bound = tt_entry.bound;
 
-        if (tt_hit && !pv_node && tt_score != VALUE_NONE && tt_bound != NO_BOUND)
+        if (tt_hit 
+            && !pv_node 
+            && tt_score != VALUE_NONE 
+            && tt_bound != NO_BOUND)
         {
             bool is_exact = tt_bound == EXACT_BOUND;
             bool is_lower = tt_bound == LOWER_BOUND && tt_score >= beta;
@@ -103,12 +108,15 @@ namespace Astra
         if (best_score > alpha)
             alpha = best_score;
 
-        MovePicker movepicker(CAPTURE_MOVES, board, history, ss, tt_entry.move);
+        MoveList ml(board, CAPTURE_MOVES);
+        sortMoves(history, board, ml, tt_entry.move, (ss - 1)->current_move, ss->ply);
+        //MovePicker movepicker(CAPTURE_MOVES, board, history, ss, tt_entry.move);
 
         Move best_move = NO_MOVE;
-        Move move = NO_MOVE;
+        //Move move = NO_MOVE;
 
-        while ((move = movepicker.nextMove()) != NO_MOVE)
+        //while ((move = movepicker.nextMove()) != NO_MOVE)
+        for(auto move : ml)
         {
             if (best_score > VALUE_TB_LOSS_IN_MAX_PLY && !in_check)
             {
@@ -122,7 +130,7 @@ namespace Astra
                 }
 
                 // see pruning
-                if (!see(board, move, 0))
+                if (!board.see(move, 0))
                     continue;
             }
 
@@ -162,7 +170,7 @@ namespace Astra
         return best_score;
     }
 
-    Score Search::abSearch(int depth, Score alpha, Score beta, Node node, Stack *ss)
+    Score Search::pvSearch(int depth, Score alpha, Score beta, Node node, Stack *ss)
     {
         assert(alpha < beta);
         assert(ss->ply >= 0);
@@ -357,7 +365,7 @@ namespace Astra
                 ss->current_move = NULL_MOVE;
 
                 board.makeNullMove();
-                Score score = -abSearch(depth - R, -beta, -beta + 1, NON_PV, ss + 1);
+                Score score = -pvSearch(depth - R, -beta, -beta + 1, NON_PV, ss + 1);
                 board.unmakeNullMove();
 
                 if (score >= beta)
@@ -371,17 +379,20 @@ namespace Astra
             }
         }
 
-        MovePicker movepicker(ALL_MOVES, board, history, ss, tt_entry.move);
-        ss->move_count = movepicker.getMoveCount();
+        //MovePicker movepicker(ALL_MOVES, board, history, ss, tt_entry.move);
+        MoveList ml(board);
+        sortMoves(history, board, ml, tt_entry.move, (ss - 1)->current_move, ss->ply);
+        ss->move_count = ml.size();
 
         uint8_t made_moves = 0, quiet_count = 0;
 
         Move quiet_moves[MAX_MOVES / 2];
 
         Move best_move = NO_MOVE;
-        Move move = NO_MOVE;
+       // Move move = NO_MOVE;
 
-        while ((move = movepicker.nextMove()) != NO_MOVE)
+        //while ((move = movepicker.nextMove()) != NO_MOVE)
+        for (auto move : ml)
         {
             if (move == excluded_move)
                 continue;
@@ -421,7 +432,7 @@ namespace Astra
                 }
 
                 // see pruning
-                if (depth < see_depth && !see(board, move, -see_margin * depth))
+                if (depth < see_depth && !board.see(move, -see_margin * depth))
                     continue;
             }
 
@@ -440,7 +451,7 @@ namespace Astra
                 const int singular_depth = (depth - 1) / 2;
 
                 ss->excluded_move = move;
-                const auto value = abSearch(singular_depth, singular_beta - 1, singular_beta, NON_PV, ss);
+                const auto value = pvSearch(singular_depth, singular_beta - 1, singular_beta, NON_PV, ss);
                 ss->excluded_move = NO_MOVE;
 
                 if (value < singular_beta)
@@ -471,20 +482,20 @@ namespace Astra
                 rdepth -= is_capture;
                 rdepth = std::clamp(new_depth - rdepth, 1, new_depth + 1);
 
-                score = -abSearch(rdepth, -alpha - 1, -alpha, NON_PV, ss + 1);
+                score = -pvSearch(rdepth, -alpha - 1, -alpha, NON_PV, ss + 1);
 
                 // if late move reduction failed high, research
                 if (score > alpha && rdepth < new_depth)
-                    score = -abSearch(new_depth, -alpha - 1, -alpha, NON_PV, ss + 1);
+                    score = -pvSearch(new_depth, -alpha - 1, -alpha, NON_PV, ss + 1);
             }
             else if (!pv_node || made_moves > 1)
                 // full-depth search if lmr was skipped
-                score = -abSearch(new_depth, -alpha - 1, -alpha, NON_PV, ss + 1);
+                score = -pvSearch(new_depth, -alpha - 1, -alpha, NON_PV, ss + 1);
 
             // principal variation search
             if (pv_node && ((score > alpha && score < beta) || made_moves == 1))
-                score = -abSearch(new_depth, -beta, -alpha, PV, ss + 1);
-
+                score = -pvSearch(new_depth, -beta, -alpha, PV, ss + 1);
+    
             board.unmakeMove(move);
 
             assert(score > -VALUE_INFINITE && score < VALUE_INFINITE);
@@ -499,7 +510,7 @@ namespace Astra
                     best_move = move;
 
                     // don't forget to update pv table
-                    pv_table.updatePV(ss->ply, move);
+                    pv_table.updatePV(ss->ply, best_move);
                 }
 
                 if (score >= beta)
@@ -510,16 +521,14 @@ namespace Astra
                 }
             }
 
-            if (!is_capture) {
-                quiet_moves[quiet_count] = move;
-                quiet_count++;
-            }
+            if (!is_capture) 
+                quiet_moves[quiet_count++] = move;
         }
 
         ss->move_count = made_moves;
 
         // check for mate and stalemate
-        if (movepicker.getMoveCount() == 0)
+        if (ml.size() == 0)
         {
             if (excluded_move != NO_MOVE)
                 best_score = alpha;
@@ -563,7 +572,7 @@ namespace Astra
         Score result = VALUE_NONE;
         while (true)
         {
-            result = abSearch(depth, alpha, beta, ROOT, ss);
+            result = pvSearch(depth, alpha, beta, ROOT, ss);
 
             if (isLimitReached(depth))
                 return result;
@@ -693,6 +702,7 @@ namespace Astra
         limit.nodes = 0;
         limit.time = 0;
         limit.infinite = false;
+        threads.stop = false;
     }
 
     void Search::printUciInfo(Score result, int depth, PVLine &pv_line) const
