@@ -6,8 +6,6 @@
 #include "tune.h"
 #include "../eval/eval.h"
 
-#include "moveordering.h"
-
 namespace Astra
 {
     // search parameters
@@ -108,15 +106,12 @@ namespace Astra
         if (best_score > alpha)
             alpha = best_score;
 
-        MoveList ml(board, CAPTURE_MOVES);
-        sortMoves(history, board, ml, tt_entry.move, (ss - 1)->current_move, ss->ply);
-        //MovePicker movepicker(CAPTURE_MOVES, board, history, ss, tt_entry.move);
+        MovePicker movepicker(CAPTURE_MOVES, board, history, ss, tt_entry.move);
 
         Move best_move = NO_MOVE;
-        //Move move = NO_MOVE;
+        Move move = NO_MOVE;
 
-        //while ((move = movepicker.nextMove()) != NO_MOVE)
-        for(auto move : ml)
+        while ((move = movepicker.nextMove()) != NO_MOVE)
         {
             if (best_score > VALUE_TB_LOSS_IN_MAX_PLY && !in_check)
             {
@@ -379,20 +374,17 @@ namespace Astra
             }
         }
 
-        //MovePicker movepicker(ALL_MOVES, board, history, ss, tt_entry.move);
-        MoveList ml(board);
-        sortMoves(history, board, ml, tt_entry.move, (ss - 1)->current_move, ss->ply);
-        ss->move_count = ml.size();
+        MovePicker movepicker(ALL_MOVES, board, history, ss, tt_entry.move);
+        ss->move_count = movepicker.getMoveCount();
 
         uint8_t made_moves = 0, quiet_count = 0;
 
         Move quiet_moves[MAX_MOVES / 2];
 
         Move best_move = NO_MOVE;
-       // Move move = NO_MOVE;
+        Move move = NO_MOVE;
 
-        //while ((move = movepicker.nextMove()) != NO_MOVE)
-        for (auto move : ml)
+        while ((move = movepicker.nextMove()) != NO_MOVE)
         {
             if (move == excluded_move)
                 continue;
@@ -528,7 +520,7 @@ namespace Astra
         ss->move_count = made_moves;
 
         // check for mate and stalemate
-        if (ml.size() == 0)
+        if (movepicker.getMoveCount() == 0)
         {
             if (excluded_move != NO_MOVE)
                 best_score = alpha;

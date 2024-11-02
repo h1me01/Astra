@@ -2,25 +2,24 @@
 
 namespace Astra
 {
-
     // most valuable victim, least valuable attacker
     constexpr int mvvlva_table[7][7] = {
-        {5, 4, 3, 2, 1, 0, 0},
-        {15, 14, 13, 12, 11, 10, 0},
-        {25, 24, 23, 22, 21, 20, 0},
-        {35, 34, 33, 32, 31, 30, 0},
-        {45, 44, 43, 42, 41, 40, 0},
-        {55, 54, 53, 52, 51, 50, 0}};
+        {55, 54, 53, 52, 51, 50, 0},
+        {105, 104, 103, 102, 101, 100, 0},
+        {205, 204, 203, 202, 201, 200, 0},
+        {305, 304, 303, 302, 301, 300, 0},
+        {405, 404, 403, 402, 401, 400, 0},
+        {505, 504, 503, 502, 501, 500, 0}};
 
-    int mvvlva(const Board &board, Move move)
+    int mvvlva(const Board &board, Move& move)
     {
-        const int attacker = typeOf(board.pieceAt(move.from()));
-        const int victim = typeOf(board.pieceAt(move.to()));
+        const PieceType attacker = typeOf(board.pieceAt(move.from()));
+        const PieceType victim = typeOf(board.pieceAt(move.to()));
         return mvvlva_table[victim][attacker];
     }
 
     // movepicker class
-    MovePicker::MovePicker(MoveType mt, Board &board, const History &history, const Stack *ss, Move tt_move)
+    MovePicker::MovePicker(MoveType mt, Board &board, const History &history, const Stack *ss, Move& tt_move)
         : mt(mt), board(board), history(history), ss(ss), ml(board, mt), tt_move(tt_move)
     {
     }
@@ -94,7 +93,7 @@ namespace Astra
             while (idx < ml.size())
             {
                 int best_idx = partialInsertionSort(idx);
-                
+
                 swapMoves(best_idx, idx);
                 Move move = ml[idx];
                 idx++;
@@ -121,7 +120,11 @@ namespace Astra
     {
         for (int i = 0; i < ml.size(); i++)
         {
-            // no reason to evaluate tt move since we directly return it
+            if (ml[i] == tt_move)
+            {
+                ml[i].score = TT_SCORE;
+                continue;
+            }
 
             // in qsearch we don't want to reach BAD stage since we only return captures
             if (mt == CAPTURE_MOVES)
@@ -154,8 +157,8 @@ namespace Astra
             {
                 assert(mt == ALL_MOVES); // qsearch should never reach this
                 ml[i].score = history.getHHScore(board.getTurn(), ml[i]);
-                //ml[i].score += 2 * history.getCHScore(board, ml[i], (ss - 1)->current_move);
-                //ml[i].score += history.getCHScore(board, ml[i], (ss - 2)->current_move);
+                // ml[i].score += 2 * history.getCHScore(board, ml[i], (ss - 1)->current_move);
+                // ml[i].score += history.getCHScore(board, ml[i], (ss - 2)->current_move);
             }
         }
     }

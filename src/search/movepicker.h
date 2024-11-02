@@ -19,6 +19,7 @@ namespace Astra
 
     enum MoveScores : int
     {
+        TT_SCORE = 10'000'000,  
         CAPTURE_SCORE = 7'000'000,
         KILLER1_SCORE = 6'000'000,
         KILLER2_SCORE = 5'000'000,
@@ -28,7 +29,7 @@ namespace Astra
     class MovePicker
     {
     public:
-        MovePicker(MoveType mt, Board& board, const History& history, const Stack *ss, Move tt_move);
+        MovePicker(MoveType mt, Board& board, const History& history, const Stack *ss, Move& tt_move);
         
         Move nextMove();
 
