@@ -20,6 +20,7 @@ namespace Astra
             for (auto &j : i)
                 for (int16_t &k : j)
                     k = 0;
+        
         /*
         for (auto &i : cont_history)
             for (auto &j : i)
@@ -41,7 +42,7 @@ namespace Astra
     void History::update(Board &board, Move &move, Move *quiet_moves, Stack *ss, int quiet_count, int depth)
     {
         int hh_bonus = std::min(max_history_bonus, depth * history_bonus);
-        //int ch_bonus = std::min(1500, 4 * depth * depth * depth);
+        int ch_bonus = std::min(1500, 4 * depth * depth * depth);
 
         Move prev_move = (ss - 1)->current_move;
         if (prev_move != NO_MOVE)
@@ -56,14 +57,14 @@ namespace Astra
             if (depth > 1)
                 updateHH(move, c, hh_bonus);
 
-            //updateCH(board, move, ss, ch_bonus);
+            updateCH(board, move, ss, ch_bonus);
 
             // history maluses
             for (int i = 0; i < quiet_count; i++)
             {
                 Move quiet = quiet_moves[i];
                 updateHH(quiet, c, -hh_bonus);
-                //updateCH(board, quiet, ss, -ch_bonus);
+                updateCH(board, quiet, ss, -ch_bonus);
             }
         }
     }
@@ -76,7 +77,6 @@ namespace Astra
         score += bonus - score * std::abs(bonus) / 16384;
     }
 
-/*
     void History::updateCH(Board &board, Move &move, Stack *ss, int bonus)
     {
         Piece curr_piece = board.pieceAt(move.from());
@@ -86,9 +86,9 @@ namespace Astra
             Move prev_move = (ss - i)->current_move;
             Piece prev_piece = board.pieceAt(prev_move.from());
 
-            int16_t &score = cont_history[prev_piece][prev_move.to()][curr_piece][move.to()];
-            score += bonus - score * std::abs(bonus) / 16384;
+            //int16_t &score = cont_history[prev_piece][prev_move.to()][curr_piece][move.to()];
+            //score += bonus - score * std::abs(bonus) / 16384;
         }
     }
-*/
+
 } // namespace Astra

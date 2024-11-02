@@ -22,13 +22,12 @@ namespace Astra
             return history[c][move.from()][move.to()];
         }
 
-        /*
         int getCHScore(Board& board, Move &move, const Move &prev_move) const
         {
             Piece p = board.pieceAt(move.from());
             Piece prev_p = board.pieceAt(prev_move.from());
-            return cont_history[prev_p][prev_move.to()][p][move.to()];
-        }*/
+            //return cont_history[prev_p][prev_move.to()][p][move.to()];
+        }
 
         Move getCounterMove(Move move) const
         {

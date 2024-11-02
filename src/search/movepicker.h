@@ -10,20 +10,7 @@ namespace Astra
     {
         TT,
         EVAL,
-        GOOD_CAPTURES,
-        KILLER_1,
-        KILLER_2,
-        COUNTER,
-        BAD
-    };
-
-    enum MoveScores : int
-    {
-        TT_SCORE = 10'000'000,  
-        CAPTURE_SCORE = 7'000'000,
-        KILLER1_SCORE = 6'000'000,
-        KILLER2_SCORE = 5'000'000,
-        COUNTER_SCORE = 4'000'000
+        REST
     };
 
     class MovePicker
@@ -51,10 +38,8 @@ namespace Astra
         
         int idx = 0;
 
-        void evaluateMoves();
-        void swapMoves(int i, int j);
-       
-        int partialInsertionSort(int start);
+        void evaluateMoves();       
+        void partialInsertionSort(int start);
     };
 
 } // namespace Astra
