@@ -3,16 +3,17 @@
 namespace Astra
 {
     // most valuable victim, least valuable attacker
-    constexpr int mvvlva_table[7][7] = {
-        {55, 54, 53, 52, 51, 50, 0},
-        {105, 104, 103, 102, 101, 100, 0},
-        {205, 204, 203, 202, 201, 200, 0},
-        {305, 304, 303, 302, 301, 300, 0},
-        {405, 404, 403, 402, 401, 400, 0},
-        {505, 504, 503, 502, 501, 500, 0}};
+    constexpr int mvvlva_table[NUM_PIECE_TYPES][NUM_PIECE_TYPES] = {
+        {55, 54, 53, 52, 51, 50},
+        {105, 104, 103, 102, 101, 100},
+        {205, 204, 203, 202, 201, 200},
+        {305, 304, 303, 302, 301, 300},
+        {405, 404, 403, 402, 401, 400},
+        {505, 504, 503, 502, 501, 500}};
 
     int mvvlva(const Board &board, Move& move)
     {
+        assert(isCapture(move));
         const PieceType attacker = typeOf(board.pieceAt(move.from()));
         const PieceType victim = typeOf(board.pieceAt(move.to()));
         return mvvlva_table[victim][attacker];
