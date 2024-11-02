@@ -83,8 +83,8 @@ namespace Astra
             {
                 assert(mt == ALL_MOVES); // qsearch should never reach this
                 ml[i].score = history.getHHScore(board.getTurn(), ml[i]);
-                // ml[i].score += 2 * history.getCHScore(board, ml[i], (ss - 1)->current_move);
-                // ml[i].score += history.getCHScore(board, ml[i], (ss - 2)->current_move);
+                ml[i].score += 2 * history.getCHScore(board, ml[i], (ss - 1)->current_move);
+                ml[i].score += history.getCHScore(board, ml[i], (ss - 2)->current_move);
             }
         }
     }

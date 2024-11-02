@@ -26,7 +26,8 @@ namespace Astra
         {
             Piece p = board.pieceAt(move.from());
             Piece prev_p = board.pieceAt(prev_move.from());
-            //return cont_history[prev_p][prev_move.to()][p][move.to()];
+            assert(p != NO_PIECE && prev_p != NO_PIECE);
+            return cont_history[prev_p][prev_move.to()][p][move.to()];
         }
 
         Move getCounterMove(Move move) const
@@ -46,7 +47,7 @@ namespace Astra
         Move counters[NUM_SQUARES][NUM_SQUARES];
 
         int16_t history[NUM_COLORS][NUM_SQUARES][NUM_SQUARES]{};
-        //int16_t cont_history[NUM_PIECES + 1][NUM_SQUARES][NUM_PIECES + 1][NUM_SQUARES]{};
+        int16_t cont_history[NUM_PIECES][NUM_SQUARES][NUM_PIECES][NUM_SQUARES]{};
 
         void updateHH(Move &move, Color c, int bonus);
         void updateCH(Board &board, Move &move, Stack *ss, int bonus);
