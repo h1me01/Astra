@@ -493,6 +493,7 @@ namespace Chess
         return isFiftyMoveRule() || isThreefold() || isInsufficientMaterial();
     }
 
+    // static exchange evaluation from weiss
     bool Board::see(Move& move, int threshold)
     {
         Square from = move.from();

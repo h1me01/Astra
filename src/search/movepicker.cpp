@@ -72,7 +72,7 @@ namespace Astra
             if (ml[i] == tt_move)
                 ml[i].score = 10'000'000;
             else if (isCapture(ml[i]))
-                ml[i].score = board.see(ml[i], 0) ? 7'000'000 + mvvlva(board, ml[i]) : mvvlva(board, ml[i]);
+                ml[i].score = (board.see(ml[i], 0) ? 7'000'000 : 0) + mvvlva(board, ml[i]);
             else if (ml[i] == history.getKiller1(ss->ply))
                 ml[i].score = 6'000'000;
             else if (ml[i] == history.getKiller2(ss->ply))
