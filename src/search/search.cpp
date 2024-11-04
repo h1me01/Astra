@@ -666,11 +666,11 @@ namespace Astra
 
         // use tt score for better evaluation
         if (tt_hit) {
-            bool first = tt_bound == EXACT_BOUND;
-            bool second = tt_bound == LOWER_BOUND && stand_pat < tt_score;
-            bool third = tt_bound == UPPER_BOUND && stand_pat > tt_score;
+            bool is_exact = tt_bound == EXACT_BOUND;
+            bool is_lower = tt_bound == LOWER_BOUND && stand_pat < tt_score;
+            bool is_upper = tt_bound == UPPER_BOUND && stand_pat > tt_score;
 
-            if (first || second || third) {
+            if (is_exact || is_lower || is_upper) {
                 best_score = tt_score;
             }
         }
@@ -705,7 +705,7 @@ namespace Astra
             }
 
             nodes++;
-            
+
             board.makeMove(move, true);
             Score score = -qSearch(-beta, -alpha, node, ss + 1);
             board.unmakeMove(move);
