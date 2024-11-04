@@ -92,8 +92,8 @@ namespace Astra
         if (id == 0)
             tt.incrementAge();
 
-        Stack stack[MAX_PLY + 4];
-        Stack *ss = stack + 2;
+        Stack stack[MAX_PLY + 2];
+        Stack *ss = stack + 2; // +2 to avoid stack underflow (history accesses ss - 2)
 
         // init stack
         for (int i = 2; i > 0; --i)
@@ -105,7 +105,7 @@ namespace Astra
             (ss - i)->excluded_move = NO_MOVE;
         }
 
-        for (int i = 0; i <= MAX_PLY + 1; ++i)
+        for (int i = 0; i < MAX_PLY; ++i)
         {
             (ss + i)->ply = i;
             (ss + i)->move_count = 0;
