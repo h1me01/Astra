@@ -26,12 +26,6 @@ namespace Astra
         uint16_t ply;
     };
 
-    struct SearchResult
-    {
-        Move best_move = NO_MOVE;
-        Score score = -VALUE_INFINITE;
-    };
-
     void initReductions();
 
     class Search
@@ -41,33 +35,35 @@ namespace Astra
 
         bool use_tb = false;
 
+        Board board;
+
         U64 nodes = 0;
         U64 tb_hits = 0;
+        
         uint8_t sel_depth = 0;
 
         Limits limit;
 
-        Board board;
-        TimeManager time_manager;
-
-        History history;
-
         Search(const std::string &fen);
 
-        SearchResult start();
+        Move start();
 
         void reset();
         void stop();
 
     private:
+
         PVTable pv_table;
+        History history;
+       
+        TimeManager time_manager;
+
+        Score pvSearch(int depth, Score alpha, Score beta, Node node, Stack *ss);
+        Score qSearch(Score alpha, Score beta, Node node, Stack *ss);
+        Score aspSearch(int depth, Score prev_eval, Stack *ss);
 
         bool isLimitReached(int depth) const;
         void printUciInfo(Score result, int depth, PVLine &pv_line) const;
-
-        Score qSearch(Score alpha, Score beta, Node node, Stack *ss);
-        Score pvSearch(int depth, Score alpha, Score beta, Node node, Stack *ss);
-        Score aspSearch(int depth, Score prev_eval, Stack *ss);
     };
 
     class ThreadPool

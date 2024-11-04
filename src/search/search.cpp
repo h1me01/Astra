@@ -73,108 +73,114 @@ namespace Astra
         reset();
     }
 
-    Score Search::qSearch(Score alpha, Score beta, Node node, Stack *ss)
+    Move Search::start()
     {
-        assert(alpha < beta);
-
-        if (isLimitReached(1))
-            return beta;
-
-        if (board.isDraw())
-            return VALUE_DRAW;
-
-        if (ss->ply >= MAX_PLY)
-            return Eval::evaluate(board);
-
-        const bool pv_node = node == PV;
-        const Color stm = board.getTurn();
-        const bool in_check = board.inCheck();
-
-        // look up in transposition table
-        TTEntry tt_entry;
-        const U64 hash = board.getHash();
-        const bool tt_hit = tt.lookup(tt_entry, hash);
-        const Score tt_score = tt_hit ? scoreFromTT(tt_entry.score, ss->ply) : static_cast<Score>(VALUE_NONE);
-        Bound tt_bound = tt_entry.bound;
-
-        if (tt_hit 
-            && !pv_node 
-            && tt_score != VALUE_NONE 
-            && tt_bound != NO_BOUND)
+        if (use_tb)
         {
-            bool is_exact = tt_bound == EXACT_BOUND;
-            bool is_lower = tt_bound == LOWER_BOUND && tt_score >= beta;
-            bool is_upper = tt_bound == UPPER_BOUND && tt_score <= alpha;
+            const auto dtz = probeDTZ(board);
+            if (dtz.second != NO_MOVE)
+            {
+                threads.stop = true;
 
-            if (is_exact || is_lower || is_upper)
-                return tt_score;
+                if (id == 0)
+                    std::cout << "bestmove " << dtz.second << std::endl;
+
+                return dtz.second;
+            }
         }
 
-        Score best_score = Eval::evaluate(board);
+        if (id == 0)
+            tt.incrementAge();
 
-        if (best_score >= beta)
-            return best_score;
+        Stack stack[MAX_PLY + 4];
+        Stack *ss = stack + 2;
 
-        if (best_score > alpha)
-            alpha = best_score;
+        // init stack
+        for (int i = 2; i > 0; --i)
+        {
+            (ss - i)->ply = i;
+            (ss - i)->move_count = 0;
+            (ss - i)->current_move = NO_MOVE;
+            (ss - i)->static_eval = 0;
+            (ss - i)->excluded_move = NO_MOVE;
+        }
 
-        MovePicker movepicker(CAPTURE_MOVES, board, history, ss, tt_entry.move);
+        for (int i = 0; i <= MAX_PLY + 1; ++i)
+        {
+            (ss + i)->ply = i;
+            (ss + i)->move_count = 0;
+            (ss + i)->current_move = NO_MOVE;
+            (ss + i)->static_eval = 0;
+            (ss + i)->excluded_move = NO_MOVE;
+        }
+
+        time_manager.start();
+
+        history.clear();
+        history.init(max_hh_bonus, hh_bonus_mult, max_ch_bonus, ch_bonus_mult);
+
+        Score previous_result = VALUE_NONE;
 
         Move best_move = NO_MOVE;
-        Move move = NO_MOVE;
-
-        while ((move = movepicker.nextMove()) != NO_MOVE)
+        for (int depth = 1; depth <= MAX_PLY; depth++)
         {
-            if (best_score > VALUE_TB_LOSS_IN_MAX_PLY && !in_check)
-            {
-                // delta pruning
-                PieceType captured = typeOf(board.pieceAt(move.to()));
-                if (best_score + delta_margin + PIECE_VALUES[captured] < alpha 
-                    && !isPromotion(move) 
-                    && board.nonPawnMat(stm))
-                {
-                    continue;
-                }
+            pv_table.clear();
 
-                // see pruning
-                if (!board.see(move, 0))
-                    continue;
-            }
+            const Score result = aspSearch(depth, previous_result, ss);
+            previous_result = result;
 
-            nodes++;
+            if (isLimitReached(depth))
+                break;
 
-            board.makeMove(move, true);
-            Score score = -qSearch(-beta, -alpha, node, ss + 1);
-            board.unmakeMove(move);
+            best_move = pv_table(0)(0);
 
-            assert(score > -VALUE_INFINITE && score < VALUE_INFINITE);
-
-            // update the best score
-            if (score > best_score)
-            {
-                best_score = score;
-
-                if (score > alpha)
-                {
-                    alpha = score;
-                    best_move = move;
-                }
-
-                if (score >= beta)
-                    // cut-off
-                    break;
-            }
+            if (id == 0)
+                printUciInfo(result, depth, pv_table(0));
         }
 
-        // store in transposition table
-        if (!threads.stop)
+        if (id == 0)
+            std::cout << "bestmove " << best_move << std::endl;
+
+        return best_move;
+    }
+
+    Score Search::aspSearch(int depth, Score prev_eval, Stack *ss)
+    {
+        Score alpha = -VALUE_INFINITE;
+        Score beta = VALUE_INFINITE;
+
+        // only use aspiration window when depth is higher or equal to 9
+        int delta = asp_window;
+        if (depth >= 9)
         {
-            // exact bounds can only be stored in pv search
-            Bound bound = best_score >= beta ? LOWER_BOUND : UPPER_BOUND;
-            tt.store(hash, best_move, scoreToTT(best_score, ss->ply), 0, bound);
+            alpha = prev_eval - delta;
+            beta = prev_eval + delta;
         }
 
-        return best_score;
+        Score result = VALUE_NONE;
+        while (true)
+        {
+            result = pvSearch(depth, alpha, beta, ROOT, ss);
+
+            if (isLimitReached(depth))
+                return result;
+
+            if (result <= alpha)
+            {
+                beta = (alpha + beta) / 2;
+                alpha = std::max(alpha - delta, -static_cast<int>(VALUE_INFINITE));
+                delta += delta / 2;
+            }
+            else if (result >= beta)
+            {
+                beta = std::min(beta + delta, static_cast<int>(VALUE_INFINITE));
+                delta += delta / 2;
+            }
+            else
+                break;
+        }
+
+        return result;
     }
 
     Score Search::pvSearch(int depth, Score alpha, Score beta, Node node, Stack *ss)
@@ -613,115 +619,108 @@ namespace Astra
         return best_score;
     }
 
-    Score Search::aspSearch(int depth, Score prev_eval, Stack *ss)
+    Score Search::qSearch(Score alpha, Score beta, Node node, Stack *ss)
     {
-        Score alpha = -VALUE_INFINITE;
-        Score beta = VALUE_INFINITE;
+        assert(alpha < beta);
 
-        // only use aspiration window when depth is higher or equal to 9
-        int delta = asp_window;
-        if (depth >= 9)
+        if (isLimitReached(1))
+            return beta;
+
+        if (board.isDraw())
+            return VALUE_DRAW;
+
+        if (ss->ply >= MAX_PLY)
+            return Eval::evaluate(board);
+
+        const bool pv_node = node == PV;
+        const Color stm = board.getTurn();
+        const bool in_check = board.inCheck();
+
+        // look up in transposition table
+        TTEntry tt_entry;
+        const U64 hash = board.getHash();
+        const bool tt_hit = tt.lookup(tt_entry, hash);
+        const Score tt_score = tt_hit ? scoreFromTT(tt_entry.score, ss->ply) : static_cast<Score>(VALUE_NONE);
+        Bound tt_bound = tt_entry.bound;
+
+        if (tt_hit 
+            && !pv_node 
+            && tt_score != VALUE_NONE 
+            && tt_bound != NO_BOUND)
         {
-            alpha = prev_eval - delta;
-            beta = prev_eval + delta;
+            bool is_exact = tt_bound == EXACT_BOUND;
+            bool is_lower = tt_bound == LOWER_BOUND && tt_score >= beta;
+            bool is_upper = tt_bound == UPPER_BOUND && tt_score <= alpha;
+
+            if (is_exact || is_lower || is_upper)
+                return tt_score;
         }
 
-        Score result = VALUE_NONE;
-        while (true)
+        Score best_score = Eval::evaluate(board);
+
+        if (best_score >= beta)
+            return best_score;
+
+        if (best_score > alpha)
+            alpha = best_score;
+
+        MovePicker movepicker(CAPTURE_MOVES, board, history, ss, tt_entry.move);
+
+        Move best_move = NO_MOVE;
+        Move move = NO_MOVE;
+
+        while ((move = movepicker.nextMove()) != NO_MOVE)
         {
-            result = pvSearch(depth, alpha, beta, ROOT, ss);
-
-            if (isLimitReached(depth))
-                return result;
-
-            if (result <= alpha)
+            if (best_score > VALUE_TB_LOSS_IN_MAX_PLY && !in_check)
             {
-                beta = (alpha + beta) / 2;
-                alpha = std::max(alpha - delta, -static_cast<int>(VALUE_INFINITE));
-                delta += delta / 2;
+                // delta pruning
+                PieceType captured = typeOf(board.pieceAt(move.to()));
+                if (best_score + delta_margin + PIECE_VALUES[captured] < alpha 
+                    && !isPromotion(move) 
+                    && board.nonPawnMat(stm))
+                {
+                    continue;
+                }
+
+                // see pruning
+                if (!board.see(move, 0))
+                    continue;
             }
-            else if (result >= beta)
+
+            nodes++;
+
+            board.makeMove(move, true);
+            Score score = -qSearch(-beta, -alpha, node, ss + 1);
+            board.unmakeMove(move);
+
+            assert(score > -VALUE_INFINITE && score < VALUE_INFINITE);
+
+            // update the best score
+            if (score > best_score)
             {
-                beta = std::min(beta + delta, static_cast<int>(VALUE_INFINITE));
-                delta += delta / 2;
-            }
-            else
-                break;
-        }
+                best_score = score;
 
-        return result;
-    }
+                if (score > alpha)
+                {
+                    alpha = score;
+                    best_move = move;
+                }
 
-    SearchResult Search::start()
-    {
-        if (use_tb)
-        {
-            const auto dtz = probeDTZ(board);
-            if (dtz.second != NO_MOVE)
-            {
-                threads.stop = true;
-
-                if (id == 0)
-                    std::cout << "bestmove " << dtz.second << std::endl;
-
-                return {dtz.second, dtz.first};
+                if (score >= beta)
+                    // cut-off
+                    break;
             }
         }
 
-        if (id == 0)
-            tt.incrementAge();
-
-        Stack stack[MAX_PLY + 4];
-        Stack *ss = stack + 2;
-
-        // init stack
-        for (int i = 2; i > 0; --i)
+        // store in transposition table
+        if (!threads.stop)
         {
-            (ss - i)->ply = i;
-            (ss - i)->move_count = 0;
-            (ss - i)->current_move = NO_MOVE;
-            (ss - i)->static_eval = 0;
-            (ss - i)->excluded_move = NO_MOVE;
+            // exact bounds can only be stored in pv search
+            Bound bound = best_score >= beta ? LOWER_BOUND : UPPER_BOUND;
+            tt.store(hash, best_move, scoreToTT(best_score, ss->ply), 0, bound);
         }
 
-        for (int i = 0; i <= MAX_PLY + 1; ++i)
-        {
-            (ss + i)->ply = i;
-            (ss + i)->move_count = 0;
-            (ss + i)->current_move = NO_MOVE;
-            (ss + i)->static_eval = 0;
-            (ss + i)->excluded_move = NO_MOVE;
-        }
-
-        time_manager.start();
-
-        history.clear();
-        history.init(max_hh_bonus, hh_bonus_mult, max_ch_bonus, ch_bonus_mult);
-
-        Score previous_result = VALUE_NONE;
-
-        SearchResult search_result;
-        for (int depth = 1; depth <= MAX_PLY; depth++)
-        {
-            pv_table.clear();
-
-            const Score result = aspSearch(depth, previous_result, ss);
-            previous_result = result;
-
-            if (isLimitReached(depth))
-                break;
-
-            search_result.best_move = pv_table(0)(0);
-            search_result.score = result;
-
-            if (id == 0)
-                printUciInfo(result, depth, pv_table(0));
-        }
-
-        if (id == 0)
-            std::cout << "bestmove " << search_result.best_move << std::endl;
-
-        return search_result;
+        return best_score;
     }
 
     bool Search::isLimitReached(const int depth) const
@@ -783,14 +782,14 @@ namespace Astra
                   << " time " << elapsed_time
                   << " pv";
 
-        // print the rest of the pv
+        // print the pv
         for (int i = 0; i < pv_line.length; i++)
             std::cout << " " << pv_line(i);
 
         std::cout << std::endl;
     }
 
-    // class ThreadPool
+    // threadpool class
     void ThreadPool::launchWorkers(const Board &board, const Limits &limit, int worker_count, bool use_tb)
     {
         stop = false;
