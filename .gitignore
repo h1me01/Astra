@@ -5,3 +5,5 @@ build/
 src/astra.exe
 
 CMakeLists.txt
+
+Weights/

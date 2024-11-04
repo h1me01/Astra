@@ -110,7 +110,9 @@ namespace UCI
     {
         options.add("Hash", Option("spin", "64", "64", 1, 2048));
         options.add("Threads", Option("spin", "1", "1", 1, 256));
+#ifndef TUNE
         options.add("SyzygyPath", Option("string", "", "", 0, 0));
+#endif
         options.apply();
     }
 
