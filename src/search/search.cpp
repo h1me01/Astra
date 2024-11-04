@@ -11,7 +11,7 @@ namespace Astra
     // search parameters
     PARAM(lmr_base, 100, 50, 150);
     PARAM(lmr_div, 157, 150, 250);
-    PARAM(lmr_depth, 2, 1, 4);
+    PARAM(lmr_depth, 2, 2, 5);
     PARAM(lmr_min_moves, 3, 1, 5);
 
     PARAM(delta_margin, 500, 400, 900);
@@ -30,9 +30,9 @@ namespace Astra
 
     PARAM(nmp_depth, 3, 2, 5);
 
-    PARAM(prob_cut_margin, 130, 100, 150);
+    PARAM(prob_cut_margin, 130, 100, 190);
 
-    PARAM(pv_see_cap_margin, 97, 90, 110);
+    PARAM(pv_see_cap_margin, 97, 70, 110);
     PARAM(pv_see_cap_depth, 5, 4, 8);
 
     PARAM(pv_see_quiet_margin, 69, 30, 95);
@@ -418,7 +418,6 @@ namespace Astra
                         continue;
 
                     nodes++;
-
                     board.makeMove(move, true);
 
                     Score score = -qSearch(-beta_cut, -beta_cut + 1, NON_PV, ss + 1);
@@ -636,6 +635,9 @@ namespace Astra
         const Color stm = board.getTurn();
         const bool in_check = board.inCheck();
 
+        Score stand_pat;
+        Score best_score;
+
         // look up in transposition table
         TTEntry tt_entry;
         const U64 hash = board.getHash();
@@ -654,9 +656,24 @@ namespace Astra
 
             if (is_exact || is_lower || is_upper)
                 return tt_score;
+
+            stand_pat = tt_score;
+            best_score = tt_score;
+        } else {
+            stand_pat = in_check ? -VALUE_MATE + ss->ply : Eval::evaluate(board);
+            best_score = stand_pat;
         }
 
-        Score best_score = Eval::evaluate(board);
+        // use tt score for better evaluation
+        if (tt_hit) {
+            bool first = tt_bound == EXACT_BOUND;
+            bool second = tt_bound == LOWER_BOUND && stand_pat < tt_score;
+            bool third = tt_bound == UPPER_BOUND && stand_pat > tt_score;
+
+            if (first || second || third) {
+                best_score = tt_score;
+            }
+        }
 
         if (best_score >= beta)
             return best_score;
@@ -675,9 +692,9 @@ namespace Astra
             {
                 // delta pruning
                 PieceType captured = typeOf(board.pieceAt(move.to()));
-                if (best_score + delta_margin + PIECE_VALUES[captured] < alpha 
-                    && !isPromotion(move) 
-                    && board.nonPawnMat(stm))
+                if (!isPromotion(move) 
+                    && board.nonPawnMat(stm)
+                    && stand_pat + delta_margin + PIECE_VALUES[captured] < alpha)
                 {
                     continue;
                 }
@@ -688,7 +705,7 @@ namespace Astra
             }
 
             nodes++;
-
+            
             board.makeMove(move, true);
             Score score = -qSearch(-beta, -alpha, node, ss + 1);
             board.unmakeMove(move);
