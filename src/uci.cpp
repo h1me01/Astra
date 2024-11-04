@@ -60,6 +60,9 @@ namespace UCI
             return;
         }
 
+        if (value == "<empty>")
+            return;
+
 #ifdef TUNE
         Astra::setParam(name, std::stoi(value));
         Astra::initReductions();
@@ -105,7 +108,7 @@ namespace UCI
     // uci class
     Uci::Uci() : board(STARTING_FEN)
     {
-        options.add("Hash", Option("spin", "64", "64", 1, 2048));
+        options.add("Hash", Option("spin", "16", "16", 1, 2048));
         options.add("Threads", Option("spin", "1", "1", 1, 256));
         options.add("SyzygyPath", Option("string", "", "", 0, 0));
         options.apply();

@@ -19,13 +19,18 @@ namespace Astra
     PARAM(iir_depth, 3, 2, 4);
 
     PARAM(razor_margin, 130, 60, 200);
-    PARAM(rzr_depth, 3, 2, 7);
+    PARAM(rzr_depth, 5, 3, 7);
 
-    PARAM(rfp_depth_mult, 46, 20, 80);
+    PARAM(rfp_depth_mult, 46, 30, 80);
     PARAM(rfp_impr_bonus, 50, 30, 100);
     PARAM(rfp_depth, 5, 3, 9);
 
+    PARAM(snmp_depth_mult, 70, 50, 90);
+    PARAM(snmp_depth, 4, 2, 7);
+
     PARAM(nmp_depth, 3, 2, 5);
+
+    PARAM(prob_cut_margin, 130, 100, 150);
 
     PARAM(pv_see_cap_margin, 97, 90, 110);
     PARAM(pv_see_cap_depth, 5, 4, 8);
@@ -35,6 +40,10 @@ namespace Astra
 
     PARAM(lmp_depth, 6, 4, 7);
     PARAM(lmp_count_base, 4, 3, 6);
+
+    PARAM(fp_depth, 8, 3, 13);
+    PARAM(fp_base, 156, 100, 200);
+    PARAM(fp_mult, 97, 80, 120);
 
     PARAM(hh_bonus_mult, 155, 100, 200);
     PARAM(max_hh_bonus, 2000, 1900, 2200);
@@ -321,7 +330,7 @@ namespace Astra
         }
 
         // only use pruning/reduction when not in check and root/pv node
-        if (!in_check && !root_node)
+        if (!root_node && !in_check)
         {
             // internal iterative reductions
             if (depth >= iir_depth && !tt_hit)
@@ -335,9 +344,18 @@ namespace Astra
                 && ss->static_eval + razor_margin < alpha)
             {
                 Score score = qSearch(alpha, beta, NON_PV, ss);
-                if (score < alpha 
-                    && std::abs(score) < VALUE_TB_WIN_IN_MAX_PLY)
+                if (score < alpha && std::abs(score) < VALUE_TB_WIN_IN_MAX_PLY)
                     return score;
+            }
+
+            // static null move pruning
+            int snmp_margin = snmp_depth_mult * depth;
+            if (!pv_node 
+                && depth <= snmp_depth 
+                && ss->static_eval - snmp_margin >= beta 
+                && ss->static_eval < VALUE_MIN_MATE)
+            {
+                return ss->static_eval - snmp_margin;
             }
 
             // reverse futility pruning
@@ -352,13 +370,15 @@ namespace Astra
 
             // null move pruning
             if (!pv_node 
-                && board.nonPawnMat(stm)
+                && board.nonPawnMat(stm) 
                 && excluded_move == NO_MOVE 
                 && (ss - 1)->current_move != NULL_MOVE 
                 && depth >= nmp_depth 
                 && ss->static_eval >= beta)
             {
-                constexpr int R = 5;
+                // assert(ss->static_eval - beta >= 0);
+                // TODO: dynamic null move reduction
+                int R = 5;
 
                 ss->current_move = NULL_MOVE;
 
@@ -375,6 +395,40 @@ namespace Astra
                     return score;
                 }
             }
+
+            // probcut
+            int beta_cut = beta + prob_cut_margin;
+            if (!pv_node 
+                && depth > 3 
+                && std::abs(beta) < VALUE_TB_WIN_IN_MAX_PLY 
+                && !(tt_entry.depth >= depth - 3 && tt_entry.score != VALUE_NONE && tt_entry.score < beta_cut))
+            {
+                MovePicker movepicker(CAPTURE_MOVES, board, history, ss, tt_entry.move);
+
+                Move move = NO_MOVE;
+                while ((move = movepicker.nextMove()) != NO_MOVE)
+                {
+                    if (move == ss->excluded_move)
+                        continue;
+
+                    nodes++;
+
+                    board.makeMove(move, true);
+
+                    Score score = -qSearch(-beta_cut, -beta_cut + 1, NON_PV, ss + 1);
+
+                    if (score >= beta_cut)
+                        score = -pvSearch(depth - 4, -beta_cut, -beta_cut + 1, NON_PV, ss + 1);
+
+                    board.unmakeMove(move);
+
+                    if (score >= beta_cut)
+                    {
+                        tt.store(hash, move, scoreToTT(score, ss->ply), depth - 3, LOWER_BOUND);
+                        return beta_cut;
+                    }
+                }
+            }
         }
 
         MovePicker movepicker(ALL_MOVES, board, history, ss, tt_entry.move);
@@ -382,7 +436,7 @@ namespace Astra
 
         uint8_t made_moves = 0, quiet_count = 0;
 
-        Move quiet_moves[MAX_MOVES / 2];
+        Move quiet_moves[64];
 
         Move best_move = NO_MOVE;
         Move move = NO_MOVE;
@@ -395,10 +449,7 @@ namespace Astra
             made_moves++;
 
             // print current move information
-            if (id == 0 
-                && root_node 
-                && time_manager.elapsedTime() > 5000 
-                && !threads.stop)
+            if (id == 0 && root_node && time_manager.elapsedTime() > 5000 && !threads.stop)
             {
                 std::cout << "info depth " << depth
                           << " currmove " << move
@@ -429,6 +480,17 @@ namespace Astra
                 // see pruning
                 if (depth < see_depth && !board.see(move, -see_margin * depth))
                     continue;
+        
+                // futility pruning
+                if (!pv_node 
+                    && !in_check
+                    && !is_capture 
+                    && !is_promotion 
+                    && depth <= fp_depth
+                    && ss->static_eval + fp_base + depth * fp_mult <= alpha) 
+                {
+                    continue;
+                }
             }
 
             // singular extensions
@@ -490,7 +552,7 @@ namespace Astra
             // principal variation search
             if (pv_node && ((score > alpha && score < beta) || made_moves == 1))
                 score = -pvSearch(new_depth, -beta, -alpha, PV, ss + 1);
-    
+
             board.unmakeMove(move);
 
             assert(score > -VALUE_INFINITE && score < VALUE_INFINITE);
@@ -516,7 +578,7 @@ namespace Astra
                 }
             }
 
-            if (!is_capture) 
+            if (!is_capture)
                 quiet_moves[quiet_count++] = move;
         }
 
@@ -634,7 +696,7 @@ namespace Astra
         time_manager.start();
 
         history.clear();
-        history.init(max_hh_bonus, hh_bonus_mult, max_ch_bonus, ch_bonus_mult); 
+        history.init(max_hh_bonus, hh_bonus_mult, max_ch_bonus, ch_bonus_mult);
 
         Score previous_result = VALUE_NONE;
 

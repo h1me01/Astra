@@ -17,9 +17,8 @@ CXXFLAGS := -std=c++17 \
             -O3 \
             -DNDEBUG \
             -funroll-loops \
-            -fno-exceptions \
-            -pedantic \
             -pthread \
+            -fno-exceptions \
             -march=native \
             -DNNUE_PATH=\"$(EvalFile)\" #nnue path
 
@@ -52,7 +51,7 @@ SRC := $(CHESS_SRC) $(EVAL_SRC) $(SEARCH_SRC) $(SYZYGY_SRC) $(MAIN_SRC)
 # detect operating system and set defaults
 ifeq ($(OS),Windows_NT)
     SUFFIX := .exe
-    LDFLAGS := -pthread -lstdc++ -static
+    LDFLAGS := -lstdc++ -static
 else
     SUFFIX :=
     LDFLAGS := -lpthread -lstdc++
