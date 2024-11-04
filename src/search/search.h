@@ -19,7 +19,6 @@ namespace Astra
 
     struct Stack
     {
-        int move_count;
         Move current_move;
         Move excluded_move;
         Score static_eval;

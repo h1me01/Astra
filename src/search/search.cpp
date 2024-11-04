@@ -99,7 +99,6 @@ namespace Astra
         for (int i = 2; i > 0; --i)
         {
             (ss - i)->ply = i;
-            (ss - i)->move_count = 0;
             (ss - i)->current_move = NO_MOVE;
             (ss - i)->static_eval = 0;
             (ss - i)->excluded_move = NO_MOVE;
@@ -108,7 +107,6 @@ namespace Astra
         for (int i = 0; i < MAX_PLY; ++i)
         {
             (ss + i)->ply = i;
-            (ss + i)->move_count = 0;
             (ss + i)->current_move = NO_MOVE;
             (ss + i)->static_eval = 0;
             (ss + i)->excluded_move = NO_MOVE;
@@ -437,7 +435,7 @@ namespace Astra
         }
 
         MovePicker movepicker(ALL_MOVES, board, history, ss, tt_entry.move);
-        ss->move_count = movepicker.getMoveCount();
+        int move_count = movepicker.getMoveCount();
 
         uint8_t made_moves = 0, quiet_count = 0;
 
@@ -523,7 +521,7 @@ namespace Astra
             }
 
             // one reply extension
-            if (in_check && (ss - 1)->move_count == 1 && ss->move_count == 1)
+            if (in_check && move_count == 1)
                 extension += 1;
 
             const int new_depth = depth - 1 + extension;
@@ -586,8 +584,6 @@ namespace Astra
             if (!is_capture)
                 quiet_moves[quiet_count++] = move;
         }
-
-        ss->move_count = made_moves;
 
         // check for mate and stalemate
         if (movepicker.getMoveCount() == 0)
