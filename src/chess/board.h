@@ -91,7 +91,6 @@ namespace Chess
         bool nonPawnMat(Color c) const;
 
         bool isRepetition(bool is_pv) const;
-        bool isThreefold() const;
         bool isInsufficientMaterial() const;
         bool isDraw() const;
 

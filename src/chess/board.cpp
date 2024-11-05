@@ -468,14 +468,6 @@ namespace Chess
         return false;
     }
 
-    bool Board::isThreefold() const
-    {
-        int count = 0;
-        for (int i = game_ply - 1; i >= 0 && count < 2; i--)
-            count += history[i].hash == hash;
-        return count >= 2;
-    }
-
     bool Board::isInsufficientMaterial() const
     {
         const U64 pawns = piece_bb[WHITE_PAWN] | piece_bb[BLACK_PAWN];
@@ -487,6 +479,7 @@ namespace Chess
         return !pawns && !queens && !rooks && num_w_minor_pieces <= 1 && num_b_minor_pieces <= 1;
     }
 
+    // doesn't include stalemate or threefold
     bool Board::isDraw() const
     {
         return history[game_ply].half_move_clock > 99 || isInsufficientMaterial();
