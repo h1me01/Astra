@@ -2,7 +2,7 @@
 #include "bench.h"
 #include "chess/perft.h"
 #include "search/tune.h"
-#include "syzygy/tbprobe.h"
+#include "fathom/tbprobe.h"
 
 #include <cstring> // strncmp
 

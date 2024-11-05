@@ -1,5 +1,5 @@
 #include "syzygy.h"
-#include "../syzygy/tbprobe.h"
+#include "../fathom/tbprobe.h"
 #include "../chess/movegen.h"
 
 namespace Astra
