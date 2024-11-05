@@ -108,7 +108,7 @@ namespace UCI
     // uci class
     Uci::Uci() : board(STARTING_FEN)
     {
-        options.add("Hash", Option("spin", "64", "64", 1, 2048));
+        options.add("Hash", Option("spin", "16", "16", 1, 2048));
         options.add("Threads", Option("spin", "1", "1", 1, 256));
 #ifndef TUNE
         options.add("SyzygyPath", Option("string", "", "", 0, 0));

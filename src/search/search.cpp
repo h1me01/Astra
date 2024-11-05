@@ -9,49 +9,49 @@
 namespace Astra
 {
     // search parameters
-    PARAM(lmr_base, 100, 50, 150);
-    PARAM(lmr_div, 157, 150, 250);
+    PARAM(lmr_base, 95, 50, 150);
+    PARAM(lmr_div, 152, 150, 250);
     PARAM(lmr_depth, 2, 2, 5);
     PARAM(lmr_min_moves, 3, 1, 5);
 
-    PARAM(delta_margin, 500, 400, 900);
+    PARAM(delta_margin, 588, 400, 900);
 
-    PARAM(iir_depth, 3, 2, 4);
+    PARAM(iir_depth, 2, 2, 4);
 
-    PARAM(razor_margin, 130, 60, 200);
+    PARAM(razor_margin, 134, 60, 200);
     PARAM(rzr_depth, 5, 3, 7);
 
-    PARAM(rfp_depth_mult, 46, 30, 80);
-    PARAM(rfp_impr_bonus, 50, 30, 100);
+    PARAM(rfp_depth_mult, 47, 30, 80);
+    PARAM(rfp_impr_bonus, 40, 30, 100);
     PARAM(rfp_depth, 5, 3, 9);
 
-    PARAM(snmp_depth_mult, 70, 50, 90);
-    PARAM(snmp_depth, 4, 2, 7);
+    PARAM(snmp_depth_mult, 65, 50, 90);
+    PARAM(snmp_depth, 3, 2, 7);
 
     PARAM(nmp_depth, 3, 2, 5);
 
-    PARAM(prob_cut_margin, 130, 100, 190);
+    PARAM(prob_cut_margin, 136, 100, 190);
 
     PARAM(pv_see_cap_margin, 97, 70, 110);
-    PARAM(pv_see_cap_depth, 5, 4, 8);
+    PARAM(pv_see_cap_depth, 4, 4, 8);
 
-    PARAM(pv_see_quiet_margin, 69, 30, 95);
-    PARAM(pv_see_quiet_depth, 7, 6, 9);
+    PARAM(pv_see_quiet_margin, 79, 30, 95);
+    PARAM(pv_see_quiet_depth, 6, 6, 9);
 
     PARAM(lmp_depth, 6, 4, 7);
-    PARAM(lmp_count_base, 4, 3, 6);
+    PARAM(lmp_count_base, 3, 3, 6);
 
-    PARAM(fp_depth, 8, 3, 13);
-    PARAM(fp_base, 156, 100, 200);
-    PARAM(fp_mult, 97, 80, 120);
+    PARAM(fp_depth, 9, 3, 13);
+    PARAM(fp_base, 139, 100, 200);
+    PARAM(fp_mult, 96, 80, 120);
 
     PARAM(hh_bonus_mult, 155, 100, 200);
-    PARAM(max_hh_bonus, 2000, 1900, 2200);
+    PARAM(max_hh_bonus, 2047, 1900, 2200);
 
-    PARAM(ch_bonus_mult, 10, 5, 15);
-    PARAM(max_ch_bonus, 1600, 1400, 1800);
+    PARAM(ch_bonus_mult, 9, 5, 15);
+    PARAM(max_ch_bonus, 1582, 1400, 1800);
 
-    PARAM(asp_window, 30, 10, 50);
+    PARAM(asp_window, 33, 10, 50);
 
     // search class
     int REDUCTIONS[MAX_PLY][MAX_MOVES];
@@ -435,7 +435,6 @@ namespace Astra
         }
 
         MovePicker movepicker(ALL_MOVES, board, history, ss, tt_entry.move);
-        int move_count = movepicker.getMoveCount();
 
         uint8_t made_moves = 0, quiet_count = 0;
 
@@ -450,14 +449,6 @@ namespace Astra
                 continue;
 
             made_moves++;
-
-            // print current move information
-            if (id == 0 && root_node && time_manager.elapsedTime() > 5000 && !threads.stop)
-            {
-                std::cout << "info depth " << depth
-                          << " currmove " << move
-                          << " currmovenumber " << static_cast<int>(made_moves) << std::endl;
-            }
 
             int extension = 0;
 
@@ -496,6 +487,14 @@ namespace Astra
                 }
             }
 
+            // print current move information
+            if (id == 0 && root_node && time_manager.elapsedTime() > 5000 && !threads.stop)
+            {
+                std::cout << "info depth " << depth
+                          << " currmove " << move
+                          << " currmovenumber " << static_cast<int>(made_moves) << std::endl;
+            }
+
             // singular extensions
             if (!root_node 
                 && depth >= 8 
@@ -511,18 +510,14 @@ namespace Astra
                 const int singular_depth = (depth - 1) / 2;
 
                 ss->excluded_move = move;
-                const auto value = pvSearch(singular_depth, singular_beta - 1, singular_beta, NON_PV, ss);
+                Score score = pvSearch(singular_depth, singular_beta - 1, singular_beta, NON_PV, ss);
                 ss->excluded_move = NO_MOVE;
 
-                if (value < singular_beta)
+                if (score < singular_beta)
                     extension = 1;
                 else if (singular_beta >= beta)
                     return singular_beta;
             }
-
-            // one reply extension
-            if (in_check && move_count == 1)
-                extension += 1;
 
             const int new_depth = depth - 1 + extension;
 
