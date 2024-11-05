@@ -29,6 +29,10 @@ namespace Astra
     PARAM(snmp_depth, 3, 2, 7);
 
     PARAM(nmp_depth, 3, 2, 5);
+    PARAM(nmp_base, 4, 3, 5);
+    PARAM(nmp_depth_div, 5, 3, 7);
+    PARAM(nmp_min, 4, 2, 6);
+    PARAM(nmp_div, 211, 205, 215);
 
     PARAM(prob_cut_margin, 136, 100, 190);
 
@@ -380,9 +384,9 @@ namespace Astra
                 && depth >= nmp_depth 
                 && ss->static_eval >= beta)
             {
-                // assert(ss->static_eval - beta >= 0);
-                // TODO: dynamic null move reduction
-                int R = 5;
+                assert(ss->static_eval - beta >= 0);
+                
+                int R = nmp_base + depth / nmp_depth_div + std::min(static_cast<int>(nmp_min), (ss->static_eval - beta) / nmp_div);
 
                 ss->current_move = NULL_MOVE;
 
@@ -405,7 +409,7 @@ namespace Astra
             if (!pv_node 
                 && depth > 3 
                 && std::abs(beta) < VALUE_TB_WIN_IN_MAX_PLY 
-                && !(tt_entry.depth >= depth - 3 && tt_entry.score != VALUE_NONE && tt_entry.score < beta_cut))
+                && !(tt_entry.depth >= depth - 3 && tt_score != VALUE_NONE && tt_score < beta_cut))
             {
                 MovePicker movepicker(CAPTURE_MOVES, board, history, ss, tt_entry.move);
 
@@ -461,9 +465,9 @@ namespace Astra
                 int see_margin = is_capture ? pv_see_cap_margin : pv_see_quiet_margin;
 
                 // late move pruning
-                if (!is_capture 
-                    && !in_check 
-                    && !pv_node 
+                if (!pv_node 
+                    && !in_check
+                    && !is_capture  
                     && !is_promotion 
                     && depth <= lmp_depth 
                     && quiet_count > (lmp_count_base + depth * depth))
@@ -488,7 +492,10 @@ namespace Astra
             }
 
             // print current move information
-            if (id == 0 && root_node && time_manager.elapsedTime() > 5000 && !threads.stop)
+            if (id == 0 
+                && root_node 
+                && time_manager.elapsedTime() > 5000 
+                && !threads.stop)
             {
                 std::cout << "info depth " << depth
                           << " currmove " << move
