@@ -53,7 +53,9 @@ namespace Chess
 
     std::ostream& operator<<(std::ostream& os, const Move& m)
     {
-        if (SQSTR[m.from()] == "a1" && SQSTR[m.to()] == "a1")
+        if (m.raw() == 0)
+            os << "NO MOVE";
+        else if (m.raw() == 65) 
             os << "NULL MOVE";
         else
             os << SQSTR[m.from()] << SQSTR[m.to()];

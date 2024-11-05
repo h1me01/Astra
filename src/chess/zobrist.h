@@ -22,10 +22,6 @@ namespace Chess
         // generate psuedorandom number
         template <typename T>
         T rand() { return T(rand64()); }
-
-        // generate psuedorandom number with only a few setFen bits
-        template <typename T>
-        T sparse_rand() { return T(rand64() & rand64() & rand64()); }
     };
 
     namespace Zobrist

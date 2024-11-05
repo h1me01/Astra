@@ -125,11 +125,11 @@ namespace Chess
         // default null move (a1a1)
         Move() : move(0) { }
 
-        explicit Move(uint16_t m) { move = m; }
+        constexpr explicit Move(uint16_t m) : move(m) { }
 
-        Move(const Move& other) : move(other.move) {}
-        Move(Square from, Square to) : move(from << 6 | to) {}
-        Move(Square from, Square to, MoveFlags mf) : move(0) { move = mf << 12 | from << 6 | to; }
+        constexpr Move(const Move& other) : move(other.move) {}
+        constexpr Move(Square from, Square to) : move(from << 6 | to) {}
+        constexpr Move(Square from, Square to, MoveFlags mf) : move(mf << 12 | from << 6 | to) {}
 
         Square to() const { return static_cast<Square>(move & 0x3f); }
         Square from() const { return static_cast<Square>(move >> 6 & 0x3f); }
@@ -145,6 +145,8 @@ namespace Chess
             return *this;
         }
 
+        uint16_t raw() const { return move; }
+
         bool operator==(const Move& m) const { return move == m.move; }
         bool operator!=(const Move& m) const { return move != m.move; }
 
@@ -157,8 +159,8 @@ namespace Chess
     };
 
     // instead of Move() use this for clarity
-    const auto NULL_MOVE = Move();
-    const auto NO_MOVE = Move(65);
+    const auto NULL_MOVE = Move(65);
+    const auto NO_MOVE = Move(0);
 
 } // namespace Chess
 

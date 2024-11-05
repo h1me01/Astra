@@ -26,8 +26,7 @@ namespace Chess
 
     // board class
 
-    Board::Board(const std::string& fen) :
-        checkers(0), pinned(0), danger(0), capture_mask(0), quiet_mask(0), piece_bb{}, board{}, stm(WHITE), game_ply(0)
+    Board::Board(const std::string& fen) : piece_bb{}, board{}, stm(WHITE), game_ply(0)
     {
         for (auto& i : board)
             i = NO_PIECE;
@@ -99,11 +98,6 @@ namespace Chess
     {
         if (this != &other)
         {
-            checkers = other.checkers;
-            pinned = other.pinned;
-            danger = other.danger;
-            capture_mask = other.capture_mask;
-            quiet_mask = other.quiet_mask;
             game_ply = other.game_ply;
             stm = other.stm;
             hash = other.hash;
@@ -119,11 +113,6 @@ namespace Chess
 
     Board::Board(const Board& other)
     {
-        checkers = other.checkers;
-        pinned = other.pinned;
-        danger = other.danger;
-        capture_mask = other.capture_mask;
-        quiet_mask = other.quiet_mask;
         game_ply = other.game_ply;
         stm = other.stm;
         hash = other.hash;
@@ -464,17 +453,27 @@ namespace Chess
         stm = ~stm;
     }
 
+    bool Board::isRepetition(bool is_pv) const {
+        int count = 0;
+        int limit = game_ply - history[game_ply].half_move_clock - 1;
+
+        for (int i = game_ply - 2; i >= 0 && i >= limit; i -= 2) {
+            if (history[i].hash == hash) {
+                if (++count == 1 + is_pv) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
     bool Board::isThreefold() const
     {
         int count = 0;
         for (int i = game_ply - 1; i >= 0 && count < 2; i--)
             count += history[i].hash == hash;
         return count >= 2;
-    }
-
-    bool Board::isFiftyMoveRule() const
-    {
-        return history[game_ply].half_move_clock >= 100;
     }
 
     bool Board::isInsufficientMaterial() const
@@ -490,7 +489,7 @@ namespace Chess
 
     bool Board::isDraw() const
     {
-        return isFiftyMoveRule() || isThreefold() || isInsufficientMaterial();
+        return history[game_ply].half_move_clock > 99 || isInsufficientMaterial();
     }
 
     // static exchange evaluation from weiss

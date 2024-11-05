@@ -54,6 +54,8 @@ namespace Chess
 
     void testPerft(int max_depth)
     {
+        double total_time = 0;
+
         for (const auto& testCase : test_cases)
         {
             Board board(testCase.fen);
@@ -70,6 +72,7 @@ namespace Chess
 
                 std::chrono::duration<double, std::milli> diff = end - start;
                 std::cout << "Depth: " << depth << " | Nodes: " << nodes << " | Time: " << diff.count() << " | ";
+                total_time += diff.count();
 
                 if (nodes == testCase.nodes[i])
                     std::cout << "Test passed!" << std::endl;
@@ -80,6 +83,8 @@ namespace Chess
                     break;
             }
         }
+
+        std::cout << "\nTotal time: " << total_time << "ms" << std::endl;
     }
 
 } // namespace Chess
