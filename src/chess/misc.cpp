@@ -23,7 +23,7 @@ namespace Chess
         int file = square_str[0] - 97;
         int rank = square_str[1] - 49;
         int index = rank * 8 + file;
-        return static_cast<Square>(index);
+        return Square(index);
     }
 
     std::vector<std::string> split(const std::string& str, char del)

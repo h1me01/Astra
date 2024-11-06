@@ -1,7 +1,6 @@
 #ifndef SEARCH_H
 #define SEARCH_H
 
-#include <iostream>
 #include <thread>
 #include "tt.h"
 #include "pvtable.h"
@@ -19,10 +18,10 @@ namespace Astra
 
     struct Stack
     {
+        uint16_t ply;
+        Score static_eval;
         Move current_move;
         Move excluded_move;
-        Score static_eval;
-        uint16_t ply;
     };
 
     void initReductions();

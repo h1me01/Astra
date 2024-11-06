@@ -11,7 +11,7 @@ namespace Chess
         b = (b & 0x3333333333333333) + ((b >> 2) & 0x3333333333333333);
         b = (b + (b >> 4)) & 0x0f0f0f0f0f0f0f0f;
         b = (b * 0x0101010101010101) >> 56;
-        return static_cast<int>(b);
+        return int(b);
     }
 
     int sparsePopCount(U64 b)
@@ -29,7 +29,7 @@ namespace Chess
     {
         int lsb = bsf(b);
         b &= b - 1;
-        return static_cast<Square>(lsb);
+        return Square(lsb);
     }
 
     U64 reverse(U64 b)

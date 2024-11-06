@@ -28,7 +28,7 @@ namespace Astra
         d.b_occ = board.occupancy(BLACK);
         d.occ = d.w_occ | d.b_occ;
 
-        if (popCount(d.occ) > static_cast<signed>(TB_LARGEST)) {
+        if (popCount(d.occ) > signed(TB_LARGEST)) {
             d.is_allowed = false;
             return d;
         }
@@ -99,8 +99,8 @@ namespace Astra
             s = VALUE_DRAW;
 
         const int prom_type = TB_GET_PROMOTES(result);
-        const auto from = static_cast<Square>(TB_GET_FROM(result));
-        const auto to = static_cast<Square>(TB_GET_TO(result));
+        const auto from = Square(TB_GET_FROM(result));
+        const auto to = Square(TB_GET_TO(result));
 
         MoveList moves(board);
         for (auto m : moves)

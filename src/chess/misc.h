@@ -55,14 +55,14 @@ namespace Chess
     // gets the opposite color
     constexpr Color operator~(Color c)
     {
-        return static_cast<Color>(c ^ BLACK);
+        return Color(c ^ BLACK);
     }
 
     constexpr Piece makePiece(Color c, PieceType pt)
     {
         if (pt == NO_PIECE_TYPE)
             return NO_PIECE;
-        return static_cast<Piece>(pt + 6 * c);
+        return Piece(pt + 6 * c);
     }
 
     constexpr PieceType typeOf(Piece p)
@@ -77,18 +77,18 @@ namespace Chess
 
     inline Square& operator++(Square& s)
     {
-        s = static_cast<Square>(static_cast<int>(s) + 1);
+        s = Square(int(s) + 1);
         return s;
     }
 
     constexpr Square operator+(Square s, Direction d)
     {
-        return static_cast<Square>(static_cast<int>(s) + static_cast<int>(d));
+        return Square(int(s) + int(d));
     }
 
     constexpr Square operator-(Square s, Direction d)
     {
-        return static_cast<Square>(static_cast<int>(s) - static_cast<int>(d));
+        return Square(int(s) - int(d));
     }
 
     inline Square& operator+=(Square& s, Direction d)
@@ -103,12 +103,12 @@ namespace Chess
 
     constexpr Rank rankOf(Square s)
     {
-        return static_cast<Rank>(s >> 3);
+        return Rank(s >> 3);
     }
 
     constexpr File fileOf(Square s)
     {
-        return static_cast<File>(s & 0b111);
+        return File(s & 0b111);
     }
 
     // gets the diagonal (a1 to h8) of the square
@@ -125,17 +125,17 @@ namespace Chess
 
     constexpr Rank relativeRank(Color c, Rank r)
     {
-        return c == WHITE ? r : static_cast<Rank>(RANK_8 - r);
+        return c == WHITE ? r : Rank(RANK_8 - r);
     }
 
     constexpr Direction relativeDir(Color c, Direction d)
     {
-        return static_cast<Direction>(c == WHITE ? d : -d);
+        return Direction(c == WHITE ? d : -d);
     }
 
     constexpr Square mirrorVertically(Color c, Square s)
     {
-        return c == WHITE ? s : static_cast<Square>(s ^ 56);
+        return c == WHITE ? s : Square(s ^ 56);
     }
 
 } // namespace Chess

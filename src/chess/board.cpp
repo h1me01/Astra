@@ -70,7 +70,7 @@ namespace Chess
             else if (c == '/')
                 sqr -= 16;
             else
-                putPiece(static_cast<Piece>(PIECE_STR.find(c)), static_cast<Square>(sqr++), true);
+                putPiece(Piece(PIECE_STR.find(c)), Square(sqr++), true);
         }
 
         // initialize hash
@@ -201,7 +201,7 @@ namespace Chess
             while (bb)
             {
                 const Square s = popLsb(bb);
-                NNUE::nnue.putPiece(acc, static_cast<Piece>(i), s);
+                NNUE::nnue.putPiece(acc, Piece(i), s);
             }
         }
     }
@@ -304,7 +304,7 @@ namespace Chess
 
         if (mf == QUIET || mf == DOUBLE_PUSH || mf == EN_PASSANT)
         {
-            const auto ep_sq = static_cast<Square>(to ^ 8);
+            const auto ep_sq = Square(to ^ 8);
 
             if (mf == DOUBLE_PUSH)
             {
@@ -319,7 +319,7 @@ namespace Chess
             else if (mf == EN_PASSANT)
             {
                 hash ^= Zobrist::psq[makePiece(~stm, PAWN)][ep_sq];
-                removePiece(static_cast<Square>(to ^ 8), update_nnue);
+                removePiece(Square(to ^ 8), update_nnue);
             }
 
             movePiece(from, to, update_nnue);
@@ -392,7 +392,7 @@ namespace Chess
             movePiece(to, from, false);
 
             if (mf == EN_PASSANT)
-                putPiece(makePiece(~stm, PAWN), static_cast<Square>(to ^ 8), false);
+                putPiece(makePiece(~stm, PAWN), Square(to ^ 8), false);
         }
         else if (mf == OO || mf == OOO)
         {
@@ -524,8 +524,8 @@ namespace Chess
             int pt;
             for (pt = 0; pt <= 5; pt++)
             {
-                U64 w_pieces = getPieceBB(WHITE, static_cast<PieceType>(pt));
-                U64 b_pieces = getPieceBB(BLACK, static_cast<PieceType>(pt));
+                U64 w_pieces = getPieceBB(WHITE, PieceType(pt));
+                U64 b_pieces = getPieceBB(BLACK, PieceType(pt));
 
                 if (my_attackers & (w_pieces | b_pieces))
                     break;
@@ -540,8 +540,8 @@ namespace Chess
                 break;
             }
 
-            U64 w_pieces = getPieceBB(WHITE, static_cast<PieceType>(pt));
-            U64 b_pieces = getPieceBB(BLACK, static_cast<PieceType>(pt));
+            U64 w_pieces = getPieceBB(WHITE, PieceType(pt));
+            U64 b_pieces = getPieceBB(BLACK, PieceType(pt));
             occ ^= (1ULL << (bsf(my_attackers & (w_pieces | b_pieces))));
 
             if (pt == PAWN || pt == BISHOP || pt == QUEEN)

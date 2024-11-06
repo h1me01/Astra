@@ -131,10 +131,10 @@ namespace Chess
         constexpr Move(Square from, Square to) : move(from << 6 | to) {}
         constexpr Move(Square from, Square to, MoveFlags mf) : move(mf << 12 | from << 6 | to) {}
 
-        Square to() const { return static_cast<Square>(move & 0x3f); }
-        Square from() const { return static_cast<Square>(move >> 6 & 0x3f); }
+        Square to() const { return Square(move & 0x3f); }
+        Square from() const { return Square(move >> 6 & 0x3f); }
 
-        MoveFlags flag() const { return static_cast<MoveFlags>(move >> 12); }
+        MoveFlags flag() const { return MoveFlags(move >> 12); }
 
         int to_from() const { return move & 0xffff; }
 

@@ -64,7 +64,7 @@ namespace Chess
 
             for (size_t i = 0; i < testCase.nodes.size(); ++i)
             {
-                const int depth = static_cast<int>(i) + 1;
+                const int depth = int(i) + 1;
 
                 auto start = std::chrono::high_resolution_clock::now();
                 auto nodes = perft(board, depth);

@@ -1,3 +1,4 @@
+#include <iostream>
 #include <sstream>
 #include <vector>
 #include "tune.h"
@@ -58,7 +59,7 @@ namespace Astra
                       << ", " << param->value
                       << ", " << param->min
                       << ", " << param->max
-                      << ", " << std::max(0.5, static_cast<double>(param->max - param->min) / 20.0)
+                      << ", " << std::max(0.5, double(param->max - param->min) / 20.0)
                       << ", " << 0.002 << "\n";
         }
     }

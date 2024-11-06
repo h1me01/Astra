@@ -175,12 +175,12 @@ namespace Astra
             if (result <= alpha)
             {
                 beta = (alpha + beta) / 2;
-                alpha = std::max(alpha - delta, -static_cast<int>(VALUE_INFINITE));
+                alpha = std::max(alpha - delta, -int(VALUE_INFINITE));
                 delta += delta / 2;
             }
             else if (result >= beta)
             {
-                beta = std::min(beta + delta, static_cast<int>(VALUE_INFINITE));
+                beta = std::min(beta + delta, int(VALUE_INFINITE));
                 delta += delta / 2;
             }
             else
@@ -254,7 +254,7 @@ namespace Astra
         TTEntry tt_entry;
         const U64 hash = board.getHash();
         const bool tt_hit = tt.lookup(tt_entry, hash);
-        const Score tt_score = tt_hit ? scoreFromTT(tt_entry.score, ss->ply) : static_cast<Score>(VALUE_NONE);
+        const Score tt_score = tt_hit ? scoreFromTT(tt_entry.score, ss->ply) : Score(VALUE_NONE);
 
         const Move excluded_move = ss->excluded_move;
 
@@ -394,7 +394,7 @@ namespace Astra
             {
                 assert(ss->static_eval - beta >= 0);
                 
-                int R = nmp_base + depth / nmp_depth_div + std::min(static_cast<int>(nmp_min), (ss->static_eval - beta) / nmp_div);
+                int R = nmp_base + depth / nmp_depth_div + std::min(int(nmp_min), (ss->static_eval - beta) / nmp_div);
 
                 ss->current_move = NULL_MOVE;
 
@@ -507,7 +507,7 @@ namespace Astra
             {
                 std::cout << "info depth " << depth
                           << " currmove " << move
-                          << " currmovenumber " << static_cast<int>(made_moves) << std::endl;
+                          << " currmovenumber " << int(made_moves) << std::endl;
             }
 
             // singular extensions
@@ -644,14 +644,13 @@ namespace Astra
         if (board.isRepetition(pv_node))
             return drawScore(nodes);
 
-        Score stand_pat;
-        Score best_score;
+        Score stand_pat, best_score;
 
         // look up in transposition table
         TTEntry tt_entry;
         const U64 hash = board.getHash();
         const bool tt_hit = tt.lookup(tt_entry, hash);
-        const Score tt_score = tt_hit ? scoreFromTT(tt_entry.score, ss->ply) : static_cast<Score>(VALUE_NONE);
+        const Score tt_score = tt_hit ? scoreFromTT(tt_entry.score, ss->ply) : Score(VALUE_NONE);
         Bound tt_bound = tt_entry.bound;
 
         if (tt_hit 
@@ -659,11 +658,11 @@ namespace Astra
             && tt_score != VALUE_NONE 
             && tt_bound != NO_BOUND)
         {
-            bool is_exact = tt_bound == EXACT_BOUND;
-            bool is_lower = tt_bound == LOWER_BOUND && tt_score >= beta;
-            bool is_upper = tt_bound == UPPER_BOUND && tt_score <= alpha;
-
-            if (is_exact || is_lower || is_upper)
+            if (tt_bound == EXACT_BOUND)
+                return tt_score;
+            else if (tt_bound == LOWER_BOUND && tt_score >= beta)
+                return tt_score;
+            else if (tt_bound == UPPER_BOUND && tt_score <= alpha)
                 return tt_score;
 
             stand_pat = tt_score;
@@ -675,13 +674,12 @@ namespace Astra
 
         // use tt score for better evaluation
         if (tt_hit) {
-            bool is_exact = tt_bound == EXACT_BOUND;
-            bool is_lower = tt_bound == LOWER_BOUND && stand_pat < tt_score;
-            bool is_upper = tt_bound == UPPER_BOUND && stand_pat > tt_score;
-
-            if (is_exact || is_lower || is_upper) {
+            if (tt_bound == EXACT_BOUND)
                 best_score = tt_score;
-            }
+            else if (tt_bound == LOWER_BOUND && stand_pat < tt_score) 
+                best_score = tt_score;
+            else if (tt_bound == UPPER_BOUND && stand_pat > tt_score)
+                best_score = tt_score;
         }
 
         if (best_score >= beta)
@@ -790,7 +788,7 @@ namespace Astra
     void Search::printUciInfo(Score result, int depth, PVLine &pv_line) const
     {
         std::cout << "info depth " << depth
-                  << " seldepth " << static_cast<int>(threads.getSelDepth())
+                  << " seldepth " << int(threads.getSelDepth())
                   << " score ";
 
         if (abs(result) >= VALUE_MIN_MATE)

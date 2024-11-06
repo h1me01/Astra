@@ -36,9 +36,9 @@ namespace Chess
             const Square s = popLsb(to);
             const Square from = s - relativeDir(Us, d);
             *moves++ = Move(from, s, mf);
-            *moves++ = Move(from, s, static_cast<MoveFlags>(mf + 1));
-            *moves++ = Move(from, s, static_cast<MoveFlags>(mf + 2));
-            *moves++ = Move(from, s, static_cast<MoveFlags>(mf + 3));
+            *moves++ = Move(from, s, MoveFlags(mf + 1));
+            *moves++ = Move(from, s, MoveFlags(mf + 2));
+            *moves++ = Move(from, s, MoveFlags(mf + 3));
         }
         return moves;
     }

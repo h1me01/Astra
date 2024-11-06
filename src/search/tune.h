@@ -1,7 +1,6 @@
 #ifndef SEARCHPARAMS_H
 #define SEARCHPARAMS_H
 
-#include <iostream>
 #include <string>
 
 // #define TUNE

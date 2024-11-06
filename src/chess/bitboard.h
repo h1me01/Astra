@@ -126,7 +126,7 @@ namespace Chess
         // returns index of least significant bit in bitboard
         constexpr Square bsf(const U64 b)
         {
-                return static_cast<Square>(DEBRUIJN64[0x03f79d71b4cb0a89 * (b ^ (b - 1)) >> 58]);
+                return Square(DEBRUIJN64[0x03f79d71b4cb0a89 * (b ^ (b - 1)) >> 58]);
         }
 
         // returns number of bits in the bitboard

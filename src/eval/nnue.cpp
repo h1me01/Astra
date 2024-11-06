@@ -17,7 +17,7 @@ namespace NNUE
         assert(s != NO_SQUARE);
 
         s = mirrorVertically(view, s);
-        return static_cast<int>(s) + typeOf(p) * 64 + (colorOf(p) != view) * 64 * 6;
+        return int(s) + typeOf(p) * 64 + (colorOf(p) != view) * 64 * 6;
     }
 
     // nnue
