@@ -15,6 +15,7 @@ I had to remove the versions prior to 3.0 due to inefficient compiling.
 
 ## Credits
 - [Stockfish](https://github.com/official-stockfish/Stockfish)
+- [Koivisto](https://github.com/Luecx/Koivisto)
 - [Fathom](https://github.com/jdart1/Fathom) 
 - [CudAD](https://github.com/Luecx/CudAD) - Used to train NNUE for versions above 3.3 
 - [Chess Programming Wiki](https://www.chessprogramming.org/Main_Page)
