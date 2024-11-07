@@ -14,19 +14,20 @@ namespace Astra
 
     PARAM(delta_margin, 509, 400, 900);
 
-    PARAM(razor_margin, 137, 60, 200);
+    PARAM(razor_margin, 137, 80, 190);
 
     PARAM(rfp_depth_mult, 47, 30, 80);
-    PARAM(rfp_impr_bonus, 43, 30, 100);
+    PARAM(rfp_impr_bonus, 43, 30, 80);
     PARAM(rfp_depth, 7, 5, 9);
 
     PARAM(snmp_depth_mult, 63, 50, 90);
-    PARAM(snmp_depth, 7, 5, 9);
+    PARAM(snmp_depth, 7, 5, 11);
 
+    PARAM(nmp_depth, 4, 3, 5);
     PARAM(nmp_base, 4, 3, 5);
     PARAM(nmp_depth_div, 5, 3, 7);
     PARAM(nmp_min, 4, 2, 6);
-    PARAM(nmp_div, 210, 205, 215);
+    PARAM(nmp_div, 211, 205, 215);
 
     PARAM(pv_see_cap_margin, 87, 70, 110);
     PARAM(pv_see_cap_depth, 6, 5, 8);
@@ -373,7 +374,7 @@ namespace Astra
             }
 
             // null move pruning
-            if (depth >= 3  
+            if (depth >= nmp_depth  
                 && board.nonPawnMat(stm) 
                 && excluded_move == NO_MOVE 
                 && ss->static_eval >= beta
