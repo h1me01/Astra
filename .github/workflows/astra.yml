@@ -65,7 +65,7 @@ jobs:
         if: github.event_name == 'push'
         shell: msys2 {0}
         run: |
-          cd ../bin
+          cd bin
           commit_bench=$(git show --summary | grep -o "bench: [0-9]*" | awk '{ print $NF }')
           ./astra bench > bench.txt
           actual_bench=$(grep -i OVERALL: bench.txt | awk -F'[^0-9]+' '{ print $2 }')
