@@ -342,21 +342,21 @@ namespace Astra
         if (!in_check && (ss - 2)->static_eval != VALUE_NONE)
             is_improving = ss->static_eval > (ss - 2)->static_eval;
 
-        // only use pruning/reduction when not in check
-        if (!in_check)
-        {
-            // internal iterative reductions
-            if (depth >= 2 && !tt_hit)
+        // internal iterative reductions
+        if (!in_check) {
+            if (depth >= 3 && !tt_hit)
                 depth--;
             if (pv_node && !tt_hit)
                 depth--;
             if (depth <= 0)
                 return qSearch(alpha, beta, PV, ss);
+        }
 
+        // only use pruning/reduction when not in check and pv
+        if (!in_check && !pv_node)
+        {
             // razoring
-            if (!pv_node 
-                && depth <= 3 
-                && ss->static_eval + razor_margin < alpha)
+            if (depth <= 3 && ss->static_eval + razor_margin < alpha)
             {
                 Score score = qSearch(alpha, beta, NON_PV, ss);
                 if (score < alpha && std::abs(score) < VALUE_TB_WIN_IN_MAX_PLY)
@@ -364,10 +364,8 @@ namespace Astra
             }
 
             // static null move pruning
-            int snmp_margin = snmp_depth_mult * depth;
-            if (!pv_node 
-                && depth <= snmp_depth 
-                && ss->static_eval - snmp_margin >= beta 
+            if (depth <= snmp_depth 
+                && ss->static_eval - snmp_depth_mult * depth >= beta 
                 && ss->static_eval < VALUE_MIN_MATE)
             {
                 return ss->static_eval;
@@ -375,8 +373,7 @@ namespace Astra
 
             // reverse futility pruning
             int rfp_margin = rfp_depth_mult * depth + rfp_impr_bonus * is_improving;
-            if (!pv_node 
-                && depth < rfp_depth 
+            if (depth < rfp_depth 
                 && ss->static_eval - rfp_margin >= beta 
                 && std::abs(beta) < VALUE_TB_WIN_IN_MAX_PLY)
             {
@@ -384,12 +381,11 @@ namespace Astra
             }
 
             // null move pruning
-            if (!pv_node 
+            if (depth >= 3  
                 && board.nonPawnMat(stm) 
                 && excluded_move == NO_MOVE 
-                && (ss - 1)->current_move != NULL_MOVE 
-                && depth >= 3 
-                && ss->static_eval >= beta)
+                && ss->static_eval >= beta
+                && (ss - 1)->current_move != NULL_MOVE )
             {
                 assert(ss->static_eval - beta >= 0);
 
@@ -413,8 +409,7 @@ namespace Astra
 
             // probcut
             int beta_cut = beta + 136;
-            if (!pv_node 
-                && depth > 3 
+            if (depth > 3 
                 && std::abs(beta) < VALUE_TB_WIN_IN_MAX_PLY 
                 && !(ent.depth >= depth - 3 
                 && tt_score != VALUE_NONE 
