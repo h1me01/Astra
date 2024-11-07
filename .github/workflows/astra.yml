@@ -21,7 +21,7 @@ jobs:
       - name: Create build
         run: |
           cd src
-          make CXX=g++ EXE=../bin/astra
+          make CXX=g++ EXE=../bin/astra -j
 
       - name: Check valgrind
         if: github.event_name == 'push'
@@ -48,4 +48,4 @@ jobs:
         shell: msys2 {0}
         run: |
           cd src
-          make CXX=g++ EXE=../bin/astra
+          make CXX=g++ EXE=../bin/astra -j

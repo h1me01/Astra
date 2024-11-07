@@ -14,6 +14,7 @@ CXXFLAGS := -s \
             -pthread \
             -fno-exceptions \
             -march=native \
+            -flto \
             -DNNUE_PATH=\"$(EvalFile)\" #nnue path
 
 LDFLAGS := -lstdc++  
