@@ -223,10 +223,6 @@ namespace Astra
                 return in_check ? -VALUE_MATE + ss->ply : VALUE_DRAW;
         }
 
-        // check extension
-        if (in_check)
-            depth++;
-
         // quiescence search
         if (depth <= 0)
             return qSearch(alpha, beta, node, ss);
@@ -343,14 +339,10 @@ namespace Astra
             is_improving = ss->static_eval > (ss - 2)->static_eval;
 
         // internal iterative reductions
-        if (!in_check) {
-            if (depth >= 3 && !tt_hit)
-                depth--;
-            if (pv_node && !tt_hit)
-                depth--;
-            if (depth <= 0)
-                return qSearch(alpha, beta, PV, ss);
-        }
+        if (depth >= 3 && !tt_hit && pv_node)
+            depth--;
+        if (depth <= 0)
+            return qSearch(alpha, beta, PV, ss);
 
         // only use pruning/reduction when not in check and pv
         if (!in_check && !pv_node)
