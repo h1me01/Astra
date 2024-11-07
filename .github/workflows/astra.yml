@@ -1,0 +1,93 @@
+name: C/C++ CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  Ubuntu:
+    runs-on: ubuntu-20.04
+
+    strategy:
+      matrix:
+        compiler: [g++]
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install Dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y expect valgrind g++-multilib qemu-user
+
+      - name: Create build
+        run: |
+          cd src
+          make CXX=${{ matrix.compiler }} EXE=Astra
+
+      - name: Move Astra to bin directory
+        run: |
+          mkdir -p bin
+          mv Astra bin/
+
+      - name: Check valgrind
+        if: github.event_name == 'push'
+        run: |
+          cd bin
+          valgrind --error-exitcode=1 ./Astra bench
+
+      - name: Check bench matches commit message
+        if: github.event_name == 'push'
+        run: |
+          cd bin
+          commit_bench=$(git show --summary | grep -o "bench: [0-9]*" | awk '{ print $NF }')
+          ./Astra bench > bench.txt
+          actual_bench=$(grep -i OVERALL: bench.txt | awk -F'[^0-9]+' '{ print $2 }')
+          if [[ "$actual_bench" != "$commit_bench" ]]; then 
+            echo "Incorrect bench, got '$actual_bench' expected '$commit_bench'" && exit 1
+          fi
+
+  Windows:
+    runs-on: windows-2022
+
+    strategy:
+      matrix:
+        config:
+          - { system: mingw64, package: x86_64-gcc, compiler: g++ }
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: ${{ matrix.config.system }}
+          install: mingw-w64-${{ matrix.config.package }} make git
+
+      - name: Add compiler to PATH
+        shell: bash
+        run: echo "PATH=$PATH:/c/msys64/${{ matrix.config.system }}/bin" >> $GITHUB_ENV
+
+      - name: Create build
+        shell: msys2 {0}
+        run: |
+          cd src_files
+          make CXX=${{ matrix.config.compiler }} EXE=Astra
+
+      - name: Move Astra to bin directory
+        shell: msys2 {0}
+        run: |
+          mkdir -p bin
+          mv Astra bin/
+
+      - name: Check bench matches commit message
+        if: github.event_name == 'push'
+        shell: msys2 {0}
+        run: |
+          cd bin
+          commit_bench=$(git show --summary | grep -o "bench: [0-9]*" | awk '{ print $NF }')
+          ./Astra bench > bench.txt
+          actual_bench=$(grep -i OVERALL: bench.txt | awk -F'[^0-9]+' '{ print $2 }')
+          if [[ "$actual_bench" != "$commit_bench" ]]; then 
+            echo "Incorrect bench, got '$actual_bench' expected '$commit_bench'" && exit 1
+          fi
