@@ -20,7 +20,7 @@ jobs:
 
       - name: Create build
         run: |
-          cd src_files
+          cd src
           make CXX=g++ EXE=../bin/astra
 
       - name: Check valgrind
@@ -58,7 +58,7 @@ jobs:
       - name: Create build
         shell: msys2 {0}
         run: |
-          cd src_files
+          cd src
           make CXX=g++ EXE=../bin/astra
 
       - name: Check bench matches commit message
