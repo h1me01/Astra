@@ -1,16 +1,10 @@
 ROOT := $(realpath $(dir $(abspath $(lastword $(MAKEFILE_LIST)))))
 EvalFile = $(ROOT)/nn-768-2x1024-1.nnue
 
-# Set release as the default target
-release: CXXFLAGS += -s
-release: clean all
-
-# default target
-TARGET = astra
-
 # compiler and flags
 CXX := g++
-CXXFLAGS := -std=c++17 \
+CXXFLAGS := -s \
+            -std=c++17 \
             -Wall \
             -Wextra \
             -Wcast-qual \
@@ -21,6 +15,8 @@ CXXFLAGS := -std=c++17 \
             -fno-exceptions \
             -march=native \
             -DNNUE_PATH=\"$(EvalFile)\" #nnue path
+
+LDFLAGS := -lstdc++  
 
 # source files
 CHESS_SRC := chess/attacks.cpp \
@@ -48,8 +44,11 @@ MAIN_SRC := main.cpp \
 
 SRC := $(CHESS_SRC) $(EVAL_SRC) $(SEARCH_SRC) $(SYZYGY_SRC) $(MAIN_SRC)
 
-# detect operating system and set defaults
-ifeq ($(OS),Windows_NT)
+# default target executable
+TARGET = astra
+
+# Detect Operating System
+ifeq ($(OS), Windows_NT)
     SUFFIX := .exe
     LDFLAGS := -lstdc++ -static
 else
@@ -69,14 +68,6 @@ $(EXE): $(SRC)
 
 # clean target
 clean:
-ifeq ($(OS),Windows_NT)
-	del /f $(EXE)
-else
 	rm -f $(EXE)
-endif
 
-# debug and release targets
-debug: CXXFLAGS += -g -DDEBUG
-debug: clean all
-
-.PHONY: all clean release debug
+.PHONY: all clean
