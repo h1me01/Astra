@@ -26,14 +26,21 @@ jobs:
           cd src
           make CXX=${{ matrix.compiler }} EXE=Astra
 
+      - name: Move Astra to bin directory
+        run: |
+          mkdir -p bin
+          mv Astra bin/
+
       - name: Check valgrind
         if: github.event_name == 'push'
         run: |
+          cd bin
           valgrind --error-exitcode=1 ./Astra bench
 
       - name: Check bench matches commit message
         if: github.event_name == 'push'
         run: |
+          cd bin
           commit_bench=$(git show --summary | grep -o "bench: [0-9]*" | awk '{ print $NF }')
           ./Astra bench > bench.txt
           actual_bench=$(grep -i OVERALL: bench.txt | awk -F'[^0-9]+' '{ print $2 }')
@@ -66,6 +73,12 @@ jobs:
         run: |
           cd src_files
           make CXX=${{ matrix.config.compiler }} EXE=Astra
+
+      - name: Move Astra to bin directory
+        shell: msys2 {0}
+        run: |
+          mkdir -p bin
+          mv Astra bin/
 
       - name: Check bench matches commit message
         if: github.event_name == 'push'
