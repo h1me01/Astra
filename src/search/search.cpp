@@ -9,53 +9,36 @@
 namespace Astra
 {
     // search parameters
-    PARAM(lmr_base, 95, 50, 150);
-    PARAM(lmr_div, 152, 150, 250);
-    PARAM(lmr_depth, 2, 2, 5);
-    PARAM(lmr_min_moves, 3, 1, 5);
+    PARAM(lmr_base, 107, 50, 150);
+    PARAM(lmr_div, 156, 150, 250);
 
-    PARAM(delta_margin, 588, 400, 900);
+    PARAM(delta_margin, 509, 400, 900);
 
-    PARAM(iir_depth, 2, 2, 4);
-
-    PARAM(razor_margin, 134, 60, 200);
-    PARAM(rzr_depth, 5, 3, 7);
+    PARAM(razor_margin, 137, 60, 200);
 
     PARAM(rfp_depth_mult, 47, 30, 80);
-    PARAM(rfp_impr_bonus, 40, 30, 100);
-    PARAM(rfp_depth, 5, 3, 9);
+    PARAM(rfp_impr_bonus, 43, 30, 100);
+    PARAM(rfp_depth, 7, 5, 9);
 
-    PARAM(snmp_depth_mult, 65, 50, 90);
-    PARAM(snmp_depth, 3, 2, 7);
+    PARAM(snmp_depth_mult, 63, 50, 90);
+    PARAM(snmp_depth, 7, 5, 9);
 
-    PARAM(nmp_depth, 3, 2, 5);
-    PARAM(nmp_base, 5, 3, 5);
+    PARAM(nmp_base, 4, 3, 5);
     PARAM(nmp_depth_div, 5, 3, 7);
     PARAM(nmp_min, 4, 2, 6);
-    PARAM(nmp_div, 214, 205, 215);
+    PARAM(nmp_div, 210, 205, 215);
 
-    PARAM(prob_cut_margin, 136, 100, 190);
+    PARAM(pv_see_cap_margin, 87, 70, 110);
+    PARAM(pv_see_cap_depth, 6, 5, 8);
 
-    PARAM(pv_see_cap_margin, 97, 70, 110);
-    PARAM(pv_see_cap_depth, 4, 4, 8);
+    PARAM(pv_see_quiet_margin, 77, 30, 95);
+    PARAM(pv_see_quiet_depth, 7, 6, 9);
 
-    PARAM(pv_see_quiet_margin, 79, 30, 95);
-    PARAM(pv_see_quiet_depth, 6, 6, 9);
+    PARAM(lmp_depth, 5, 4, 7);
 
-    PARAM(lmp_depth, 6, 4, 7);
-    PARAM(lmp_count_base, 3, 3, 6);
-
-    PARAM(fp_depth, 9, 3, 13);
-    PARAM(fp_base, 139, 100, 200);
-    PARAM(fp_mult, 96, 80, 120);
-
-    PARAM(hh_bonus_mult, 155, 100, 200);
-    PARAM(max_hh_bonus, 2047, 1900, 2200);
-
-    PARAM(ch_bonus_mult, 9, 5, 15);
-    PARAM(max_ch_bonus, 1582, 1400, 1800);
-
-    PARAM(asp_window, 33, 10, 50);
+    PARAM(fp_depth, 9, 7, 11);
+    PARAM(fp_base, 146, 100, 200);
+    PARAM(fp_mult, 98, 80, 120);
 
     // search helper
 
@@ -124,7 +107,6 @@ namespace Astra
         time_manager.start();
 
         history.clear();
-        history.init(max_hh_bonus, hh_bonus_mult, max_ch_bonus, ch_bonus_mult);
 
         Score previous_result = VALUE_NONE;
 
@@ -157,7 +139,7 @@ namespace Astra
         Score beta = VALUE_INFINITE;
 
         // only use aspiration window when depth is higher or equal to 9
-        int delta = asp_window;
+        int delta = 30;
         if (depth >= 9)
         {
             alpha = prev_eval - delta;
@@ -364,14 +346,16 @@ namespace Astra
         if (!in_check)
         {
             // internal iterative reductions
-            if (depth >= iir_depth && !tt_hit)
+            if (depth >= 2 && !tt_hit)
+                depth--;
+            if (pv_node && !tt_hit)
                 depth--;
             if (depth <= 0)
                 return qSearch(alpha, beta, PV, ss);
 
             // razoring
             if (!pv_node 
-                && depth <= rzr_depth 
+                && depth <= 3 
                 && ss->static_eval + razor_margin < alpha)
             {
                 Score score = qSearch(alpha, beta, NON_PV, ss);
@@ -386,7 +370,7 @@ namespace Astra
                 && ss->static_eval - snmp_margin >= beta 
                 && ss->static_eval < VALUE_MIN_MATE)
             {
-                return ss->static_eval - snmp_margin;
+                return ss->static_eval;
             }
 
             // reverse futility pruning
@@ -404,7 +388,7 @@ namespace Astra
                 && board.nonPawnMat(stm) 
                 && excluded_move == NO_MOVE 
                 && (ss - 1)->current_move != NULL_MOVE 
-                && depth >= nmp_depth 
+                && depth >= 3 
                 && ss->static_eval >= beta)
             {
                 assert(ss->static_eval - beta >= 0);
@@ -428,7 +412,7 @@ namespace Astra
             }
 
             // probcut
-            int beta_cut = beta + prob_cut_margin;
+            int beta_cut = beta + 136;
             if (!pv_node 
                 && depth > 3 
                 && std::abs(beta) < VALUE_TB_WIN_IN_MAX_PLY 
@@ -495,7 +479,7 @@ namespace Astra
                     && !is_capture 
                     && !is_promotion 
                     && depth <= lmp_depth 
-                    && quiet_count > (lmp_count_base + depth * depth))
+                    && quiet_count > (4 + depth * depth))
                 {
                     continue;
                 }
@@ -561,7 +545,7 @@ namespace Astra
             Score score = VALUE_NONE;
 
             // late move reduction
-            if (depth >= lmr_depth && !in_check && made_moves > lmr_min_moves)
+            if (depth >= 2 && !in_check && made_moves > 3)
             {
                 int rdepth = REDUCTIONS[depth][made_moves];
                 rdepth += is_improving;
