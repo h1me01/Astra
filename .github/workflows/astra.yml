@@ -24,22 +24,23 @@ jobs:
       - name: Create build
         run: |
           cd src
-          make CXX=${{ matrix.compiler }} EXE=../bin/astra
+          make CXX=${{ matrix.compiler }} EXE=bin/astra
 
-      - name: Debug: List files after build
+      - name: Move astra to bin directory
         run: |
-          ls -la bin  # List files in bin to ensure 'astra' is there
+          mkdir -p bin
+          mv astra bin/
 
       - name: Check valgrind
         if: github.event_name == 'push'
         run: |
-          cd bin  # Go to the bin folder
+          cd bin
           valgrind --error-exitcode=1 ./astra bench
 
       - name: Check bench matches commit message
         if: github.event_name == 'push'
         run: |
-          cd bin  # Go to the bin folder
+          cd bin
           commit_bench=$(git show --summary | grep -o "bench: [0-9]*" | awk '{ print $NF }')
           ./astra bench > bench.txt
           actual_bench=$(grep -i OVERALL: bench.txt | awk -F'[^0-9]+' '{ print $2 }')
@@ -71,18 +72,19 @@ jobs:
         shell: msys2 {0}
         run: |
           cd src_files
-          make CXX=${{ matrix.config.compiler }} EXE=../bin/astra
+          make CXX=${{ matrix.config.compiler }} EXE=bin/astra
 
-      - name: Debug: List files after build
+      - name: Move astra to bin directory
         shell: msys2 {0}
         run: |
-          ls -la ../bin  # List files in bin to ensure 'astra' is there
+          mkdir -p bin
+          mv astra bin/
 
       - name: Check bench matches commit message
         if: github.event_name == 'push'
         shell: msys2 {0}
         run: |
-          cd ../bin  # Go to the bin folder
+          cd bin
           commit_bench=$(git show --summary | grep -o "bench: [0-9]*" | awk '{ print $NF }')
           ./astra bench > bench.txt
           actual_bench=$(grep -i OVERALL: bench.txt | awk -F'[^0-9]+' '{ print $2 }')
