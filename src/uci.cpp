@@ -69,8 +69,14 @@ namespace UCI
         return;
 #endif
 
-        if (options.count(name))
-            options[name] = value;
+        int n_value = std::stoi(value);
+
+        if (options.count(name)) {
+            if (n_value >= options[name].min && n_value <= options[name].max) 
+                options[name] = value;
+            else 
+                std::cout << "Invalid value for option: " << name << std::endl;
+        }
         else
             std::cout << "Unknown option: " << name << std::endl;
     }
