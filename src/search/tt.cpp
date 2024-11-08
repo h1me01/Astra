@@ -1,4 +1,3 @@
-#include <iostream>
 #include "tt.h"
 
 namespace Astra
@@ -27,14 +26,8 @@ namespace Astra
         tt_size /= 2;
         mask = tt_size - 1;
 
-        try {
-            entries = new TTEntry[tt_size];
-            clear();
-        } catch (const std::bad_alloc&) {
-            std::cerr << "Error: Memory allocation failed for TTEntry array\n";
-            entries = nullptr;
-            return;
-        }
+        entries = new TTEntry[tt_size];
+        clear();
     }
 
     void TTable::clear() const
