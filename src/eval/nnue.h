@@ -28,7 +28,7 @@ namespace NNUE
         {
             index++;
             assert(index < MAX_PLY);
-            data[index] = data[index - 1];
+            accumulators[index] = accumulators[index - 1];
         }
 
         void pop()
@@ -37,11 +37,11 @@ namespace NNUE
             index--;
         }
 
-        Accumulator& back() { return data[index]; }
+        Accumulator& back() { return accumulators[index]; }
 
     private:
         int index;
-        std::array<Accumulator, MAX_PLY + 1> data{};
+        std::array<Accumulator, MAX_PLY> accumulators{};
     };
 
     struct NNUE

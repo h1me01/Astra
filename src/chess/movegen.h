@@ -81,7 +81,7 @@ namespace Chess
     }
 
     template <Color Us>
-    U64 checkerMask(Board& board, const Square& king_sq)
+    U64 checkerMask(const Board& board, const Square& king_sq, U64& pinned)
     {
         constexpr Color them = ~Us;
         const U64 their_occ = board.occupancy(them);
@@ -96,7 +96,7 @@ namespace Chess
         U64 candidates = (getAttacks(ROOK, king_sq, their_occ) & board.orthSliders(them))
             | (getAttacks(BISHOP, king_sq, their_occ) & board.diagSliders(them));
 
-        board.pinned = 0;
+        pinned = 0;
         while (candidates)
         {
             const Square s = popLsb(candidates);
@@ -107,7 +107,7 @@ namespace Chess
                 checkers ^= SQUARE_BB[s];
             else if ((blockers & (blockers - 1)) == 0)
                 // if there is only one of our piece between them, add our piece to the pinned
-                board.pinned ^= blockers;
+                pinned ^= blockers;
         }
 
         return checkers;
@@ -346,7 +346,7 @@ namespace Chess
         const U64 occ = our_occ | their_occ;
 
         board.danger = dangerMask<Us>(board, occ);
-        board.checkers = checkerMask<Us>(board, our_king_sq);
+        board.checkers = checkerMask<Us>(board, our_king_sq, board.pinned);
 
         // generate king moves
         const U64 attacks = getAttacks(KING, our_king_sq, occ) & ~(our_occ | board.danger);

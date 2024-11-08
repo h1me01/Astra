@@ -140,11 +140,11 @@ namespace Astra
         Score beta = VALUE_INFINITE;
 
         // only use aspiration window when depth is higher or equal to 9
-        int delta = 30;
+        int window = 30;
         if (depth >= 9)
         {
-            alpha = prev_eval - delta;
-            beta = prev_eval + delta;
+            alpha = prev_eval - window;
+            beta = prev_eval + window;
         }
 
         Score result = VALUE_NONE;
@@ -158,13 +158,13 @@ namespace Astra
             if (result <= alpha)
             {
                 beta = (alpha + beta) / 2;
-                alpha = std::max(alpha - delta, -int(VALUE_INFINITE));
-                delta += delta / 2;
+                alpha = std::max(alpha - window, -int(VALUE_INFINITE));
+                window += window / 2;
             }
             else if (result >= beta)
             {
-                beta = std::min(beta + delta, int(VALUE_INFINITE));
-                delta += delta / 2;
+                beta = std::min(beta + window, int(VALUE_INFINITE));
+                window += window / 2;
             }
             else
                 break;
