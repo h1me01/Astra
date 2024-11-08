@@ -16,12 +16,12 @@ namespace Chess
 
     const int PIECE_VALUES[] = {100, 325, 325, 500, 1000, 0, 0};
 
-    enum Color : int
+    enum Color 
     {
         WHITE, BLACK, NUM_COLORS = 2
     };
 
-    enum Direction : int
+    enum Direction
     {
         NORTH = 8,
         NORTH_EAST = 9,
@@ -35,7 +35,7 @@ namespace Chess
         SOUTH_SOUTH = -16,
     };
 
-    enum PieceType : int
+    enum PieceType 
     {
         PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING, NO_PIECE_TYPE, NUM_PIECE_TYPES = 6
     };
@@ -46,14 +46,14 @@ namespace Chess
         NO_PIECE_TYPE
     };
 
-    enum Piece : int
+    enum Piece 
     {
         WHITE_PAWN, WHITE_KNIGHT, WHITE_BISHOP, WHITE_ROOK, WHITE_QUEEN, WHITE_KING,
         BLACK_PAWN, BLACK_KNIGHT, BLACK_BISHOP, BLACK_ROOK, BLACK_QUEEN, BLACK_KING,
         NO_PIECE, NUM_PIECES = 12
     };
 
-    enum Square : int
+    enum Square
     {
         a1, b1, c1, d1, e1, f1, g1, h1,
         a2, b2, c2, d2, e2, f2, g2, h2,
@@ -78,12 +78,12 @@ namespace Chess
         "None"
     };
 
-    enum File : int
+    enum File
     {
         FILE_A, FILE_B, FILE_C, FILE_D, FILE_E, FILE_F, FILE_G, FILE_H
     };
 
-    enum Rank : int
+    enum Rank
     {
         RANK_1, RANK_2, RANK_3, RANK_4, RANK_5, RANK_6, RANK_7, RANK_8
     };
@@ -104,7 +104,7 @@ namespace Chess
         VALUE_TB_LOSS_IN_MAX_PLY = -VALUE_TB_WIN_IN_MAX_PLY
     };
 
-    enum MoveFlags : int
+    enum MoveFlags
     {
         QUIET = 0,
         DOUBLE_PUSH = 1,

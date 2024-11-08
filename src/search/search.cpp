@@ -152,22 +152,20 @@ namespace Astra
         {
             result = pvSearch(depth, alpha, beta, ROOT, ss);
 
-            if (isLimitReached(depth))
+            if (id == 0 && isLimitReached(depth))
                 return result;
 
             if (result <= alpha)
             {
                 beta = (alpha + beta) / 2;
                 alpha = std::max(alpha - window, -int(VALUE_INFINITE));
-                window += window / 2;
             }
             else if (result >= beta)
-            {
                 beta = std::min(beta + window, int(VALUE_INFINITE));
-                window += window / 2;
-            }
             else
                 break;
+
+            window += window / 2;
         }
 
         return result;
