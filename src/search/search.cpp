@@ -337,9 +337,9 @@ namespace Astra
         }
 
         // check for improvement
-        bool is_improving = false;
+        bool improving = false;
         if (!in_check && (ss - 2)->eval != VALUE_NONE)
-            is_improving = ss->eval > (ss - 2)->eval;
+            improving = ss->eval > (ss - 2)->eval;
 
         // only use pruning/reduction when not in check
         if (!in_check)
@@ -347,8 +347,6 @@ namespace Astra
             // internal iterative reductions
             if (depth >= 2 && !tt_hit && pv_node)
                 depth--;
-            if (depth <= 0)
-                return qSearch(alpha, beta, PV, ss);
 
             // razoring
             if (!pv_node 
@@ -364,7 +362,7 @@ namespace Astra
             if (!pv_node 
                 && depth <= rfp_depth 
                 && ss->eval < VALUE_TB_WIN_IN_MAX_PLY
-                && ss->eval - rfp_depth_mult * (depth - is_improving) >= beta)
+                && ss->eval - rfp_depth_mult * (depth - improving) >= beta)
             {
                 return (ss->eval + beta) / 2;
             }
@@ -534,7 +532,7 @@ namespace Astra
             if (depth >= 2 && !in_check && made_moves > 3)
             {
                 int rdepth = REDUCTIONS[depth][made_moves];
-                rdepth += is_improving;
+                rdepth += improving;
                 rdepth -= pv_node;
                 rdepth -= is_capture;
                 rdepth = std::clamp(new_depth - rdepth, 1, new_depth + 1);
@@ -639,7 +637,10 @@ namespace Astra
         const bool tt_hit = tt.lookup(ent, hash);
         const Score tt_score = tt_hit ? scoreFromTT(ent.score, ss->ply) : Score(VALUE_NONE);
 
-        if (tt_hit && !pv_node && tt_score != VALUE_NONE && ent.bound != NO_BOUND)
+        if (tt_hit 
+            && !pv_node 
+            && tt_score != VALUE_NONE 
+            && ent.bound != NO_BOUND)
         {
             if (ent.bound == EXACT_BOUND)
                 return tt_score;
