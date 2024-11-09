@@ -267,26 +267,20 @@ namespace UCI
 
     Move Uci::getMove(const std::string &str_move) const
     {
-        const Square from = squareFromString(str_move.substr(0, 2));
-        const Square to = squareFromString(str_move.substr(2, 2));
-        const Piece p_from = board.pieceAt(from);
-        const Piece p_to = board.pieceAt(to);
-
+        Square from = squareFromString(str_move.substr(0, 2));
+        Square to = squareFromString(str_move.substr(2, 2));
+        Piece p_from = board.pieceAt(from);
         MoveFlags mf = QUIET;
 
-        const bool is_capture = p_to != NO_PIECE;
+        bool is_capture = board.pieceAt(to) != NO_PIECE;
 
         if (typeOf(p_from) == PAWN)
         {
-            const bool is_double_push = (rankOf(from) == 1 && rankOf(to) == 3) || (rankOf(from) == 6 && rankOf(to) == 4);
-            const bool is_promotion = rankOf(to) == 0 || rankOf(to) == 7;
-            const bool is_ep = board.history[board.getPly()].ep_sq == to;
-
-            if (is_double_push)
+            if ((rankOf(from) == 1 && rankOf(to) == 3) || (rankOf(from) == 6 && rankOf(to) == 4))
                 mf = DOUBLE_PUSH;
-            else if (is_ep)
+            else if (board.history[board.getPly()].ep_sq == to)
                 mf = EN_PASSANT;
-            else if (is_promotion)
+            else if (rankOf(to) == 0 || rankOf(to) == 7)
             {
                 char promotion = tolower(str_move[4]);
 
@@ -303,12 +297,9 @@ namespace UCI
         }
         else if (typeOf(p_from) == KING)
         {
-            bool is_short = (from == e1 && to == g1) || (from == e8 && to == g8);
-            bool is_long = (from == e1 && to == c1) || (from == e8 && to == c8);
-
-            if (is_short)
+            if ((from == e1 && to == g1) || (from == e8 && to == g8))
                 mf = OO;
-            else if (is_long)
+            else if ((from == e1 && to == c1) || (from == e8 && to == c8))
                 mf = OOO;
             else if (is_capture)
                 mf = CAPTURE;
