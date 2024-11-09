@@ -11,7 +11,7 @@ namespace UCI
     const std::string version = "4.0";
 
     // options class
-    void Options::add(const std::string &name, const Option &option)
+    void Options::add(std::string name, const Option &option)
     {
         options[name] = option;
     }
@@ -81,7 +81,7 @@ namespace UCI
             std::cout << "Unknown option: " << name << std::endl;
     }
 
-    std::string Options::get(const std::string &str) const
+    std::string Options::get(std::string str) const
     {
         auto it = options.find(str);
         if (it != options.end())
@@ -200,7 +200,7 @@ namespace UCI
 
         board = Board(fen);
         while (is >> token)
-            if (token != "moves")
+            if (token != "moves") 
                 board.makeMove(getMove(token));
 
         board.refreshAccumulator();

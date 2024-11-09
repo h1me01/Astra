@@ -246,7 +246,7 @@ namespace Astra
 
         if (!root_node 
             && !pv_node 
-            && excluded_move == NO_MOVE 
+            && !excluded_move 
             && tt_hit 
             && tt_score != VALUE_NONE 
             && ent.depth >= depth 
@@ -371,7 +371,7 @@ namespace Astra
             if (!pv_node 
                 && depth >= nmp_depth  
                 && board.nonPawnMat(stm) 
-                && excluded_move == NO_MOVE 
+                && !excluded_move 
                 && ss->eval >= beta
                 && (ss - 1)->current_move != NULL_MOVE )
             {
@@ -400,9 +400,7 @@ namespace Astra
             if (!pv_node 
                 && depth > 3 
                 && std::abs(beta) < VALUE_TB_WIN_IN_MAX_PLY 
-                && !(ent.depth >= depth - 3 
-                && tt_score != VALUE_NONE 
-                && tt_score < beta_cut))
+                && !(ent.depth >= depth - 3 && tt_score != VALUE_NONE && tt_score < beta_cut))
             {
                 MovePicker movepicker(CAPTURE_MOVES, board, history, ss, ent.move);
 
@@ -501,7 +499,7 @@ namespace Astra
                 && tt_hit 
                 && tt_score != VALUE_NONE 
                 && ent.move == move 
-                && excluded_move == NO_MOVE 
+                && !excluded_move 
                 && std::abs(tt_score) < VALUE_TB_WIN_IN_MAX_PLY 
                 && ent.bound & LOWER_BOUND 
                 && ent.depth >= depth - 3)
@@ -593,7 +591,7 @@ namespace Astra
             best_score = std::min(best_score, max_score);
 
         // store in transposition table
-        if (excluded_move == NO_MOVE && !threads.stop)
+        if (!excluded_move && !threads.stop)
         {
             Bound bound;
             if (best_score >= beta)

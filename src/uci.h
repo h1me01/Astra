@@ -33,13 +33,13 @@ namespace UCI
         int num_workers = 1;  // default number of threads
         bool use_tb = false;
 
-        void add(const std::string& name, const Option& option);
+        void add(std::string name, const Option& option);
         
         void print() const;
         void apply();
         
         void set(std::istringstream& is);
-        std::string get(const std::string& str) const;
+        std::string get(std::string str) const;
 
     private:
         std::unordered_map<std::string, Option> options;

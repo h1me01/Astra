@@ -150,6 +150,8 @@ namespace Chess
         bool operator==(const Move& m) const { return move == m.move; }
         bool operator!=(const Move& m) const { return move != m.move; }
 
+        bool operator!() const { return move == 0; }
+
         int score = 0;
     private:
         // first 4 bits represent the move flag
