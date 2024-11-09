@@ -9,37 +9,44 @@
 namespace Astra
 {
     // search parameters
-    PARAM(lmr_base, 107, 50, 150);
-    PARAM(lmr_div, 156, 150, 250);
+    PARAM(lmr_base, 107, 80, 130, 8);
+    PARAM(lmr_div, 176, 150, 200, 10);
 
-    PARAM(delta_margin, 509, 400, 900);
+    PARAM(delta_margin, 509, 450, 650, 25);
 
-    PARAM(razor_margin, 137, 80, 190);
+    PARAM(rzr_depth, 3, 2, 5, 1);
+    PARAM(rzr_margin, 137, 100, 170, 10);
 
-    PARAM(rfp_depth_mult, 47, 30, 80);
-    PARAM(rfp_impr_bonus, 43, 30, 80);
-    PARAM(rfp_depth, 7, 5, 9);
+    PARAM(rfp_depth_mult, 68, 50, 90, 5);
+    PARAM(rfp_impr_bonus, 71, 45, 90, 5);
+    PARAM(rfp_depth, 7, 5, 9, 1);
 
-    PARAM(snmp_depth_mult, 63, 50, 90);
-    PARAM(snmp_depth, 7, 5, 11);
+    PARAM(snmp_depth_mult, 63, 50, 80, 5);
+    PARAM(snmp_depth, 7, 6, 9, 1);
 
-    PARAM(nmp_depth, 4, 3, 5);
-    PARAM(nmp_base, 4, 3, 5);
-    PARAM(nmp_depth_div, 5, 3, 7);
-    PARAM(nmp_min, 4, 2, 6);
-    PARAM(nmp_div, 211, 205, 215);
+    PARAM(nmp_depth, 4, 3, 5, 1);
+    PARAM(nmp_base, 4, 3, 5, 1);
+    PARAM(nmp_depth_div, 5, 3, 7, 1);
+    PARAM(nmp_min, 4, 3, 6, 1);
+    PARAM(nmp_div, 211, 200, 220, 2);
 
-    PARAM(pv_see_cap_margin, 87, 70, 110);
-    PARAM(pv_see_cap_depth, 6, 5, 8);
+    PARAM(pv_see_cap_margin, 92, 80, 110, 5);
+    PARAM(pv_see_cap_depth, 6, 5, 8, 1);
 
-    PARAM(pv_see_quiet_margin, 77, 30, 95);
-    PARAM(pv_see_quiet_depth, 7, 6, 9);
+    PARAM(pv_see_quiet_margin, 77, 60, 95, 5);
+    PARAM(pv_see_quiet_depth, 7, 6, 9, 1);
 
-    PARAM(lmp_depth, 5, 4, 7);
+    PARAM(lmp_depth, 5, 4, 7, 1);
 
-    PARAM(fp_depth, 9, 7, 11);
-    PARAM(fp_base, 146, 100, 200);
-    PARAM(fp_mult, 98, 80, 120);
+    PARAM(fp_depth, 9, 7, 11, 1);
+    PARAM(fp_base, 146, 120, 180, 10);
+    PARAM(fp_mult, 98, 85, 110, 5);
+
+    PARAM(asp_depth, 9, 6, 12, 1);
+    PARAM(asp_window, 30, 15, 45, 5);
+
+    PARAM(ch_mult, 12, 8, 16, 1);
+    PARAM(hh_mult, 155, 140, 170, 7);
 
     // search helper
 
@@ -108,6 +115,7 @@ namespace Astra
         time_manager.start();
 
         history.clear();
+        history.init(hh_mult, ch_mult);
 
         Score previous_result = VALUE_NONE;
 
@@ -140,8 +148,8 @@ namespace Astra
         Score beta = VALUE_INFINITE;
 
         // only use aspiration window when depth is higher or equal to 9
-        int window = 30;
-        if (depth >= 9)
+        int window = asp_window;
+        if (depth >= asp_depth)
         {
             alpha = prev_eval - window;
             beta = prev_eval + window;
@@ -337,17 +345,19 @@ namespace Astra
         if (!in_check && (ss - 2)->static_eval != VALUE_NONE)
             is_improving = ss->static_eval > (ss - 2)->static_eval;
 
-        // internal iterative reductions
-        if (depth >= 3 && !tt_hit && pv_node)
-            depth--;
-        if (depth <= 0)
-            return qSearch(alpha, beta, PV, ss);
-
-        // only use pruning/reduction when not in check and pv
-        if (!in_check && !pv_node)
+        // only use pruning/reduction when not in check
+        if (!in_check)
         {
+            // internal iterative reductions
+            if (depth >= 2 && !tt_hit && pv_node)
+                depth--;
+            if (depth <= 0)
+                return qSearch(alpha, beta, PV, ss);
+
             // razoring
-            if (depth <= 3 && ss->static_eval + razor_margin < alpha)
+            if (!pv_node 
+                && depth <= rzr_depth 
+                && ss->static_eval + rzr_margin < alpha)
             {
                 Score score = qSearch(alpha, beta, NON_PV, ss);
                 if (score < alpha && std::abs(score) < VALUE_TB_WIN_IN_MAX_PLY)
@@ -355,7 +365,8 @@ namespace Astra
             }
 
             // static null move pruning
-            if (depth <= snmp_depth 
+            if (!pv_node 
+                && depth <= snmp_depth 
                 && ss->static_eval - snmp_depth_mult * depth >= beta 
                 && ss->static_eval < VALUE_MIN_MATE)
             {
@@ -364,7 +375,8 @@ namespace Astra
 
             // reverse futility pruning
             int rfp_margin = rfp_depth_mult * depth + rfp_impr_bonus * is_improving;
-            if (depth < rfp_depth 
+            if (!pv_node 
+                && depth < rfp_depth 
                 && ss->static_eval - rfp_margin >= beta 
                 && std::abs(beta) < VALUE_TB_WIN_IN_MAX_PLY)
             {
@@ -372,7 +384,8 @@ namespace Astra
             }
 
             // null move pruning
-            if (depth >= nmp_depth  
+            if (!pv_node 
+                && depth >= nmp_depth  
                 && board.nonPawnMat(stm) 
                 && excluded_move == NO_MOVE 
                 && ss->static_eval >= beta
@@ -400,7 +413,8 @@ namespace Astra
 
             // probcut
             int beta_cut = beta + 136;
-            if (depth > 3 
+            if (!pv_node 
+                && depth > 3 
                 && std::abs(beta) < VALUE_TB_WIN_IN_MAX_PLY 
                 && !(ent.depth >= depth - 3 
                 && tt_score != VALUE_NONE 

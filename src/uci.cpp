@@ -156,8 +156,12 @@ namespace UCI
                 Astra::threads.stop = false;
                 Bench::bench(13);
             }
-            else if (token == "tune")
+            else if (token == "tune") 
+            {
                 Astra::paramsToSpsa();
+                std::cout << std::endl;
+                Astra::paramsToJSON();
+            }
             else if (token == "setoption")
             {
                 options.set(is);

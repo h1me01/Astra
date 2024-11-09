@@ -8,7 +8,8 @@ namespace Astra
     // holds all the tuning parameters for search
     std::vector<Param *> params;
 
-    Param::Param(std::string name, int value, int min, int max) : name(std::move(name)), value(value), min(min), max(max)
+    Param::Param(std::string name, int value, int min, int max, int step) 
+    : name(std::move(name)), value(value), min(min), max(max), step(step)
     {
         if (value < min || value > max)
         {
@@ -62,6 +63,28 @@ namespace Astra
                       << ", " << std::max(0.5, double(param->max - param->min) / 20.0)
                       << ", " << 0.002 << "\n";
         }
+    }
+
+    void paramsToJSON()
+    {
+        std::stringstream ss;
+        ss << "{\n";
+        for (size_t i = 0; i < params.size(); i++)
+        {
+            ss << "  \"" << params[i]->name << "\": {\n";
+            ss << "    \"value\": " << params[i]->value << ",\n";
+            ss << "    \"min_value\": " << params[i]->min << ",\n";
+            ss << "    \"max_value\": " << params[i]->max << ",\n";
+            ss << "    \"step\": " << params[i]->step << "\n";
+            ss << "  }";
+            
+            if (i < params.size() - 1)
+                ss << ",";
+            
+            ss << "\n";
+        }
+        ss << "}\n";
+        std::cout << ss.str();
     }
 
 } // namespace Astra

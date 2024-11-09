@@ -8,6 +8,12 @@ namespace Astra
         clear();
     }
 
+    void History::init(int hh_mult, int ch_mult)
+    {
+        this->hh_mult = hh_mult;
+        this->ch_mult = ch_mult;
+    }
+
     void History::clear()
     {
         for (auto &i : history)
@@ -34,8 +40,8 @@ namespace Astra
 
     void History::update(Board &board, Move &move, Move *quiet_moves, Stack *ss, int quiet_count, int depth)
     {
-        int hh_bonus = std::min(1975, depth * 164);
-        int ch_bonus = std::min(1669, depth * depth * 12);
+        int hh_bonus = std::min(1975, depth * hh_mult);
+        int ch_bonus = std::min(1669, depth * depth * ch_mult);
 
         Move prev_move = (ss - 1)->current_move;
         if (prev_move != NO_MOVE)

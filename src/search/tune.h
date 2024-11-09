@@ -14,8 +14,9 @@ namespace Astra
         std::string name;
         int value;
         int min, max;
+        int step;
 
-        Param(std::string name, int value, int min, int max);
+        Param(std::string name, int value, int min, int max, int step);
 
         operator int() const;
     };
@@ -26,10 +27,12 @@ namespace Astra
 
     void paramsToSpsa();
 
+    void paramsToJSON();
+
 #ifdef TUNE
-#define PARAM(name, value, min, max) Param name(#name, value, min, max)
+#define PARAM(name, value, min, max, step) Param name(#name, value, min, max, step)
 #else
-#define PARAM(name, value, min, max) constexpr int name = value
+#define PARAM(name, value, min, max, step) constexpr int name = value
 #endif
 
 } // namespace Astra
