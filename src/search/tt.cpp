@@ -2,7 +2,7 @@
 
 namespace Astra
 {
-    TTable::TTable(const int size_mb) : current_age(0), entries(nullptr)
+    TTable::TTable(int size_mb) : current_age(0), entries(nullptr)
     {
         init(size_mb);
     }
@@ -16,14 +16,11 @@ namespace Astra
         if (entries != nullptr)
             delete[] entries;
 
-        const U64 size_bytes = size_mb * 1024 * 1024;
+        U64 size_bytes = size_mb * 1024 * 1024;
         U64 max_entries = size_bytes / sizeof(TTEntry);
 
-        tt_size = 1;
-        while (tt_size <= max_entries)
-            tt_size *= 2;
-
-        tt_size /= 2;
+        // find the next power of 2
+        tt_size = 1ULL << (63 - __builtin_clzll(max_entries));
         mask = tt_size - 1;
 
         entries = new TTEntry[tt_size];
@@ -65,7 +62,7 @@ namespace Astra
             bool second = bound == EXACT_BOUND;
             // store if not exact bound but depth is greater or equal
             bool third = bound != EXACT_BOUND && entries[idx].depth <= depth;
-            // store if key is equal and depth is greater
+            // store if hash is equal and depth is greater
             bool fourth = entries[idx].hash == hash && entries[idx].depth <= depth + 3;
 
             if (first || second || third || fourth)
