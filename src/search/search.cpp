@@ -19,7 +19,7 @@ namespace Astra
 
     PARAM(rfp_depth_mult, 68, 50, 90, 5);
     PARAM(rfp_impr_bonus, 71, 45, 90, 5);
-    PARAM(rfp_depth, 7, 5, 9, 1);
+    PARAM(rfp_depth, 7, 6, 9, 1);
 
     PARAM(snmp_depth_mult, 63, 50, 80, 5);
     PARAM(snmp_depth, 7, 6, 9, 1);
@@ -100,7 +100,7 @@ namespace Astra
         {
             (ss - i)->ply = i;
             (ss - i)->current_move = NO_MOVE;
-            (ss - i)->static_eval = 0;
+            (ss - i)->eval = 0;
             (ss - i)->excluded_move = NO_MOVE;
         }
 
@@ -108,7 +108,7 @@ namespace Astra
         {
             (ss + i)->ply = i;
             (ss + i)->current_move = NO_MOVE;
-            (ss + i)->static_eval = 0;
+            (ss + i)->eval = 0;
             (ss + i)->excluded_move = NO_MOVE;
         }
 
@@ -256,7 +256,7 @@ namespace Astra
             && ent.depth >= depth 
             && (ss - 1)->current_move != NULL_MOVE)
         {
-            ss->static_eval = tt_score;
+            ss->eval = tt_score;
 
             switch (ent.bound)
             {
@@ -277,17 +277,17 @@ namespace Astra
                 return tt_score;
         }
         else
-            ss->static_eval = in_check ? Score(VALUE_NONE) : Eval::evaluate(board);
+            ss->eval = in_check ? Score(VALUE_NONE) : Eval::evaluate(board);
 
         // use tt score for better evaluation
-        if (tt_hit && ss->static_eval != VALUE_NONE)
+        if (tt_hit && ss->eval != VALUE_NONE)
         {
             if (ent.bound == EXACT_BOUND)
-                ss->static_eval = tt_score;
-            else if (ent.bound == LOWER_BOUND && ss->static_eval < tt_score)
-                ss->static_eval = tt_score;
-            else if (ent.bound == UPPER_BOUND && ss->static_eval > tt_score)
-                ss->static_eval = tt_score;
+                ss->eval = tt_score;
+            else if (ent.bound == LOWER_BOUND && ss->eval < tt_score)
+                ss->eval = tt_score;
+            else if (ent.bound == UPPER_BOUND && ss->eval > tt_score)
+                ss->eval = tt_score;
         }
    
         Score max_score = VALUE_INFINITE;
@@ -342,8 +342,8 @@ namespace Astra
 
         // check for improvement
         bool is_improving = false;
-        if (!in_check && (ss - 2)->static_eval != VALUE_NONE)
-            is_improving = ss->static_eval > (ss - 2)->static_eval;
+        if (!in_check && (ss - 2)->eval != VALUE_NONE)
+            is_improving = ss->eval > (ss - 2)->eval;
 
         // only use pruning/reduction when not in check
         if (!in_check)
@@ -357,7 +357,7 @@ namespace Astra
             // razoring
             if (!pv_node 
                 && depth <= rzr_depth 
-                && ss->static_eval + rzr_margin < alpha)
+                && ss->eval + rzr_margin < alpha)
             {
                 Score score = qSearch(alpha, beta, NON_PV, ss);
                 if (score < alpha && std::abs(score) < VALUE_TB_WIN_IN_MAX_PLY)
@@ -367,20 +367,20 @@ namespace Astra
             // static null move pruning
             if (!pv_node 
                 && depth <= snmp_depth 
-                && ss->static_eval - snmp_depth_mult * depth >= beta 
-                && ss->static_eval < VALUE_MIN_MATE)
+                && ss->eval - snmp_depth_mult * depth >= beta 
+                && ss->eval < VALUE_MIN_MATE)
             {
-                return ss->static_eval;
+                return ss->eval;
             }
 
             // reverse futility pruning
             int rfp_margin = rfp_depth_mult * depth + rfp_impr_bonus * is_improving;
             if (!pv_node 
-                && depth < rfp_depth 
-                && ss->static_eval - rfp_margin >= beta 
-                && std::abs(beta) < VALUE_TB_WIN_IN_MAX_PLY)
+                && depth <= rfp_depth 
+                && ss->eval - rfp_margin >= beta 
+                && ss->eval < VALUE_MIN_MATE)
             {
-                return ss->static_eval - rfp_margin;
+                return (ss->eval + beta) / 2;
             }
 
             // null move pruning
@@ -388,12 +388,12 @@ namespace Astra
                 && depth >= nmp_depth  
                 && board.nonPawnMat(stm) 
                 && excluded_move == NO_MOVE 
-                && ss->static_eval >= beta
+                && ss->eval >= beta
                 && (ss - 1)->current_move != NULL_MOVE )
             {
-                assert(ss->static_eval - beta >= 0);
+                assert(ss->eval - beta >= 0);
 
-                int R = nmp_base + depth / nmp_depth_div + std::min(int(nmp_min), (ss->static_eval - beta) / nmp_div);
+                int R = nmp_base + depth / nmp_depth_div + std::min(int(nmp_min), (ss->eval - beta) / nmp_div);
 
                 ss->current_move = NULL_MOVE;
 
@@ -468,7 +468,7 @@ namespace Astra
 
             if (!root_node && best_score > VALUE_TB_LOSS_IN_MAX_PLY)
             {
-                assert(ss->static_eval != VALUE_NONE || in_check);
+                assert(ss->eval != VALUE_NONE || in_check);
 
                 int see_depth = is_capture ? pv_see_cap_depth : pv_see_quiet_depth;
                 int see_margin = is_capture ? pv_see_cap_margin : pv_see_quiet_margin;
@@ -494,7 +494,7 @@ namespace Astra
                     && !is_capture 
                     && !is_promotion 
                     && depth <= fp_depth 
-                    && ss->static_eval + fp_base + depth * fp_mult <= alpha)
+                    && ss->eval + fp_base + depth * fp_mult <= alpha)
                 {
                     continue;
                 }

@@ -19,7 +19,7 @@ namespace Astra
     struct Stack
     {
         uint16_t ply;
-        Score static_eval;
+        Score eval;
         Move current_move;
         Move excluded_move;
     };
