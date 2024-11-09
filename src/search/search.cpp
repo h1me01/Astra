@@ -344,7 +344,7 @@ namespace Astra
         // only use pruning/reduction when not in check
         if (!in_check)
         {
-            // internal iterative reductions
+            // internal iterative reduction
             if (depth >= 2 && !tt_hit && pv_node)
                 depth--;
 
