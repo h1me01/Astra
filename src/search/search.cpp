@@ -15,14 +15,10 @@ namespace Astra
     PARAM(delta_margin, 509, 450, 650, 25);
 
     PARAM(rzr_depth, 3, 2, 5, 1);
-    PARAM(rzr_margin, 137, 100, 170, 10);
+    PARAM(rzr_depth_mult, 200, 150, 250, 15);
 
-    PARAM(rfp_depth_mult, 68, 50, 90, 5);
-    PARAM(rfp_impr_bonus, 71, 45, 90, 5);
+    PARAM(rfp_depth_mult, 75, 50, 100, 5);
     PARAM(rfp_depth, 7, 6, 9, 1);
-
-    PARAM(snmp_depth_mult, 63, 50, 80, 5);
-    PARAM(snmp_depth, 7, 6, 9, 1);
 
     PARAM(nmp_depth, 4, 3, 5, 1);
     PARAM(nmp_base, 4, 3, 5, 1);
@@ -357,28 +353,18 @@ namespace Astra
             // razoring
             if (!pv_node 
                 && depth <= rzr_depth 
-                && ss->eval + rzr_margin < alpha)
+                && ss->eval + rzr_depth_mult * depth < alpha)
             {
                 Score score = qSearch(alpha, beta, NON_PV, ss);
-                if (score < alpha && std::abs(score) < VALUE_TB_WIN_IN_MAX_PLY)
+                if (score < alpha)
                     return score;
             }
 
-            // static null move pruning
-            if (!pv_node 
-                && depth <= snmp_depth 
-                && ss->eval - snmp_depth_mult * depth >= beta 
-                && ss->eval < VALUE_MIN_MATE)
-            {
-                return ss->eval;
-            }
-
             // reverse futility pruning
-            int rfp_margin = rfp_depth_mult * depth + rfp_impr_bonus * is_improving;
             if (!pv_node 
                 && depth <= rfp_depth 
-                && ss->eval - rfp_margin >= beta 
-                && ss->eval < VALUE_MIN_MATE)
+                && ss->eval < VALUE_TB_WIN_IN_MAX_PLY
+                && ss->eval - rfp_depth_mult * (depth - is_improving) >= beta)
             {
                 return (ss->eval + beta) / 2;
             }
