@@ -150,7 +150,7 @@ namespace Astra
         Score result = VALUE_NONE;
         while (true)
         {
-            result = pvSearch(depth, alpha, beta, ROOT, ss);
+            result = negamax(depth, alpha, beta, ROOT, ss);
 
             if (id == 0 && isLimitReached(depth))
                 return result;
@@ -171,7 +171,7 @@ namespace Astra
         return result;
     }
 
-    Score Search::pvSearch(int depth, Score alpha, Score beta, Node node, Stack *ss)
+    Score Search::negamax(int depth, Score alpha, Score beta, Node node, Stack *ss)
     {
         assert(alpha < beta);
         assert(ss->ply >= 0);
@@ -385,7 +385,7 @@ namespace Astra
                 ss->current_move = NULL_MOVE;
 
                 board.makeNullMove();
-                Score score = -pvSearch(depth - R, -beta, -beta + 1, NON_PV, ss + 1);
+                Score score = -negamax(depth - R, -beta, -beta + 1, NON_PV, ss + 1);
                 board.unmakeNullMove();
 
                 if (score >= beta)
@@ -420,7 +420,7 @@ namespace Astra
                     Score score = -qSearch(-beta_cut, -beta_cut + 1, NON_PV, ss + 1);
 
                     if (score >= beta_cut)
-                        score = -pvSearch(depth - 4, -beta_cut, -beta_cut + 1, NON_PV, ss + 1);
+                        score = -negamax(depth - 4, -beta_cut, -beta_cut + 1, NON_PV, ss + 1);
 
                     board.unmakeMove(move);
 
@@ -512,7 +512,7 @@ namespace Astra
                 const int singular_depth = (depth - 1) / 2;
 
                 ss->excluded_move = move;
-                Score score = pvSearch(singular_depth, singular_beta - 1, singular_beta, NON_PV, ss);
+                Score score = negamax(singular_depth, singular_beta - 1, singular_beta, NON_PV, ss);
                 ss->excluded_move = NO_MOVE;
 
                 if (score < singular_beta)
@@ -539,19 +539,19 @@ namespace Astra
                 rdepth -= is_capture;
                 rdepth = std::clamp(new_depth - rdepth, 1, new_depth + 1);
 
-                score = -pvSearch(rdepth, -alpha - 1, -alpha, NON_PV, ss + 1);
+                score = -negamax(rdepth, -alpha - 1, -alpha, NON_PV, ss + 1);
 
                 // if late move reduction failed high, research
                 if (score > alpha && rdepth < new_depth)
-                    score = -pvSearch(new_depth, -alpha - 1, -alpha, NON_PV, ss + 1);
+                    score = -negamax(new_depth, -alpha - 1, -alpha, NON_PV, ss + 1);
             }
             else if (!pv_node || made_moves > 1)
                 // full-depth search if lmr was skipped
-                score = -pvSearch(new_depth, -alpha - 1, -alpha, NON_PV, ss + 1);
+                score = -negamax(new_depth, -alpha - 1, -alpha, NON_PV, ss + 1);
 
             // principal variation search
             if (pv_node && ((score > alpha && score < beta) || made_moves == 1))
-                score = -pvSearch(new_depth, -beta, -alpha, PV, ss + 1);
+                score = -negamax(new_depth, -beta, -alpha, PV, ss + 1);
 
             board.unmakeMove(move);
 

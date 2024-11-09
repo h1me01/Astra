@@ -56,7 +56,7 @@ namespace Astra
        
         TimeManager time_manager;
 
-        Score pvSearch(int depth, Score alpha, Score beta, Node node, Stack *ss);
+        Score negamax(int depth, Score alpha, Score beta, Node node, Stack *ss);
         Score qSearch(Score alpha, Score beta, Node node, Stack *ss);
         Score aspSearch(int depth, Score prev_eval, Stack *ss);
 
