@@ -118,7 +118,7 @@ namespace Astra
         Move best_move = NO_MOVE;
         for (int depth = 1; depth <= MAX_PLY; depth++)
         {
-            pv_table.clear();
+            pv_table.reset();
 
             const Score result = aspSearch(depth, previous_result, ss);
             previous_result = result;
@@ -759,7 +759,7 @@ namespace Astra
         nodes = 0;
         tb_hits = 0;
         tt.clear();
-        pv_table.clear();
+        pv_table.reset();
         history.clear();
     }
 

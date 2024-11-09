@@ -41,7 +41,7 @@ namespace NNUE
 
     private:
         int index;
-        std::array<Accumulator, MAX_PLY> accumulators{};
+        std::array<Accumulator, MAX_PLY + 1> accumulators{};
     };
 
     struct NNUE

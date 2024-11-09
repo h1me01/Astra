@@ -21,14 +21,10 @@ namespace Astra
         PVLine& operator()(const int depth) { return pvs[depth]; }
         PVLine operator()(int depth) const { return pvs[depth]; }
 
-        void clear()
+        void reset()
         {
             for (auto& pvLine : pvs)
-            {
-                for (int i = 0; i < MAX_PLY + 1; i++)
-                    pvLine(i) = NULL_MOVE;
                 pvLine.length = 0;
-            }
         }
 
         void updatePV(int ply, Move m)
