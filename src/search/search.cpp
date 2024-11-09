@@ -147,7 +147,7 @@ namespace Astra
         Score alpha = -VALUE_INFINITE;
         Score beta = VALUE_INFINITE;
 
-        // only use aspiration window when depth is higher or equal to 9
+        // only use aspiration window when depth is higher or equal to asp_depth
         int window = asp_window;
         if (depth >= asp_depth)
         {
