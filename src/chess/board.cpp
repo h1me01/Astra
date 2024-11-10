@@ -278,7 +278,6 @@ namespace Chess
         const Piece pc_from = board[from];
         const Piece pc_to = board[to];
         const PieceType pt = typeOf(pc_from);
-        const U64 mask = SQUARE_BB[from] | SQUARE_BB[to];
 
         assert(from >= 0 && from < NUM_SQUARES);
         assert(to >= 0 && to < NUM_SQUARES);
@@ -298,7 +297,7 @@ namespace Chess
         hash ^= Zobrist::castle[getCastleHashIndex(history[game_ply].castle_mask)];
 
         // update castling rights
-        history[game_ply].castle_mask |= mask;
+        history[game_ply].castle_mask |= SQUARE_BB[from] | SQUARE_BB[to];
 
         // reset half move clock if pawn move or capture
         if (pt == PAWN || pc_to != NO_PIECE)
