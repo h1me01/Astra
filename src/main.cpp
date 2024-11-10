@@ -1,5 +1,4 @@
 #include "uci.h"
-#include <bitset>
 
 int main()
 {
