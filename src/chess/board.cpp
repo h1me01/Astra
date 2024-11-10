@@ -265,6 +265,11 @@ namespace Chess
         return piece_bb[knight] | piece_bb[bishop] | piece_bb[rook] | piece_bb[queen];
     }
 
+    bool Board::isCapture(const Move& m) const
+    {
+        return board[m.to()] != NO_PIECE;
+    }
+
     void Board::makeMove(const Move& m, bool update_nnue)
     {
         const MoveFlags mf = m.flag();

@@ -47,7 +47,7 @@ namespace Astra
         if (prev_move != NO_MOVE)
             counters[prev_move.from()][prev_move.to()] = move;
 
-        if (!isCapture(move))
+        if (!board.isCapture(move))
         {
             killer2[ss->ply] = killer1[ss->ply];
             killer1[ss->ply] = move;

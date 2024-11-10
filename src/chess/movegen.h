@@ -50,19 +50,19 @@ namespace Chess
     }
 
     template <Color Us>
-    U64 dangerMask(const Board& board, U64 occ)
+    void initDangerMask(Board& board, U64 occ)
     {
         constexpr Color them = ~Us;
 
         // enemy king attacks
-        U64 danger = getAttacks(KING, board.kingSq(them), occ);
+        board.danger = getAttacks(KING, board.kingSq(them), occ);
         // enemy pawns attacks
-        danger |= diagPawnAttacks<them>(board.getPieceBB(them, PAWN));
+        board.danger |= diagPawnAttacks<them>(board.getPieceBB(them, PAWN));
 
         // enemy knights attacks
         U64 their_knights = board.getPieceBB(them, KNIGHT);
         while (their_knights)
-            danger |= getAttacks(KNIGHT, popLsb(their_knights), occ);
+            board.danger |= getAttacks(KNIGHT, popLsb(their_knights), occ);
 
         // exclude our king from the occupancy, because checks should not be included
         occ ^= SQUARE_BB[board.kingSq(Us)];
@@ -70,33 +70,31 @@ namespace Chess
         // enemy bishop and queen attacks
         U64 their_diag_sliders = board.diagSliders(them);
         while (their_diag_sliders)
-            danger |= getAttacks(BISHOP, popLsb(their_diag_sliders), occ);
+            board.danger |= getAttacks(BISHOP, popLsb(their_diag_sliders), occ);
 
         // enemy rook and queen attacks
         U64 their_orth_sliders = board.orthSliders(them);
         while (their_orth_sliders)
-            danger |= getAttacks(ROOK, popLsb(their_orth_sliders), occ);
-
-        return danger;
+            board.danger |= getAttacks(ROOK, popLsb(their_orth_sliders), occ);
     }
 
     template <Color Us>
-    U64 checkerMask(const Board& board, const Square& king_sq, U64& pinned)
+    void initCheckerMask(Board& board, const Square king_sq)
     {
         constexpr Color them = ~Us;
         const U64 their_occ = board.occupancy(them);
         const U64 our_occ = board.occupancy(Us);
 
         // enemy pawns attacks at our king
-        U64 checkers = pawnAttacks(Us, king_sq) & board.getPieceBB(them, PAWN);;
+        board.checkers = pawnAttacks(Us, king_sq) & board.getPieceBB(them, PAWN);;
         // enemy knights attacks at our king
-        checkers |= getAttacks(KNIGHT, king_sq, our_occ | their_occ) & board.getPieceBB(them, KNIGHT);
+        board.checkers |= getAttacks(KNIGHT, king_sq, our_occ | their_occ) & board.getPieceBB(them, KNIGHT);
 
         // potential enemy bishop, rook and queen attacks at our king
         U64 candidates = (getAttacks(ROOK, king_sq, their_occ) & board.orthSliders(them))
             | (getAttacks(BISHOP, king_sq, their_occ) & board.diagSliders(them));
 
-        pinned = 0;
+        board.pinned = 0;
         while (candidates)
         {
             const Square s = popLsb(candidates);
@@ -104,13 +102,11 @@ namespace Chess
             // if between the enemy slider attack and our king is no of our pieces
             // add the enemy piece to the checkers bitboard
             if (blockers == 0)
-                checkers ^= SQUARE_BB[s];
+                board.checkers ^= SQUARE_BB[s];
             else if ((blockers & (blockers - 1)) == 0)
                 // if there is only one of our piece between them, add our piece to the pinned
-                pinned ^= blockers;
+                board.pinned ^= blockers;
         }
-
-        return checkers;
     }
 
     template <Color Us>
@@ -345,8 +341,8 @@ namespace Chess
         const U64 their_occ = board.occupancy(them);
         const U64 occ = our_occ | their_occ;
 
-        board.danger = dangerMask<Us>(board, occ);
-        board.checkers = checkerMask<Us>(board, our_king_sq, board.pinned);
+        initDangerMask<Us>(board, occ);
+        initCheckerMask<Us>(board, our_king_sq);
 
         // generate king moves
         const U64 attacks = getAttacks(KING, our_king_sq, occ) & ~(our_occ | board.danger);

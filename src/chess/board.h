@@ -89,6 +89,7 @@ namespace Chess
 
         bool inCheck() const;
         bool nonPawnMat(Color c) const;
+        bool isCapture(const Move& m) const;
 
         bool isRepetition(bool is_pv) const;
         bool isInsufficientMaterial() const;

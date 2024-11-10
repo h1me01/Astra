@@ -1,9 +1,10 @@
 #include "uci.h"
+#include <bitset>
 
 int main()
 {
     initLookUpTables();
-    Zobrist::init(); 
+    Zobrist::init();
     Astra::initReductions();
 
     NNUE::nnue.init();

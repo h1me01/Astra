@@ -16,7 +16,9 @@ namespace NNUE
         assert(p != NO_PIECE);
         assert(s != NO_SQUARE);
 
-        s = mirrorVertically(view, s);
+        if (view == BLACK)
+            s = Square(s ^ 56);
+
         return int(s) + typeOf(p) * 64 + (colorOf(p) != view) * 64 * 6;
     }
 

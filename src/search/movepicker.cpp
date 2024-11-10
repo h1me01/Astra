@@ -13,7 +13,7 @@ namespace Astra
 
     int mvvlva(const Board &board, Move &move)
     {
-        assert(isCapture(move));
+        assert(board.isCapture(move));
         const PieceType attacker = typeOf(board.pieceAt(move.from()));
         const PieceType victim = typeOf(board.pieceAt(move.to()));
         return mvvlva_table[victim][attacker];
@@ -71,7 +71,7 @@ namespace Astra
         {
             if (ml[i] == tt_move)
                 ml[i].score = 10'000'000;
-            else if (isCapture(ml[i]))
+            else if (board.isCapture(ml[i]))
                 ml[i].score = (board.see(ml[i], 0) ? 7'000'000 : 0) + mvvlva(board, ml[i]);
             else if (ml[i] == history.getKiller1(ss->ply))
                 ml[i].score = 6'000'000;

@@ -37,16 +37,9 @@ namespace Chess
         }
     }
 
-    inline bool isCapture(const Move& m)
-    {
-        const MoveFlags flag = m.flag();
-        return flag == CAPTURE || flag == EN_PASSANT || (flag >= PC_KNIGHT && flag <= PC_QUEEN);
-    }
-
     inline bool isPromotion(const Move& m)
     {
-        const MoveFlags flag = m.flag();
-        return flag >= PR_KNIGHT && flag <= PC_QUEEN;
+        return m.flag() >= PR_KNIGHT;
     }
 
     // prints the move
@@ -91,16 +84,6 @@ namespace Chess
         return Square(int(s) - int(d));
     }
 
-    inline Square& operator+=(Square& s, Direction d)
-    {
-        return s = s + d;
-    }
-
-    inline Square& operator-=(Square& s, Direction d)
-    {
-        return s = s - d;
-    }
-
     constexpr Rank rankOf(Square s)
     {
         return Rank(s >> 3);
@@ -131,11 +114,6 @@ namespace Chess
     constexpr Direction relativeDir(Color c, Direction d)
     {
         return Direction(c == WHITE ? d : -d);
-    }
-
-    constexpr Square mirrorVertically(Color c, Square s)
-    {
-        return c == WHITE ? s : Square(s ^ 56);
     }
 
 } // namespace Chess

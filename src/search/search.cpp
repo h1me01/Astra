@@ -446,7 +446,7 @@ namespace Astra
 
             int extension = 0;
 
-            bool is_capture = isCapture(move);
+            bool is_capture = board.isCapture(move);
             bool is_promotion = isPromotion(move);
 
             if (!root_node && best_score > VALUE_TB_LOSS_IN_MAX_PLY)
