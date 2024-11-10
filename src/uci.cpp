@@ -281,21 +281,19 @@ namespace UCI
 
         if (typeOf(p_from) == PAWN)
         {
-            if ((rankOf(from) == 1 && rankOf(to) == 3) || (rankOf(from) == 6 && rankOf(to) == 4))
-                mf = DOUBLE_PUSH;
-            else if (board.history[board.getPly()].ep_sq == to)
+            if (board.history[board.getPly()].ep_sq == to)
                 mf = EN_PASSANT;
             else if (rankOf(to) == 0 || rankOf(to) == 7)
             {
                 char promotion = tolower(str_move[4]);
 
-                mf = is_capture ? PC_QUEEN : PR_QUEEN;
+                mf = PR_QUEEN;
                 if (promotion == 'r')
-                    mf = is_capture ? PC_ROOK : PR_ROOK;
+                    mf = PR_ROOK;
                 else if (promotion == 'b')
-                    mf = is_capture ? PC_BISHOP : PR_BISHOP;
+                    mf = PR_BISHOP;
                 else if (promotion == 'n')
-                    mf = is_capture ? PC_KNIGHT : PR_KNIGHT;
+                    mf = PR_KNIGHT;
             }
             else if (is_capture)
                 mf = CAPTURE;
@@ -303,9 +301,9 @@ namespace UCI
         else if (typeOf(p_from) == KING)
         {
             if ((from == e1 && to == g1) || (from == e8 && to == g8))
-                mf = OO;
+                mf = CASTLING;
             else if ((from == e1 && to == c1) || (from == e8 && to == c8))
-                mf = OOO;
+                mf = CASTLING;
             else if (is_capture)
                 mf = CAPTURE;
         }

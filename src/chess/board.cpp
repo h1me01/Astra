@@ -307,11 +307,11 @@ namespace Chess
         if (update_nnue)
             accumulators.push();
 
-        if (mf == QUIET || mf == DOUBLE_PUSH || mf == EN_PASSANT)
+        if (mf == QUIET || mf == EN_PASSANT)
         {
             const auto ep_sq = Square(to ^ 8);
 
-            if (mf == DOUBLE_PUSH)
+            if (pt == PAWN && std::abs(from - to) == 16) // double push
             {
                 U64 ep_mask = pawnAttacks(stm, ep_sq);
 
@@ -329,16 +329,16 @@ namespace Chess
 
             movePiece(from, to, update_nnue);
         }
-        else if (mf == OO || mf == OOO)
+        else if (mf == CASTLING)
         {
             Square rook_from, rook_to;
 
-            if (mf == OO)
+            if (to == g1 || to == g8) // kingside
             {
                 rook_from = stm == WHITE ? h1 : h8;
                 rook_to = stm == WHITE ? f1 : f8;
             }
-            else
+            else // queenside
             {
                 rook_from = stm == WHITE ? a1 : a8;
                 rook_to = stm == WHITE ? d1 : d8;
@@ -347,14 +347,14 @@ namespace Chess
             movePiece(from, to, update_nnue); // move king
             movePiece(rook_from, rook_to, update_nnue);
         }
-        else if (mf >= PR_KNIGHT && mf <= PC_QUEEN)
+        else if (mf >= PR_KNIGHT)
         {
             const PieceType prom_type = typeOfPromotion(mf);
 
             hash ^= Zobrist::psq[pc_from][from];
             removePiece(from, update_nnue);
 
-            if (mf >= PC_KNIGHT)
+            if (pc_to != NO_PIECE)
             {
                 history[game_ply].captured = pc_to;
                 hash ^= Zobrist::psq[pc_to][to];
@@ -389,26 +389,28 @@ namespace Chess
         const Square from = m.from();
         const Square to = m.to();
 
+        const Piece captured = history[game_ply].captured;
+
         if (accumulators.size())
             accumulators.pop();
 
-        if (mf == QUIET || mf == DOUBLE_PUSH || mf == EN_PASSANT)
+        if (mf == QUIET || mf == EN_PASSANT)
         {
             movePiece(to, from, false);
 
             if (mf == EN_PASSANT)
                 putPiece(makePiece(~stm, PAWN), Square(to ^ 8), false);
         }
-        else if (mf == OO || mf == OOO)
+        else if (mf == CASTLING)
         {
             Square rook_from, rook_to;
 
-            if (mf == OO)
+            if (to == g1 || to == g8) // kingside
             {
                 rook_from = stm == WHITE ? f1 : f8;
                 rook_to = stm == WHITE ? h1 : h8;
             }
-            else
+            else // queenside
             {
                 rook_from = stm == WHITE ? d1 : d8;
                 rook_to = stm == WHITE ? a1 : a8;
@@ -417,18 +419,18 @@ namespace Chess
             movePiece(to, from, false); // move king
             movePiece(rook_from, rook_to, false);
         }
-        else if (mf >= PR_KNIGHT && mf <= PC_QUEEN)
+        else if (mf >= PR_KNIGHT)
         {
             removePiece(to, false);
             putPiece(makePiece(stm, PAWN), from, false);
 
-            if (mf >= PC_KNIGHT)
-                putPiece(history[game_ply].captured, to, false);
+            if (captured != NO_PIECE) 
+                putPiece(captured, to, false);
         }
         else if (mf == CAPTURE)
         {
             movePiece(to, from, false);
-            putPiece(history[game_ply].captured, to, false);
+            putPiece(captured, to, false);
         }
 
         game_ply--;

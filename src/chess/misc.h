@@ -21,16 +21,12 @@ namespace Chess
         switch (mf)
         {
         case PR_KNIGHT:
-        case PC_KNIGHT:
             return KNIGHT;
         case PR_BISHOP:
-        case PC_BISHOP:
             return BISHOP;
         case PR_ROOK:
-        case PC_ROOK:
             return ROOK;
         case PR_QUEEN:
-        case PC_QUEEN:
             return QUEEN;
         default:
             return NO_PIECE_TYPE;

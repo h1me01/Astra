@@ -18,7 +18,7 @@ namespace Chess
 
     constexpr U64 ignoreOOODanger(Color c) { return c == WHITE ? 0x2 : 0x200000000000000; }
 
-    // helper to generate quiet moves
+    // helper to generate quiet/capture moves
     template <MoveFlags MF>
     Move* make(Move* moves, Square from, U64 to)
     {
@@ -27,18 +27,18 @@ namespace Chess
         return moves;
     }
 
-    // helper to generate promotion capture moves
-    template <Color Us, Direction d, MoveFlags mf>
+    // helper to generate promotion moves
+    template <Color Us, Direction d>
     Move* makePromotions(Move* moves, U64 to)
     {
         while (to)
         {
             const Square s = popLsb(to);
             const Square from = s - relativeDir(Us, d);
-            *moves++ = Move(from, s, mf);
-            *moves++ = Move(from, s, MoveFlags(mf + 1));
-            *moves++ = Move(from, s, MoveFlags(mf + 2));
-            *moves++ = Move(from, s, MoveFlags(mf + 3));
+            *moves++ = Move(from, s, PR_KNIGHT);
+            *moves++ = Move(from, s, PR_BISHOP);
+            *moves++ = Move(from, s, PR_ROOK);
+            *moves++ = Move(from, s, PR_QUEEN);
         }
         return moves;
     }
@@ -120,7 +120,7 @@ namespace Chess
         U64 is_allowed = castleMask & ooMask(Us);
 
         if (!(possible_checks | is_allowed))
-            *moves++ = Us == WHITE ? Move(e1, g1, OO) : Move(e8, g8, OO);
+            *moves++ = Us == WHITE ? Move(e1, g1, CASTLING) : Move(e8, g8, CASTLING);
 
         // ignoreLongCastlingDanger is used to get rid of the danger on the possibleChecks or b8 square
         possible_checks = ((occ | (board.danger & ~ignoreOOODanger(Us))) & oooBlockersMask(Us));
@@ -128,7 +128,7 @@ namespace Chess
         is_allowed = castleMask & oooMask(Us);
 
         if (!(possible_checks | is_allowed))
-            *moves++ = Us == WHITE ? Move(e1, c1, OOO) : Move(e8, c8, OOO);
+            *moves++ = Us == WHITE ? Move(e1, c1, CASTLING) : Move(e8, c8, CASTLING);
 
         return moves;
     }
@@ -223,10 +223,10 @@ namespace Chess
                     while (attacks)
                     {
                         const Square to = popLsb(attacks);
-                        *moves++ = Move(s, to, PC_KNIGHT);
-                        *moves++ = Move(s, to, PC_BISHOP);
-                        *moves++ = Move(s, to, PC_ROOK);
-                        *moves++ = Move(s, to, PC_QUEEN);
+                        *moves++ = Move(s, to, PR_KNIGHT);
+                        *moves++ = Move(s, to, PR_BISHOP);
+                        *moves++ = Move(s, to, PR_ROOK);
+                        *moves++ = Move(s, to, PR_QUEEN);
                     }
                 }
                 else
@@ -240,7 +240,7 @@ namespace Chess
                         moves = make<QUIET>(moves, s, single_push);
 
                         const U64 double_push = shift(relativeDir(Us, NORTH), single_push & MASK_RANK[relativeRank(Us, RANK_3)]);
-                        moves = make<DOUBLE_PUSH>(moves, s, double_push & ~occ & LINE[our_king_sq][s]);
+                        moves = make<QUIET>(moves, s, double_push & ~occ & LINE[our_king_sq][s]);
                     }
                 }
             }
@@ -288,7 +288,7 @@ namespace Chess
         while (double_push && mt == ALL_MOVES)
         {
             s = popLsb(double_push);
-            *moves++ = Move(s - relativeDir(Us, NORTH_NORTH), s, DOUBLE_PUSH);
+            *moves++ = Move(s - relativeDir(Us, NORTH_NORTH), s, QUIET);
         }
 
         // captures
@@ -317,15 +317,15 @@ namespace Chess
             if (mt == ALL_MOVES)
             {
                 attacks = shift(relativeDir(Us, NORTH), our_pawns) & board.quiet_mask;
-                moves = makePromotions<Us, NORTH, PR_KNIGHT>(moves, attacks);
+                moves = makePromotions<Us, NORTH>(moves, attacks);
             }
 
             // promotion captures
             attacks = shift(relativeDir(Us, NORTH_WEST), our_pawns) & board.capture_mask;
-            moves = makePromotions<Us, NORTH_WEST, PC_KNIGHT>(moves, attacks);
+            moves = makePromotions<Us, NORTH_WEST>(moves, attacks);
 
             attacks = shift(relativeDir(Us, NORTH_EAST), our_pawns) & board.capture_mask;
-            moves = makePromotions<Us, NORTH_EAST, PC_KNIGHT>(moves, attacks);
+            moves = makePromotions<Us, NORTH_EAST>(moves, attacks);
         }
 
         return moves;

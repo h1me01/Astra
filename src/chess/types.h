@@ -107,12 +107,13 @@ namespace Chess
     enum MoveFlags
     {
         QUIET = 0,
-        DOUBLE_PUSH = 1,
-        OO = 2, OOO = 3,
-        CAPTURE = 4,
-        EN_PASSANT = 5,
-        PR_KNIGHT = 8, PR_BISHOP = 9, PR_ROOK = 10, PR_QUEEN = 11,
-        PC_KNIGHT = 12, PC_BISHOP = 13, PC_ROOK = 14, PC_QUEEN = 15
+        CAPTURE = 1,
+        CASTLING = 2,
+        EN_PASSANT = 3,
+        PR_KNIGHT = 4, 
+        PR_BISHOP = 5, 
+        PR_ROOK = 6, 
+        PR_QUEEN = 7,
     };
 
     // max number of possible legal moves in chess are 218
