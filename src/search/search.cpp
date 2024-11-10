@@ -491,7 +491,7 @@ namespace Astra
             if (id == 0 
                 && root_node 
                 && time_manager.elapsedTime() > 5000 
-                && !threads.stop)
+                && !threads.isStopped())
             {
                 std::cout << "info depth " << depth
                           << " currmove " << move
@@ -596,7 +596,7 @@ namespace Astra
             best_score = std::min(best_score, max_score);
 
         // store in transposition table
-        if (!excluded_move && !threads.stop)
+        if (!excluded_move && !threads.isStopped())
         {
             Bound bound;
             if (best_score >= beta)
@@ -727,7 +727,7 @@ namespace Astra
         }
 
         // store in transposition table
-        if (!threads.stop)
+        if (!threads.isStopped())
         {
             // exact bounds can only be stored in pv search
             Bound bound = best_score >= beta ? LOWER_BOUND : UPPER_BOUND;
@@ -739,7 +739,7 @@ namespace Astra
 
     bool Search::isLimitReached(const int depth) const
     {
-        if (threads.stop)
+        if (threads.isStopped())
             return true;
 
         if (limit.infinite)
