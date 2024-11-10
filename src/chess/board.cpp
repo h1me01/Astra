@@ -17,7 +17,7 @@ namespace Chess
     }
 
     // represent castle rights correctly in fen notation
-    bool castleNotationHelper(const std::ostringstream& fen_stream)
+    bool castleNotationHelper(const std::ostringstream &fen_stream)
     {
         const std::string fen = fen_stream.str();
         const std::string rights = fen.substr(fen.find(' ') + 1);
@@ -26,9 +26,9 @@ namespace Chess
 
     // board class
 
-    Board::Board(const std::string& fen) : piece_bb{}, board{}, stm(WHITE), game_ply(0)
+    Board::Board(const std::string &fen) : piece_bb{}, board{}, stm(WHITE), game_ply(0)
     {
-        for (auto& i : board)
+        for (auto &i : board)
             i = NO_PIECE;
         history[0] = StateInfo();
 
@@ -46,15 +46,20 @@ namespace Chess
         {
             switch (c)
             {
-            case 'K': history[game_ply].castle_mask &= ~WHITE_OO_MASK;
+            case 'K':
+                history[game_ply].castle_mask &= ~WHITE_OO_MASK;
                 break;
-            case 'Q': history[game_ply].castle_mask &= ~WHITE_OOO_MASK;
+            case 'Q':
+                history[game_ply].castle_mask &= ~WHITE_OOO_MASK;
                 break;
-            case 'k': history[game_ply].castle_mask &= ~BLACK_OO_MASK;
+            case 'k':
+                history[game_ply].castle_mask &= ~BLACK_OO_MASK;
                 break;
-            case 'q': history[game_ply].castle_mask &= ~BLACK_OOO_MASK;
+            case 'q':
+                history[game_ply].castle_mask &= ~BLACK_OOO_MASK;
                 break;
-            default: break;
+            default:
+                break;
             }
         }
 
@@ -94,7 +99,7 @@ namespace Chess
         refreshAccumulator();
     }
 
-    Board& Board::operator=(const Board& other)
+    Board &Board::operator=(const Board &other)
     {
         if (this != &other)
         {
@@ -111,7 +116,7 @@ namespace Chess
         return *this;
     }
 
-    Board::Board(const Board& other)
+    Board::Board(const Board &other)
     {
         game_ply = other.game_ply;
         stm = other.stm;
@@ -187,7 +192,7 @@ namespace Chess
     void Board::refreshAccumulator()
     {
         accumulators.clear();
-        NNUE::Accumulator& acc = accumulators.back();
+        NNUE::Accumulator &acc = accumulators.back();
 
         for (int j = 0; j < NNUE::HIDDEN_SIZE; j++)
         {
@@ -265,12 +270,12 @@ namespace Chess
         return piece_bb[knight] | piece_bb[bishop] | piece_bb[rook] | piece_bb[queen];
     }
 
-    bool Board::isCapture(const Move& m) const
+    bool Board::isCapture(const Move &m) const
     {
         return board[m.to()] != NO_PIECE;
     }
 
-    void Board::makeMove(const Move& m, bool update_nnue)
+    void Board::makeMove(const Move &m, bool update_nnue)
     {
         const MoveFlags mf = m.flag();
         const Square from = m.from();
@@ -278,6 +283,8 @@ namespace Chess
         const Piece pc_from = board[from];
         const Piece pc_to = board[to];
         const PieceType pt = typeOf(pc_from);
+
+        bool is_capture = pc_to != NO_PIECE;
 
         assert(from >= 0 && from < NUM_SQUARES);
         assert(to >= 0 && to < NUM_SQUARES);
@@ -306,29 +313,7 @@ namespace Chess
         if (update_nnue)
             accumulators.push();
 
-        if (mf == QUIET || mf == EN_PASSANT)
-        {
-            const auto ep_sq = Square(to ^ 8);
-
-            if (pt == PAWN && std::abs(from - to) == 16) // double push
-            {
-                U64 ep_mask = pawnAttacks(stm, ep_sq);
-
-                if (ep_mask & getPieceBB(~stm, PAWN))
-                {
-                    history[game_ply].ep_sq = ep_sq;
-                    hash ^= Zobrist::ep[fileOf(ep_sq)];
-                }
-            }
-            else if (mf == EN_PASSANT)
-            {
-                hash ^= Zobrist::psq[makePiece(~stm, PAWN)][ep_sq];
-                removePiece(ep_sq, update_nnue);
-            }
-
-            movePiece(from, to, update_nnue);
-        }
-        else if (mf == CASTLING)
+        if (mf == CASTLING)
         {
             Square rook_from, rook_to;
 
@@ -353,7 +338,7 @@ namespace Chess
             hash ^= Zobrist::psq[pc_from][from];
             removePiece(from, update_nnue);
 
-            if (pc_to != NO_PIECE)
+            if (is_capture)
             {
                 history[game_ply].captured = pc_to;
                 hash ^= Zobrist::psq[pc_to][to];
@@ -363,11 +348,33 @@ namespace Chess
             hash ^= Zobrist::psq[makePiece(stm, prom_type)][to];
             putPiece(makePiece(stm, prom_type), to, update_nnue);
         }
-        else if (mf == CAPTURE)
+        else if (is_capture)
         {
             history[game_ply].captured = pc_to;
             hash ^= Zobrist::psq[pc_to][to];
             removePiece(to, update_nnue);
+            movePiece(from, to, update_nnue);
+        }
+        else if (!is_capture || mf == EN_PASSANT)
+        {
+            const auto ep_sq = Square(to ^ 8);
+
+            if (pt == PAWN && std::abs(from - to) == 16) // double push
+            {
+                U64 ep_mask = pawnAttacks(stm, ep_sq);
+
+                if (ep_mask & getPieceBB(~stm, PAWN))
+                {
+                    history[game_ply].ep_sq = ep_sq;
+                    hash ^= Zobrist::ep[fileOf(ep_sq)];
+                }
+            }
+            else if (mf == EN_PASSANT)
+            {
+                hash ^= Zobrist::psq[makePiece(~stm, PAWN)][ep_sq];
+                removePiece(ep_sq, update_nnue);
+            }
+
             movePiece(from, to, update_nnue);
         }
 
@@ -380,7 +387,7 @@ namespace Chess
         Astra::tt.prefetch(hash);
     }
 
-    void Board::unmakeMove(const Move& m)
+    void Board::unmakeMove(const Move &m)
     {
         stm = ~stm;
 
@@ -393,14 +400,7 @@ namespace Chess
         if (accumulators.size())
             accumulators.pop();
 
-        if (mf == QUIET || mf == EN_PASSANT)
-        {
-            movePiece(to, from, false);
-
-            if (mf == EN_PASSANT)
-                putPiece(makePiece(~stm, PAWN), Square(to ^ 8), false);
-        }
-        else if (mf == CASTLING)
+        if (mf == CASTLING)
         {
             Square rook_from, rook_to;
 
@@ -423,13 +423,20 @@ namespace Chess
             removePiece(to, false);
             putPiece(makePiece(stm, PAWN), from, false);
 
-            if (captured != NO_PIECE) 
+            if (captured != NO_PIECE)
                 putPiece(captured, to, false);
         }
-        else if (mf == CAPTURE)
+        else if (captured != NO_PIECE)
         {
             movePiece(to, from, false);
             putPiece(captured, to, false);
+        }
+        else if (captured == NO_PIECE || mf == EN_PASSANT)
+        {
+            movePiece(to, from, false);
+
+            if (mf == EN_PASSANT)
+                putPiece(makePiece(~stm, PAWN), Square(to ^ 8), false);
         }
 
         game_ply--;
@@ -459,13 +466,17 @@ namespace Chess
         stm = ~stm;
     }
 
-    bool Board::isRepetition(bool is_pv) const {
+    bool Board::isRepetition(bool is_pv) const
+    {
         int count = 0;
         int limit = game_ply - history[game_ply].half_move_clock - 1;
 
-        for (int i = game_ply - 2; i >= 0 && i >= limit; i -= 2) {
-            if (history[i].hash == hash) {
-                if (++count == 1 + is_pv) {
+        for (int i = game_ply - 2; i >= 0 && i >= limit; i -= 2)
+        {
+            if (history[i].hash == hash)
+            {
+                if (++count == 1 + is_pv)
+                {
                     return true;
                 }
             }
@@ -492,7 +503,7 @@ namespace Chess
     }
 
     // static exchange evaluation from weiss
-    bool Board::see(Move& move, int threshold)
+    bool Board::see(Move &move, int threshold)
     {
         Square from = move.from();
         Square to = move.to();

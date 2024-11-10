@@ -19,11 +19,10 @@ namespace Chess
     constexpr U64 ignoreOOODanger(Color c) { return c == WHITE ? 0x2 : 0x200000000000000; }
 
     // helper to generate quiet/capture moves
-    template <MoveFlags MF>
-    Move* make(Move* moves, Square from, U64 to)
+    inline Move* make(Move* moves, Square from, U64 to)
     {
         while (to)
-            *moves++ = Move(from, popLsb(to), MF);
+            *moves++ = Move(from, popLsb(to));
         return moves;
     }
 
@@ -152,9 +151,9 @@ namespace Chess
                 // only include getAttacks that are aligned with our king
                 attacks = getAttacks(typeOf(board.pieceAt(s)), s, occ) & LINE[our_king_sq][s];
 
-                moves = make<CAPTURE>(moves, s, attacks & board.capture_mask);
+                moves = make(moves, s, attacks & board.capture_mask);
                 if (mt == ALL_MOVES)
-                    moves = make<QUIET>(moves, s, attacks & board.quiet_mask);
+                    moves = make(moves, s, attacks & board.quiet_mask);
             }
         }
 
@@ -165,9 +164,9 @@ namespace Chess
             s = popLsb(our_knights);
             attacks = getAttacks(KNIGHT, s, occ);
 
-            moves = make<CAPTURE>(moves, s, attacks & board.capture_mask);
+            moves = make(moves, s, attacks & board.capture_mask);
             if (mt == ALL_MOVES)
-                moves = make<QUIET>(moves, s, attacks & board.quiet_mask);
+                moves = make(moves, s, attacks & board.quiet_mask);
         }
 
         // bishops and queens
@@ -177,9 +176,9 @@ namespace Chess
             s = popLsb(our_diag_sliders);
             attacks = getAttacks(BISHOP, s, occ);
 
-            moves = make<CAPTURE>(moves, s, attacks & board.capture_mask);
+            moves = make(moves, s, attacks & board.capture_mask);
             if (mt == ALL_MOVES)
-                moves = make<QUIET>(moves, s, attacks & board.quiet_mask);
+                moves = make(moves, s, attacks & board.quiet_mask);
         }
 
         // rooks and queens
@@ -189,9 +188,9 @@ namespace Chess
             s = popLsb(our_orth_sliders);
             attacks = getAttacks(ROOK, s, occ);
 
-            moves = make<CAPTURE>(moves, s, attacks & board.capture_mask);
+            moves = make(moves, s, attacks & board.capture_mask);
             if (mt == ALL_MOVES)
-                moves = make<QUIET>(moves, s, attacks & board.quiet_mask);
+                moves = make(moves, s, attacks & board.quiet_mask);
         }
 
         return moves;
@@ -232,15 +231,15 @@ namespace Chess
                 else
                 {
                     const U64 attacks = pawnAttacks(Us, s) & board.capture_mask & LINE[s][our_king_sq];
-                    moves = make<CAPTURE>(moves, s, attacks);
+                    moves = make(moves, s, attacks);
 
                     if (mt == ALL_MOVES)
                     {
                         const U64 single_push = shift(relativeDir(Us, NORTH), SQUARE_BB[s]) & ~occ & LINE[our_king_sq][s];
-                        moves = make<QUIET>(moves, s, single_push);
+                        moves = make(moves, s, single_push);
 
                         const U64 double_push = shift(relativeDir(Us, NORTH), single_push & MASK_RANK[relativeRank(Us, RANK_3)]);
-                        moves = make<QUIET>(moves, s, double_push & ~occ & LINE[our_king_sq][s]);
+                        moves = make(moves, s, double_push & ~occ & LINE[our_king_sq][s]);
                     }
                 }
             }
@@ -282,13 +281,13 @@ namespace Chess
         while (single_push && mt == ALL_MOVES)
         {
             s = popLsb(single_push);
-            *moves++ = Move(s - relativeDir(Us, NORTH), s, QUIET);
+            *moves++ = Move(s - relativeDir(Us, NORTH), s);
         }
 
         while (double_push && mt == ALL_MOVES)
         {
             s = popLsb(double_push);
-            *moves++ = Move(s - relativeDir(Us, NORTH_NORTH), s, QUIET);
+            *moves++ = Move(s - relativeDir(Us, NORTH_NORTH), s);
         }
 
         // captures
@@ -296,14 +295,14 @@ namespace Chess
         while (left_captures)
         {
             s = popLsb(left_captures);
-            *moves++ = Move(s - relativeDir(Us, NORTH_WEST), s, CAPTURE);
+            *moves++ = Move(s - relativeDir(Us, NORTH_WEST), s);
         }
 
         U64 right_captures = shift(relativeDir(Us, NORTH_EAST), our_pawns) & board.capture_mask;
         while (right_captures)
         {
             s = popLsb(right_captures);
-            *moves++ = Move(s - relativeDir(Us, NORTH_EAST), s, CAPTURE);
+            *moves++ = Move(s - relativeDir(Us, NORTH_EAST), s);
         }
 
         // promotions
@@ -347,9 +346,9 @@ namespace Chess
         // generate king moves
         const U64 attacks = getAttacks(KING, our_king_sq, occ) & ~(our_occ | board.danger);
 
-        moves = make<CAPTURE>(moves, our_king_sq, attacks & their_occ);
+        moves = make(moves, our_king_sq, attacks & their_occ);
         if (mt == ALL_MOVES)
-            moves = make<QUIET>(moves, our_king_sq, attacks & ~their_occ);
+            moves = make(moves, our_king_sq, attacks & ~their_occ);
 
         // if double check, then only king moves are legal
         const int num_checkers = sparsePopCount(board.checkers);
@@ -382,7 +381,7 @@ namespace Chess
             {
                 can_capture = board.attackers(Us, checker_sq, occ) & ~board.pinned;
                 while (can_capture)
-                    *moves++ = Move(popLsb(can_capture), checker_sq, CAPTURE);
+                    *moves++ = Move(popLsb(can_capture), checker_sq);
                 return moves;
             }
 

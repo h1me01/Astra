@@ -275,9 +275,7 @@ namespace UCI
         Square from = squareFromString(str_move.substr(0, 2));
         Square to = squareFromString(str_move.substr(2, 2));
         Piece p_from = board.pieceAt(from);
-        MoveFlags mf = QUIET;
-
-        bool is_capture = board.pieceAt(to) != NO_PIECE;
+        MoveFlags mf = NORMAL;
 
         if (typeOf(p_from) == PAWN)
         {
@@ -295,8 +293,6 @@ namespace UCI
                 else if (promotion == 'n')
                     mf = PR_KNIGHT;
             }
-            else if (is_capture)
-                mf = CAPTURE;
         }
         else if (typeOf(p_from) == KING)
         {
@@ -304,11 +300,7 @@ namespace UCI
                 mf = CASTLING;
             else if ((from == e1 && to == c1) || (from == e8 && to == c8))
                 mf = CASTLING;
-            else if (is_capture)
-                mf = CAPTURE;
         }
-        else if (is_capture)
-            mf = CAPTURE;
 
         return Move(from, to, mf);
     }

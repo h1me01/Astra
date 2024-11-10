@@ -106,14 +106,13 @@ namespace Chess
 
     enum MoveFlags
     {
-        QUIET = 0,
-        CAPTURE = 1,
-        CASTLING = 2,
-        EN_PASSANT = 3,
-        PR_KNIGHT = 4, 
-        PR_BISHOP = 5, 
-        PR_ROOK = 6, 
-        PR_QUEEN = 7,
+        NORMAL = 0,
+        CASTLING = 1,
+        EN_PASSANT = 2,
+        PR_KNIGHT = 3, 
+        PR_BISHOP = 4, 
+        PR_ROOK = 5, 
+        PR_QUEEN = 6,
     };
 
     // max number of possible legal moves in chess are 218
@@ -123,14 +122,13 @@ namespace Chess
     class Move
     {
     public:
-        // default null move (a1a1)
+        // default move (a1a1)
         Move() : move(0) { }
 
         constexpr explicit Move(uint16_t m) : move(m) { }
 
         constexpr Move(const Move& other) : move(other.move) {}
-        constexpr Move(Square from, Square to) : move(from << 6 | to) {}
-        constexpr Move(Square from, Square to, MoveFlags mf) : move(mf << 12 | from << 6 | to) {}
+        constexpr Move(Square from, Square to, MoveFlags mf = NORMAL) : move(mf << 12 | from << 6 | to) {}
 
         Square to() const { return Square(move & 0x3f); }
         Square from() const { return Square(move >> 6 & 0x3f); }
