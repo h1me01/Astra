@@ -217,8 +217,6 @@ namespace UCI
 
     void Uci::go(std::istringstream &is)
     {
-        Astra::threads.stopAll(); // stop all threads
-
         Astra::Limits limit;
 
         int64_t w_time = 0, b_time = 0, move_time = 0;
