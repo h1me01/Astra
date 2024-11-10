@@ -8,8 +8,6 @@ namespace Astra
     class ThreadPool
     {
     public:
-        ~ThreadPool();
-
         void launchWorkers(const Board &board, const Limits &limit, int worker_count, bool use_tb);
         void stopAll();
 

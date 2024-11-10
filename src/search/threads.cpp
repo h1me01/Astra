@@ -2,12 +2,6 @@
 
 namespace Astra
 {
-
-    ThreadPool::~ThreadPool()
-    {
-        stopAll();
-    }   
-
     bool ThreadPool::isStopped() const
     {
         return stop.load(std::memory_order_relaxed);
@@ -15,8 +9,6 @@ namespace Astra
 
     void ThreadPool::launchWorkers(const Board &board, const Limits &limit, int worker_count, bool use_tb)
     {
-        stopAll(); // stop all threads
-
         stop = false;
 
         threads.clear();
