@@ -1,5 +1,6 @@
 #include "uci.h"
 #include "bench.h"
+#include "search/threads.h"
 #include "chess/perft.h"
 #include "search/tune.h"
 #include "fathom/tbprobe.h"
@@ -66,19 +67,23 @@ namespace UCI
 #ifdef TUNE
         Astra::setParam(name, std::stoi(value));
         Astra::initReductions();
-        return;
 #endif
 
         int n_value = std::stoi(value);
 
-        if (options.count(name)) {
-            if (n_value >= options[name].min && n_value <= options[name].max) 
+        if (options.count(name))
+        {
+            if (n_value >= options[name].min && n_value <= options[name].max)
                 options[name] = value;
-            else 
+            else
                 std::cout << "Invalid value for option: " << name << std::endl;
         }
         else
+        {
+#ifndef TUNE
             std::cout << "Unknown option: " << name << std::endl;
+#endif
+        }
     }
 
     std::string Options::get(std::string str) const
@@ -156,7 +161,7 @@ namespace UCI
                 Astra::threads.stop = false;
                 Bench::bench(13);
             }
-            else if (token == "tune") 
+            else if (token == "tune")
             {
                 Astra::paramsToSpsa();
                 std::cout << std::endl;
@@ -200,7 +205,7 @@ namespace UCI
 
         board = Board(fen);
         while (is >> token)
-            if (token != "moves") 
+            if (token != "moves")
                 board.makeMove(getMove(token));
 
         board.refreshAccumulator();

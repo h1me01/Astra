@@ -1,7 +1,6 @@
 #ifndef SEARCH_H
 #define SEARCH_H
 
-#include <thread>
 #include "tt.h"
 #include "pvtable.h"
 #include "history.h"
@@ -64,28 +63,7 @@ namespace Astra
         void printUciInfo(Score result, int depth, PVLine &pv_line) const;
     };
 
-    class ThreadPool
-    {
-    public:
-        ThreadPool() : stop(false) {}
-
-        void launchWorkers(const Board &board, const Limits &limit, int worker_count, bool use_tb);
-        void stopAll();
-
-        U64 getTotalNodes() const;
-        U64 getTotalTbHits() const;
-        uint8_t getSelDepth() const;
-
-        // stop running all threads
-        bool stop;
-
-    private:
-        std::vector<Search> threads;
-        std::vector<std::thread> running_threads;
-    };
-
-    // global variables
-    extern ThreadPool threads;
+    // global variable
     extern TTable tt;
 
 } // namespace Astra

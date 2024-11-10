@@ -35,7 +35,8 @@ SEARCH_SRC := search/search.cpp \
               search/movepicker.cpp \
               search/tt.cpp \
               search/tune.cpp \
-              search/history.cpp
+              search/history.cpp \
+              search/threads.cpp
 
 SYZYGY_SRC := fathom/tbprobe.cpp
 
