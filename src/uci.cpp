@@ -69,14 +69,18 @@ namespace UCI
         Astra::initReductions();
 #endif
 
-        int n_value = std::stoi(value);
-
         if (options.count(name))
         {
-            if (n_value >= options[name].min && n_value <= options[name].max)
+            if (options[name].type == "spin") {
+                int n_value = std::stoi(value);
+
+                if (n_value >= options[name].min && n_value <= options[name].max)
+                    options[name] = value;
+                else
+                    std::cout << "Invalid value for option: " << name << std::endl;
+            } else {
                 options[name] = value;
-            else
-                std::cout << "Invalid value for option: " << name << std::endl;
+            }
         }
         else
         {
