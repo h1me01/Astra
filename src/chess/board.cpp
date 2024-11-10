@@ -233,13 +233,13 @@ namespace Chess
 
     U64 Board::attackers(Color c, Square s, const U64 occ) const
     {
-        const int pawn = c == WHITE ? WHITE_PAWN : BLACK_PAWN;
-        const int knight = c == WHITE ? WHITE_KNIGHT : BLACK_KNIGHT;
-        const int bishop = c == WHITE ? WHITE_BISHOP : BLACK_BISHOP;
-        const int rook = c == WHITE ? WHITE_ROOK : BLACK_ROOK;
-        const int queen = c == WHITE ? WHITE_QUEEN : BLACK_QUEEN;
-        const int king = c == WHITE ? WHITE_KING : BLACK_KING;
-        const Color opp_color = c == WHITE ? BLACK : WHITE;
+        Piece pawn = c == WHITE ? WHITE_PAWN : BLACK_PAWN;
+        Piece knight = c == WHITE ? WHITE_KNIGHT : BLACK_KNIGHT;
+        Piece bishop = c == WHITE ? WHITE_BISHOP : BLACK_BISHOP;
+        Piece rook = c == WHITE ? WHITE_ROOK : BLACK_ROOK;
+        Piece queen = c == WHITE ? WHITE_QUEEN : BLACK_QUEEN;
+        Piece king = c == WHITE ? WHITE_KING : BLACK_KING;
+        Color opp_color = c == WHITE ? BLACK : WHITE;
 
         U64 attacks = pawnAttacks(opp_color, s) & piece_bb[pawn];
         attacks |= getAttacks(KNIGHT, s, occ) & piece_bb[knight];
@@ -324,7 +324,7 @@ namespace Chess
             else if (mf == EN_PASSANT)
             {
                 hash ^= Zobrist::psq[makePiece(~stm, PAWN)][ep_sq];
-                removePiece(Square(to ^ 8), update_nnue);
+                removePiece(ep_sq, update_nnue);
             }
 
             movePiece(from, to, update_nnue);
@@ -477,11 +477,11 @@ namespace Chess
 
     bool Board::isInsufficientMaterial() const
     {
-        const U64 pawns = piece_bb[WHITE_PAWN] | piece_bb[BLACK_PAWN];
-        const U64 queens = piece_bb[WHITE_QUEEN] | piece_bb[BLACK_QUEEN];
-        const U64 rooks = piece_bb[WHITE_ROOK] | piece_bb[BLACK_ROOK];
-        const int num_w_minor_pieces = popCount(piece_bb[WHITE_KNIGHT] | piece_bb[WHITE_BISHOP]);
-        const int num_b_minor_pieces = popCount(piece_bb[BLACK_KNIGHT] | piece_bb[BLACK_BISHOP]);
+        U64 pawns = piece_bb[WHITE_PAWN] | piece_bb[BLACK_PAWN];
+        U64 queens = piece_bb[WHITE_QUEEN] | piece_bb[BLACK_QUEEN];
+        U64 rooks = piece_bb[WHITE_ROOK] | piece_bb[BLACK_ROOK];
+        int num_w_minor_pieces = popCount(piece_bb[WHITE_KNIGHT] | piece_bb[WHITE_BISHOP]);
+        int num_b_minor_pieces = popCount(piece_bb[BLACK_KNIGHT] | piece_bb[BLACK_BISHOP]);
         // draw when KvK, KvK+B, KvK+N, K+NvK+N, K+BvK+B
         return !pawns && !queens && !rooks && num_w_minor_pieces <= 1 && num_b_minor_pieces <= 1;
     }
