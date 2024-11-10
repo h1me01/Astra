@@ -227,6 +227,10 @@ namespace Astra
                 return in_check ? -VALUE_MATE + ss->ply : VALUE_DRAW;
         }
 
+        // check extension
+        if (in_check)
+            depth++;
+
         // quiescence search
         if (depth <= 0)
             return qSearch(alpha, beta, node, ss);
