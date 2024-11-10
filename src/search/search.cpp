@@ -346,7 +346,7 @@ namespace Astra
         if (!in_check)
         {
             // internal iterative reduction
-            if (depth >= 2 && !tt_hit && pv_node)
+            if (depth >= 3 && !tt_hit && pv_node)
                 depth--;
 
             // razoring
