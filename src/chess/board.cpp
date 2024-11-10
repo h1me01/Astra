@@ -272,7 +272,7 @@ namespace Chess
 
     bool Board::isCapture(const Move &m) const
     {
-        return board[m.to()] != NO_PIECE;
+        return board[m.to()] != NO_PIECE || m.flag() == EN_PASSANT;
     }
 
     void Board::makeMove(const Move &m, bool update_nnue)
