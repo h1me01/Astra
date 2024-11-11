@@ -157,7 +157,7 @@ namespace Astra
         {
             result = negamax(depth, alpha, beta, ROOT, ss);
 
-            if (id == 0 && isLimitReached(depth))
+            if (isLimitReached(depth))
                 return result;
 
             if (result <= alpha)
@@ -739,11 +739,11 @@ namespace Astra
 
     bool Search::isLimitReached(const int depth) const
     {
-        if (threads.isStopped())
-            return true;
-
         if (limit.infinite)
             return false;
+
+        if (threads.isStopped())
+            return true;
 
         if (limit.time != 0 && time_manager.elapsedTime() > limit.time)
             return true;
@@ -764,15 +764,6 @@ namespace Astra
         tt.clear();
         pv_table.reset();
         history.clear();
-    }
-
-    void Search::stop()
-    {
-        limit.depth = 0;
-        limit.nodes = 0;
-        limit.time = 0;
-        limit.infinite = false;
-        threads.stop = true;
     }
 
     void Search::printUciInfo(Score result, int depth, PVLine &pv_line) const
