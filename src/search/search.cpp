@@ -10,28 +10,23 @@
 namespace Astra
 {
     // search parameters
-    PARAM(lmr_base, 116, 80, 130, 8);
-    PARAM(lmr_div, 168, 150, 200, 10);
+    PARAM(lmr_base, 95, 80, 130, 8);
+    PARAM(lmr_div, 168, 150, 200, 8);
 
-    PARAM(rzr_depth, 4, 3, 5, 1);
     PARAM(rzr_depth_mult, 186, 150, 250, 15);
-
     PARAM(rfp_depth_mult, 81, 50, 100, 5);
-    PARAM(rfp_depth, 7, 6, 9, 1);
 
-    PARAM(nmp_base, 5, 3, 5, 1);
-    PARAM(nmp_depth_div, 4, 3, 6, 1);
+    PARAM(nmp_depth_div, 5, 3, 6, 1);
     PARAM(nmp_min, 4, 3, 6, 1);
-    PARAM(nmp_div, 208, 200, 220, 2);
+    PARAM(nmp_div, 214, 200, 220, 2);
 
-    PARAM(fp_depth, 9, 7, 11, 1);
     PARAM(fp_base, 147, 120, 180, 10);
     PARAM(fp_mult, 101, 85, 110, 5);
 
-    PARAM(asp_depth, 9, 6, 12, 1);
-    PARAM(asp_window, 18, 15, 45, 5);
+    PARAM(asp_depth, 9, 6, 9, 1);
+    PARAM(asp_window, 18, 10, 50, 5);
 
-    PARAM(ch_mult, 14, 8, 16, 1);
+    PARAM(ch_mult, 12, 8, 16, 1);
     PARAM(hh_mult, 149, 140, 170, 5);
 
     // search helper
@@ -133,7 +128,7 @@ namespace Astra
         Score alpha = -VALUE_INFINITE;
         Score beta = VALUE_INFINITE;
 
-        // only use aspiration window when depth is higher or equal to asp_depth
+        // only use aspiration window when depth is higher or equal to 6
         int window = asp_window;
         if (depth >= asp_depth)
         {
@@ -144,6 +139,12 @@ namespace Astra
         Score result = VALUE_NONE;
         while (true)
         {
+            if (alpha < -500)
+                alpha = -VALUE_INFINITE;
+            
+            if (beta > 500) 
+                beta = VALUE_INFINITE;
+            
             result = negamax(depth, alpha, beta, ROOT, ss);
 
             if (isLimitReached(depth))
@@ -344,7 +345,7 @@ namespace Astra
 
             // razoring
             if (!pv_node 
-                && depth <= rzr_depth 
+                && depth <= 3 
                 && ss->eval + rzr_depth_mult * depth < alpha)
             {
                 Score score = qSearch(alpha, beta, NON_PV, ss);
@@ -354,7 +355,7 @@ namespace Astra
 
             // reverse futility pruning
             if (!pv_node 
-                && depth <= rfp_depth 
+                && depth <= 7 
                 && ss->eval < VALUE_TB_WIN_IN_MAX_PLY
                 && ss->eval - rfp_depth_mult * (depth - improving) >= beta)
             {
@@ -363,7 +364,7 @@ namespace Astra
 
             // null move pruning
             if (!pv_node 
-                && depth >= 3  
+                && depth >= 4  
                 && board.nonPawnMat(stm) 
                 && !excluded_move 
                 && ss->eval >= beta
@@ -371,7 +372,7 @@ namespace Astra
             {
                 assert(ss->eval - beta >= 0);
 
-                int R = nmp_base + depth / nmp_depth_div + std::min(int(nmp_min), (ss->eval - beta) / nmp_div);
+                int R = 5 + depth / nmp_depth_div + std::min(int(nmp_min), (ss->eval - beta) / nmp_div);
 
                 ss->current_move = NULL_MOVE;
 
@@ -458,7 +459,7 @@ namespace Astra
                 }
 
                 // see pruning
-                if (depth < (is_cap ? 6 : 7) && !board.see(move, -(is_cap ? 94 : 85) * depth))
+                if (depth < (is_cap ? 6 : 7) && !board.see(move, -(is_cap ? 94 : 92) * depth))
                     continue;
             
                 // futility pruning
@@ -466,7 +467,7 @@ namespace Astra
                     && !in_check 
                     && !is_cap 
                     && !is_prom 
-                    && depth <= fp_depth 
+                    && depth <= 9 
                     && ss->eval + fp_base + depth * fp_mult <= alpha)
                 {
                     continue;
@@ -677,7 +678,7 @@ namespace Astra
                 PieceType captured = typeOf(board.pieceAt(move.to()));
                 if (!isPromotion(move) 
                     && board.nonPawnMat(stm) 
-                    && stand_pat + 450 + PIECE_VALUES[captured] < alpha)
+                    && stand_pat + 400 + PIECE_VALUES[captured] < alpha)
                 {
                     continue;
                 }
