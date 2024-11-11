@@ -567,7 +567,7 @@ namespace Astra
                     alpha = score;
                     best_move = move;
 
-                    // don't forget to update pv table
+                    // update pv table
                     pv_table.updatePV(ss->ply, best_move);
                 }
 
@@ -772,7 +772,7 @@ namespace Astra
         limit.nodes = 0;
         limit.time = 0;
         limit.infinite = false;
-        threads.stop = false;
+        threads.stop = true;
     }
 
     void Search::printUciInfo(Score result, int depth, PVLine &pv_line) const
