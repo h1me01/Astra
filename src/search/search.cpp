@@ -11,39 +11,39 @@ namespace Astra
 {
     // search parameters
     PARAM(lmr_base, 116, 80, 130, 8);
-    PARAM(lmr_div, 166, 150, 200, 10);
+    PARAM(lmr_div, 168, 150, 200, 10);
 
-    PARAM(delta_margin, 521, 450, 650, 25);
+    PARAM(delta_margin, 515, 450, 650, 25);
 
-    PARAM(rzr_depth, 5, 2, 5, 1);
-    PARAM(rzr_depth_mult, 181, 150, 250, 15);
+    PARAM(rzr_depth, 4, 2, 5, 1);
+    PARAM(rzr_depth_mult, 186, 150, 250, 15);
 
-    PARAM(rfp_depth_mult, 79, 50, 100, 5);
-    PARAM(rfp_depth, 8, 6, 9, 1);
+    PARAM(rfp_depth_mult, 81, 50, 100, 5);
+    PARAM(rfp_depth, 7, 6, 9, 1);
 
-    PARAM(nmp_depth, 3, 3, 5, 1);
+    PARAM(nmp_depth, 4, 3, 5, 1);
     PARAM(nmp_base, 5, 3, 5, 1);
-    PARAM(nmp_depth_div, 3, 3, 7, 1);
+    PARAM(nmp_depth_div, 4, 3, 7, 1);
     PARAM(nmp_min, 4, 3, 6, 1);
-    PARAM(nmp_div, 209, 200, 220, 2);
+    PARAM(nmp_div, 208, 200, 220, 2);
 
-    PARAM(pv_see_cap_margin, 98, 80, 110, 5);
-    PARAM(pv_see_cap_depth, 7, 5, 8, 1);
+    PARAM(pv_see_cap_margin, 94, 80, 110, 5);
+    PARAM(pv_see_cap_depth, 6, 5, 8, 1);
 
-    PARAM(pv_see_quiet_margin, 81, 60, 95, 5);
-    PARAM(pv_see_quiet_depth, 7, 6, 9, 1);
+    PARAM(pv_see_quiet_margin, 85, 60, 95, 5);
+    PARAM(pv_see_quiet_depth, 6, 6, 9, 1);
 
     PARAM(lmp_depth, 5, 4, 7, 1);
 
-    PARAM(fp_depth, 8, 7, 11, 1);
-    PARAM(fp_base, 150, 120, 180, 10);
-    PARAM(fp_mult, 96, 85, 110, 5);
+    PARAM(fp_depth, 9, 7, 11, 1);
+    PARAM(fp_base, 147, 120, 180, 10);
+    PARAM(fp_mult, 101, 85, 110, 5);
 
-    PARAM(asp_depth, 8, 6, 12, 1);
-    PARAM(asp_window, 25, 15, 45, 5);
+    PARAM(asp_depth, 9, 6, 12, 1);
+    PARAM(asp_window, 18, 15, 45, 5);
 
-    PARAM(ch_mult, 13, 8, 16, 1);
-    PARAM(hh_mult, 157, 140, 170, 7);
+    PARAM(ch_mult, 14, 8, 16, 1);
+    PARAM(hh_mult, 149, 140, 170, 7);
 
     // search helper
 

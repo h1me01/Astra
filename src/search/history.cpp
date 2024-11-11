@@ -40,7 +40,7 @@ namespace Astra
 
     void History::update(Board &board, Move &move, Move *quiet_moves, Stack *ss, int quiet_count, int depth)
     {
-        int hh_bonus = std::min(1975, depth * hh_mult);
+        int hh_bonus = std::min(2047, depth * hh_mult);
         int ch_bonus = std::min(1669, depth * depth * ch_mult);
 
         Move prev_move = (ss - 1)->current_move;
