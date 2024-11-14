@@ -13,15 +13,19 @@ namespace Astra
     PARAM(lmr_base, 95, 80, 130, 8);
     PARAM(lmr_div, 168, 150, 200, 8);
 
+    PARAM(rzr_depth, 4, 3, 5, 1);
     PARAM(rzr_depth_mult, 186, 150, 250, 15);
+    
+    PARAM(rfp_depth, 9, 7, 11, 1);
     PARAM(rfp_depth_mult, 81, 50, 100, 5);
 
+    PARAM(nmp_base, 4, 3, 5, 1);
     PARAM(nmp_depth_div, 5, 3, 6, 1);
     PARAM(nmp_min, 4, 3, 6, 1);
     PARAM(nmp_div, 214, 200, 220, 2);
 
-    PARAM(see_cap_margin, 94, 85, 110)
-    PARAM(see_quiet_margin, 92, 75, 100)
+    PARAM(see_cap_margin, 94, 85, 110, 3);
+    PARAM(see_quiet_margin, 92, 75, 100, 3);
 
     PARAM(fp_base, 147, 120, 180, 10);
     PARAM(fp_mult, 101, 85, 110, 5);
