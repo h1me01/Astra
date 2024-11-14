@@ -105,14 +105,14 @@ namespace Astra
         history.clear();
         history.init(hh_mult, ch_mult);
 
+        pv_table.reset();
+
         Score previous_result = VALUE_NONE;
 
         Move best_move = NO_MOVE;
         for (int depth = 1; depth <= MAX_PLY; depth++)
         {
-            pv_table.reset();
-
-            const Score result = aspSearch(depth, previous_result, ss);
+            Score result = aspSearch(depth, previous_result, ss);
             previous_result = result;
 
             if (isLimitReached(depth))
@@ -202,7 +202,7 @@ namespace Astra
                 if (alpha >= mating_value)
                     return mating_value; // beta cut-off
             }
-            // check for alpha cut-off from a theoretical mate position
+
             mating_value = -VALUE_MATE + ss->ply;
             if (mating_value > alpha)
             {
@@ -256,22 +256,11 @@ namespace Astra
         {
             ss->eval = tt_score;
 
-            switch (ent.bound)
-            {
-            case EXACT_BOUND:
+            if (ent.bound == EXACT_BOUND)
                 return tt_score;
-            case LOWER_BOUND:
-                alpha = std::max(alpha, tt_score);
-                break;
-            case UPPER_BOUND:
-                beta = std::min(beta, tt_score);
-                break;
-            default:
-                break;
-            }
-
-            // check for a cut-off
-            if (alpha >= beta)
+            else if (ent.bound == LOWER_BOUND && tt_score >= beta)
+                return tt_score;
+            else if (ent.bound == UPPER_BOUND && tt_score <= alpha)
                 return tt_score;
         }
         else
@@ -352,7 +341,7 @@ namespace Astra
 
             // razoring
             if (!pv_node 
-                && depth <= 3 
+                && depth <= rzr_depth 
                 && ss->eval + rzr_depth_mult * depth < alpha)
             {
                 Score score = qSearch(alpha, beta, NON_PV, ss);
@@ -362,7 +351,7 @@ namespace Astra
 
             // reverse futility pruning
             if (!pv_node 
-                && depth <= 7 
+                && depth <= rfp_depth 
                 && ss->eval < VALUE_TB_WIN_IN_MAX_PLY
                 && ss->eval - rfp_depth_mult * (depth - improving) >= beta)
             {
@@ -379,7 +368,7 @@ namespace Astra
             {
                 assert(ss->eval - beta >= 0);
 
-                int R = 5 + depth / nmp_depth_div + std::min(int(nmp_min), (ss->eval - beta) / nmp_div);
+                int R = nmp_base + depth / nmp_depth_div + std::min(int(nmp_min), (ss->eval - beta) / nmp_div);
 
                 ss->current_move = NULL_MOVE;
 
@@ -465,8 +454,10 @@ namespace Astra
                     continue;
                 }
 
+                int see_margin = is_cap ? see_cap_margin : see_quiet_margin;
+
                 // see pruning
-                if (depth < (is_cap ? 6 : 7) && !board.see(move, -(is_cap ? 94 : 92) * depth))
+                if (depth < (is_cap ? 6 : 7) && !board.see(move, -see_margin * depth))
                     continue;
             
                 // futility pruning
@@ -561,7 +552,7 @@ namespace Astra
                     alpha = score;
                     best_move = move;
 
-                    // update pv table
+                    // update pv
                     pv_table.updatePV(ss->ply, best_move);
                 }
 
