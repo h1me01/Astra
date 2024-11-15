@@ -246,13 +246,6 @@ namespace Astra
         const bool tt_hit = tt.lookup(ent, hash);
         const Score tt_score = tt_hit ? scoreFromTT(ent.score, ss->ply) : Score(VALUE_NONE);
 
-        // set eval to tt score if available
-        if (tt_hit) 
-        {
-            assert(tt_score != VALUE_NONE);
-            ss->eval = tt_score;
-        }
-
         if (!root_node 
             && !pv_node 
             && tt_hit 
@@ -260,6 +253,9 @@ namespace Astra
             && !excluded_move 
             && (ss - 1)->current_move != NULL_MOVE)
         {
+            assert(tt_score != VALUE_NONE);
+            ss->eval = tt_score;
+
             if (ent.bound == EXACT_BOUND)
                 return tt_score;
             else if (ent.bound == LOWER_BOUND && tt_score >= beta)
@@ -333,20 +329,18 @@ namespace Astra
 
         // check for improvement
         bool improving = false;
-        if (!in_check && (ss - 2)->eval != VALUE_NONE)
+        if (!in_check)
             improving = ss->eval > (ss - 2)->eval;
 
-        // only use pruning/reduction when not in check
-        if (!in_check)
-        {
-            // internal iterative reduction
-            if (depth >= 3 && !tt_hit && pv_node)
-                depth--;
+        // internal iterative reduction
+        if (!in_check && depth >= 3 && !tt_hit && pv_node)
+            depth--;
 
+        // only use pruning when not in check and pv node
+        if (!in_check && !pv_node)
+        {
             // razoring
-            if (!pv_node 
-                && depth <= rzr_depth 
-                && ss->eval + rzr_depth_mult * depth < alpha)
+            if (depth <= rzr_depth && ss->eval + rzr_depth_mult * depth < alpha)
             {
                 Score score = qSearch(alpha, beta, NON_PV, ss);
                 if (score < alpha)
@@ -354,8 +348,7 @@ namespace Astra
             }
 
             // reverse futility pruning
-            if (!pv_node 
-                && depth <= rfp_depth 
+            if (depth <= rfp_depth 
                 && ss->eval < VALUE_TB_WIN_IN_MAX_PLY
                 && ss->eval - rfp_depth_mult * (depth - improving) >= beta)
             {
@@ -363,8 +356,7 @@ namespace Astra
             }
 
             // null move pruning
-            if (!pv_node 
-                && depth >= 4  
+            if (depth >= 4  
                 && board.nonPawnMat(stm) 
                 && !excluded_move 
                 && ss->eval >= beta
@@ -392,8 +384,7 @@ namespace Astra
 
             // probcut
             int beta_cut = beta + 136;
-            if (!pv_node 
-                && depth > 3 
+            if (depth > 3 
                 && std::abs(beta) < VALUE_TB_WIN_IN_MAX_PLY 
                 && !(ent.depth >= depth - 3 && tt_score != VALUE_NONE && tt_score < beta_cut))
             {
