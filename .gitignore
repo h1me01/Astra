@@ -6,4 +6,4 @@ src/astra.exe
 
 CMakeLists.txt
 
-Weights/
+weights/

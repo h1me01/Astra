@@ -64,11 +64,10 @@ namespace Chess
         initBishopAttacks();
 
         // init pseudo legal getAttacks
-        memcpy(PSEUDO_LEGAL_ATTACKS[KNIGHT], KNIGHT_ATTACKS, sizeof(KNIGHT_ATTACKS));
-        memcpy(PSEUDO_LEGAL_ATTACKS[KING], KING_ATTACKS, sizeof(KING_ATTACKS));
-
         for (Square s = a1; s <= h8; ++s)
         {
+            PSEUDO_LEGAL_ATTACKS[KNIGHT][s] = KNIGHT_ATTACKS[s];
+            PSEUDO_LEGAL_ATTACKS[KING][s] = KING_ATTACKS[s];
             PSEUDO_LEGAL_ATTACKS[ROOK][s] = getRookAttacks(s, 0);
             PSEUDO_LEGAL_ATTACKS[BISHOP][s] = getBishopAttacks(s, 0);
             PSEUDO_LEGAL_ATTACKS[QUEEN][s] = PSEUDO_LEGAL_ATTACKS[ROOK][s] | PSEUDO_LEGAL_ATTACKS[BISHOP][s];
