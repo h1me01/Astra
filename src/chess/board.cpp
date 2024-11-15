@@ -196,8 +196,8 @@ namespace Chess
 
         for (int j = 0; j < NNUE::HIDDEN_SIZE; j++)
         {
-            acc[WHITE][j] = NNUE::nnue.fc1_biases[j];
-            acc[BLACK][j] = NNUE::nnue.fc1_biases[j];
+            acc.data[WHITE][j] = NNUE::nnue.fc1_biases[j];
+            acc.data[BLACK][j] = NNUE::nnue.fc1_biases[j];
         }
 
         for (int i = WHITE_PAWN; i <= BLACK_KING; i++)

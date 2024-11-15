@@ -731,6 +731,7 @@ namespace Astra
     {
         nodes = 0;
         tb_hits = 0;
+        sel_depth = 0;
         tt.clear();
         pv_table.reset();
         history.clear();

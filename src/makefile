@@ -1,5 +1,6 @@
 ROOT := $(realpath $(dir $(abspath $(lastword $(MAKEFILE_LIST)))))
 EvalFile = $(ROOT)/nn-768-2x1024-1.nnue
+AVX2 := -mavx2 
 
 # Compiler and flags
 CXX := g++
@@ -13,7 +14,6 @@ CXXFLAGS := -s \
             -funroll-loops \
             -pthread \
             -fno-exceptions \
-            -march=native \
             -flto \
             -DNNUE_PATH=\"$(EvalFile)\" # nnue path
 
@@ -47,7 +47,8 @@ MAIN_SRC := main.cpp \
 SRC := $(CHESS_SRC) $(EVAL_SRC) $(SEARCH_SRC) $(SYZYGY_SRC) $(MAIN_SRC)
 
 # Default target executable
-TARGET = astra
+TARGET_NATIVE = astra_x86-64
+TARGET_AVX2 = astra_avx2_x86-64
 
 # Detect Operating System
 ifeq ($(OS), Windows_NT)
@@ -58,10 +59,6 @@ else
     LDFLAGS := -lpthread -lstdc++
 endif
 
-# Allow overriding exe name (used by openbench)
-EXE ?= $(TARGET)
-EXE := $(EXE)$(SUFFIX)
-
 # Detect Platform-specific Cleanup Command
 ifeq ($(OS), Windows_NT)
     RM = del /Q
@@ -69,21 +66,38 @@ else
     RM = rm -f
 endif
 
-# Default rule to build executable
-all: $(EXE)
+TARGET_NATIVE_SUFFIX := $(TARGET_NATIVE)$(SUFFIX)
+TARGET_AVX2_SUFFIX := $(TARGET_AVX2)$(SUFFIX)
 
-$(EXE): $(SRC)
-	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
+CXX_FLAGS_NATIVE := $(CXXFLAGS) -march=native
+CXX_FLAGS_AVX2 := $(CXXFLAGS) $(AVX2) -DAVX2
+
+# Default rule to build executable
+all: $(TARGET_NATIVE) $(TARGET_AVX2)
+
+$(TARGET_NATIVE):
+$(TARGET_NATIVE): $(SRC)
+	$(CXX) $(CXX_FLAGS_NATIVE) -o $@ $^ $(LDFLAGS)
+
+$(TARGET_AVX2): 
+$(TARGET_AVX2): $(SRC)
+	$(CXX) $(CXX_FLAGS_AVX2) -o $@ $^ $(LDFLAGS)
 
 # Clean target
 clean:
-	$(RM) $(EXE)
+	$(RM) $(TARGET_NATIVE) $(TARGET_AVX2)
 
 # PGO (Profile-Guided Optimization) process
 pgo:
-	$(CXX) $(CXXFLAGS) -fprofile-generate -o $(EXE) $(SRC) $(LDFLAGS)
-	./$(EXE) bench
-	$(CXX) $(filter-out -fprofile-generate, $(CXXFLAGS)) -fprofile-use -o $(EXE) $(SRC) $(LDFLAGS)
+	$(CXX) $(CXX_FLAGS_NATIVE) -fprofile-generate -o $(TARGET_NATIVE) $(SRC) $(LDFLAGS)
+	./$(TARGET_NATIVE) bench
+
+	$(CXX) $(CXX_FLAGS_AVX2) -fprofile-generate -o $(TARGET_AVX2) $(SRC) $(LDFLAGS)
+	./$(TARGET_AVX2) bench
+
+	$(CXX) $(filter-out -fprofile-generate, $(CXX_FLAGS_NATIVE)) -fprofile-use -o $(TARGET_NATIVE) $(SRC) $(LDFLAGS)
+	$(CXX) $(filter-out -fprofile-generate, $(CXX_FLAGS_AVX2)) -fprofile-use -o $(TARGET_AVX2) $(SRC) $(LDFLAGS)
+
 	$(RM) *.gcda *.o $(DEPENDS) profdata
 
 .PHONY: all clean pgo
