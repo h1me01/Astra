@@ -21,7 +21,7 @@ jobs:
       - name: Create build
         run: |
           cd src
-          make pgo EXE=../bin/astra -j
+          make CXX=g++ EXE=../bin/astra -j
 
       - name: Check valgrind
         if: github.event_name == 'push'
@@ -38,13 +38,14 @@ jobs:
       - uses: msys2/setup-msys2@v2
         with:
           msystem: mingw64
-          install: mingw-w64-x86_64-gcc make git mingw-w64-x86_64-pthreads
+          install: mingw-w64-x86_64-gcc make git
 
       - name: Add compiler to $PATH env
-        run: echo "C:/msys64/mingw64/bin" >> $GITHUB_PATH
+        shell: bash
+        run: echo "PATH=$PATH:/c/msys64/mingw64/bin" >> $GITHUB_ENV
 
       - name: Create build
         shell: msys2 {0}
         run: |
           cd src
-          make pgo EXE=../bin/astra -j
+          make CXX=g++ EXE=../bin/astra -j
