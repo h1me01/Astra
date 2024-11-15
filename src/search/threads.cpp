@@ -2,7 +2,6 @@
 
 namespace Astra
 {
-    
     bool ThreadPool::isStopped() const
     {
         return stop.load(std::memory_order_relaxed);

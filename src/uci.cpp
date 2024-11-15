@@ -71,14 +71,17 @@ namespace UCI
 
         if (options.count(name))
         {
-            if (options[name].type == "spin") {
+            if (options[name].type == "spin")
+            {
                 int n_value = std::stoi(value);
 
                 if (n_value >= options[name].min && n_value <= options[name].max)
                     options[name] = value;
                 else
                     std::cout << "Invalid value for option: " << name << std::endl;
-            } else {
+            }
+            else
+            {
                 options[name] = value;
             }
         }
@@ -131,8 +134,14 @@ namespace UCI
         options.apply();
     }
 
-    void Uci::loop()
+    void Uci::loop(int argc, char **argv)
     {
+        if (argc > 1 && strncmp(argv[1], "bench", 5) == 0) {
+            Astra::threads.stop = false;
+            Bench::bench(2); 
+            return;
+        }
+
         std::string line;
         std::string token;
 

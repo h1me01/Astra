@@ -50,7 +50,7 @@ namespace UCI
     public :
         Uci();
 
-        void loop();
+        void loop(int argc, char** argv);
 
     private:
         Board board;

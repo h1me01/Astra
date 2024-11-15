@@ -764,7 +764,7 @@ namespace Astra
         std::cout << std::endl;
     }
 
-    // global variables
+    // global variable
     TTable tt(16);
 
 } // namespace Astra
