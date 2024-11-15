@@ -87,16 +87,16 @@ namespace Astra
         for (int i = 2; i > 0; --i)
         {
             (ss - i)->ply = i;
-            (ss - i)->current_move = NO_MOVE;
             (ss - i)->eval = 0;
+            (ss - i)->current_move = NO_MOVE;
             (ss - i)->excluded_move = NO_MOVE;
         }
 
         for (int i = 0; i < MAX_PLY; ++i)
         {
             (ss + i)->ply = i;
-            (ss + i)->current_move = NO_MOVE;
             (ss + i)->eval = 0;
+            (ss + i)->current_move = NO_MOVE;
             (ss + i)->excluded_move = NO_MOVE;
         }
 
@@ -110,7 +110,7 @@ namespace Astra
         Score previous_result = VALUE_NONE;
 
         Move best_move = NO_MOVE;
-        for (int depth = 1; depth <= MAX_PLY; depth++)
+        for (int depth = 1; depth < MAX_PLY; depth++)
         {
             Score result = aspSearch(depth, previous_result, ss);
             previous_result = result;
@@ -238,24 +238,28 @@ namespace Astra
         if (pv_node && ss->ply > sel_depth)
             sel_depth = ss->ply; // heighest depth a pv node has reached
 
+        const Move excluded_move = ss->excluded_move;
+
         // look up in transposition table
         TTEntry ent;
         const U64 hash = board.getHash();
         const bool tt_hit = tt.lookup(ent, hash);
         const Score tt_score = tt_hit ? scoreFromTT(ent.score, ss->ply) : Score(VALUE_NONE);
 
-        const Move excluded_move = ss->excluded_move;
+        // set eval to tt score if available
+        if (tt_hit) 
+        {
+            assert(tt_score != VALUE_NONE);
+            ss->eval = tt_score;
+        }
 
         if (!root_node 
             && !pv_node 
-            && !excluded_move 
             && tt_hit 
-            && tt_score != VALUE_NONE 
             && ent.depth >= depth 
+            && !excluded_move 
             && (ss - 1)->current_move != NULL_MOVE)
         {
-            ss->eval = tt_score;
-
             if (ent.bound == EXACT_BOUND)
                 return tt_score;
             else if (ent.bound == LOWER_BOUND && tt_score >= beta)
@@ -364,7 +368,7 @@ namespace Astra
                 && board.nonPawnMat(stm) 
                 && !excluded_move 
                 && ss->eval >= beta
-                && (ss - 1)->current_move != NULL_MOVE )
+                && (ss - 1)->current_move != NULL_MOVE)
             {
                 assert(ss->eval - beta >= 0);
 
@@ -443,32 +447,20 @@ namespace Astra
             {
                 assert(ss->eval != VALUE_NONE || in_check);
 
-                // late move pruning
-                if (!pv_node 
-                    && !in_check 
-                    && !is_cap 
-                    && !is_prom 
-                    && depth <= 5 
-                    && quiet_count > (4 + depth * depth))
-                {
-                    continue;
-                }
-
                 int see_margin = is_cap ? see_cap_margin : see_quiet_margin;
 
                 // see pruning
                 if (depth < (is_cap ? 6 : 7) && !board.see(move, -see_margin * depth))
                     continue;
-            
-                // futility pruning
-                if (!pv_node 
-                    && !in_check 
-                    && !is_cap 
-                    && !is_prom 
-                    && depth <= 9 
-                    && ss->eval + fp_base + depth * fp_mult <= alpha)
-                {
-                    continue;
+
+                if (!pv_node && !in_check && !is_cap && !is_prom) {
+                    // late move pruning
+                    if (depth <= 5 && quiet_count > (4 + depth * depth))
+                        continue;
+                
+                    // futility pruning
+                    if (depth <= 9  && ss->eval + fp_base + depth * fp_mult <= alpha)
+                        continue;
                 }
             }
 
@@ -487,13 +479,14 @@ namespace Astra
             if (!root_node 
                 && depth >= 8 
                 && tt_hit 
-                && tt_score != VALUE_NONE 
                 && ent.move == move 
                 && !excluded_move 
                 && std::abs(tt_score) < VALUE_TB_WIN_IN_MAX_PLY 
                 && ent.bound & LOWER_BOUND 
                 && ent.depth >= depth - 3)
             {
+                assert(tt_score != VALUE_NONE);
+
                 const Score singular_beta = tt_score - 3 * depth;
                 const int singular_depth = (depth - 1) / 2;
 
@@ -625,11 +618,12 @@ namespace Astra
         const bool tt_hit = tt.lookup(ent, hash);
         const Score tt_score = tt_hit ? scoreFromTT(ent.score, ss->ply) : Score(VALUE_NONE);
 
-        if (tt_hit 
-            && !pv_node 
-            && tt_score != VALUE_NONE 
+        if (!pv_node 
+            && tt_hit 
             && ent.bound != NO_BOUND)
         {
+            assert(tt_score != VALUE_NONE);
+
             if (ent.bound == EXACT_BOUND)
                 return tt_score;
             else if (ent.bound == LOWER_BOUND && tt_score >= beta)
