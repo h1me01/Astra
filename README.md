@@ -7,7 +7,7 @@ Compile the code yourself for better performance.
 ```
 git clone https://github.com/h1me01/Astra.git
 cd Astra/src
-make pgo -j
+make pgo
 ```
 
 ## Note
