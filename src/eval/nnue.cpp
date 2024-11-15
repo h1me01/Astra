@@ -10,10 +10,7 @@
 INCBIN(Weights, NNUE_PATH);
 
 #define avx_madd_epi16 _mm256_madd_epi16
-#define avx_load_reg _mm256_load_si256
-#define avx_store_reg _mm256_store_si256
 #define avx_add_epi32 _mm256_add_epi32
-#define avx_sub_epi32 _mm256_sub_epi32
 #define avx_add_epi16 _mm256_add_epi16
 #define avx_sub_epi16 _mm256_sub_epi16
 #define avx_max_epi16 _mm256_max_epi16
@@ -21,7 +18,6 @@ INCBIN(Weights, NNUE_PATH);
 namespace NNUE
 {
     // simd
-
     inline int32_t sumRegisterEpi32(__m256i &reg)
     {
         const __m256i reduced_8 = reg;
