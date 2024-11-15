@@ -38,11 +38,10 @@ jobs:
       - uses: msys2/setup-msys2@v2
         with:
           msystem: mingw64
-          install: mingw-w64-x86_64-gcc make git
+          install: mingw-w64-x86_64-gcc make git mingw-w64-x86_64-pthreads
 
       - name: Add compiler to $PATH env
-        shell: bash
-        run: echo "PATH=$PATH:/c/msys64/mingw64/bin" >> $GITHUB_ENV
+        run: echo "C:/msys64/mingw64/bin" >> $GITHUB_PATH
 
       - name: Create build
         shell: msys2 {0}
