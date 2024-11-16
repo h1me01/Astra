@@ -31,7 +31,7 @@ namespace Astra
 
     Search::Search(const std::string &fen) : board(fen)
     {
-        reset();
+        tt.clear();
     }
 
     Move Search::start()
@@ -75,8 +75,10 @@ namespace Astra
             (ss + i)->excluded_move = NO_MOVE;
         }
 
+        // reset stuff
         history.clear();
         pv_table.reset();
+        nodes = tb_hits = sel_depth = 0;
 
         int avg_eval = 0;
 
@@ -431,10 +433,8 @@ namespace Astra
             {
                 assert(ss->eval != VALUE_NONE || in_check);
 
-                int see_margin = is_cap ? 97 : 91;
-
                 // see pruning
-                if (depth < (is_cap ? 6 : 7) && !board.see(move, -see_margin * depth))
+                if (depth < (is_cap ? 6 : 7) && !board.see(move, -(is_cap ? 97 : 91) * depth))
                     continue;
 
                 if (!pv_node && !in_check && !is_cap && !is_prom) {
@@ -723,16 +723,6 @@ namespace Astra
             return true;
 
         return false;
-    }
-
-    void Search::reset()
-    {
-        nodes = 0;
-        tb_hits = 0;
-        sel_depth = 0;
-        tt.clear();
-        pv_table.reset();
-        history.clear();
     }
 
     void Search::printUciInfo(Score result, int depth, PVLine &pv_line) const

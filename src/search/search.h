@@ -45,8 +45,6 @@ namespace Astra
 
         Move start();
 
-        void reset();
-
     private:
         PVTable pv_table;
         History history;
