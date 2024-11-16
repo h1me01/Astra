@@ -12,8 +12,6 @@ namespace Astra
     public:
         History();
 
-        void init(int hh_mult, int ch_mult);
-
         void clear();
         void update(Board &board, Move &move, Move *quiet_moves, Stack *ss, int quiet_count, int depth);
 
@@ -38,8 +36,6 @@ namespace Astra
         Move getKiller2(int ply) const { return killer2[ply]; }
 
     private:
-        int hh_mult, ch_mult;
-
         Move killer1[MAX_PLY];
         Move killer2[MAX_PLY];
         Move counters[NUM_SQUARES][NUM_SQUARES];
