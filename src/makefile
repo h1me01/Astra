@@ -1,6 +1,5 @@
 ROOT := $(realpath $(dir $(abspath $(lastword $(MAKEFILE_LIST)))))
 EvalFile = $(ROOT)/nn-768-2x1024-1.nnue
-AVX2 := -mavx2 
 
 # Compiler and flags
 CXX := g++
@@ -15,6 +14,7 @@ CXXFLAGS := -s \
             -pthread \
             -fno-exceptions \
             -flto \
+            -march=native \
             -DNNUE_PATH=\"$(EvalFile)\" # nnue path
 
 LDFLAGS := -lstdc++
@@ -47,8 +47,7 @@ MAIN_SRC := main.cpp \
 SRC := $(CHESS_SRC) $(EVAL_SRC) $(SEARCH_SRC) $(SYZYGY_SRC) $(MAIN_SRC)
 
 # Default target executable
-TARGET_NATIVE = astra-x86-64
-TARGET_AVX2 = astra-avx2-x86-64
+TARGET = astra
 
 # Detect Operating System
 ifeq ($(OS), Windows_NT)
@@ -66,38 +65,25 @@ else
     RM = rm -f
 endif
 
-TARGET_NATIVE_SUFFIX := $(TARGET_NATIVE)$(SUFFIX)
-TARGET_AVX2_SUFFIX := $(TARGET_AVX2)$(SUFFIX)
-
-CXX_FLAGS_NATIVE := $(CXXFLAGS) -march=native
-CXX_FLAGS_AVX2 := $(CXXFLAGS) $(AVX2) -DAVX2
+TARGET_SUFFIX := $(TARGET)$(SUFFIX)
 
 # Default rule to build executable
-all: $(TARGET_NATIVE) $(TARGET_AVX2)
+all: $(TARGET_SUFFIX)
 
-$(TARGET_NATIVE):
-$(TARGET_NATIVE): $(SRC)
-	$(CXX) $(CXX_FLAGS_NATIVE) -o $@ $^ $(LDFLAGS)
-
-$(TARGET_AVX2): 
-$(TARGET_AVX2): $(SRC)
-	$(CXX) $(CXX_FLAGS_AVX2) -o $@ $^ $(LDFLAGS)
+$(TARGET_SUFFIX): $(SRC)
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
 
 # Clean target
 clean:
-	$(RM) $(TARGET_NATIVE) $(TARGET_AVX2)
+	$(RM) $(TARGET_SUFFIX)
 
 # PGO (Profile-Guided Optimization) process
 pgo:
-	$(CXX) $(CXX_FLAGS_NATIVE) -fprofile-generate -o $(TARGET_NATIVE) $(SRC) $(LDFLAGS)
-	./$(TARGET_NATIVE) bench
+	$(CXX) $(CXXFLAGS) -fprofile-generate -o $(TARGET_SUFFIX) $(SRC) $(LDFLAGS)
+	./$(TARGET_SUFFIX) bench
 
-	$(CXX) $(CXX_FLAGS_AVX2) -fprofile-generate -o $(TARGET_AVX2) $(SRC) $(LDFLAGS)
-	./$(TARGET_AVX2) bench
+	$(CXX) $(filter-out -fprofile-generate, $(CXXFLAGS)) -fprofile-use -o $(TARGET_SUFFIX) $(SRC) $(LDFLAGS)
 
-	$(CXX) $(filter-out -fprofile-generate, $(CXX_FLAGS_NATIVE)) -fprofile-use -o $(TARGET_NATIVE) $(SRC) $(LDFLAGS)
-	$(CXX) $(filter-out -fprofile-generate, $(CXX_FLAGS_AVX2)) -fprofile-use -o $(TARGET_AVX2) $(SRC) $(LDFLAGS)
-
-	$(RM) *.gcda *.o $(DEPENDS) profdata
+	$(RM) *.gcda *.o profdata
 
 .PHONY: all clean pgo

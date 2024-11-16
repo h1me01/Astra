@@ -60,7 +60,7 @@ namespace NNUE
 
     int32_t NNUE::forward(const Accumulator &acc, Color stm) const
     {
-#if defined(AVX2)
+#if defined(__AVX2__) || defined(__AVX__)
         __m256i zero = _mm256_setzero_si256();
 
         const auto acc_stm = (__m256i *)acc.data[stm];
@@ -99,7 +99,7 @@ namespace NNUE
         const int w_idx = index(s, p, WHITE);
         const int b_idx = index(s, p, BLACK);
 
-#if defined(AVX2)
+#if defined(__AVX2__) || defined(__AVX__)
         __m256i *acc_white = (__m256i *)acc.data[WHITE];
         __m256i *acc_black = (__m256i *)acc.data[BLACK];
 
@@ -125,7 +125,7 @@ namespace NNUE
         const int w_idx = index(s, p, WHITE);
         const int b_idx = index(s, p, BLACK);
 
-#if defined(AVX2)
+#if defined(__AVX2__) || defined(__AVX__)
         __m256i *acc_white = (__m256i *)acc.data[WHITE];
         __m256i *acc_black = (__m256i *)acc.data[BLACK];
 
@@ -153,7 +153,7 @@ namespace NNUE
         const int b_from_idx = index(from, p, BLACK);
         const int b_to_idx = index(to, p, BLACK);
 
-#if defined(AVX2)
+#if defined(__AVX2__) || defined(__AVX__)
         __m256i *acc_white = (__m256i *)acc.data[WHITE];
         __m256i *acc_black = (__m256i *)acc.data[BLACK];
 
