@@ -7,8 +7,8 @@
 
 using namespace Chess;
 
-#if defined(AVX2)
-    #define ALIGNMENT 256
+#if defined(AVX512)
+    #define ALIGNMENT 64
 #else
     #define ALIGNMENT 32
 #endif
@@ -20,7 +20,7 @@ namespace NNUE
     constexpr int OUTPUT_SIZE = 1;
 
     struct Accumulator {
-       alignas(ALIGNMENT) int16_t data[2][HIDDEN_SIZE]; 
+       alignas(ALIGNMENT) int16_t data[NUM_COLORS][HIDDEN_SIZE]; 
     };
 
     class Accumulators

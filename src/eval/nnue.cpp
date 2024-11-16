@@ -23,7 +23,6 @@ namespace NNUE
         const __m256i reduced_8 = reg;
         const __m128i reduced_4 = _mm_add_epi32(_mm256_castsi256_si128(reduced_8), _mm256_extractf128_si256(reduced_8, 1));
 
-        // summarize the 128 register using SSE instructions
         __m128i vsum = _mm_add_epi32(reduced_4, _mm_srli_si128(reduced_4, 8));
         vsum = _mm_add_epi32(vsum, _mm_srli_si128(vsum, 4));
         int32_t sums = _mm_cvtsi128_si32(vsum);
@@ -62,7 +61,7 @@ namespace NNUE
     int32_t NNUE::forward(const Accumulator &acc, Color stm) const
     {
 #if defined(AVX2)
-        __m256i reluBias = _mm256_setzero_si256();
+        __m256i zero = _mm256_setzero_si256();
 
         const auto acc_stm = (__m256i *)acc.data[stm];
         const auto acc_opp = (__m256i *)acc.data[~stm];
@@ -72,8 +71,8 @@ namespace NNUE
 
         for (int i = 0; i < HIDDEN_SIZE / 16; i++)
         {
-            __m256i acc_act_data = avx_max_epi16(acc_stm[i], reluBias);
-            __m256i acc_nac_data = avx_max_epi16(acc_opp[i], reluBias);
+            __m256i acc_act_data = avx_max_epi16(acc_stm[i], zero);
+            __m256i acc_nac_data = avx_max_epi16(acc_opp[i], zero);
             res = avx_add_epi32(res, avx_madd_epi16(acc_act_data, weights[i]));
             res = avx_add_epi32(res, avx_madd_epi16(acc_nac_data, weights[i + HIDDEN_SIZE / 16]));
         }
