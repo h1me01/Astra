@@ -8,7 +8,7 @@ namespace Astra
 {
     struct Time {
         int64_t optimum = 0;
-        int64_t max_time = 0;
+        int64_t max = 0;
     };
     
     struct Limits
@@ -50,7 +50,7 @@ namespace Astra
 
             Time time;
             time.optimum = adj_time * optimum;
-            time.max_time = time_left * 0.8 - overhead;
+            time.max = time_left * 0.8 - overhead;
             
             return time;
         }

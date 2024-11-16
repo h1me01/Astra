@@ -102,7 +102,7 @@ namespace Astra
                 printUciInfo(result, depth, pv_table(0)); 
 
                 // skip time managament if no time is set
-                if (!limit.time.optimum || !limit.time.max_time)
+                if (!limit.time.optimum || !limit.time.max)
                     continue;
 
                 // increase time if eval is increasing
@@ -114,7 +114,7 @@ namespace Astra
                     limit.time.optimum *= 1.10;
 
                 // stop search if more than 75% of our max time is reached
-                if (depth > 10 && time_manager.elapsedTime() > limit.time.max_time * 0.75) 
+                if (depth > 10 && time_manager.elapsedTime() > limit.time.max * 0.75) 
                     break;
             }
         }
@@ -131,7 +131,7 @@ namespace Astra
         Score beta = VALUE_INFINITE;
 
         // only use aspiration window when depth is higher or equal to 6
-        int window = 10;
+        int window = 11;
         if (depth >= 9)
         {
             alpha = prev_eval - window;
@@ -711,7 +711,7 @@ namespace Astra
         if (limit.time.optimum != 0 && time_manager.elapsedTime() > limit.time.optimum)
             return true;
 
-        if (limit.time.max_time != 0 && time_manager.elapsedTime() > limit.time.max_time) {
+        if (limit.time.max != 0 && time_manager.elapsedTime() > limit.time.max) {
             threads.stop = true;
             return true;
         }
