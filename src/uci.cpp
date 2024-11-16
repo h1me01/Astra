@@ -274,7 +274,7 @@ namespace UCI
         const int inc = stm == WHITE ? w_inc : b_inc;
 
         if (move_time != 0)
-            limit.time = move_time;
+            limit.time.optimum = move_time;
         else if (time_left != 0)
             limit.time = Astra::TimeManager::getOptimum(time_left, inc, moves_to_go);
 

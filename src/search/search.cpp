@@ -10,31 +10,31 @@
 namespace Astra
 {
     // search parameters
-    PARAM(lmr_base, 95, 80, 130, 8);
-    PARAM(lmr_div, 168, 150, 200, 8);
+    PARAM(lmr_base, 101, 80, 130, 8);
+    PARAM(lmr_div, 181, 150, 200, 8);
 
     PARAM(rzr_depth, 4, 3, 5, 1);
-    PARAM(rzr_depth_mult, 186, 150, 250, 15);
+    PARAM(rzr_depth_mult, 175, 150, 250, 15);
     
     PARAM(rfp_depth, 9, 7, 11, 1);
-    PARAM(rfp_depth_mult, 81, 50, 100, 5);
+    PARAM(rfp_depth_mult, 76, 50, 100, 5);
 
     PARAM(nmp_base, 4, 3, 5, 1);
     PARAM(nmp_depth_div, 5, 3, 6, 1);
-    PARAM(nmp_min, 4, 3, 6, 1);
+    PARAM(nmp_min, 3, 3, 6, 1);
     PARAM(nmp_div, 214, 200, 220, 2);
 
-    PARAM(see_cap_margin, 94, 85, 110, 3);
-    PARAM(see_quiet_margin, 92, 75, 100, 3);
+    PARAM(see_cap_margin, 96, 85, 110, 3);
+    PARAM(see_quiet_margin, 89, 75, 100, 3);
 
-    PARAM(fp_base, 147, 120, 180, 10);
-    PARAM(fp_mult, 101, 85, 110, 5);
+    PARAM(fp_base, 156, 120, 180, 10);
+    PARAM(fp_mult, 105, 85, 110, 5);
 
     PARAM(asp_depth, 9, 6, 9, 1);
-    PARAM(asp_window, 18, 10, 50, 5);
+    PARAM(asp_window, 10, 5, 30, 5);
 
-    PARAM(ch_mult, 12, 8, 16, 1);
-    PARAM(hh_mult, 149, 140, 170, 5);
+    PARAM(ch_mult, 11, 8, 16, 1);
+    PARAM(hh_mult, 155, 140, 170, 5);
 
     // search helper
 
@@ -63,6 +63,8 @@ namespace Astra
 
     Move Search::start()
     {
+        time_manager.start();
+
         if (use_tb)
         {
             const auto dtz = probeDTZ(board);
@@ -100,12 +102,12 @@ namespace Astra
             (ss + i)->excluded_move = NO_MOVE;
         }
 
-        time_manager.start();
-
         history.clear();
         history.init(hh_mult, ch_mult);
 
         pv_table.reset();
+
+        int avg_eval = 0;
 
         Score previous_result = VALUE_NONE;
 
@@ -120,8 +122,28 @@ namespace Astra
 
             best_move = pv_table(0)(0);
 
-            if (id == 0)
-                printUciInfo(result, depth, pv_table(0));
+            avg_eval += result;
+
+            if (id == 0) 
+            {
+                printUciInfo(result, depth, pv_table(0)); 
+
+                // skip time managament if no time is set
+                if (!limit.time.optimum || !limit.time.max_time)
+                    continue;
+
+                // increase time if eval is increasing
+                if (result + 30 < avg_eval / depth) 
+                    limit.time.optimum *= 1.10;
+
+                // increase time if eval is decreasing
+                if (result > -200 && result - previous_result < -20)
+                    limit.time.optimum *= 1.10;
+
+                // stop search if more than 75% of our max time is reached
+                if (depth > 10 && time_manager.elapsedTime() > limit.time.max_time * 0.75) 
+                    break;
+            }
         }
 
         if (id == 0)
@@ -715,8 +737,13 @@ namespace Astra
         if (threads.isStopped())
             return true;
 
-        if (limit.time != 0 && time_manager.elapsedTime() > limit.time)
+        if (limit.time.optimum != 0 && time_manager.elapsedTime() > limit.time.optimum)
             return true;
+
+        if (limit.time.max_time != 0 && time_manager.elapsedTime() > limit.time.max_time) {
+            threads.stop = true;
+            return true;
+        }
 
         if (limit.nodes != 0 && nodes >= limit.nodes)
             return true;

@@ -6,9 +6,14 @@
 
 namespace Astra
 {
+    struct Time {
+        int64_t optimum = 0;
+        int64_t max_time = 0;
+    };
+    
     struct Limits
     {
-        int64_t time = 0;
+        Time time;
         U64 nodes = 0;
         int depth = MAX_PLY - 1;
         bool infinite = false;
@@ -30,20 +35,24 @@ namespace Astra
             return std::chrono::duration_cast<std::chrono::milliseconds>(current_time - start_time).count();
         }
 
-        static int64_t getOptimum(int64_t time, int inc, int moves_to_go)
+        static Time getOptimum(int64_t time_left, int inc, int moves_to_go)
         {
             double optimum;
 
             int overhead = inc ? 0 : 10;
             int mtg = moves_to_go ? std::min(moves_to_go, 50) : 50;
 
-            int64_t timeLeft = std::max<int64_t>(1, time + inc * (mtg - 1) - overhead * (2 + mtg));
+            int64_t adj_time = std::max<int64_t>(1LL, time_left + inc * (mtg - 1) - overhead * (2 + mtg));
             if (moves_to_go == 0)
-                optimum = std::min(0.025, 0.2 * time / timeLeft);
+                optimum = std::min(0.025, 0.2 * time_left / double(adj_time));
             else
-                optimum = std::min(0.95 / mtg, 0.88 * time / timeLeft);
+                optimum = std::min(0.95 / mtg, 0.88 * time_left / double(adj_time));
 
-            return optimum * timeLeft;
+            Time time;
+            time.optimum = adj_time * optimum;
+            time.max_time = time_left * 0.8 - overhead;
+            
+            return time;
         }
 
     private:
