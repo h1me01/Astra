@@ -47,8 +47,8 @@ MAIN_SRC := main.cpp \
 SRC := $(CHESS_SRC) $(EVAL_SRC) $(SEARCH_SRC) $(SYZYGY_SRC) $(MAIN_SRC)
 
 # Default target executable
-TARGET_NATIVE = astra_x86-64
-TARGET_AVX2 = astra_avx2_x86-64
+TARGET_NATIVE = astra-x86-64
+TARGET_AVX2 = astra-avx2-x86-64
 
 # Detect Operating System
 ifeq ($(OS), Windows_NT)

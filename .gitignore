@@ -2,7 +2,8 @@
 
 build/
 
-src/astra.exe
+src/astra-x86-64.exe
+src/astra-avx2-x86-64.exe
 
 CMakeLists.txt
 
