@@ -24,13 +24,11 @@ using avx_type = __m256i;
 #define avx_add_epi16 _mm256_add_epi16
 #define avx_sub_epi16 _mm256_sub_epi16
 #define avx_max_epi16 _mm256_max_epi16
-#else
-using avx_type = __m128i; // doesn't matter
 #endif
 
 namespace NNUE
 {
-
+#if defined(__AVX512F__) || defined(__AVX2__) || defined(__AVX__)
     inline int32_t sumRegisterEpi32(avx_type &reg)
     {
 #if defined(__AVX512F__)
@@ -46,6 +44,7 @@ namespace NNUE
 
         return sums;
     }
+#endif
 
     // helper
     int index(Square s, Piece p, Color view)
