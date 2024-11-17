@@ -3,12 +3,13 @@
 
 #include <array>
 #include <cassert>
+#include <immintrin.h>
 #include "../chess/types.h"
 
 using namespace Chess;
 
 #if defined(__AVX512F__)
-    #define ALIGNMENT 32 // change this to 64 later since currently i dont support avx512
+    #define ALIGNMENT 64 
 #else
     #define ALIGNMENT 32
 #endif
