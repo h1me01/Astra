@@ -21,7 +21,6 @@ namespace Astra
 
         // find the next power of 2
         tt_size = 1ULL << (63 - __builtin_clzll(max_entries));
-        mask = tt_size - 1;
 
         entries = new TTEntry[tt_size];
         clear();
@@ -35,7 +34,7 @@ namespace Astra
 
     bool TTable::lookup(TTEntry& entry, U64 hash) const
     {
-        U64 idx = hash & mask;
+        U64 idx = hash % tt_size;
         if (entries[idx].hash == hash)
         {
             entry = entries[idx];
@@ -46,9 +45,9 @@ namespace Astra
 
     void TTable::store(U64 hash, Move move, Score score, int depth, Bound bound) const
     {
-        U64 idx = hash & mask;
+        U64 idx = hash % tt_size;
 
-        if (entries[idx].hash == 0)
+        if (!entries[idx].hash)
         {
             // save if no entry is present
             entries[idx] = TTEntry(hash, depth, move, score, bound);
@@ -56,16 +55,10 @@ namespace Astra
         }
         else
         {
-            // store if age is different then current age
-            bool first = entries[idx].getAge() != current_age;
-            // store if exact bound
-            bool second = bound == EXACT_BOUND;
-            // store if not exact bound but depth is greater or equal
-            bool third = bound != EXACT_BOUND && entries[idx].depth <= depth;
-            // store if hash is equal and depth is greater
-            bool fourth = entries[idx].hash == hash && entries[idx].depth <= depth + 3;
-
-            if (first || second || third || fourth)
+            if ((bound == EXACT_BOUND) || 
+                (entries[idx].getAge() != current_age) || 
+                (entries[idx].hash == hash && entries[idx].depth <= depth) || 
+                (entries[idx].hash != hash && entries[idx].depth <= depth + 3))
             {
                 entries[idx] = TTEntry(hash, depth, move, score, bound);
                 entries[idx].age = current_age;
@@ -82,7 +75,7 @@ namespace Astra
 
     void TTable::prefetch(U64 hash) const
     {
-        __builtin_prefetch(&entries[hash & mask]);
+        __builtin_prefetch(&entries[hash % tt_size]);
     }
 
     Score scoreToTT(Score s, int ply)

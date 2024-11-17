@@ -18,7 +18,7 @@ namespace Astra
     struct TTEntry
     {
         U64 hash;
-        int depth;
+        uint8_t depth;
         uint8_t age;
         Move move;
         Score score;
@@ -51,7 +51,6 @@ namespace Astra
     private:
         uint8_t current_age;
         U64 tt_size{};
-        U64 mask{};
         TTEntry* entries;
     };
 
