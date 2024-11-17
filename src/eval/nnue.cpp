@@ -28,17 +28,17 @@ using avx_type = __m256i;
 
 namespace NNUE
 {
-    // simd
+
     inline int32_t sumRegisterEpi32(avx_type &reg)
     {
 #if defined(__AVX512F__)
-        const __m256i reduced_8 = _mm256_add_epi32(_mm512_castsi512_si256(reg), _mm512_extracti32x8_epi32(reg, 1));
+        const __m256i red_8 = _mm256_add_epi32(_mm512_castsi512_si256(reg), _mm512_extracti32x8_epi32(reg, 1));
 #elif defined(__AVX2__) || defined(__AVX__)
-        const __m256i reduced_8 = reg;
+        const __m256i red_8 = reg;
 #endif
-        const __m128i reduced_4 = _mm_add_epi32(_mm256_castsi256_si128(reduced_8), _mm256_extractf128_si256(reduced_8, 1));
+        const __m128i red_4 = _mm_add_epi32(_mm256_castsi256_si128(red_8), _mm256_extractf128_si256(red_8, 1));
 
-        __m128i vsum = _mm_add_epi32(reduced_4, _mm_srli_si128(reduced_4, 8));
+        __m128i vsum = _mm_add_epi32(red_4, _mm_srli_si128(red_4, 8));
         vsum = _mm_add_epi32(vsum, _mm_srli_si128(vsum, 4));
         int32_t sums = _mm_cvtsi128_si32(vsum);
 
@@ -77,12 +77,12 @@ namespace NNUE
     int32_t NNUE::forward(const Accumulator &acc, Color stm) const
     {
 #if defined(__AVX512F__) || defined(__AVX2__) || defined(__AVX__)
-        const avx_type zero {};
+        constexpr avx_type zero{};
 
         const auto acc_stm = (avx_type *)acc.data[stm];
         const auto acc_opp = (avx_type *)acc.data[~stm];
 
-        avx_type res {};
+        avx_type res{};
         const auto weights = (avx_type *)(fc2_weights);
 
         for (int i = 0; i < HIDDEN_SIZE / div; i++)
