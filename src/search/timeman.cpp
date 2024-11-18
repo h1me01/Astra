@@ -1,5 +1,4 @@
 #include "timeman.h"
-#include <iostream>
 
 namespace Astra
 {
