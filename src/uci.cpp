@@ -274,10 +274,13 @@ namespace UCI
         const int64_t time_left = stm == WHITE ? w_time : b_time;
         const int inc = stm == WHITE ? w_inc : b_inc;
 
-        if (move_time != 0)
-            limit.time.optimum = move_time;
+        if (move_time != 0) 
+        {
+            limit.time.optimum = move_time; 
+            limit.time.max = move_time;
+        }
         else if (time_left != 0)
-            limit.time = Astra::getOptimum(time_left, inc, moves_to_go, std::stoi(options.get("MoveOverhead")));
+            limit.time = Astra::TimeMan::getOptimum(time_left, inc, moves_to_go, std::stoi(options.get("MoveOverhead")));
 
         // start search
         Astra::threads.launchWorkers(board, limit, options.num_workers, options.use_tb);

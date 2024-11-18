@@ -39,7 +39,7 @@ namespace Astra
 
     Move Search::start()
     {
-        startTimer();
+        tm.start();
 
         if (use_tb)
         {
@@ -124,7 +124,7 @@ namespace Astra
                     limit.time.optimum = limit.time.max * 0.75;
 
                 // stop search if more than 75% of our max time is reached
-                if (depth > 10 && elapsedTime() > limit.time.max * 0.75) 
+                if (depth > 10 && tm.elapsedTime() > limit.time.max * 0.75) 
                     break;
             }
         }
@@ -461,7 +461,7 @@ namespace Astra
             // print current move information
             if (id == 0 
                 && root_node 
-                && elapsedTime() > 5000 
+                && tm.elapsedTime() > 5000 
                 && !threads.isStopped())
             {
                 std::cout << "info depth " << depth
@@ -710,16 +710,6 @@ namespace Astra
         return best_score;
     }
 
-    void Search::startTimer()
-    {
-        start_time = Clock::now();
-    }
-
-    int Search::elapsedTime() const
-    {
-        return std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now() - start_time).count();
-    }
-
     bool Search::isLimitReached(const int depth) const
     {
         if (limit.infinite)
@@ -728,10 +718,10 @@ namespace Astra
         if (threads.isStopped())
             return true;
 
-        if (limit.time.optimum != 0 && elapsedTime() >= limit.time.optimum)
+        if (limit.time.optimum != 0 && tm.elapsedTime() > limit.time.optimum)
             return true;
 
-        if (limit.time.max != 0 && elapsedTime() >= limit.time.max) {
+        if (limit.time.max != 0 && tm.elapsedTime() > limit.time.max) {
             threads.stop = true;
             return true;
         }
@@ -756,7 +746,7 @@ namespace Astra
         else
             std::cout << "cp " << result;
 
-        const U64 elapsed_time = elapsedTime();
+        const U64 elapsed_time = tm.elapsedTime();
         const U64 total_nodes = threads.getTotalNodes();
         const U64 nps = total_nodes * 1000 / (elapsed_time + 1);
 

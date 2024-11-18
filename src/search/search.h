@@ -49,14 +49,11 @@ namespace Astra
         PVTable pv_table;
         History history;
        
-        TimePoint start_time;
+        TimeMan tm; 
 
         Score aspSearch(int depth, Score prev_eval, Stack *ss);
         Score negamax(int depth, Score alpha, Score beta, Node node, Stack *ss);
         Score qSearch(Score alpha, Score beta, Node node, Stack *ss);
-
-        void startTimer();
-        int elapsedTime() const;
 
         bool isLimitReached(int depth) const;
         void printUciInfo(Score result, int depth, PVLine &pv_line) const;
