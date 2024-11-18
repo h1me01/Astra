@@ -15,7 +15,7 @@ namespace Astra
 
         U64 getTotalNodes() const;
         U64 getTotalTbHits() const;
-        uint8_t getSelDepth() const;
+        int getSelDepth() const;
 
         // stop running all threads
         std::atomic<bool> stop{false};

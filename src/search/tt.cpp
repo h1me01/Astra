@@ -78,6 +78,16 @@ namespace Astra
         __builtin_prefetch(&entries[hash % tt_size]);
     }
 
+    int TTable::hashfull() const
+    {
+        int used = 0;
+        for (U64 i = 0; i < 1000; i++)
+            if (entries[i].hash)
+                used++;
+
+        return used;
+    }
+
     Score scoreToTT(Score s, int ply)
     {
         if (s >= VALUE_TB_WIN_IN_MAX_PLY)

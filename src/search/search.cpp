@@ -728,7 +728,7 @@ namespace Astra
     void Search::printUciInfo(Score result, int depth, PVLine &pv_line) const
     {
         std::cout << "info depth " << depth
-                  << " seldepth " << int(threads.getSelDepth())
+                  << " seldepth " << threads.getSelDepth()
                   << " score ";
 
         if (abs(result) >= VALUE_MIN_MATE)
@@ -743,6 +743,7 @@ namespace Astra
         std::cout << " nodes " << total_nodes
                   << " nps " << nps
                   << " tbhits " << threads.getTotalTbHits()
+                  << " hashfull " << tt.hashfull()
                   << " time " << elapsed_time
                   << " pv";
 

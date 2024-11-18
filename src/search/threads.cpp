@@ -56,12 +56,12 @@ namespace Astra
         return total_tb_hits;
     }
 
-    uint8_t ThreadPool::getSelDepth() const
+    int ThreadPool::getSelDepth() const
     {
         uint8_t max_sel_depth = 0;
         for (const auto &t : threads)
             max_sel_depth = std::max(max_sel_depth, t.sel_depth);
-        return max_sel_depth;
+        return int(max_sel_depth);
     }
 
     // global variable

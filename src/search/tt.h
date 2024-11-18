@@ -48,6 +48,7 @@ namespace Astra
         void incrementAge();
         void prefetch(U64 hash) const;
 
+        int hashfull() const;
     private:
         uint8_t current_age;
         U64 tt_size{};
