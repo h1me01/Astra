@@ -46,11 +46,11 @@ namespace Astra
             const auto dtz = probeDTZ(board);
             if (dtz.second != NO_MOVE)
             {
-                threads.stop = true;
-
-                if (id == 0)
-                    std::cout << "bestmove " << dtz.second << std::endl;
-
+                if (id == 0) 
+                {
+                    threads.stop = true;
+                    std::cout << "bestmove " << dtz.second << std::endl; 
+                }
                 return dtz.second;
             }
         }
@@ -129,9 +129,11 @@ namespace Astra
             }
         }
 
-        if (id == 0)
+        if (id == 0) 
+        {
+            threads.stop = true;
             std::cout << "bestmove " << best_move << std::endl;
-
+        }
         return best_move;
     }
 
@@ -718,13 +720,8 @@ namespace Astra
         if (threads.isStopped())
             return true;
 
-        if (limit.time.optimum != 0 && tm.elapsedTime() > limit.time.optimum)
+        if (limit.time.optimum != 0 && tm.elapsedTime() > limit.time.optimum) 
             return true;
-
-        if (limit.time.max != 0 && tm.elapsedTime() > limit.time.max) {
-            threads.stop = true;
-            return true;
-        }
 
         if (limit.nodes != 0 && nodes >= limit.nodes)
             return true;

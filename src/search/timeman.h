@@ -45,16 +45,17 @@ namespace Astra
             Time time;
 
             int mtg = moves_to_go ? moves_to_go : 50;
-
             int64_t adj_time = std::max<int64_t>(1LL, time_left + inc * mtg - overhead * (moves_to_go ? 1 : mtg));
-
+            
             if (moves_to_go == 0)
-                time.optimum = adj_time * 0.0575;
+                time.optimum = adj_time * 0.05;
             else
-                time.optimum = std::min(time_left * 0.9, (adj_time * 0.9) / std::max(1.0, mtg / 2.5));
+                time.optimum = std::min(time_left * 0.5, adj_time * 0.9 / std::max(1.0, mtg / 1.5));
 
-            time.max = 0.8 * time_left - overhead;
+            time.max = time_left * 0.8 - overhead;
 
+            std::cout << time.optimum << std::endl;
+            
             return time;
         }
 
