@@ -4,7 +4,7 @@
 #include "tt.h"
 #include "pvtable.h"
 #include "history.h"
-#include "timemanager.h"
+#include "timeman.h"
 
 namespace Astra
 {
@@ -49,11 +49,14 @@ namespace Astra
         PVTable pv_table;
         History history;
        
-        TimeManager time_manager;
+        TimePoint start_time;
 
         Score aspSearch(int depth, Score prev_eval, Stack *ss);
         Score negamax(int depth, Score alpha, Score beta, Node node, Stack *ss);
         Score qSearch(Score alpha, Score beta, Node node, Stack *ss);
+
+        void startTimer();
+        int elapsedTime() const;
 
         bool isLimitReached(int depth) const;
         void printUciInfo(Score result, int depth, PVLine &pv_line) const;

@@ -128,6 +128,7 @@ namespace UCI
     {
         options.add("Hash", Option("spin", "16", "16", 1, 2048));
         options.add("Threads", Option("spin", "1", "1", 1, 256));
+        options.add("MoveOverhead", Option("spin", "50", "50", 0, 10000));
 #ifndef TUNE
         options.add("SyzygyPath", Option("string", "", "", 0, 0));
 #endif
@@ -276,7 +277,7 @@ namespace UCI
         if (move_time != 0)
             limit.time.optimum = move_time;
         else if (time_left != 0)
-            limit.time = Astra::TimeManager::getOptimum(time_left, inc, moves_to_go);
+            limit.time = Astra::getOptimum(time_left, inc, moves_to_go, std::stoi(options.get("MoveOverhead")));
 
         // start search
         Astra::threads.launchWorkers(board, limit, options.num_workers, options.use_tb);

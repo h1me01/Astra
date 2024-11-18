@@ -11,7 +11,10 @@ namespace Astra
 {
     // search helper
 
-    Score drawScore(U64 nodes) { return VALUE_DRAW - 1 + Score(nodes & 0x2); }
+    Score drawScore(U64 nodes) 
+    { 
+        return VALUE_DRAW - 1 + Score(nodes & 0x2); 
+    }
 
     int REDUCTIONS[MAX_PLY][MAX_MOVES];
 
@@ -36,7 +39,7 @@ namespace Astra
 
     Move Search::start()
     {
-        time_manager.start();
+        startTimer();
 
         if (use_tb)
         {
@@ -82,6 +85,7 @@ namespace Astra
 
         int avg_eval = 0;
 
+        int best_move_changes = 0;
         Score previous_result = VALUE_NONE;
 
         Move best_move = NO_MOVE;
@@ -93,9 +97,11 @@ namespace Astra
             if (isLimitReached(depth))
                 break;
 
+            best_move_changes = best_move != pv_table(0)(0); 
+            avg_eval += result;
+
             best_move = pv_table(0)(0);
 
-            avg_eval += result;
 
             if (id == 0) 
             {
@@ -110,11 +116,15 @@ namespace Astra
                     limit.time.optimum *= 1.10;
 
                 // increase time if eval is decreasing
-                if (result > -200 && result - previous_result < -20)
+                if (result > -100 && result - previous_result < -20)
                     limit.time.optimum *= 1.10;
 
+                // increase optimum time if best move changes often
+                if (best_move_changes > 4) 
+                    limit.time.optimum = limit.time.max * 0.75;
+
                 // stop search if more than 75% of our max time is reached
-                if (depth > 10 && time_manager.elapsedTime() > limit.time.max * 0.75) 
+                if (depth > 10 && elapsedTime() > limit.time.max * 0.75) 
                     break;
             }
         }
@@ -451,7 +461,7 @@ namespace Astra
             // print current move information
             if (id == 0 
                 && root_node 
-                && time_manager.elapsedTime() > 5000 
+                && elapsedTime() > 5000 
                 && !threads.isStopped())
             {
                 std::cout << "info depth " << depth
@@ -700,6 +710,16 @@ namespace Astra
         return best_score;
     }
 
+    void Search::startTimer()
+    {
+        start_time = Clock::now();
+    }
+
+    int Search::elapsedTime() const
+    {
+        return std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now() - start_time).count();
+    }
+
     bool Search::isLimitReached(const int depth) const
     {
         if (limit.infinite)
@@ -708,10 +728,10 @@ namespace Astra
         if (threads.isStopped())
             return true;
 
-        if (limit.time.optimum != 0 && time_manager.elapsedTime() > limit.time.optimum)
+        if (limit.time.optimum != 0 && elapsedTime() >= limit.time.optimum)
             return true;
 
-        if (limit.time.max != 0 && time_manager.elapsedTime() > limit.time.max) {
+        if (limit.time.max != 0 && elapsedTime() >= limit.time.max) {
             threads.stop = true;
             return true;
         }
@@ -736,7 +756,7 @@ namespace Astra
         else
             std::cout << "cp " << result;
 
-        const U64 elapsed_time = time_manager.elapsedTime();
+        const U64 elapsed_time = elapsedTime();
         const U64 total_nodes = threads.getTotalNodes();
         const U64 nps = total_nodes * 1000 / (elapsed_time + 1);
 
