@@ -6,7 +6,6 @@ namespace Astra
 
     Time getOptimum(int64_t time_left, int inc, int moves_to_go, int overhead)
     {
-        std::cout << overhead << std::endl;
         Time time;
 
         int mtg = moves_to_go ? moves_to_go : 50;
