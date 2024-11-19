@@ -34,6 +34,7 @@ namespace Astra
         Move tt_move = NO_MOVE;
         
         int idx = 0;
+        int ml_size;
 
         void evaluateMoves();       
         void partialInsertionSort(int start);

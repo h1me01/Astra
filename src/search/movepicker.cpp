@@ -23,6 +23,7 @@ namespace Astra
     MovePicker::MovePicker(MoveType mt, Board &board, const History &history, const Stack *ss, Move &tt_move)
         : mt(mt), board(board), history(history), ss(ss), ml(board, mt), tt_move(tt_move)
     {
+        ml_size = ml.size();
     }
 
     Move MovePicker::nextMove()
@@ -40,7 +41,7 @@ namespace Astra
             [[fallthrough]];
         case REST:
         {
-            while (idx < ml.size())
+            while (idx < ml_size)
             {
                 partialInsertionSort(idx);
 
@@ -67,7 +68,7 @@ namespace Astra
 
     void MovePicker::evaluateMoves()
     {
-        for (int i = 0; i < ml.size(); i++)
+        for (int i = 0; i < ml_size; i++)
         {
             if (ml[i] == tt_move)
                 ml[i].score = 10'000'000;
@@ -93,7 +94,7 @@ namespace Astra
     {
         int best_idx = start;
 
-        for (int i = 1 + start; i < ml.size(); i++)
+        for (int i = 1 + start; i < ml_size; i++)
             if (ml[i].score > ml[best_idx].score)
                 best_idx = i;
 
