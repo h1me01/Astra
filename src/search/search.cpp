@@ -9,6 +9,36 @@
 
 namespace Astra
 {
+    // search parameters
+    PARAM(lmr_base, 98, 80, 130, 8);
+    PARAM(lmr_div, 177, 150, 200, 8);
+
+    PARAM(asp_depth, 9, 6, 9, 1);
+    PARAM(asp_window, 11, 10, 30, 5);
+
+    PARAM(rzr_depth, 4, 3, 5, 1);
+    PARAM(rzr_depth_mult, 173, 150, 250, 15);
+    
+    PARAM(rfp_depth, 9, 7, 11, 1);
+    PARAM(rfp_depth_mult, 77, 50, 100, 5);
+
+    PARAM(nmp_depth_div, 5, 3, 6, 1);
+    PARAM(nmp_div, 215, 200, 220, 2);
+
+    PARAM(see_cap_depth, 6, 5, 8, 1);
+    PARAM(see_cap_margin, 97, 85, 110, 3);
+
+    PARAM(see_quiet_depth, 7, 6, 9, 1);
+    PARAM(see_quiet_margin, 91, 75, 100, 3);
+
+    PARAM(lmp_depth, 5, 4, 7, 1);
+
+    PARAM(fp_depth, 9, 7, 11, 1);
+    PARAM(fp_base, 149, 120, 180, 10);
+    PARAM(fp_mult, 105, 85, 110, 5);
+
+    PARAM(q_see_margin, 0, -35, 35, 10);
+
     // search helper
 
     Score drawScore(U64 nodes) 
@@ -139,8 +169,8 @@ namespace Astra
         Score beta = VALUE_INFINITE;
 
         // only use aspiration window when depth is higher or equal to 6
-        int window = 11;
-        if (depth >= 9)
+        int window = asp_window;
+        if (depth >= asp_depth)
         {
             alpha = prev_eval - window;
             beta = prev_eval + window;
@@ -343,7 +373,7 @@ namespace Astra
         if (!in_check && !pv_node)
         {
             // razoring
-            if (depth <= 4 && ss->eval + 173 * depth < alpha)
+            if (depth <= rzr_depth && ss->eval + rzr_depth_mult * depth < alpha)
             {
                 Score score = qSearch(alpha, beta, NON_PV, ss);
                 if (score < alpha)
@@ -351,9 +381,9 @@ namespace Astra
             }
 
             // reverse futility pruning
-            if (depth <= 9 
+            if (depth <= rfp_depth 
                 && ss->eval < VALUE_TB_WIN_IN_MAX_PLY
-                && ss->eval - 77 * (depth - improving) >= beta)
+                && ss->eval - rfp_depth_mult * (depth - improving) >= beta)
             {
                 return (ss->eval + beta) / 2;
             }
@@ -367,7 +397,7 @@ namespace Astra
             {
                 assert(ss->eval - beta >= 0);
 
-                int R = 4 + depth / 5 + std::min(3, (ss->eval - beta) / 215);
+                int R = 4 + depth / nmp_depth_div + std::min(3, (ss->eval - beta) / nmp_div);
 
                 ss->current_move = NULL_MOVE;
 
@@ -442,16 +472,19 @@ namespace Astra
                 assert(ss->eval != VALUE_NONE || in_check);
 
                 // see pruning
-                if (depth < (is_cap ? 6 : 7) && !board.see(move, -(is_cap ? 97 : 91) * depth))
+                int see_depth = is_cap ? see_cap_depth : see_quiet_depth;
+                int see_margin = is_cap ? see_cap_margin : see_quiet_margin;
+
+                if (depth < see_depth && !board.see(move, -see_margin * depth))
                     continue;
 
                 if (!pv_node && !in_check && !is_cap && !is_prom) {
                     // late move pruning
-                    if (depth <= 5 && quiet_count > (4 + depth * depth))
+                    if (depth <= lmp_depth && quiet_count > (4 + depth * depth))
                         continue;
                 
                     // futility pruning
-                    if (depth <= 9  && ss->eval + 149 + depth * 105 <= alpha)
+                    if (depth <= fp_depth  && ss->eval + fp_base + depth * fp_mult <= alpha)
                         continue;
                 }
             }
@@ -502,7 +535,7 @@ namespace Astra
             Score score = VALUE_NONE;
 
             // late move reduction
-            if (depth >= 2 && !in_check && made_moves > 3)
+            if (depth >= 3 && !in_check && made_moves > 3)
             {
                 int rdepth = REDUCTIONS[depth][made_moves];
                 rdepth += improving;
@@ -668,7 +701,7 @@ namespace Astra
                 }
 
                 // see pruning
-                if (!board.see(move, 0))
+                if (!board.see(move, q_see_margin))
                     continue;
             }
 
