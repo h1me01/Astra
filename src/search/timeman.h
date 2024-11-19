@@ -28,9 +28,6 @@ namespace Astra
     class TimeMan
     {
     public:
-        using Clock = std::chrono::steady_clock;
-        using TimePoint = Clock::time_point;
-
         TimeMan() : start_time(Clock::now()) {}
 
         void start() { start_time = Clock::now(); }
