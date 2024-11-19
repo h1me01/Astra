@@ -17,10 +17,10 @@ namespace Astra
         U64 getTotalTbHits() const;
         int getSelDepth() const;
 
+    private:
         // stop running all threads
         std::atomic<bool> stop{false};
 
-    private:
         std::vector<Search> threads;
         std::vector<std::thread> running_threads;
     };

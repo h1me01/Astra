@@ -138,7 +138,6 @@ namespace UCI
     void Uci::loop(int argc, char **argv)
     {
         if (argc > 1 && strncmp(argv[1], "bench", 5) == 0) {
-            Astra::threads.stop = false;
             Bench::bench(2); 
             return;
         }
@@ -171,10 +170,7 @@ namespace UCI
             else if (token == "go")
                 go(is);
             else if (token == "bench")
-            {
-                Astra::threads.stop = false;
                 Bench::bench(13);
-            }
             else if (token == "tune")
             {
                 Astra::paramsToSpsa();
