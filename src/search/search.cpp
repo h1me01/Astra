@@ -25,6 +25,8 @@ namespace Astra
     PARAM(nmp_depth_div, 5, 3, 6, 1);
     PARAM(nmp_div, 215, 200, 220, 2);
 
+    PARAM(probcut_margin, 136, 100, 200, 10);
+
     PARAM(see_cap_depth, 6, 5, 8, 1);
     PARAM(see_cap_margin, 97, 85, 110, 3);
 
@@ -416,7 +418,7 @@ namespace Astra
             }
 
             // probcut
-            int beta_cut = beta + 136;
+            int beta_cut = beta + probcut_margin;
             if (depth > 3 
                 && std::abs(beta) < VALUE_TB_WIN_IN_MAX_PLY 
                 && !(ent.depth >= depth - 3 && tt_score != VALUE_NONE && tt_score < beta_cut))
