@@ -7,6 +7,3 @@ src/.exe
 CMakeLists.txt
 
 weights/
-
-src/main.cpp
-src/search/tune.h

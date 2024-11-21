@@ -109,7 +109,6 @@ namespace Astra
         }
 
         // reset stuff
-        history.clear();
         pv_table.reset();
         nodes = tb_hits = sel_depth = 0;
 

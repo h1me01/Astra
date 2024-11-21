@@ -1,6 +1,8 @@
 #include "history.h"
 #include "search.h"
 
+#include <cstring> // for memset
+
 namespace Astra
 {
     History::History()
@@ -10,26 +12,16 @@ namespace Astra
 
     void History::clear()
     {
-        for (auto &i : history)
-            for (auto &j : i)
-                for (int16_t &k : j)
-                    k = 0;
+        std::memset(history, 0, sizeof(history));
+        std::memset(cont_history, 0, sizeof(cont_history));
+        std::memset(capt_history, 0, sizeof(capt_history));
 
-        for (auto &i : cont_history)
-            for (auto &j : i)
-                for (auto &k : j)
-                    for (int16_t &l : k)
-                        l = 0;
+        // set to NO_MOVE
+        std::memset(counters, 0, sizeof(counters));
 
-        for (auto &counter : counters)
-            for (auto &j : counter)
-                j = NO_MOVE;
-
-        for (int i = 0; i < MAX_PLY; i++)
-        {
-            killer1[i] = NO_MOVE;
-            killer2[i] = NO_MOVE;
-        }
+        // set to with NO_MOVE 
+        std::fill_n(killer1, MAX_PLY, NO_MOVE);
+        std::fill_n(killer2, MAX_PLY, NO_MOVE);
     }
 
     void History::update(Board &board, Move &move, Move *quiet_moves, Stack *ss, int quiet_count, int depth)
@@ -87,5 +79,7 @@ namespace Astra
     int16_t History::history[NUM_COLORS][NUM_SQUARES][NUM_SQUARES]{};
 
     int16_t History::cont_history[NUM_PIECES + 1][NUM_SQUARES][NUM_PIECES + 1][NUM_SQUARES]{};
+
+    int16_t History::capt_history[NUM_PIECES + 1][NUM_SQUARES][NUM_PIECE_TYPES]{};
 
 } // namespace Astra

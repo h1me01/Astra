@@ -42,6 +42,7 @@ namespace Astra
 
         static int16_t history[NUM_COLORS][NUM_SQUARES][NUM_SQUARES];
         static int16_t cont_history[NUM_PIECES + 1][NUM_SQUARES][NUM_PIECES + 1][NUM_SQUARES];
+        static int16_t capt_history[NUM_PIECES + 1][NUM_SQUARES][NUM_PIECE_TYPES];
 
         void updateHH(Move &move, Color c, int bonus);
         void updateCH(Board &board, Move &move, Stack *ss, int bonus);

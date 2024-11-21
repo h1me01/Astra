@@ -33,6 +33,7 @@ namespace Astra
         bool use_tb = false;
 
         Board board;
+        History history;
 
         U64 nodes = 0;
         U64 tb_hits = 0;
@@ -47,7 +48,6 @@ namespace Astra
 
     private:
         PVTable pv_table;
-        History history;
        
         TimeMan tm; 
 
