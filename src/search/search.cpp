@@ -88,8 +88,8 @@ namespace Astra
         if (id == 0)
             tt.incrementAge();
 
-        Stack stack[MAX_PLY + 2];
-        Stack *ss = stack + 2; // +2 to avoid stack underflow (history accesses ss - 2)
+        Stack stack[MAX_PLY + 6];
+        Stack *ss = stack + 6; // +6 to avoid stack underflow (history accesses ss - 2)
 
         // init stack
         for (int i = 2; i > 0; --i)
