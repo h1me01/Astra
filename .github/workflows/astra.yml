@@ -27,7 +27,9 @@ jobs:
         if: github.event_name == 'push'
         run: |
           cd src
-          valgrind --error-exitcode=1 ./astra bench
+          valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes --verbose --log-file=valgrind.log ./astra bench
+          cat valgrind.log
+          grep -q "ERROR SUMMARY: 0 errors" valgrind.log
 
   Windows:
     runs-on: windows-2022
