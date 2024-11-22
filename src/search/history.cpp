@@ -10,11 +10,6 @@ namespace Astra
 
     History::History()
     {
-        clear();
-    }
-
-    void History::clear()
-    {
         std::memset(quiet_history, 0, sizeof(quiet_history));
         std::memset(cont_history, 0, sizeof(cont_history));
         std::memset(capt_history, 0, sizeof(capt_history));

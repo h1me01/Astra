@@ -12,7 +12,6 @@ namespace Astra
     public:
         History();
 
-        void clear();
         void update(Board &board, Move &move, Stack *ss, Move *q_moves, int qc, Move* c_moves, int cc, int depth);
 
         int getQHScore(Color c, Move &move) const;
