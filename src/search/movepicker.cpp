@@ -21,7 +21,7 @@ namespace Astra
             stage++;
             evaluateMoves();
             [[fallthrough]];
-        case GOOD_CAPTURES:
+        case REST:
         {
             while (idx < ml_size)
             {
@@ -37,41 +37,9 @@ namespace Astra
                 return move;
             }
 
-            stage++;
-            [[fallthrough]];
-        }
-        case KILLER1:
-            stage++;
-            if (killer1 != NO_MOVE) 
-                return killer1;
-            [[fallthrough]];
-        case KILLER2:
-            stage++;
-            if (killer2 != NO_MOVE) 
-                return killer2;
-            [[fallthrough]];
-        case COUNTER:
-            stage++;
-            if (counter != NO_MOVE) 
-                return counter;
-            [[fallthrough]];
-        case REST:
-            while (idx < ml_size)
-            {
-                partialInsertionSort(idx);
-
-                Move move = ml[idx];
-                idx++;
-
-                // skip tt move since we already returned it
-                if (move == tt_move || move == killer1 || move == killer2 || move == counter)
-                    continue;
-
-                return move;
-            }
-
             // no more moves left
-            return NO_MOVE;
+            return NO_MOVE; 
+        }
         default:
             assert(false); // we should never reach this
             return NO_MOVE;
@@ -93,20 +61,11 @@ namespace Astra
                 ml[i].score = 7'000'000 * board.see(ml[i], 0) + PIECE_VALUES[captured] + ch_score + 1000 * isPromotion(ml[i]); 
             }
             else if (ml[i] == history.getKiller1(ss->ply)) 
-            {
                 ml[i].score = 6'000'000;
-                killer1 = ml[i];
-            }
             else if (ml[i] == history.getKiller2(ss->ply)) 
-            {
                 ml[i].score = 5'000'000; 
-                killer2 = ml[i];
-            }
             else if (history.getCounterMove((ss - 1)->current_move) == ml[i]) 
-            {
                 ml[i].score = 4'000'000;
-                counter = ml[i];
-            }
             else
             {
                 assert(mt == ALL_MOVES); // qsearch should never reach this

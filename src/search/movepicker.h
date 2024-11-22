@@ -10,10 +10,6 @@ namespace Astra
     {
         TT,
         EVAL,
-        GOOD_CAPTURES,
-        KILLER1,
-        KILLER2,
-        COUNTER,
         REST
     };
 
@@ -36,9 +32,6 @@ namespace Astra
         MoveList ml;
         
         Move tt_move = NO_MOVE;
-        Move killer1 = NO_MOVE;
-        Move killer2 = NO_MOVE;
-        Move counter = NO_MOVE;
         
         int idx = 0;
         int ml_size;
