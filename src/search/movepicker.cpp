@@ -2,24 +2,6 @@
 
 namespace Astra
 {
-    // most valuable victim, least valuable attacker
-    constexpr int mvvlva_table[NUM_PIECE_TYPES][NUM_PIECE_TYPES] = {
-        {55, 54, 53, 52, 51, 50},
-        {105, 104, 103, 102, 101, 100},
-        {205, 204, 203, 202, 201, 200},
-        {305, 304, 303, 302, 301, 300},
-        {405, 404, 403, 402, 401, 400},
-        {505, 504, 503, 502, 501, 500}};
-
-    int mvvlva(const Board &board, Move &move)
-    {
-        assert(board.isCapture(move));
-        const PieceType attacker = typeOf(board.pieceAt(move.from()));
-        const PieceType victim = typeOf(board.pieceAt(move.to()));
-        return mvvlva_table[victim][attacker];
-    }
-
-    // movepicker class
     MovePicker::MovePicker(MoveType mt, Board &board, const History &history, const Stack *ss, Move &tt_move)
         : mt(mt), board(board), history(history), ss(ss), ml(board, mt), tt_move(tt_move)
     {
@@ -72,8 +54,12 @@ namespace Astra
         {
             if (ml[i] == tt_move)
                 ml[i].score = 10'000'000;
-            else if (board.isCapture(ml[i]))
-                ml[i].score = (board.see(ml[i], 0) ? 7'000'000 : 0) + mvvlva(board, ml[i]);
+            else if (board.isCapture(ml[i])) 
+            {
+                PieceType captured = typeOf(board.pieceAt(ml[i].to()));
+                int ch_score = history.getCHScore(board, ml[i]);
+                ml[i].score = 7'000'000 * board.see(ml[i], 0) + PIECE_VALUES[captured] + ch_score + 1000 * isPromotion(ml[i]); 
+            }
             else if (ml[i] == history.getKiller1(ss->ply))
                 ml[i].score = 6'000'000;
             else if (ml[i] == history.getKiller2(ss->ply))
@@ -83,9 +69,11 @@ namespace Astra
             else
             {
                 assert(mt == ALL_MOVES); // qsearch should never reach this
-                ml[i].score = history.getHHScore(board.getTurn(), ml[i]);
-                ml[i].score += 2 * history.getCHScore(board, ml[i], (ss - 1)->current_move);
-                ml[i].score += history.getCHScore(board, ml[i], (ss - 2)->current_move);
+                ml[i].score = 2 * history.getQHScore(board.getTurn(), ml[i]);
+                ml[i].score += 2 * history.getContHScore(board, ml[i], (ss - 1)->current_move);
+                ml[i].score += 2 * history.getContHScore(board, ml[i], (ss - 2)->current_move);
+                ml[i].score += history.getContHScore(board, ml[i], (ss - 4)->current_move);
+                ml[i].score += history.getContHScore(board, ml[i], (ss - 6)->current_move);
             }
         }
     }

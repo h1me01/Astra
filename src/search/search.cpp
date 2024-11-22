@@ -108,10 +108,6 @@ namespace Astra
             (ss + i)->excluded_move = NO_MOVE;
         }
 
-        // reset stuff
-        pv_table.reset();
-        nodes = tb_hits = sel_depth = 0;
-
         int avg_eval = 0;
 
         int best_move_changes = 0;
@@ -130,7 +126,6 @@ namespace Astra
             avg_eval += result;
 
             best_move = pv_table(0)(0);
-
 
             if (id == 0) 
             {
@@ -451,9 +446,10 @@ namespace Astra
 
         MovePicker movepicker(ALL_MOVES, board, history, ss, ent.move);
 
-        uint8_t made_moves = 0, quiet_count = 0;
+        uint8_t made_moves = 0, q_count = 0, c_count = 0;
 
-        Move quiet_moves[64];
+        Move q_moves[64];
+        Move c_moves[64];
         Move best_move = NO_MOVE, move = NO_MOVE;
 
         while ((move = movepicker.nextMove()) != NO_MOVE)
@@ -481,7 +477,7 @@ namespace Astra
 
                 if (!pv_node && !in_check && !is_cap && !is_prom) {
                     // late move pruning
-                    if (depth <= lmp_depth && quiet_count > (4 + depth * depth))
+                    if (depth <= lmp_depth && q_count > (4 + depth * depth))
                         continue;
                 
                     // futility pruning
@@ -577,14 +573,16 @@ namespace Astra
 
                 if (score >= beta)
                 {
-                    history.update(board, move, quiet_moves, ss, quiet_count, depth);
+                    history.update(board, move, ss,q_moves, q_count, c_moves, c_count, depth);
                     // cut-off
                     break;
                 }
             }
 
-            if (!is_cap && !is_prom)
-                quiet_moves[quiet_count++] = move;
+            if (!is_cap)
+                q_moves[q_count++] = move;
+            else 
+                c_moves[c_count++] = move;
         }
 
         // check for mate and stalemate

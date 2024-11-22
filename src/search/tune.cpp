@@ -5,9 +5,6 @@
 
 namespace Astra
 {
-    // holds all the tuning parameters for search
-    std::vector<Param *> params;
-
     Param::Param(std::string name, int value, int min, int max, int step) 
     : name(std::move(name)), value(value), min(min), max(max), step(step)
     {
