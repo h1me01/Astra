@@ -57,12 +57,12 @@ namespace Astra
     {
         int bonus = historyBonus(depth);
 
-        Move prev_move = (ss - 1)->current_move;
-        if (prev_move != NO_MOVE)
-            counters[prev_move.from()][prev_move.to()] = best;
-
         if (!board.isCapture(best))
         {
+            Move prev_move = (ss - 1)->current_move;
+            if (prev_move != NO_MOVE)
+                counters[prev_move.from()][prev_move.to()] = best;
+
             if (best != killer1[ss->ply]) {
                 killer2[ss->ply] = killer1[ss->ply];
                 killer1[ss->ply] = best; 
