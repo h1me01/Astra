@@ -10,36 +10,34 @@
 namespace Astra
 {
     // search parameters
-    PARAM(lmr_base, 98, 80, 130, 8);
-    PARAM(lmr_div, 177, 150, 200, 8);
+    PARAM(lmr_base, 100, 80, 130, 8);
+    PARAM(lmr_div, 175, 150, 200, 8);
 
     PARAM(asp_depth, 9, 6, 9, 1);
     PARAM(asp_window, 11, 10, 30, 5);
 
     PARAM(rzr_depth, 4, 3, 5, 1);
-    PARAM(rzr_depth_mult, 173, 150, 250, 15);
+    PARAM(rzr_depth_mult, 175, 150, 250, 15);
     
     PARAM(rfp_depth, 9, 7, 11, 1);
-    PARAM(rfp_depth_mult, 77, 50, 100, 5);
+    PARAM(rfp_depth_mult, 80, 50, 100, 5);
 
     PARAM(nmp_depth_div, 5, 3, 6, 1);
     PARAM(nmp_div, 215, 200, 220, 2);
 
-    PARAM(probcut_margin, 136, 100, 200, 10);
+    PARAM(probcut_margin, 135, 100, 200, 10);
 
     PARAM(see_cap_depth, 6, 5, 8, 1);
-    PARAM(see_cap_margin, 97, 85, 110, 3);
+    PARAM(see_cap_margin, 99, 85, 110, 3);
 
     PARAM(see_quiet_depth, 7, 6, 9, 1);
-    PARAM(see_quiet_margin, 91, 75, 100, 3);
+    PARAM(see_quiet_margin, 95, 75, 100, 3);
 
     PARAM(lmp_depth, 5, 4, 7, 1);
 
-    PARAM(fp_depth, 9, 7, 11, 1);
-    PARAM(fp_base, 149, 120, 180, 10);
-    PARAM(fp_mult, 105, 85, 110, 5);
-
-    PARAM(q_see_margin, 0, -35, 35, 10);
+    PARAM(fp_depth, 10, 7, 11, 1);
+    PARAM(fp_base, 150, 120, 180, 10);
+    PARAM(fp_mult, 106, 85, 110, 5);
 
     // search helper
 
@@ -92,15 +90,7 @@ namespace Astra
         Stack *ss = stack + 6; // +6 to avoid stack underflow (history accesses ss - 2)
 
         // init stack
-        for (int i = 2; i > 0; --i)
-        {
-            (ss - i)->ply = i;
-            (ss - i)->eval = 0;
-            (ss - i)->current_move = NO_MOVE;
-            (ss - i)->excluded_move = NO_MOVE;
-        }
-
-        for (int i = 0; i < MAX_PLY; ++i)
+        for (int i = -6; i < MAX_PLY; ++i)
         {
             (ss + i)->ply = i;
             (ss + i)->eval = 0;
@@ -175,10 +165,10 @@ namespace Astra
         Score result = VALUE_NONE;
         while (true)
         {
-            if (alpha < -500)
+            if (alpha < -2000)
                 alpha = -VALUE_INFINITE;
             
-            if (beta > 500) 
+            if (beta > 2000) 
                 beta = VALUE_INFINITE;
             
             result = negamax(depth, alpha, beta, ROOT, ss);
@@ -362,7 +352,7 @@ namespace Astra
             improving = ss->eval > (ss - 2)->eval;
 
         // internal iterative reduction
-        if (!in_check && depth >= 3 && !tt_hit && pv_node)
+        if (!in_check && !tt_hit && pv_node && depth >= 3)
             depth--;
 
         // only use pruning when not in check and pv node
@@ -446,12 +436,12 @@ namespace Astra
 
         MovePicker movepicker(ALL_MOVES, board, history, ss, ent.move);
 
-        uint8_t made_moves = 0, q_count = 0, c_count = 0;
+        int made_moves = 0, q_count = 0, c_count = 0;
 
         Move q_moves[64];
         Move c_moves[64];
         Move best_move = NO_MOVE, move = NO_MOVE;
-
+        int played_m = 0;
         while ((move = movepicker.nextMove()) != NO_MOVE)
         {
             if (move == excluded_move)
@@ -486,6 +476,11 @@ namespace Astra
                 }
             }
 
+            if (!is_cap)
+                q_moves[q_count++] = move;
+            else 
+                c_moves[c_count++] = move;
+
             // print current move information
             if (id == 0 
                 && root_node 
@@ -494,8 +489,10 @@ namespace Astra
             {
                 std::cout << "info depth " << depth
                           << " currmove " << move
-                          << " currmovenumber " << int(made_moves) << std::endl;
+                          << " currmovenumber " << made_moves << std::endl;
             }
+
+            played_m++;
 
             // singular extensions
             if (!root_node 
@@ -532,26 +529,29 @@ namespace Astra
             Score score = VALUE_NONE;
 
             // late move reduction
-            if (depth >= 3 && !in_check && made_moves > 3)
+            if (depth >= 2 && made_moves > 1 && (!pv_node || !is_cap))
             {
                 int rdepth = REDUCTIONS[depth][made_moves];
-                rdepth += improving;
-                rdepth -= pv_node;
-                rdepth -= is_cap;
+                
+                rdepth += !improving;
+                rdepth += 2*pv_node;
+                rdepth += (board.isCapture(ent.move) || isPromotion(ent.move));
+                rdepth -= board.inCheck();
+                rdepth -= ent.depth >= depth;
                 rdepth = std::clamp(new_depth - rdepth, 1, new_depth + 1);
 
-                score = -negamax(rdepth, -alpha - 1, -alpha, NON_PV, ss + 1);
+                score = -negamax(new_depth - rdepth, -alpha - 1, -alpha, NON_PV, ss + 1);
 
                 // if late move reduction failed high, research
-                if (score > alpha && rdepth < new_depth)
+                if (score > alpha && rdepth < new_depth && rdepth > 1)
                     score = -negamax(new_depth, -alpha - 1, -alpha, NON_PV, ss + 1);
             }
-            else if (!pv_node || made_moves > 1)
+            else if (!pv_node || played_m > 1)
                 // full-depth search if lmr was skipped
                 score = -negamax(new_depth, -alpha - 1, -alpha, NON_PV, ss + 1);
 
             // principal variation search
-            if (pv_node && ((score > alpha && score < beta) || made_moves == 1))
+            if (pv_node && ((score > alpha && score < beta) || played_m == 1))
                 score = -negamax(new_depth, -beta, -alpha, PV, ss + 1);
 
             board.unmakeMove(move);
@@ -566,23 +566,18 @@ namespace Astra
                 {
                     alpha = score;
                     best_move = move;
-
+                    
                     // update pv
                     pv_table.updatePV(ss->ply, best_move);
                 }
 
                 if (score >= beta)
                 {
-                    history.update(board, move, ss,q_moves, q_count, c_moves, c_count, depth);
+                    history.update(board, move, ss,q_moves, q_count, c_moves, c_count, depth + (best_score > beta + 75));
                     // cut-off
                     break;
                 }
             }
-
-            if (!is_cap)
-                q_moves[q_count++] = move;
-            else 
-                c_moves[c_count++] = move;
         }
 
         // check for mate and stalemate
@@ -700,7 +695,7 @@ namespace Astra
                 }
 
                 // see pruning
-                if (!board.see(move, q_see_margin))
+                if (!board.see(move, 0))
                     continue;
             }
 

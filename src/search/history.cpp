@@ -6,7 +6,7 @@
 
 namespace Astra
 {
-    PARAM(history_mult, 153, 100, 200, 8);
+    PARAM(history_mult, 149, 100, 200, 8);
 
     History::History()
     {
