@@ -30,8 +30,6 @@ namespace Astra
     PARAM(see_cap_margin, 97, 85, 110, 3);
     PARAM(see_quiet_margin, 91, 75, 100, 3);
 
-    PARAM(lmp_depth, 5, 4, 7, 1);
-
     PARAM(fp_depth, 9, 7, 11, 1);
     PARAM(fp_base, 149, 120, 180, 10);
     PARAM(fp_mult, 105, 85, 110, 5);
@@ -127,7 +125,7 @@ namespace Astra
                     limit.time.optimum *= 1.10;
 
                 // increase time if eval is decreasing
-                if (result > -100 && result - previous_result < -20) // TODO set -100 to -150
+                if (result > -175 && result - previous_result < -20) 
                     limit.time.optimum *= 1.10;
 
                 // increase optimum time if best move changes often
@@ -449,7 +447,7 @@ namespace Astra
 
                 if (!pv_node && !in_check && !is_cap && !is_prom) {
                     // late move pruning
-                    if (depth <= lmp_depth && q_count > (4 + depth * depth))
+                    if (depth <= 5 && q_count > (4 + depth * depth))
                         continue;
                 
                     // futility pruning
