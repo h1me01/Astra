@@ -14,7 +14,7 @@ namespace Astra
     PARAM(lmr_div, 177, 150, 200, 8);
 
     PARAM(asp_depth, 9, 6, 9, 1);
-    PARAM(asp_window, 11, 10, 30, 5);
+    PARAM(asp_window, 11, 5, 20, 3);
 
     PARAM(rzr_depth, 4, 3, 5, 1);
     PARAM(rzr_depth_mult, 173, 150, 250, 15);
@@ -22,10 +22,10 @@ namespace Astra
     PARAM(rfp_depth, 9, 7, 11, 1);
     PARAM(rfp_depth_mult, 77, 50, 100, 5);
 
+    PARAM(nmp_base, 4, 4, 5, 1);
+    PARAM(nmp_min, 3, 3, 6, 1);
     PARAM(nmp_depth_div, 5, 3, 6, 1);
     PARAM(nmp_div, 215, 200, 220, 2);
-
-    PARAM(probcut_margin, 136, 100, 200, 10);
 
     PARAM(see_cap_margin, 97, 85, 110, 3);
     PARAM(see_quiet_margin, 91, 75, 100, 3);
@@ -160,10 +160,10 @@ namespace Astra
         Score result = VALUE_NONE;
         while (true)
         {
-            if (alpha < -2000)
+            if (alpha < -1500)
                 alpha = -VALUE_INFINITE;
             
-            if (beta > 2000) 
+            if (beta > 1500) 
                 beta = VALUE_INFINITE;
             
             result = negamax(depth, alpha, beta, false, ROOT, ss);
@@ -181,7 +181,7 @@ namespace Astra
             else
                 break;
 
-            window += window / 2;
+            window += window / 3;
         }
 
         return result;
@@ -365,7 +365,7 @@ namespace Astra
             {
                 assert(ss->eval - beta >= 0);
 
-                int R = 4 + depth / nmp_depth_div + std::min(3, (ss->eval - beta) / nmp_div);
+                int R = nmp_base + depth / nmp_depth_div + std::min(int(nmp_min), (ss->eval - beta) / nmp_div);
 
                 ss->current_move = NULL_MOVE;
 
@@ -384,7 +384,7 @@ namespace Astra
             }
 
             // probcut
-            int beta_cut = beta + probcut_margin;
+            int beta_cut = beta + 136;
             if (depth > 3 
                 && std::abs(beta) < VALUE_TB_WIN_IN_MAX_PLY 
                 && !(ent.depth >= depth - 3 && tt_score != VALUE_NONE && tt_score < beta_cut))
