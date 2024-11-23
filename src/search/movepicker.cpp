@@ -61,11 +61,20 @@ namespace Astra
                 ml[i].score = 7'000'000 * board.see(ml[i], 0) + PIECE_VALUES[captured] + ch_score + 1000 * isPromotion(ml[i]); 
             }
             else if (ml[i] == history.getKiller1(ss->ply)) 
+            {
                 ml[i].score = 6'000'000;
+                killer1 = ml[i];
+            }
             else if (ml[i] == history.getKiller2(ss->ply)) 
+            {
                 ml[i].score = 5'000'000; 
+                killer2 = ml[i];
+            }
             else if (history.getCounterMove((ss - 1)->current_move) == ml[i]) 
+            {
                 ml[i].score = 4'000'000;
+                counter = ml[i];
+            }
             else
             {
                 assert(mt == ALL_MOVES); // qsearch should never reach this

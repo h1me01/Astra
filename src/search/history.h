@@ -7,6 +7,8 @@ namespace Astra
 {
     struct Stack;
 
+    int historyBonus(int depth);
+
     class History
     {
     public:
@@ -22,6 +24,10 @@ namespace Astra
         Move getKiller1(int ply) const { return killer1[ply]; }
         Move getKiller2(int ply) const { return killer2[ply]; }
 
+        void updateHH(Move &move, Color c, int bonus);
+        void updateCH(Board& board, Move &move, int bonus);
+        void updateContH(Board &board, Move &move, Stack *ss, int bonus);
+
     private:
         Move killer1[MAX_PLY];
         Move killer2[MAX_PLY];
@@ -30,10 +36,6 @@ namespace Astra
         static int16_t quiet_history[NUM_COLORS][NUM_SQUARES][NUM_SQUARES];
         static int16_t cont_history[NUM_PIECES + 1][NUM_SQUARES][NUM_PIECES + 1][NUM_SQUARES];
         static int16_t capt_history[NUM_PIECES + 1][NUM_SQUARES][NUM_PIECE_TYPES];
-
-        void updateHH(Move &move, Color c, int bonus);
-        void updateCH(Board& board, Move &move, int bonus);
-        void updateContH(Board &board, Move &move, Stack *ss, int bonus);
     };
 
 } // namespace Astra
