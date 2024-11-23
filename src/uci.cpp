@@ -9,7 +9,7 @@
 
 namespace UCI
 {
-    const std::string version = "4.0";
+    const std::string version = "4.1";
 
     // options class
     void Options::add(std::string name, const Option &option)

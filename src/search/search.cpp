@@ -10,29 +10,29 @@
 namespace Astra
 {
     // search parameters
-    PARAM(lmr_base, 98, 80, 130, 8);
+    PARAM(lmr_base, 93, 80, 130, 8);
     PARAM(lmr_div, 177, 150, 200, 8);
 
-    PARAM(asp_depth, 9, 6, 9, 1);
+    PARAM(asp_depth, 8, 6, 9, 1);
     PARAM(asp_window, 11, 5, 20, 3);
 
     PARAM(rzr_depth, 4, 3, 5, 1);
-    PARAM(rzr_depth_mult, 173, 150, 250, 15);
+    PARAM(rzr_depth_mult, 182, 150, 250, 15);
     
-    PARAM(rfp_depth, 9, 7, 11, 1);
-    PARAM(rfp_depth_mult, 77, 50, 100, 5);
+    PARAM(rfp_depth, 8, 7, 11, 1);
+    PARAM(rfp_depth_mult, 82, 50, 100, 5);
 
     PARAM(nmp_base, 4, 4, 5, 1);
-    PARAM(nmp_min, 3, 3, 6, 1);
+    PARAM(nmp_min, 4, 3, 6, 1);
     PARAM(nmp_depth_div, 5, 3, 6, 1);
     PARAM(nmp_div, 215, 200, 220, 2);
 
-    PARAM(see_cap_margin, 97, 85, 110, 3);
-    PARAM(see_quiet_margin, 91, 75, 100, 3);
+    PARAM(see_cap_margin, 96, 85, 110, 3);
+    PARAM(see_quiet_margin, 86, 75, 100, 3);
 
-    PARAM(fp_depth, 9, 7, 11, 1);
-    PARAM(fp_base, 149, 120, 180, 10);
-    PARAM(fp_mult, 105, 85, 110, 5);
+    PARAM(fp_depth, 8, 7, 11, 1);
+    PARAM(fp_base, 150, 120, 180, 10);
+    PARAM(fp_mult, 104, 85, 110, 5);
 
     // search helper
 
@@ -57,7 +57,7 @@ namespace Astra
 
     // search class
 
-    Search::Search(const std::string &fen) : board(fen)
+    Search::Search(const std::string &fen) : board(fen) 
     {
         tt.clear();
     }
