@@ -10,31 +10,33 @@
 namespace Astra
 {
     // search parameters
-    PARAM(lmr_base, 93, 80, 130, 8);
+    PARAM(lmr_base, 98, 80, 130, 8);
     PARAM(lmr_div, 177, 150, 200, 8);
 
-    PARAM(asp_depth, 8, 6, 9, 1);
+    PARAM(asp_depth, 9, 6, 9, 1);
     PARAM(asp_window, 11, 5, 20, 3);
 
+    PARAM(iir_depth, 3, 3, 4, 1);
+
     PARAM(rzr_depth, 4, 3, 5, 1);
-    PARAM(rzr_depth_mult, 182, 150, 250, 15);
+    PARAM(rzr_depth_mult, 173, 150, 250, 15);
     
-    PARAM(rfp_depth, 8, 7, 11, 1);
-    PARAM(rfp_depth_mult, 82, 50, 100, 5);
+    PARAM(rfp_depth, 9, 7, 11, 1);
+    PARAM(rfp_depth_mult, 77, 50, 100, 5);
 
     PARAM(nmp_base, 4, 4, 5, 1);
-    PARAM(nmp_min, 4, 3, 6, 1);
+    PARAM(nmp_min, 3, 3, 6, 1);
     PARAM(nmp_depth_div, 5, 3, 6, 1);
     PARAM(nmp_div, 215, 200, 220, 2);
 
-    PARAM(probcut_margin, 172, 130, 180, 8);
+    PARAM(probcut_margin, 136, 130, 180, 8);
 
-    PARAM(see_cap_margin, 96, 85, 110, 3);
-    PARAM(see_quiet_margin, 86, 75, 100, 3);
+    PARAM(see_cap_margin, 97, 85, 110, 3);
+    PARAM(see_quiet_margin, 91, 75, 100, 3);
 
-    PARAM(fp_depth, 8, 7, 11, 1);
-    PARAM(fp_base, 150, 120, 180, 10);
-    PARAM(fp_mult, 104, 85, 110, 5);
+    PARAM(fp_depth, 9, 7, 11, 1);
+    PARAM(fp_base, 149, 120, 180, 10);
+    PARAM(fp_mult, 105, 85, 110, 5);
 
     // search helper
 
@@ -123,7 +125,7 @@ namespace Astra
                     limit.time.optimum *= 1.10;
 
                 // increase time if eval is decreasing
-                if (result > -175 && result - previous_result < -20) 
+                if (result > -200 && result - previous_result < -20) 
                     limit.time.optimum *= 1.10;
 
                 // increase optimum time if best move changes often
@@ -164,7 +166,7 @@ namespace Astra
             if (beta > 1500) 
                 beta = VALUE_INFINITE;
             
-            result = negamax(depth, alpha, beta, false, ss);
+            result = negamax(depth, alpha, beta, ss);
 
             if (isLimitReached(depth))
                 return result;
@@ -185,7 +187,7 @@ namespace Astra
         return result;
     }
 
-    Score Search::negamax(int depth, Score alpha, Score beta, bool cut_node, Stack *ss)
+    Score Search::negamax(int depth, Score alpha, Score beta, Stack *ss)
     {
         assert(alpha < beta);
         assert(ss->ply >= 0);
@@ -230,17 +232,17 @@ namespace Astra
                 return drawScore(nodes);
         }
 
-        // quiescence search
+        // dive into quiescence search if depth is less than 1
         if (depth <= 0)
             return qSearch(alpha, beta, ss);
 
-        (ss + 1)->excluded_move = NO_MOVE;
+        (ss + 1)->skipped_move = NO_MOVE;
 
         // selective depth
         if (pv_node && ss->ply > sel_depth)
             sel_depth = ss->ply; // heighest depth a pv node has reached
 
-        const Move excluded_move = ss->excluded_move;
+        const Move skipped_move = ss->skipped_move;
 
         // look up in transposition table
         TTEntry ent;
@@ -252,8 +254,8 @@ namespace Astra
             && !pv_node 
             && tt_hit 
             && ent.depth >= depth 
-            && !excluded_move 
-            && (ss - 1)->current_move != NULL_MOVE)
+            && !skipped_move 
+            && (ss - 1)->curr_move != NULL_MOVE)
         {
             assert(tt_score != VALUE_NONE);
             ss->eval = tt_score;
@@ -341,7 +343,7 @@ namespace Astra
         }
 
         // internal iterative reduction
-        if (!in_check && !tt_hit && depth >= 3 && (pv_node || cut_node))
+        if (!in_check && !skipped_move && !tt_hit && depth >= iir_depth && pv_node)
             depth--;
 
         // only use pruning when not in check and pv node
@@ -365,19 +367,19 @@ namespace Astra
 
             // null move pruning
             if (depth >= 4  
-                && board.nonPawnMat(stm) 
-                && !excluded_move 
+                && !skipped_move 
                 && ss->eval >= beta
-                && (ss - 1)->current_move != NULL_MOVE)
+                && board.nonPawnMat(stm) 
+                && (ss - 1)->curr_move != NULL_MOVE)
             {
                 assert(ss->eval - beta >= 0);
 
                 int R = nmp_base + depth / nmp_depth_div + std::min(int(nmp_min), (ss->eval - beta) / nmp_div);
 
-                ss->current_move = NULL_MOVE;
+                ss->curr_move = NULL_MOVE;
 
                 board.makeNullMove();
-                Score score = -negamax(depth - R, -beta, -beta + 1, !cut_node, ss + 1);
+                Score score = -negamax(depth - R, -beta, -beta + 1, ss + 1);
                 board.unmakeNullMove();
 
                 if (score >= beta)
@@ -401,7 +403,7 @@ namespace Astra
                 Move move = NO_MOVE;
                 while ((move = movepicker.nextMove()) != NO_MOVE)
                 {
-                    if (move == ss->excluded_move)
+                    if (move == ss->skipped_move)
                         continue;
 
                     nodes++;
@@ -410,7 +412,7 @@ namespace Astra
                     Score score = -qSearch(-beta_cut, -beta_cut + 1, ss + 1);
 
                     if (score >= beta_cut)
-                        score = -negamax(depth - 4, -beta_cut, -beta_cut + 1, !cut_node, ss + 1);
+                        score = -negamax(depth - 4, -beta_cut, -beta_cut + 1, ss + 1);
 
                     board.unmakeMove(move);
 
@@ -425,6 +427,8 @@ namespace Astra
 
         MovePicker mp(ALL_MOVES, board, history, ss, ent.move);
 
+        bool is_ttmove_cap = board.isCapture(ent.move);
+
         int move_count = 0, q_count = 0, c_count = 0;
 
         Move q_moves[64];
@@ -433,10 +437,8 @@ namespace Astra
         
         while ((move = mp.nextMove()) != NO_MOVE)
         {
-            if (move == excluded_move)
+            if (move == skipped_move)
                 continue;
-
-            move_count++;
 
             int extension = 0;
 
@@ -468,6 +470,8 @@ namespace Astra
             else 
                 q_moves[q_count++] = move;
 
+            move_count++;
+
             // print current move information
             if (id == 0 
                 && root_node 
@@ -481,39 +485,37 @@ namespace Astra
 
             // singular extensions
             if (!root_node 
-                && depth >= 8 
+                && depth >= 6 
                 && tt_hit 
                 && ent.move == move 
-                && !excluded_move 
+                && !skipped_move 
                 && std::abs(tt_score) < VALUE_TB_WIN_IN_MAX_PLY 
                 && ent.bound & LOWER_BOUND 
                 && ent.depth >= depth - 3)
             {
-                const Score singular_beta = tt_score - 3 * depth;
-                const int singular_depth = (depth - 1) / 2;
+                Score sbeta = tt_score - 3 * depth;
+                int sdepth = (depth - 1) / 2;
 
-                ss->excluded_move = move;
-                Score score = negamax(singular_depth, singular_beta - 1, singular_beta, cut_node, ss);
-                ss->excluded_move = NO_MOVE;
+                ss->skipped_move = move;
+                Score score = negamax(sdepth, sbeta - 1, sbeta, ss);
+                ss->skipped_move = NO_MOVE;
 
-                if (score < singular_beta) 
+                if (score < sbeta) 
                      extension = 1;
-                if (singular_beta >= beta)
-                    return singular_beta;
+                else if (sbeta >= beta)
+                    return sbeta;
                 else if (tt_score >= beta)
-                   extension = -2 + pv_node;
-                else if (cut_node)
-                   extension = -2;
+                    extension = -2 + pv_node;
+                else if (tt_score <= alpha)
+                    extension = -1;
             }
 
             const int new_depth = depth - 1 + extension;
-
-            bool is_tt_move_cap = board.isCapture(ent.move);
-
+          
             nodes++;
             board.makeMove(move, true);
            
-            ss->current_move = move;
+            ss->curr_move = move;
 
             Score score = VALUE_NONE;
 
@@ -524,11 +526,9 @@ namespace Astra
                 // reduce when not improving
                 r += !improving;
                 // reduce when not in pv
-                r += 2 * !pv_node;
+                r += !pv_node;
                 // reduce if tt move is a capture
-                r += is_tt_move_cap;
-                // reduce in cut nodes
-                r += cut_node * (1 + !is_cap);
+                r += is_ttmove_cap;
                 // decrease reduction when move gives check
                 r -= board.inCheck();
                 // decrease reduction when move is killer or counter
@@ -536,13 +536,13 @@ namespace Astra
             
                 int rdepth = std::clamp(new_depth - r, 1, new_depth + 1);
 
-                score = -negamax(rdepth, -alpha - 1, -alpha, true, ss + 1);
+                score = -negamax(rdepth, -alpha - 1, -alpha, ss + 1);
 
                 // if late move reduction failed high and we actually reduced, do a research
                 if (score > alpha && r > 1) 
                 {
                     if (rdepth < new_depth)
-                        score = -negamax(new_depth, -alpha - 1, -alpha, !cut_node, ss + 1);
+                        score = -negamax(new_depth, -alpha - 1, -alpha, ss + 1);
 
                     int bonus = (score <= alpha ? -1 : score >= beta ? 1 : 0) * historyBonus(new_depth);
                     history.updateContH(board, move, ss, bonus);
@@ -550,11 +550,11 @@ namespace Astra
             }
             else if (!pv_node || move_count > 1)
                 // full-depth search if lmr was skipped
-                score = -negamax(new_depth, -alpha - 1, -alpha, !cut_node, ss + 1);
+                score = -negamax(new_depth, -alpha - 1, -alpha, ss + 1);
 
             // principal variation search
             if (pv_node && ((score > alpha && score < beta) || move_count == 1))
-                score = -negamax(new_depth, -beta, -alpha, false, ss + 1);
+                score = -negamax(new_depth, -beta, -alpha, ss + 1);
 
             board.unmakeMove(move);
 
@@ -585,7 +585,7 @@ namespace Astra
         // check for mate and stalemate
         if (mp.getMoveCount() == 0)
         {
-            if (excluded_move != NO_MOVE)
+            if (skipped_move != NO_MOVE)
                 best_score = alpha;
             else
                 best_score = in_check ? -VALUE_MATE + ss->ply : VALUE_DRAW;
@@ -595,7 +595,7 @@ namespace Astra
             best_score = std::min(best_score, max_score);
 
         // store in transposition table
-        if (!excluded_move && !threads.isStopped())
+        if (!skipped_move && !threads.isStopped())
         {
             Bound bound;
             if (best_score >= beta)

@@ -6,9 +6,9 @@
 
 namespace Astra
 {
-    PARAM(history_mult, 158, 100, 200, 8);
-    PARAM(history_minus, 21, 0, 50, 5);
-    PARAM(max_history_bonus, 1773, 1100, 1800, 50);
+    PARAM(history_mult, 142, 100, 200, 8);
+    PARAM(history_minus, 24, 0, 50, 5);
+    PARAM(max_history_bonus, 1778, 1100, 1800, 50);
 
     int historyBonus(int depth)
     {
@@ -59,7 +59,7 @@ namespace Astra
 
         if (!board.isCapture(best))
         {
-            Move prev_move = (ss - 1)->current_move;
+            Move prev_move = (ss - 1)->curr_move;
             if (prev_move != NO_MOVE)
                 counters[prev_move.from()][prev_move.to()] = best;
 
@@ -121,8 +121,8 @@ namespace Astra
 
         int offsets[] = {-1, -2, -4, -6}; 
         for (int offset : offsets) {
-            if ((ss + offset)->current_move != NO_MOVE) {
-                Move prev_move = (ss + offset)->current_move;
+            if ((ss + offset)->curr_move != NO_MOVE) {
+                Move prev_move = (ss + offset)->curr_move;
                 Piece prev_piece = board.pieceAt(prev_move.from());
 
                 int16_t &score = cont_history[prev_piece][prev_move.to()][curr_piece][move.to()];

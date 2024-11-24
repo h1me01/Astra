@@ -70,7 +70,7 @@ namespace Astra
                 ml[i].score = 5'000'000; 
                 killer2 = ml[i];
             }
-            else if (history.getCounterMove((ss - 1)->current_move) == ml[i]) 
+            else if (history.getCounterMove((ss - 1)->curr_move) == ml[i]) 
             {
                 ml[i].score = 4'000'000;
                 counter = ml[i];
@@ -79,10 +79,10 @@ namespace Astra
             {
                 assert(mt == ALL_MOVES); // qsearch should never reach this
                 ml[i].score = 2 * history.getQHScore(board.getTurn(), ml[i]);
-                ml[i].score += 2 * history.getContHScore(board, ml[i], (ss - 1)->current_move);
-                ml[i].score += 2 * history.getContHScore(board, ml[i], (ss - 2)->current_move);
-                ml[i].score += history.getContHScore(board, ml[i], (ss - 4)->current_move);
-                ml[i].score += history.getContHScore(board, ml[i], (ss - 6)->current_move);
+                ml[i].score += 2 * history.getContHScore(board, ml[i], (ss - 1)->curr_move);
+                ml[i].score += 2 * history.getContHScore(board, ml[i], (ss - 2)->curr_move);
+                ml[i].score += history.getContHScore(board, ml[i], (ss - 4)->curr_move);
+                ml[i].score += history.getContHScore(board, ml[i], (ss - 6)->curr_move);
             }
         }
     }

@@ -12,8 +12,8 @@ namespace Astra
     {
         uint16_t ply;
         Score eval = VALUE_NONE;
-        Move current_move = NO_MOVE;
-        Move excluded_move = NO_MOVE;
+        Move curr_move = NO_MOVE;
+        Move skipped_move = NO_MOVE;
     };
 
     void initReductions();
@@ -45,7 +45,7 @@ namespace Astra
         TimeMan tm; 
 
         Score aspSearch(int depth, Score prev_eval, Stack *ss);
-        Score negamax(int depth, Score alpha, Score beta, bool cut_node, Stack *ss);
+        Score negamax(int depth, Score alpha, Score beta, Stack *ss);
         Score qSearch(Score alpha, Score beta, Stack *ss);
 
         bool isLimitReached(int depth) const;

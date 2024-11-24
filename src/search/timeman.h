@@ -42,7 +42,7 @@ namespace Astra
             Time time;
 
             int mtg = moves_to_go ? moves_to_go : 50;
-            int64_t adj_time = std::max<int64_t>(1LL, time_left + inc * mtg / 2 - overhead * (moves_to_go ? 1 : mtg));
+            int64_t adj_time = std::max<int64_t>(1LL, time_left + inc * mtg / 1.5 - overhead * (moves_to_go ? 1 : mtg));
             
             if (moves_to_go == 0)
                 time.optimum = adj_time * 0.05;
