@@ -8,13 +8,6 @@
 
 namespace Astra
 {
-    enum Node
-    {
-        NON_PV,
-        PV,
-        ROOT
-    };
-
     struct Stack
     {
         uint16_t ply;
@@ -52,8 +45,8 @@ namespace Astra
         TimeMan tm; 
 
         Score aspSearch(int depth, Score prev_eval, Stack *ss);
-        Score negamax(int depth, Score alpha, Score beta, bool cut_node, Node node, Stack *ss);
-        Score qSearch(Score alpha, Score beta, Node node, Stack *ss);
+        Score negamax(int depth, Score alpha, Score beta, bool cut_node, Stack *ss);
+        Score qSearch(Score alpha, Score beta, Stack *ss);
 
         bool isLimitReached(int depth) const;
         void printUciInfo(Score result, int depth, PVLine &pv_line) const;
