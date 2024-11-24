@@ -18,9 +18,9 @@ namespace Astra
     struct Stack
     {
         uint16_t ply;
-        Score eval;
-        Move current_move;
-        Move excluded_move;
+        Score eval = VALUE_NONE;
+        Move current_move = NO_MOVE;
+        Move excluded_move = NO_MOVE;
     };
 
     void initReductions();

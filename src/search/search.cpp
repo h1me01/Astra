@@ -27,6 +27,8 @@ namespace Astra
     PARAM(nmp_depth_div, 5, 3, 6, 1);
     PARAM(nmp_div, 215, 200, 220, 2);
 
+    PARAM(probcut_margin, 172, 130, 180, 8);
+
     PARAM(see_cap_margin, 96, 85, 110, 3);
     PARAM(see_quiet_margin, 86, 75, 100, 3);
 
@@ -84,14 +86,10 @@ namespace Astra
         Stack stack[MAX_PLY + 6];
         Stack *ss = stack + 6; // +6 to avoid stack underflow (history accesses ss - 2)
 
-        // init stack
-        for (int i = -6; i < MAX_PLY; ++i)
-        {
+        for(int i = 6; i > 0 ; --i)
+            (ss - i)->ply = i;
+        for (int i = 0; i < MAX_PLY; ++i)
             (ss + i)->ply = i;
-            (ss + i)->eval = 0;
-            (ss + i)->current_move = NO_MOVE;
-            (ss + i)->excluded_move = NO_MOVE;
-        }
 
         int avg_eval = 0;
 
@@ -187,7 +185,7 @@ namespace Astra
         return result;
     }
 
-    Score Search::negamax(int depth, Score alpha, Score beta,bool cut_node, Node node, Stack *ss)
+    Score Search::negamax(int depth, Score alpha, Score beta, bool cut_node, Node node, Stack *ss)
     {
         assert(alpha < beta);
         assert(ss->ply >= 0);
@@ -330,8 +328,14 @@ namespace Astra
 
         // check for improvement
         bool improving = false;
-        if (!in_check)
-            improving = ss->eval > (ss - 2)->eval;
+        if (ss->ply >= 2) 
+        { 
+            if (ss->ply >= 4 && (ss - 2)->eval == VALUE_NONE) 
+                // if ss - 2 eval was not calculated, use ss - 4 eval
+                improving = ss->eval > (ss - 4)->eval || (ss - 4)->eval == VALUE_NONE;
+            else
+                improving = ss->eval > (ss - 2)->eval || (ss - 2)->eval == VALUE_NONE;        
+        }
 
         // internal iterative reduction
         if (!in_check && !tt_hit && depth >= 3 && (pv_node || cut_node))
@@ -384,7 +388,7 @@ namespace Astra
             }
 
             // probcut
-            int beta_cut = beta + 136;
+            int beta_cut = beta + probcut_margin;
             if (depth > 3 
                 && std::abs(beta) < VALUE_TB_WIN_IN_MAX_PLY 
                 && !(ent.depth >= depth - 3 && tt_score != VALUE_NONE && tt_score < beta_cut))

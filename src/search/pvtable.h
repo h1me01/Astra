@@ -21,7 +21,7 @@ namespace Astra
         PVLine& operator()(const int depth) { return pvs[depth]; }
         PVLine operator()(int depth) const { return pvs[depth]; }
 
-        void reset()
+        PVTable()
         {
             for (auto& pvLine : pvs)
                 pvLine.length = 0;
