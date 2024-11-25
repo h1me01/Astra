@@ -94,7 +94,7 @@ namespace Astra
                 ml[i].score = 10'000'000;
             else if (board.isCapture(ml[i])) 
             {
-                PieceType captured = typeOf(board.pieceAt(ml[i].to()));
+                PieceType captured = ml[i].flag() == EN_PASSANT ? PAWN : typeOf(board.pieceAt(ml[i].to()));
                 int ch_score = history.getCHScore(board, ml[i]);
                 ml[i].score = 7'000'000 * board.see(ml[i], 0) + PIECE_VALUES[captured] + ch_score + 1000 * isPromotion(ml[i]); 
             }

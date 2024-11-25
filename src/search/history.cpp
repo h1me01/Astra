@@ -36,7 +36,7 @@ namespace Astra
 
     int History::getCHScore(const Board &board, Move &move) const
     {
-        PieceType captured = typeOf(board.pieceAt(move.to()));
+        PieceType captured = move.flag() == EN_PASSANT ? PAWN : typeOf(board.pieceAt(move.to()));
         Piece p = board.pieceAt(move.from());
         return capt_history[p][move.to()][captured];
     }
@@ -108,7 +108,7 @@ namespace Astra
 
     void History::updateCH(Board &board, Move &move, int bonus)
     {
-        PieceType captured = typeOf(board.pieceAt(move.to()));
+        PieceType captured = move.flag() == EN_PASSANT ? PAWN : typeOf(board.pieceAt(move.to()));
         Piece curr_piece = board.pieceAt(move.from());
 
         int16_t &score = capt_history[curr_piece][move.to()][captured];

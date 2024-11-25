@@ -607,7 +607,7 @@ namespace Astra
             best_score = std::min(best_score, max_score);
 
         // store in transposition table
-        if (!skipped && !threads.isStopped())
+        if (!skipped)
         {
             Bound bound;
             if (best_score >= beta)
@@ -695,7 +695,7 @@ namespace Astra
             if (best_score > VALUE_TB_LOSS_IN_MAX_PLY && !in_check)
             {
                 // delta pruning
-                PieceType captured = typeOf(board.pieceAt(move.to()));
+                PieceType captured = move.flag() == EN_PASSANT ? PAWN : typeOf(board.pieceAt(move.to()));
                 if (!isPromotion(move) 
                     && board.nonPawnMat(stm) 
                     && stand_pat + 400 + PIECE_VALUES[captured] < alpha)
@@ -733,14 +733,13 @@ namespace Astra
             }
         }
 
-        // store in transposition table
-        if (!threads.isStopped())
-        {
-            // exact bounds can only be stored in pv search
-            Bound bound = best_score >= beta ? LOWER_BOUND : UPPER_BOUND;
-            tt.store(hash, best_move, scoreToTT(best_score, ss->ply), 0, bound);
-        }
+        if (best_score >= beta && abs(best_score) < VALUE_TB_WIN_IN_MAX_PLY)
+            best_score = (best_score + beta) / 2;
 
+        // store in transposition table
+        Bound bound = best_score >= beta ? LOWER_BOUND : UPPER_BOUND; // exact bounds can only be stored in pv search
+        tt.store(hash, best_move, scoreToTT(best_score, ss->ply), 0, bound);
+        
         return best_score;
     }
 
