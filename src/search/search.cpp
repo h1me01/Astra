@@ -433,7 +433,7 @@ namespace Astra
         bool skip_quiets = false;
         bool is_ttmove_cap = board.isCapture(ent.move);
 
-        int move_count = 0, q_count = 0, c_count = 0;
+        int move_moves = 0, q_count = 0, c_count = 0;
 
         Move q_moves[64];
         Move c_moves[64];
@@ -452,7 +452,7 @@ namespace Astra
             if (!root_node && best_score > VALUE_TB_LOSS_IN_MAX_PLY)
             {
                 int history_score = is_cap ? history.getCHScore(board, move) : history.getQHScore(stm, move); 
-                int r = REDUCTIONS[depth][move_count + 1] + !improving - history_score / hp_div;
+                int r = REDUCTIONS[depth][move_moves + 1] + !improving - history_score / hp_div;
 
                 int lmr_depth = std::max(1, depth - r);
                 
@@ -486,7 +486,7 @@ namespace Astra
             else 
                 q_moves[q_count++] = move;
 
-            move_count++;
+            move_moves++;
 
             // print current move information
             if (id == 0 
@@ -496,7 +496,7 @@ namespace Astra
             {
                 std::cout << "info depth " << depth
                           << " currmove " << move
-                          << " currmovenumber " << move_count << std::endl;
+                          << " currmovenumber " << move_moves << std::endl;
             }
 
             // singular extensions
@@ -536,9 +536,9 @@ namespace Astra
             Score score = VALUE_NONE;
 
             // late move reduction
-            if (depth > 1 && move_count > 3 && (!pv_node || !is_cap))
+            if (depth > 1 && move_moves > 3 && (!pv_node || !is_cap))
             {
-                int r = REDUCTIONS[depth][move_count + 1];
+                int r = REDUCTIONS[depth][move_moves + 1];
                 // increase when tt move is capture
                 r += is_ttmove_cap;
                 // reduce when not improving
@@ -564,12 +564,12 @@ namespace Astra
                     history.updateContH(board, move, ss, bonus);
                 }
             }
-            else if (!pv_node || move_count > 1)
+            else if (!pv_node || move_moves > 1)
                 // full-depth search if lmr was skipped
                 score = -negamax(new_depth, -alpha - 1, -alpha, ss + 1);
 
             // principal variation search
-            if (pv_node && ((score > alpha && score < beta) || move_count == 1))
+            if (pv_node && ((score > alpha && score < beta) || move_moves == 1))
                 score = -negamax(new_depth, -beta, -alpha, ss + 1);
 
             board.unmakeMove(move);
