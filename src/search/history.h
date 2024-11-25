@@ -17,8 +17,8 @@ namespace Astra
         void update(Board &board, Move &move, Stack *ss, Move *q_moves, int qc, Move* c_moves, int cc, int depth);
 
         int getQHScore(Color c, Move &move) const;
-        int getCHScore(Board &board, Move &move) const;
-        int getContHScore(Board &board, Move &move, const Move &prev_move) const;
+        int getCHScore(const Board &board, Move &move) const;
+        int getContHScore(const Board &board, Move &move, const Move &prev_move) const;
 
         Move getCounterMove(Move move) const;
         Move getKiller1(int ply) const { return killer1[ply]; }

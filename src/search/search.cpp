@@ -36,6 +36,9 @@ namespace Astra
     PARAM(fp_base, 146, 120, 180, 10);
     PARAM(fp_mult, 101, 85, 110, 5);
 
+    PARAM(hp_margin, 3755, 2500, 5000, 400);
+    PARAM(hp_div, 6000, 5000, 8500, 400);
+    PARAM(hp_depth, 5, 4, 6, 1);
     PARAM(history_bonus_margin, 73, 55, 100, 5);
 
     // search helper
@@ -236,13 +239,13 @@ namespace Astra
         if (depth <= 0)
             return qSearch(alpha, beta, ss);
 
-        (ss + 1)->skipped_move = NO_MOVE;
+        (ss + 1)->skipped = NO_MOVE;
 
         // selective depth
         if (pv_node && ss->ply > sel_depth)
             sel_depth = ss->ply; // heighest depth a pv node has reached
 
-        const Move skipped_move = ss->skipped_move;
+        const Move skipped = ss->skipped;
 
         // look up in transposition table
         TTEntry ent;
@@ -254,7 +257,7 @@ namespace Astra
             && !pv_node 
             && tt_hit 
             && ent.depth >= depth 
-            && !skipped_move 
+            && !skipped 
             && (ss - 1)->curr_move != NULL_MOVE)
         {
             assert(tt_score != VALUE_NONE);
@@ -343,7 +346,7 @@ namespace Astra
         }
 
         // internal iterative reduction
-        if (!in_check && !skipped_move && !tt_hit && depth >= 4 && pv_node)
+        if (!in_check && !skipped && !tt_hit && depth >= 4 && pv_node)
             depth--;
 
         // only use pruning when not in check and pv node
@@ -367,7 +370,7 @@ namespace Astra
 
             // null move pruning
             if (depth >= 4  
-                && !skipped_move 
+                && !skipped 
                 && ss->eval >= beta
                 && board.nonPawnMat(stm) 
                 && (ss - 1)->curr_move != NULL_MOVE)
@@ -403,7 +406,7 @@ namespace Astra
                 Move move = NO_MOVE;
                 while ((move = movepicker.nextMove()) != NO_MOVE)
                 {
-                    if (move == ss->skipped_move)
+                    if (move == ss->skipped)
                         continue;
 
                     nodes++;
@@ -427,6 +430,7 @@ namespace Astra
 
         MovePicker mp(ALL_MOVES, board, history, ss, ent.move);
 
+        bool skip_quiets = false;
         bool is_ttmove_cap = board.isCapture(ent.move);
 
         int move_count = 0, q_count = 0, c_count = 0;
@@ -435,33 +439,45 @@ namespace Astra
         Move c_moves[64];
         Move best_move = NO_MOVE, move = NO_MOVE;
         
-        while ((move = mp.nextMove()) != NO_MOVE)
+        while ((move = mp.nextMove(skip_quiets)) != NO_MOVE)
         {
-            if (move == skipped_move)
+            if (move == skipped)
                 continue;
 
             int extension = 0;
 
             bool is_cap = board.isCapture(move);
             bool is_prom = isPromotion(move);
-
+            
             if (!root_node && best_score > VALUE_TB_LOSS_IN_MAX_PLY)
             {
-                assert(ss->eval != VALUE_NONE || in_check);
+                int history_score = is_cap ? history.getCHScore(board, move) : history.getQHScore(stm, move); 
+                int r = REDUCTIONS[depth][move_count + 1] + !improving - history_score / hp_div;
 
+                int lmr_depth = std::max(1, depth - r);
+                
                 // see pruning
-                int see_margin = is_cap ? see_cap_margin : see_quiet_margin;
-                if (depth < (is_cap ? 6 : 7) && !board.see(move, -see_margin * depth))
+                int see_margin = is_cap ? depth * see_cap_margin : lmr_depth * see_quiet_margin;
+                if (!board.see(move, -see_margin))
                     continue;
 
-                if (!pv_node && !in_check && !is_cap && !is_prom) {
-                    // late move pruning
-                    if (depth <= 5 && q_count > (4 + depth * depth))
-                        continue;
-                
+                // late move pruning
+                if (q_count > (4 + depth * depth)) 
+                    skip_quiets = true;
+
+                if (!is_cap && !is_prom) 
+                {
+                    // history pruning
+                    if (history_score < -hp_margin * depth && lmr_depth < hp_depth) 
+                        skip_quiets = true;
+                    
                     // futility pruning
-                    if (depth <= fp_depth  && ss->eval + fp_base + depth * fp_mult <= alpha)
-                        continue;
+                    if (!in_check 
+                        && lmr_depth <= fp_depth 
+                        && ss->eval + fp_base + lmr_depth * fp_mult <= alpha) 
+                    {
+                        skip_quiets = true;
+                    }
                 }
             }
 
@@ -488,7 +504,7 @@ namespace Astra
                 && depth >= 6 
                 && tt_hit 
                 && ent.move == move 
-                && !skipped_move 
+                && !skipped 
                 && std::abs(tt_score) < VALUE_TB_WIN_IN_MAX_PLY 
                 && ent.bound & LOWER_BOUND 
                 && ent.depth >= depth - 3)
@@ -496,9 +512,9 @@ namespace Astra
                 Score sbeta = tt_score - 3 * depth;
                 int sdepth = (depth - 1) / 2;
 
-                ss->skipped_move = move;
+                ss->skipped = move;
                 Score score = negamax(sdepth, sbeta - 1, sbeta, ss);
-                ss->skipped_move = NO_MOVE;
+                ss->skipped = NO_MOVE;
 
                 if (score < sbeta) 
                      extension = 1;
@@ -522,26 +538,26 @@ namespace Astra
             // late move reduction
             if (depth > 1 && move_count > 3 && (!pv_node || !is_cap))
             {
-                int r = REDUCTIONS[depth][move_count];
+                int r = REDUCTIONS[depth][move_count + 1];
+                // increase when tt move is capture
+                r += is_ttmove_cap;
                 // reduce when not improving
                 r += !improving;
                 // reduce when not in pv
                 r += !pv_node;
-                // reduce if tt move is a capture
-                r += is_ttmove_cap;
                 // decrease reduction when move gives check
                 r -= board.inCheck();
                 // decrease reduction when move is killer or counter
-                r -= 2 * (mp.killer1 == move || mp.killer2 == move || mp.counter == move);
-            
-                int rdepth = std::clamp(new_depth - r, 1, new_depth + 1);
+                r -= (mp.killer1 == move || mp.killer2 == move || mp.counter == move);
+              
+                int lmr_depth = std::clamp(new_depth - r, 1, new_depth + 1);
 
-                score = -negamax(rdepth, -alpha - 1, -alpha, ss + 1);
+                score = -negamax(lmr_depth, -alpha - 1, -alpha, ss + 1);
 
                 // if late move reduction failed high and we actually reduced, do a research
                 if (score > alpha && r > 1) 
                 {
-                    if (rdepth < new_depth)
+                    if (lmr_depth < new_depth)
                         score = -negamax(new_depth, -alpha - 1, -alpha, ss + 1);
 
                     int bonus = (score <= alpha ? -1 : score >= beta ? 1 : 0) * historyBonus(new_depth);
@@ -585,7 +601,7 @@ namespace Astra
         // check for mate and stalemate
         if (mp.getMoveCount() == 0)
         {
-            if (skipped_move != NO_MOVE)
+            if (skipped != NO_MOVE)
                 best_score = alpha;
             else
                 best_score = in_check ? -VALUE_MATE + ss->ply : VALUE_DRAW;
@@ -595,7 +611,7 @@ namespace Astra
             best_score = std::min(best_score, max_score);
 
         // store in transposition table
-        if (!skipped_move && !threads.isStopped())
+        if (!skipped && !threads.isStopped())
         {
             Bound bound;
             if (best_score >= beta)

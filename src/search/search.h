@@ -13,7 +13,7 @@ namespace Astra
         uint16_t ply;
         Score eval = VALUE_NONE;
         Move curr_move = NO_MOVE;
-        Move skipped_move = NO_MOVE;
+        Move skipped = NO_MOVE;
     };
 
     void initReductions();

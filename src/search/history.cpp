@@ -34,14 +34,14 @@ namespace Astra
         return quiet_history[c][move.from()][move.to()];
     }
 
-    int History::getCHScore(Board &board, Move &move) const
+    int History::getCHScore(const Board &board, Move &move) const
     {
         PieceType captured = typeOf(board.pieceAt(move.to()));
         Piece p = board.pieceAt(move.from());
         return capt_history[p][move.to()][captured];
     }
 
-    int History::getContHScore(Board &board, Move &move, const Move &prev_move) const
+    int History::getContHScore(const Board &board, Move &move, const Move &prev_move) const
     {
         Piece p = board.pieceAt(move.from());
         Piece prev_p = board.pieceAt(prev_move.from());

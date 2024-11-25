@@ -10,6 +10,10 @@ namespace Astra
     {
         TT,
         EVAL,
+        GOOD_CAPTURES,
+        KILLER1,
+        KILLER2,
+        COUNTER,
         REST
     };
 
@@ -18,7 +22,7 @@ namespace Astra
     public:
         MovePicker(MoveType mt, Board& board, const History& history, const Stack *ss, Move& tt_move);
         
-        Move nextMove();
+        Move nextMove(bool skip_quiets = false);
 
         int getMoveCount() { return ml.size(); }
 
