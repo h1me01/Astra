@@ -10,33 +10,33 @@
 namespace Astra
 {
     // search parameters
-    PARAM(lmr_base, 98, 80, 130, 8);
-    PARAM(lmr_div, 177, 150, 200, 8);
+    PARAM(lmr_base, 93, 80, 130, 8);
+    PARAM(lmr_div, 170, 150, 200, 8);
 
-    PARAM(asp_depth, 9, 6, 9, 1);
-    PARAM(asp_window, 11, 5, 20, 3);
+    PARAM(asp_depth, 8, 6, 9, 1);
+    PARAM(asp_window, 8, 5, 20, 3);
 
-    PARAM(iir_depth, 3, 3, 4, 1);
-
-    PARAM(rzr_depth, 4, 3, 5, 1);
-    PARAM(rzr_depth_mult, 173, 150, 250, 15);
+    PARAM(rzr_depth, 3, 3, 5, 1);
+    PARAM(rzr_depth_mult, 156, 150, 250, 15);
     
-    PARAM(rfp_depth, 9, 7, 11, 1);
+    PARAM(rfp_depth, 10, 7, 11, 1);
     PARAM(rfp_depth_mult, 77, 50, 100, 5);
 
-    PARAM(nmp_base, 4, 4, 5, 1);
+    PARAM(nmp_base, 5, 4, 5, 1);
     PARAM(nmp_min, 3, 3, 6, 1);
     PARAM(nmp_depth_div, 5, 3, 6, 1);
-    PARAM(nmp_div, 215, 200, 220, 2);
+    PARAM(nmp_div, 213, 200, 220, 2);
 
-    PARAM(probcut_margin, 136, 130, 180, 8);
+    PARAM(probcut_margin, 144, 130, 180, 8);
 
-    PARAM(see_cap_margin, 97, 85, 110, 3);
-    PARAM(see_quiet_margin, 91, 75, 100, 3);
+    PARAM(see_cap_margin, 100, 85, 110, 3);
+    PARAM(see_quiet_margin, 89, 75, 100, 3);
 
-    PARAM(fp_depth, 9, 7, 11, 1);
-    PARAM(fp_base, 149, 120, 180, 10);
-    PARAM(fp_mult, 105, 85, 110, 5);
+    PARAM(fp_depth, 10, 7, 11, 1);
+    PARAM(fp_base, 146, 120, 180, 10);
+    PARAM(fp_mult, 101, 85, 110, 5);
+
+    PARAM(history_bonus_margin, 73, 55, 100, 5);
 
     // search helper
 
@@ -343,7 +343,7 @@ namespace Astra
         }
 
         // internal iterative reduction
-        if (!in_check && !skipped_move && !tt_hit && depth >= iir_depth && pv_node)
+        if (!in_check && !skipped_move && !tt_hit && depth >= 4 && pv_node)
             depth--;
 
         // only use pruning when not in check and pv node
@@ -575,7 +575,7 @@ namespace Astra
 
                 if (score >= beta)
                 {
-                    history.update(board, move, ss,q_moves, q_count, c_moves, c_count, depth + (best_score > beta + 75));
+                    history.update(board, move, ss,q_moves, q_count, c_moves, c_count, depth + (best_score > beta + history_bonus_margin));
                     // cut-off
                     break;
                 }
