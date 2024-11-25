@@ -10,36 +10,36 @@
 namespace Astra
 {
     // search parameters
-    PARAM(lmr_base, 93, 80, 130, 8);
-    PARAM(lmr_div, 170, 150, 200, 8);
+    PARAM(lmr_base, 100, 80, 130, 8);
+    PARAM(lmr_div, 180, 150, 200, 8);
 
     PARAM(asp_depth, 8, 6, 9, 1);
     PARAM(asp_window, 8, 5, 20, 3);
 
     PARAM(rzr_depth, 3, 3, 5, 1);
-    PARAM(rzr_depth_mult, 156, 150, 250, 15);
+    PARAM(rzr_depth_mult, 159, 150, 250, 15);
     
     PARAM(rfp_depth, 10, 7, 11, 1);
-    PARAM(rfp_depth_mult, 77, 50, 100, 5);
+    PARAM(rfp_depth_mult, 75, 50, 100, 5);
 
     PARAM(nmp_base, 5, 4, 5, 1);
-    PARAM(nmp_min, 3, 3, 6, 1);
-    PARAM(nmp_depth_div, 5, 3, 6, 1);
-    PARAM(nmp_div, 213, 200, 220, 2);
+    PARAM(nmp_min, 4, 3, 6, 1);
+    PARAM(nmp_depth_div, 6, 3, 6, 1);
+    PARAM(nmp_div, 214, 200, 220, 2);
 
-    PARAM(probcut_margin, 144, 130, 180, 8);
+    PARAM(probcut_margin, 142, 130, 180, 8);
 
     PARAM(see_cap_margin, 100, 85, 110, 3);
-    PARAM(see_quiet_margin, 89, 75, 100, 3);
+    PARAM(see_quiet_margin, 90, 75, 100, 3);
 
     PARAM(fp_depth, 10, 7, 11, 1);
     PARAM(fp_base, 146, 120, 180, 10);
     PARAM(fp_mult, 101, 85, 110, 5);
 
-    PARAM(hp_margin, 3755, 2500, 5000, 400);
-    PARAM(hp_div, 6000, 5000, 8500, 400);
+    PARAM(hp_margin, 3780, 2500, 5000, 400);
+    PARAM(hp_div, 5962, 5000, 8500, 400);
     PARAM(hp_depth, 5, 4, 6, 1);
-    PARAM(history_bonus_margin, 73, 55, 100, 5);
+    PARAM(history_bonus_margin, 76, 55, 100, 5);
 
     // search helper
 
@@ -209,9 +209,6 @@ namespace Astra
         const bool root_node = ss->ply == 0;
         const bool pv_node = beta - alpha != 1;
 
-        if(root_node)
-            assert(ss->ply == 0);
-
         if (!root_node)
         {   
             // mate distance pruning
@@ -255,12 +252,12 @@ namespace Astra
 
         if (!root_node 
             && !pv_node 
+            && !skipped 
             && tt_hit 
             && ent.depth >= depth 
-            && !skipped 
+            && tt_score != VALUE_NONE
             && (ss - 1)->curr_move != NULL_MOVE)
         {
-            assert(tt_score != VALUE_NONE);
             ss->eval = tt_score;
 
             if (ent.bound == EXACT_BOUND)
@@ -274,7 +271,7 @@ namespace Astra
             ss->eval = in_check ? Score(VALUE_NONE) : Eval::evaluate(board);
 
         // use tt score for better evaluation
-        if (tt_hit && ss->eval != VALUE_NONE)
+        if (tt_hit && ss->eval != VALUE_NONE && tt_score != VALUE_NONE)
         {
             if (ent.bound == EXACT_BOUND)
                 ss->eval = tt_score;
@@ -447,7 +444,6 @@ namespace Astra
             int extension = 0;
 
             bool is_cap = board.isCapture(move);
-            bool is_prom = isPromotion(move);
             
             if (!root_node && best_score > VALUE_TB_LOSS_IN_MAX_PLY)
             {
@@ -465,7 +461,7 @@ namespace Astra
                 if (q_count > (4 + depth * depth)) 
                     skip_quiets = true;
 
-                if (!is_cap && !is_prom) 
+                if (!is_cap && !isPromotion(move)) 
                 {
                     // history pruning
                     if (history_score < -hp_margin * depth && lmr_depth < hp_depth) 
@@ -634,7 +630,7 @@ namespace Astra
         if (isLimitReached(1))
             return beta;
 
-        if (ss->ply >= MAX_PLY)
+        if (ss->ply > MAX_PLY)
             return Eval::evaluate(board);
 
         const bool pv_node = beta - alpha != 1;
@@ -654,10 +650,9 @@ namespace Astra
 
         if (!pv_node 
             && tt_hit 
+            && tt_score != VALUE_NONE
             && ent.bound != NO_BOUND)
         {
-            assert(tt_score != VALUE_NONE);
-
             if (ent.bound == EXACT_BOUND)
                 return tt_score;
             else if (ent.bound == LOWER_BOUND && tt_score >= beta)
@@ -675,7 +670,7 @@ namespace Astra
         }
 
         // use tt score for better evaluation
-        if (tt_hit)
+        if (tt_hit && tt_score != VALUE_NONE)
         {
             if (ent.bound == EXACT_BOUND)
                 best_score = tt_score;
@@ -687,7 +682,6 @@ namespace Astra
 
         if (best_score >= beta)
             return best_score;
-
         if (best_score > alpha)
             alpha = best_score;
 
