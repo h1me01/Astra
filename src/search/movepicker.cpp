@@ -14,8 +14,11 @@ namespace Astra
         {
         case TT:
             stage++;
-            if (tt_move != NO_MOVE && ml.find(tt_move) != -1)
+            if (tt_move != NO_MOVE && ml.find(tt_move) != -1) 
+            {
+                ml_tt_move = tt_move;
                 return tt_move;
+            }
             [[fallthrough]];
         case EVAL:
             stage++;
@@ -34,7 +37,7 @@ namespace Astra
                 idx++;
 
                 // skip tt move since we already returned it
-                if (move != tt_move)
+                if (move != ml_tt_move)
                     return move;
             }
 
@@ -69,7 +72,7 @@ namespace Astra
                     continue;
 
                 // skip tt move, killer1, killer2, and counter
-                if (move != tt_move 
+                if (move != ml_tt_move 
                     && move != killer1 
                     && move != killer2 
                     && move != counter)
@@ -90,9 +93,13 @@ namespace Astra
     {
         for (int i = 0; i < ml_size; i++)
         {
-            if (ml[i] == tt_move)
-                ml[i].score = 10'000'000;
-            else if (board.isCapture(ml[i])) 
+            ml[i].score = 0;
+
+            // we don't want to accidentally set tt move as a killer or counter
+            if (ml[i] == ml_tt_move) 
+                continue;
+
+            if (board.isCapture(ml[i])) 
             {
                 PieceType captured = ml[i].flag() == EN_PASSANT ? PAWN : typeOf(board.pieceAt(ml[i].to()));
                 int ch_score = history.getCHScore(board, ml[i]);

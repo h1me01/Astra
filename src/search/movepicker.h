@@ -40,6 +40,7 @@ namespace Astra
         MoveList ml;
         
         Move tt_move = NO_MOVE;
+        Move ml_tt_move = NO_MOVE;
         
         int idx = 0;
         int ml_size;
