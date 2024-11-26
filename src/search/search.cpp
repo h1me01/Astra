@@ -398,7 +398,7 @@ namespace Astra
                 && std::abs(beta) < VALUE_TB_WIN_IN_MAX_PLY 
                 && !(ent.depth >= depth - 3 && tt_score != VALUE_NONE && tt_score < beta_cut))
             {
-                MovePicker movepicker(CAPTURE_MOVES, board, history, ss, ent.move);
+                MovePicker movepicker(PC_SEARCH, board, history, ss, ent.move);
 
                 Move move = NO_MOVE;
                 while ((move = movepicker.nextMove()) != NO_MOVE)
@@ -425,7 +425,7 @@ namespace Astra
             }
         }
 
-        MovePicker mp(ALL_MOVES, board, history, ss, ent.move);
+        MovePicker mp(N_SEARCH, board, history, ss, ent.move);
 
         bool skip_quiets = false;
         bool is_ttmove_cap = board.isCapture(ent.move);
@@ -685,7 +685,7 @@ namespace Astra
         if (best_score > alpha)
             alpha = best_score;
 
-        MovePicker mp(CAPTURE_MOVES, board, history, ss, ent.move);
+        MovePicker mp(Q_SEARCH, board, history, ss, ent.move);
 
         Move best_move = NO_MOVE;
         Move move = NO_MOVE;
@@ -732,6 +732,9 @@ namespace Astra
                     break;
             }
         }
+
+        if (mp.getMoveCount() == 0) 
+            return in_check ? -VALUE_MATE + ss->ply : VALUE_DRAW;
 
         if (best_score >= beta && abs(best_score) < VALUE_TB_WIN_IN_MAX_PLY)
             best_score = (best_score + beta) / 2;

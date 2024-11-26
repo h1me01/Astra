@@ -6,6 +6,12 @@
 
 namespace Astra
 {
+    enum SearchType : int {
+        N_SEARCH,
+        Q_SEARCH,
+        PC_SEARCH
+    };
+
     enum Stage : int
     {
         TT,
@@ -13,13 +19,15 @@ namespace Astra
         KILLER1,
         KILLER2,
         COUNTER,
-        REST
+        REST,
+        
+        Q_QUIET_CHECKERS
     };
 
     class MovePicker
     {
     public:
-        MovePicker(MoveType mt, Board& board, const History& history, const Stack *ss, Move& tt_move);
+        MovePicker(SearchType st, Board& board, const History& history, const Stack *ss, Move& tt_move);
         
         Move nextMove(bool skip_quiets = false);
 
@@ -32,7 +40,7 @@ namespace Astra
     private:
         int stage = TT;
 
-        MoveType mt;
+        SearchType st;
         Board& board;
         const History& history;
         const Stack *ss;

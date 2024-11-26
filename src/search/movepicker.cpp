@@ -2,11 +2,15 @@
 
 namespace Astra
 {
-    MovePicker::MovePicker(MoveType mt, Board &board, const History &history, const Stack *ss, Move &tt_move)
-        : mt(mt), board(board), history(history), ss(ss), ml(board, mt), tt_move(tt_move)
+    MovePicker::MovePicker(SearchType st, Board &board, const History &history, const Stack *ss, Move &tt_move)
+        : st(st), board(board), history(history), ss(ss), ml(board), tt_move(tt_move)
     {
-        ml_size = ml.size();
+        if (st == PC_SEARCH || st == Q_SEARCH)
+            stage = GOOD_CAPTURES;
+        else 
+            stage = TT;
 
+        ml_size = ml.size();
         scoreMoves();
     }
 
@@ -34,6 +38,9 @@ namespace Astra
                 if (move != ml_tt_move)
                     return move;
             }
+
+            if (st == PC_SEARCH || st == Q_SEARCH)
+                return NO_MOVE;
 
             stage = KILLER1;
             [[fallthrough]];
@@ -69,6 +76,8 @@ namespace Astra
             }
 
             return NO_MOVE;
+        case Q_QUIET_CHECKERS:
+            return NO_MOVE;
         default:
             assert(false); // we should never reach this
             return NO_MOVE;
@@ -85,9 +94,15 @@ namespace Astra
 
             PieceType captured = ml[i].flag() == EN_PASSANT ? PAWN : typeOf(board.pieceAt(ml[i].to()));
 
+            if (captured != NO_PIECE_TYPE && st  == Q_SEARCH)  
+            {
+                ml[i].score = 1e8 + 1e7 * board.see(ml[i], 0) + PIECE_VALUES[captured] + history.getCHScore(board, ml[i]);
+                continue;
+            }
+
             if (ml[i] == tt_move)  
                 ml_tt_move = tt_move;
-            else if (captured != NO_PIECE_TYPE)
+            else if (captured != NO_PIECE_TYPE) 
                 ml[i].score = 1e7 * board.see(ml[i], 0) + PIECE_VALUES[captured] + history.getCHScore(board, ml[i]);
             else if (ml[i] == history.getKiller1(ss->ply))
                 killer1 = ml[i];

@@ -5,11 +5,6 @@
 
 namespace Chess
 {
-    enum MoveType
-    {
-        CAPTURE_MOVES, ALL_MOVES
-    };
-
     constexpr U64 ooMask(Color c) { return c == WHITE ? WHITE_OO_MASK : BLACK_OO_MASK; }
     constexpr U64 oooMask(Color c) { return c == WHITE ? WHITE_OOO_MASK : BLACK_OOO_MASK; }
 
@@ -19,7 +14,7 @@ namespace Chess
     constexpr U64 ignoreOOODanger(Color c) { return c == WHITE ? 0x2 : 0x200000000000000; }
 
     // helper to generate quiet/capture moves
-    inline Move* make(Move* moves, Square from, U64 to)
+    inline Move *make(Move *moves, Square from, U64 to)
     {
         while (to)
             *moves++ = Move(from, popLsb(to));
@@ -28,7 +23,7 @@ namespace Chess
 
     // helper to generate promotion moves
     template <Color Us, Direction d>
-    Move* makePromotions(Move* moves, U64 to)
+    Move *makePromotions(Move *moves, U64 to)
     {
         while (to)
         {
@@ -49,7 +44,7 @@ namespace Chess
     }
 
     template <Color Us>
-    void initDangerMask(Board& board, U64 occ)
+    void initDangerMask(Board &board, U64 occ)
     {
         constexpr Color them = ~Us;
 
@@ -78,20 +73,20 @@ namespace Chess
     }
 
     template <Color Us>
-    void initCheckerMask(Board& board, const Square king_sq)
+    void initCheckerMask(Board &board, const Square king_sq)
     {
         constexpr Color them = ~Us;
         const U64 their_occ = board.occupancy(them);
         const U64 our_occ = board.occupancy(Us);
 
         // enemy pawns attacks at our king
-        board.checkers = pawnAttacks(Us, king_sq) & board.getPieceBB(them, PAWN);;
+        board.checkers = pawnAttacks(Us, king_sq) & board.getPieceBB(them, PAWN);
+        ;
         // enemy knights attacks at our king
         board.checkers |= getAttacks(KNIGHT, king_sq, our_occ | their_occ) & board.getPieceBB(them, KNIGHT);
 
         // potential enemy bishop, rook and queen attacks at our king
-        U64 candidates = (getAttacks(ROOK, king_sq, their_occ) & board.orthSliders(them))
-            | (getAttacks(BISHOP, king_sq, their_occ) & board.diagSliders(them));
+        U64 candidates = (getAttacks(ROOK, king_sq, their_occ) & board.orthSliders(them)) | (getAttacks(BISHOP, king_sq, their_occ) & board.diagSliders(them));
 
         board.pinned = 0;
         while (candidates)
@@ -109,7 +104,7 @@ namespace Chess
     }
 
     template <Color Us>
-    Move* genCastlingMoves(const Board& board, Move* moves, const U64 occ)
+    Move *genCastlingMoves(const Board &board, Move *moves, const U64 occ)
     {
         const U64 castleMask = board.history[board.getPly()].castle_mask;
 
@@ -132,10 +127,10 @@ namespace Chess
         return moves;
     }
 
-    template <Color Us, MoveType mt>
-    Move* genPieceMoves(const Board& board, Move* moves, const U64 occ, const int num_checkers)
+    template <Color Us>
+    Move *genPieceMoves(const Board &board, Move *moves, const U64 occ, const int num_checkers)
     {
-        Square s; // used to store square
+        Square s;    // used to store square
         U64 attacks; // used to store piece attack squares;
 
         // pinned pieces cannot move if king is in check
@@ -152,8 +147,7 @@ namespace Chess
                 attacks = getAttacks(typeOf(board.pieceAt(s)), s, occ) & LINE[our_king_sq][s];
 
                 moves = make(moves, s, attacks & board.capture_mask);
-                if (mt == ALL_MOVES)
-                    moves = make(moves, s, attacks & board.quiet_mask);
+                moves = make(moves, s, attacks & board.quiet_mask);
             }
         }
 
@@ -165,8 +159,7 @@ namespace Chess
             attacks = getAttacks(KNIGHT, s, occ);
 
             moves = make(moves, s, attacks & board.capture_mask);
-            if (mt == ALL_MOVES)
-                moves = make(moves, s, attacks & board.quiet_mask);
+            moves = make(moves, s, attacks & board.quiet_mask);
         }
 
         // bishops and queens
@@ -177,8 +170,7 @@ namespace Chess
             attacks = getAttacks(BISHOP, s, occ);
 
             moves = make(moves, s, attacks & board.capture_mask);
-            if (mt == ALL_MOVES)
-                moves = make(moves, s, attacks & board.quiet_mask);
+            moves = make(moves, s, attacks & board.quiet_mask);
         }
 
         // rooks and queens
@@ -189,15 +181,14 @@ namespace Chess
             attacks = getAttacks(ROOK, s, occ);
 
             moves = make(moves, s, attacks & board.capture_mask);
-            if (mt == ALL_MOVES)
-                moves = make(moves, s, attacks & board.quiet_mask);
+            moves = make(moves, s, attacks & board.quiet_mask);
         }
 
         return moves;
     }
 
-    template <Color Us, MoveType mt>
-    Move* genPawnMoves(const Board& board, Move* moves, const U64 occ, const int num_checkers)
+    template <Color Us>
+    Move *genPawnMoves(const Board &board, Move *moves, const U64 occ, const int num_checkers)
     {
         constexpr Color them = ~Us;
         const Square ep_sq = board.history[board.getPly()].ep_sq;
@@ -233,14 +224,11 @@ namespace Chess
                     const U64 attacks = pawnAttacks(Us, s) & board.capture_mask & LINE[s][our_king_sq];
                     moves = make(moves, s, attacks);
 
-                    if (mt == ALL_MOVES)
-                    {
-                        const U64 single_push = shift(relativeDir(Us, NORTH), SQUARE_BB[s]) & ~occ & LINE[our_king_sq][s];
-                        moves = make(moves, s, single_push);
+                    const U64 single_push = shift(relativeDir(Us, NORTH), SQUARE_BB[s]) & ~occ & LINE[our_king_sq][s];
+                    moves = make(moves, s, single_push);
 
-                        const U64 double_push = shift(relativeDir(Us, NORTH), single_push & MASK_RANK[relativeRank(Us, RANK_3)]);
-                        moves = make(moves, s, double_push & ~occ & LINE[our_king_sq][s]);
-                    }
+                    const U64 double_push = shift(relativeDir(Us, NORTH), single_push & MASK_RANK[relativeRank(Us, RANK_3)]);
+                    moves = make(moves, s, double_push & ~occ & LINE[our_king_sq][s]);
                 }
             }
 
@@ -278,13 +266,13 @@ namespace Chess
         // quiet mask is applied later, to consider the possibility of a double push blocking a check
         single_push &= board.quiet_mask;
 
-        while (single_push && mt == ALL_MOVES)
+        while (single_push)
         {
             s = popLsb(single_push);
             *moves++ = Move(s - relativeDir(Us, NORTH), s);
         }
 
-        while (double_push && mt == ALL_MOVES)
+        while (double_push)
         {
             s = popLsb(double_push);
             *moves++ = Move(s - relativeDir(Us, NORTH_NORTH), s);
@@ -313,11 +301,8 @@ namespace Chess
             U64 attacks;
 
             // quiet promotions
-            if (mt == ALL_MOVES)
-            {
-                attacks = shift(relativeDir(Us, NORTH), our_pawns) & board.quiet_mask;
-                moves = makePromotions<Us, NORTH>(moves, attacks);
-            }
+            attacks = shift(relativeDir(Us, NORTH), our_pawns) & board.quiet_mask;
+            moves = makePromotions<Us, NORTH>(moves, attacks);
 
             // promotion captures
             attacks = shift(relativeDir(Us, NORTH_WEST), our_pawns) & board.capture_mask;
@@ -330,8 +315,8 @@ namespace Chess
         return moves;
     }
 
-    template <Color Us, MoveType mt>
-    Move* genLegalMoves(Board& board, Move* moves)
+    template <Color Us>
+    Move *genLegalMoves(Board &board, Move *moves)
     {
         const Color them = ~Us;
         const Square ep_sq = board.history[board.getPly()].ep_sq;
@@ -347,8 +332,7 @@ namespace Chess
         const U64 attacks = getAttacks(KING, our_king_sq, occ) & ~(our_occ | board.danger);
 
         moves = make(moves, our_king_sq, attacks & their_occ);
-        if (mt == ALL_MOVES)
-            moves = make(moves, our_king_sq, attacks & ~their_occ);
+        moves = make(moves, our_king_sq, attacks & ~their_occ);
 
         // if double check, then only king moves are legal
         const int num_checkers = sparsePopCount(board.checkers);
@@ -397,12 +381,11 @@ namespace Chess
             // we can move to any square which is not occupied
             board.quiet_mask = ~occ;
 
-            if (mt == ALL_MOVES)
-                moves = genCastlingMoves<Us>(board, moves, occ);
+            moves = genCastlingMoves<Us>(board, moves, occ);
         }
 
-        moves = genPieceMoves<Us, mt>(board, moves, occ, num_checkers);
-        moves = genPawnMoves<Us, mt>(board, moves, occ, num_checkers);
+        moves = genPieceMoves<Us>(board, moves, occ, num_checkers);
+        moves = genPawnMoves<Us>(board, moves, occ, num_checkers);
 
         return moves;
     }
@@ -410,22 +393,17 @@ namespace Chess
     class MoveList
     {
     public:
-        MoveList(Board& board, MoveType mt = ALL_MOVES)
+        MoveList(Board &board)
         {
-            bool is_w = board.getTurn() == WHITE;
-
-            if (mt == CAPTURE_MOVES)
-                last = is_w ? genLegalMoves<WHITE, CAPTURE_MOVES>(board, list) : genLegalMoves<BLACK, CAPTURE_MOVES>(board, list);
-            else
-                last = is_w ? genLegalMoves<WHITE, ALL_MOVES>(board, list) : genLegalMoves<BLACK, ALL_MOVES>(board, list);
+            last = board.getTurn() == WHITE ? genLegalMoves<WHITE>(board, list) : genLegalMoves<BLACK>(board, list);
         }
 
-        constexpr Move& operator[](int i)
+        constexpr Move &operator[](int i)
         {
             assert(i >= 0 && i < size());
             return list[i];
         }
-        
+
         int find(Move m) const
         {
             for (int i = 0; i < size(); i++)
@@ -434,15 +412,15 @@ namespace Chess
             return -1;
         }
 
-        const Move* begin() const { return list; }
-        const Move* end() const { return last; }
+        const Move *begin() const { return list; }
+        const Move *end() const { return last; }
         int size() const { return last - list; }
 
     private:
         Move list[MAX_MOVES];
-        Move* last;
+        Move *last;
     };
 
 } // namespace Chess
 
-#endif //MOVEGEN_H
+#endif // MOVEGEN_H
