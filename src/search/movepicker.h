@@ -9,7 +9,6 @@ namespace Astra
     enum Stage : int
     {
         TT,
-        SCORE,
         GOOD_CAPTURES,
         KILLER1,
         KILLER2,
