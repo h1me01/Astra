@@ -255,12 +255,6 @@ namespace Chess
         return attacks;
     }
 
-    bool Board::inCheck() const
-    {
-        const U64 occ = occupancy(WHITE) | occupancy(BLACK);
-        return attackers(~stm, kingSq(stm), occ);
-    }
-
     bool Board::nonPawnMat(Color c) const
     {
         Piece knight = c == WHITE ? WHITE_KNIGHT : BLACK_KNIGHT;
@@ -270,9 +264,9 @@ namespace Chess
         return piece_bb[knight] | piece_bb[bishop] | piece_bb[rook] | piece_bb[queen];
     }
 
-    bool Board::isCapture(const Move &m) const
+    bool Board::givesCheck(const Move& m) const 
     {
-        return board[m.to()] != NO_PIECE || m.flag() == EN_PASSANT;
+
     }
 
     void Board::makeMove(const Move &m, bool update_nnue)

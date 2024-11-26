@@ -90,6 +90,7 @@ namespace Chess
         bool inCheck() const;
         bool nonPawnMat(Color c) const;
         bool isCapture(const Move& m) const;
+        bool givesCheck(const Move& m) const;
 
         bool isRepetition(bool is_pv) const;
         bool isInsufficientMaterial() const;
@@ -134,6 +135,16 @@ namespace Chess
     inline Square Board::kingSq(Color c) const { return bsf(getPieceBB(c, KING)); }
 
     inline NNUE::Accumulator& Board::getAccumulator() { return accumulators.back(); }
+
+    inline bool Board::inCheck() const
+    {
+        return attackers(~stm, kingSq(stm), occupancy(WHITE) | occupancy(BLACK));
+    }
+
+    inline bool Board::isCapture(const Move &m) const
+    {
+        return board[m.to()] != NO_PIECE || m.flag() == EN_PASSANT;
+    }
 
     inline void Board::putPiece(Piece p, Square s, bool update_nnue)
     {
