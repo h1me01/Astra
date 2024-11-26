@@ -12,7 +12,7 @@ namespace Astra
             if (in_check)
                 stage = Q_IN_CHECK_TT_MOVE;
             else
-                stage = Q_CAPTURES;
+                stage = Q_MOVES;
         }
 
         ml_size = ml.size();
@@ -81,39 +81,20 @@ namespace Astra
             }
 
             return NO_MOVE;
-        case Q_CAPTURES:
-            while (idx < ml_size)
-            {
-                partialInsertionSort(idx);
-                Move move = ml[idx];
-
-                if (move.score <= 0)
-                    break; // done with captures
-
-                idx++;
-
-                return move;
-            }
-
-            stage = Q_QUIET_CHECKERS;
-
-            [[fallthrough]];
-        case Q_QUIET_CHECKERS:
-            return NO_MOVE;  // TODO
+        case Q_MOVES:
             while (idx < ml_size)
             {
                 partialInsertionSort(idx);
                 Move move = ml[idx];
                 idx++;
-
-                assert(!board.isCapture(move));
-
-                bool gives_check = false;
-                if (gives_check)
+                
+                if (board.isCapture(move) || board.givesCheck(move))
                     return move;
             }
 
             return NO_MOVE; // no more moves
+
+            [[fallthrough]];
         case Q_IN_CHECK_TT_MOVE:
             stage = Q_IN_CHECK_REST;
             if (ml_tt_move != NO_MOVE)
@@ -150,11 +131,7 @@ namespace Astra
             if (st == Q_SEARCH && !in_check)
             {
                 if (captured != NO_PIECE_TYPE)
-                {
-                    // add 1e6 to make sure that captures are positive
-                    ml[i].score = 1e6 + 1e7 * board.see(ml[i], 0) + PIECE_VALUES[captured] + history.getCHScore(board, ml[i]);
-                    assert(ml[i].score > 0); 
-                }
+                    ml[i].score = 1e7 * board.see(ml[i], 0) + PIECE_VALUES[captured] + history.getCHScore(board, ml[i]);
 
                 continue; // don't score quiet moves
             }

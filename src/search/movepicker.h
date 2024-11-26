@@ -22,8 +22,7 @@ namespace Astra
         COUNTER,
         REST,
 
-        Q_CAPTURES,
-        Q_QUIET_CHECKERS,
+        Q_MOVES,
 
         Q_IN_CHECK_TT_MOVE,
         Q_IN_CHECK_REST

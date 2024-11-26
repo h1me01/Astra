@@ -266,7 +266,7 @@ namespace Chess
 
     bool Board::givesCheck(const Move& m) const 
     {
-
+        return false;
     }
 
     void Board::makeMove(const Move &m, bool update_nnue)
