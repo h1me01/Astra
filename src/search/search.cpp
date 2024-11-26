@@ -685,7 +685,7 @@ namespace Astra
         if (best_score > alpha)
             alpha = best_score;
 
-        MovePicker mp(Q_SEARCH, board, history, ss, ent.move);
+        MovePicker mp(Q_SEARCH, board, history, ss, ent.move, in_check);
 
         Move best_move = NO_MOVE;
         Move move = NO_MOVE;

@@ -6,7 +6,8 @@
 
 namespace Astra
 {
-    enum SearchType : int {
+    enum SearchType : int
+    {
         N_SEARCH,
         Q_SEARCH,
         PC_SEARCH
@@ -20,15 +21,19 @@ namespace Astra
         KILLER2,
         COUNTER,
         REST,
-        
-        Q_QUIET_CHECKERS
+
+        Q_CAPTURES,
+        Q_QUIET_CHECKERS,
+
+        Q_IN_CHECK_TT_MOVE,
+        Q_IN_CHECK_REST
     };
 
     class MovePicker
     {
     public:
-        MovePicker(SearchType st, Board& board, const History& history, const Stack *ss, Move& tt_move);
-        
+        MovePicker(SearchType st, Board &board, const History &history, const Stack *ss, Move &tt_move, bool in_check = false);
+
         Move nextMove(bool skip_quiets = false);
 
         int getMoveCount() { return ml.size(); }
@@ -41,18 +46,20 @@ namespace Astra
         int stage = TT;
 
         SearchType st;
-        Board& board;
-        const History& history;
+        Board &board;
+        const History &history;
         const Stack *ss;
         MoveList ml;
-        
+
         Move tt_move = NO_MOVE;
         Move ml_tt_move = NO_MOVE;
-        
+
+        bool in_check;
+
         int idx = 0;
         int ml_size;
 
-        void scoreMoves();       
+        void scoreMoves();
         void partialInsertionSort(int current_idx);
     };
 

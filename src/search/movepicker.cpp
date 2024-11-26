@@ -2,13 +2,18 @@
 
 namespace Astra
 {
-    MovePicker::MovePicker(SearchType st, Board &board, const History &history, const Stack *ss, Move &tt_move)
-        : st(st), board(board), history(history), ss(ss), ml(board), tt_move(tt_move)
+    MovePicker::MovePicker(SearchType st, Board &board, const History &history, const Stack *ss, Move &tt_move, bool in_check)
+        : st(st), board(board), history(history), ss(ss), ml(board), tt_move(tt_move), in_check(in_check)
     {
-        if (st == PC_SEARCH || st == Q_SEARCH)
+        if (st == PC_SEARCH)
             stage = GOOD_CAPTURES;
-        else 
-            stage = TT;
+        else if (st == Q_SEARCH) 
+        {
+            if (in_check)
+                stage = Q_IN_CHECK_TT_MOVE;
+            else
+                stage = Q_CAPTURES;
+        }
 
         ml_size = ml.size();
         scoreMoves();
@@ -27,11 +32,11 @@ namespace Astra
             while (idx < ml_size)
             {
                 partialInsertionSort(idx);
+                Move move = ml[idx];
 
-                if (ml[idx].score < 1e7)
+                if (move.score < 1e7)
                     break; // done with good captures
 
-                Move move = ml[idx];
                 idx++;
 
                 // skip tt move since we already returned it
@@ -39,10 +44,11 @@ namespace Astra
                     return move;
             }
 
-            if (st == PC_SEARCH || st == Q_SEARCH)
+            if (st == PC_SEARCH)
                 return NO_MOVE;
-
+            
             stage = KILLER1;
+
             [[fallthrough]];
         case KILLER1:
             stage = KILLER2;
@@ -63,7 +69,6 @@ namespace Astra
             while (idx < ml_size)
             {
                 partialInsertionSort(idx);
-
                 Move move = ml[idx];
                 idx++;
 
@@ -76,8 +81,56 @@ namespace Astra
             }
 
             return NO_MOVE;
+        case Q_CAPTURES:
+            while (idx < ml_size)
+            {
+                partialInsertionSort(idx);
+                Move move = ml[idx];
+
+                if (move.score <= 0)
+                    break; // done with captures
+
+                idx++;
+
+                return move;
+            }
+
+            stage = Q_QUIET_CHECKERS;
+
+            [[fallthrough]];
         case Q_QUIET_CHECKERS:
-            return NO_MOVE;
+            return NO_MOVE;  // TODO
+            while (idx < ml_size)
+            {
+                partialInsertionSort(idx);
+                Move move = ml[idx];
+                idx++;
+
+                assert(!board.isCapture(move));
+
+                bool gives_check = false;
+                if (gives_check)
+                    return move;
+            }
+
+            return NO_MOVE; // no more moves
+        case Q_IN_CHECK_TT_MOVE:
+            stage = Q_IN_CHECK_REST;
+            if (ml_tt_move != NO_MOVE)
+                return tt_move;
+            [[fallthrough]];
+        case Q_IN_CHECK_REST:
+            while (idx < ml_size)
+            {
+                partialInsertionSort(idx);
+                Move move = ml[idx];
+                idx++;
+
+                if (move != ml_tt_move)
+                    return move;
+            }
+
+            return NO_MOVE; // no more moves
         default:
             assert(false); // we should never reach this
             return NO_MOVE;
@@ -94,21 +147,28 @@ namespace Astra
 
             PieceType captured = ml[i].flag() == EN_PASSANT ? PAWN : typeOf(board.pieceAt(ml[i].to()));
 
-            if (captured != NO_PIECE_TYPE && st  == Q_SEARCH)  
+            if (st == Q_SEARCH && !in_check)
             {
-                ml[i].score = 1e8 + 1e7 * board.see(ml[i], 0) + PIECE_VALUES[captured] + history.getCHScore(board, ml[i]);
-                continue;
+                if (captured != NO_PIECE_TYPE)
+                {
+                    // add 1e6 to make sure that captures are positive
+                    ml[i].score = 1e6 + 1e7 * board.see(ml[i], 0) + PIECE_VALUES[captured] + history.getCHScore(board, ml[i]);
+                    assert(ml[i].score > 0); 
+                }
+
+                continue; // don't score quiet moves
             }
 
-            if (ml[i] == tt_move)  
-                ml_tt_move = tt_move;
+            if (ml[i] == tt_move)
+                ml_tt_move = tt_move; 
+            // add 1e7 when in check so we play the captures before quiet moves
             else if (captured != NO_PIECE_TYPE) 
-                ml[i].score = 1e7 * board.see(ml[i], 0) + PIECE_VALUES[captured] + history.getCHScore(board, ml[i]);
-            else if (ml[i] == history.getKiller1(ss->ply))
+                ml[i].score = in_check * 1e7 + 1e7 * board.see(ml[i], 0) + PIECE_VALUES[captured] + history.getCHScore(board, ml[i]);
+            else if (ml[i] == history.getKiller1(ss->ply) && !in_check)
                 killer1 = ml[i];
-            else if (ml[i] == history.getKiller2(ss->ply))
+            else if (ml[i] == history.getKiller2(ss->ply) && !in_check)
                 killer2 = ml[i];
-            else if (history.getCounterMove((ss - 1)->curr_move) == ml[i])
+            else if (history.getCounterMove((ss - 1)->curr_move) == ml[i] && !in_check)
                 counter = ml[i];
             else
             {
