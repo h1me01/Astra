@@ -159,7 +159,7 @@ namespace Chess
 
         constexpr explicit Move(uint16_t m) : move(m) {}
 
-        constexpr Move(const Move &other) : move(other.move) {}
+        constexpr Move(const Move &other) : score(other.score), move(other.move) {}
         constexpr Move(Square from, Square to, MoveFlags mf = NORMAL) : move(mf << 12 | from << 6 | to) {}
 
         Square to() const { return Square(move & 0x3f); }
@@ -197,7 +197,7 @@ namespace Chess
 
     // instead of Move() use this for clarity
     const auto NULL_MOVE = Move(65);
-    const auto NO_MOVE = Move(0);
+    const auto NO_MOVE = Move();
 
 } // namespace Chess
 

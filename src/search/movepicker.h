@@ -9,7 +9,7 @@ namespace Astra
     enum Stage : int
     {
         TT,
-        EVAL,
+        SCORE,
         GOOD_CAPTURES,
         KILLER1,
         KILLER2,
@@ -45,8 +45,8 @@ namespace Astra
         int idx = 0;
         int ml_size;
 
-        void evaluateMoves();       
-        void partialInsertionSort(int start);
+        void scoreMoves();       
+        void partialInsertionSort(int current_idx);
     };
 
 } // namespace Astra

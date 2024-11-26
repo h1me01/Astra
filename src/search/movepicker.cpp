@@ -13,26 +13,25 @@ namespace Astra
         switch (stage)
         {
         case TT:
-            stage++;
-            if (tt_move != NO_MOVE && ml.find(tt_move) != -1) 
+            stage = SCORE;
+            if (tt_move != NO_MOVE && ml.find(tt_move) != -1)
             {
                 ml_tt_move = tt_move;
                 return tt_move;
             }
             [[fallthrough]];
-        case EVAL:
-            stage++;
-            evaluateMoves();
+        case SCORE:
+            stage = GOOD_CAPTURES;
+            scoreMoves();
             [[fallthrough]];
         case GOOD_CAPTURES:
-        {
             while (idx < ml_size)
             {
                 partialInsertionSort(idx);
 
                 if (ml[idx].score < 7'000'000)
                     break; // done with good captures
-                
+
                 Move move = ml[idx];
                 idx++;
 
@@ -41,26 +40,24 @@ namespace Astra
                     return move;
             }
 
-            stage++;
+            stage = KILLER1;
             [[fallthrough]];
-        }
         case KILLER1:
-            stage++;
-            if (!skip_quiets && killer1 != NO_MOVE)
+            stage = KILLER2;
+            if (!skip_quiets && killer1 != NO_MOVE && killer1 != ml_tt_move)
                 return killer1;
             [[fallthrough]];
         case KILLER2:
-            stage++;
-            if (!skip_quiets && killer2 != NO_MOVE)
+            stage = COUNTER;
+            if (!skip_quiets && killer2 != NO_MOVE && killer2 != ml_tt_move)
                 return killer2;
             [[fallthrough]];
         case COUNTER:
-            stage++;
-            if (!skip_quiets && counter != NO_MOVE)
+            stage = REST;
+            if (!skip_quiets && counter != NO_MOVE && counter != killer1 && counter != killer2 && counter != ml_tt_move)
                 return counter;
             [[fallthrough]];
         case REST:
-        {
             while (idx < ml_size)
             {
                 partialInsertionSort(idx);
@@ -68,19 +65,15 @@ namespace Astra
                 Move move = ml[idx];
                 idx++;
 
-                if (!board.isCapture(move) && skip_quiets) 
+                if (!board.isCapture(move) && skip_quiets)
                     continue;
 
                 // skip tt move, killer1, killer2, and counter
-                if (move != ml_tt_move 
-                    && move != killer1 
-                    && move != killer2 
-                    && move != counter)
+                if (move != ml_tt_move && move != killer1 && move != killer2 && move != counter)
                     return move;
             }
 
-             return NO_MOVE;
-        }
+            return NO_MOVE;
         default:
             assert(false); // we should never reach this
             return NO_MOVE;
@@ -89,40 +82,38 @@ namespace Astra
 
     // private member
 
-    void MovePicker::evaluateMoves()
+    void MovePicker::scoreMoves()
     {
         for (int i = 0; i < ml_size; i++)
         {
             ml[i].score = 0;
 
-            // we don't want to accidentally set tt move as a killer or counter
-            if (ml[i] == ml_tt_move) 
-                continue;
+            PieceType captured = ml[i].flag() == EN_PASSANT ? PAWN : typeOf(board.pieceAt(ml[i].to()));
 
-            if (board.isCapture(ml[i])) 
+            // don't accidentally set tt move as a killer or counter
+            if (ml[i] == ml_tt_move)  
             {
-                PieceType captured = ml[i].flag() == EN_PASSANT ? PAWN : typeOf(board.pieceAt(ml[i].to()));
-                int ch_score = history.getCHScore(board, ml[i]);
-                ml[i].score = 7'000'000 * board.see(ml[i], 0) + PIECE_VALUES[captured] + ch_score + 1000 * isPromotion(ml[i]); 
+                ml[i].score = 10'000'000; 
             }
-            else if (ml[i] == history.getKiller1(ss->ply)) 
+            else if (captured != NO_PIECE_TYPE)
+                ml[i].score = 7'000'000 * board.see(ml[i], 0) + PIECE_VALUES[captured] + history.getCHScore(board, ml[i]);
+            else if (ml[i] == history.getKiller1(ss->ply))
             {
                 ml[i].score = 6'000'000;
                 killer1 = ml[i];
             }
-            else if (ml[i] == history.getKiller2(ss->ply)) 
+            else if (ml[i] == history.getKiller2(ss->ply))
             {
-                ml[i].score = 5'000'000; 
+                ml[i].score = 5'000'000;
                 killer2 = ml[i];
             }
-            else if (history.getCounterMove((ss - 1)->curr_move) == ml[i]) 
+            else if (history.getCounterMove((ss - 1)->curr_move) == ml[i])
             {
                 ml[i].score = 4'000'000;
                 counter = ml[i];
             }
             else
             {
-                assert(mt == ALL_MOVES); // qsearch should never reach this
                 ml[i].score = 2 * history.getQHScore(board.getTurn(), ml[i]);
                 ml[i].score += 2 * history.getContHScore(board, ml[i], (ss - 1)->curr_move);
                 ml[i].score += 2 * history.getContHScore(board, ml[i], (ss - 2)->curr_move);
@@ -132,23 +123,15 @@ namespace Astra
         }
     }
 
-    void MovePicker::partialInsertionSort(int start)
+    void MovePicker::partialInsertionSort(int current_idx)
     {
-        int best_idx = start;
+        int best_idx = current_idx;
 
-        for (int i = 1 + start; i < ml_size; i++)
+        for (int i = 1 + current_idx; i < ml_size; i++)
             if (ml[i].score > ml[best_idx].score)
                 best_idx = i;
 
-        // swap
-        Move temp = ml[best_idx];
-        int temp_score = ml[best_idx].score;
-
-        ml[best_idx] = ml[start];
-        ml[best_idx].score = ml[start].score;
-
-        ml[start] = temp;
-        ml[start].score = temp_score;
+        std::swap(ml[current_idx], ml[best_idx]);
     }
 
 } // namespace Astra
