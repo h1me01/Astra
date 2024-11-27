@@ -2,7 +2,7 @@
 
 build/
 
-src/.exe
+src/astra.exe
 
 CMakeLists.txt
 

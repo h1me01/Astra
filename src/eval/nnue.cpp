@@ -80,11 +80,11 @@ namespace NNUE
 #if defined(__AVX512F__) || defined(__AVX2__) || defined(__AVX__)
         constexpr avx_type zero{};
 
-        const auto acc_stm = (avx_type *)acc.data[stm];
-        const auto acc_opp = (avx_type *)acc.data[~stm];
+        const auto acc_stm = (const avx_type *)acc.data[stm];
+        const auto acc_opp = (const avx_type *)acc.data[~stm];
 
         avx_type res{};
-        const auto weights = (avx_type *)(fc2_weights);
+        const auto weights = (const avx_type *)(fc2_weights);
 
         for (int i = 0; i < HIDDEN_SIZE / div; i++)
             res = avx_add_epi32(res, avx_madd_epi16(avx_max_epi16(acc_stm[i], zero), weights[i]));
@@ -118,8 +118,8 @@ namespace NNUE
         avx_type *acc_white = (avx_type *)acc.data[WHITE];
         avx_type *acc_black = (avx_type *)acc.data[BLACK];
 
-        const auto wgt_white = (avx_type *)(fc1_weights + w_idx * HIDDEN_SIZE);
-        const auto wgt_black = (avx_type *)(fc1_weights + b_idx * HIDDEN_SIZE);
+        const auto wgt_white = (const avx_type *)(fc1_weights + w_idx * HIDDEN_SIZE);
+        const auto wgt_black = (const avx_type *)(fc1_weights + b_idx * HIDDEN_SIZE);
 
         for (int i = 0; i < HIDDEN_SIZE / div; i++)
             acc_white[i] = avx_add_epi16(acc_white[i], wgt_white[i]);
@@ -143,8 +143,8 @@ namespace NNUE
         avx_type *acc_white = (avx_type *)acc.data[WHITE];
         avx_type *acc_black = (avx_type *)acc.data[BLACK];
 
-        const auto wgt_white = (avx_type *)(fc1_weights + w_idx * HIDDEN_SIZE);
-        const auto wgt_black = (avx_type *)(fc1_weights + b_idx * HIDDEN_SIZE);
+        const auto wgt_white = (const avx_type *)(fc1_weights + w_idx * HIDDEN_SIZE);
+        const auto wgt_black = (const avx_type *)(fc1_weights + b_idx * HIDDEN_SIZE);
 
         for (int i = 0; i < HIDDEN_SIZE / div; i++)
             acc_white[i] = avx_sub_epi16(acc_white[i], wgt_white[i]);
@@ -170,10 +170,10 @@ namespace NNUE
         avx_type *acc_white = (avx_type *)acc.data[WHITE];
         avx_type *acc_black = (avx_type *)acc.data[BLACK];
 
-        const auto wgt_white_from = (avx_type *)(fc1_weights + w_from_idx * HIDDEN_SIZE);
-        const auto wgt_white_to = (avx_type *)(fc1_weights + w_to_idx * HIDDEN_SIZE);
-        const auto wgt_black_from = (avx_type *)(fc1_weights + b_from_idx * HIDDEN_SIZE);
-        const auto wgt_black_to = (avx_type *)(fc1_weights + b_to_idx * HIDDEN_SIZE);
+        const auto wgt_white_from = (const avx_type *)(fc1_weights + w_from_idx * HIDDEN_SIZE);
+        const auto wgt_white_to = (const avx_type *)(fc1_weights + w_to_idx * HIDDEN_SIZE);
+        const auto wgt_black_from = (const avx_type *)(fc1_weights + b_from_idx * HIDDEN_SIZE);
+        const auto wgt_black_to = (const avx_type *)(fc1_weights + b_to_idx * HIDDEN_SIZE);
 
         for (int i = 0; i < HIDDEN_SIZE / div; i++)
             acc_white[i] = avx_add_epi16(acc_white[i], avx_sub_epi16(wgt_white_to[i], wgt_white_from[i]));
