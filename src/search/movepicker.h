@@ -31,11 +31,14 @@ namespace Astra
     class MovePicker
     {
     public:
-        MovePicker(SearchType st, Board &board, const History &history, const Stack *ss, Move &tt_move, bool in_check = false);
+        MovePicker(SearchType st, Board &board, History &history, Stack *ss, Move &tt_move, bool in_check = false);
 
-        Move nextMove(bool skip_quiets = false);
+        Move nextMove(bool skip_quiets);
 
         int getMoveCount() { return ml.size(); }
+        
+        Move killer1 = NO_MOVE;
+        Move killer2 = NO_MOVE;
 
     private:
         int stage = TT;
@@ -49,8 +52,7 @@ namespace Astra
         Move tt_move = NO_MOVE;
         Move ml_tt_move = NO_MOVE;
 
-        Move killer1 = NO_MOVE;
-        Move killer2 = NO_MOVE;
+    
         Move counter = NO_MOVE;
 
         bool in_check;

@@ -2,7 +2,7 @@
 
 namespace Astra
 {
-    MovePicker::MovePicker(SearchType st, Board &board, const History &history, const Stack *ss, Move &tt_move, bool in_check)
+    MovePicker::MovePicker(SearchType st, Board &board, History &history, Stack *ss, Move &tt_move, bool in_check)
         : st(st), board(board), history(history), ss(ss), ml(board), tt_move(tt_move), in_check(in_check)
     {
         if (st == PC_SEARCH)
@@ -52,17 +52,17 @@ namespace Astra
             [[fallthrough]];
         case KILLER1:
             stage = KILLER2;
-            if (!skip_quiets && killer1 != NO_MOVE)
+            if (killer1 != NO_MOVE)
                 return killer1;
             [[fallthrough]];
         case KILLER2:
             stage = COUNTER;
-            if (!skip_quiets && killer2 != NO_MOVE)
+            if (killer2 != NO_MOVE)
                 return killer2;
             [[fallthrough]];
         case COUNTER:
             stage = QUIET_AND_BAD_CAP;
-            if (!skip_quiets && counter != NO_MOVE && counter != killer1 && counter != killer2)
+            if (counter != NO_MOVE && counter != killer1 && counter != killer2)
                 return counter;
             [[fallthrough]];
         case QUIET_AND_BAD_CAP:
@@ -75,7 +75,7 @@ namespace Astra
                 if (!board.isCapture(move) && skip_quiets)
                     continue;
 
-                // skip tt move, killer1, killer2, and counter
+                // skip tt move, killers, and counter
                 if (move != ml_tt_move && move != killer1 && move != killer2 && move != counter)
                     return move;
             }
@@ -87,14 +87,14 @@ namespace Astra
                 partialInsertionSort(idx);
                 Move move = ml[idx];
                 idx++;
+
+                if (move.score <= 0)
+                    break; 
                 
-                if (board.isCapture(move) /*|| board.givesCheck(move)*/)
-                    return move;
+                return move;
             }
 
             return NO_MOVE; // no more moves
-
-            [[fallthrough]];
         case Q_IN_CHECK_TT_MOVE:
             stage = Q_IN_CHECK_REST;
             if (ml_tt_move != NO_MOVE)
@@ -106,6 +106,9 @@ namespace Astra
                 partialInsertionSort(idx);
                 Move move = ml[idx];
                 idx++;
+
+                if (!board.isCapture(move) && skip_quiets)
+                    continue;
 
                 if (move != ml_tt_move)
                     return move;
@@ -131,9 +134,14 @@ namespace Astra
             if (st == Q_SEARCH && !in_check)
             {
                 if (captured != NO_PIECE_TYPE) 
-                    ml[i].score = 1e6 + 1e7 * board.see(ml[i], 0) + PIECE_VALUES[captured] + history.getCHScore(board, ml[i]);
+                {
+                    ml[i].score = 1e7 + 1e7 * board.see(ml[i], 0) + PIECE_VALUES[captured] + history.getCHScore(board, ml[i]);
+                    ml[i].score += (ml[i] == tt_move) * 1e8;
+                }
+                else if(board.givesCheck(ml[i])) 
+                    ml[i].score = 0 * 1e6;
 
-                continue; // don't score quiet moves
+                continue; // don't score non checker quiet moves
             }
 
             if (ml[i] == tt_move)

@@ -417,7 +417,7 @@ namespace Astra
                 MovePicker movepicker(PC_SEARCH, board, history, ss, ent.move);
 
                 Move move = NO_MOVE;
-                while ((move = movepicker.nextMove()) != NO_MOVE)
+                while ((move = movepicker.nextMove(true)) != NO_MOVE)
                 {
                     if (move == ss->skipped)
                         continue;
@@ -457,8 +457,6 @@ namespace Astra
         {
             if (move == ss->skipped)
                 continue;
-
-            int extension = 0;
 
             bool is_cap = board.isCapture(move);
             
@@ -512,6 +510,8 @@ namespace Astra
                           << " currmovenumber " << made_moves << std::endl;
             }
 
+            int extension = 0;
+
             // singular extensions
             if (!root_node 
                 && tt_hit 
@@ -553,12 +553,16 @@ namespace Astra
                 int r = REDUCTIONS[depth][made_moves + 1];
                 // increase when tt move is capture
                 r += is_ttmove_cap;
-                // reduce when not improving
+                // increase when not improving
                 r += !improving;
-                // reduce when not in pv
+                // increase when not in pv
                 r += !pv_node;
-                // decrease reduction when move gives check
+                // decrease when move gives check
                 r -= board.inCheck();
+                // decrease in high history scores
+                r -= history.getCHScore(board, move) / hp_div;
+                // decrease when move is a killer
+                r -= (move == mp.killer1 || move == mp.killer2);
 
                 int lmr_depth = std::clamp(new_depth - r, 1, new_depth + 1);
 
@@ -718,7 +722,9 @@ namespace Astra
         Move best_move = NO_MOVE;
         Move move = NO_MOVE;
 
-        while ((move = mp.nextMove()) != NO_MOVE)
+        bool skip_quiets = !in_check;
+
+        while ((move = mp.nextMove(skip_quiets)) != NO_MOVE)
         {
             if (best_score > VALUE_TB_LOSS_IN_MAX_PLY)
             {
@@ -740,6 +746,9 @@ namespace Astra
             board.unmakeMove(move);
 
             assert(score > -VALUE_INFINITE && score < VALUE_INFINITE);
+
+            if (score > VALUE_TB_LOSS_IN_MAX_PLY)
+                skip_quiets = true;
 
             // update the best score
             if (score > best_score)

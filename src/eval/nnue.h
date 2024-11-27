@@ -6,6 +6,8 @@
 #include <immintrin.h>
 #include "../chess/types.h"
 
+#include <iostream>
+
 using namespace Chess;
 
 #if defined(__AVX512F__)
@@ -36,7 +38,7 @@ namespace NNUE
         void push()
         {
             index++;
-            assert(index < MAX_PLY);
+            assert(index < MAX_PLY + 1);
             accumulators[index] = accumulators[index - 1];
         }
 
