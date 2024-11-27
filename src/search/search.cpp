@@ -45,11 +45,6 @@ namespace Astra
 
     // search helper
 
-    Score drawScore(U64 nodes) 
-    { 
-        return VALUE_DRAW - 1 + Score(nodes & 0x2); 
-    }
-
     int REDUCTIONS[MAX_PLY][MAX_MOVES];
 
     void initReductions()
@@ -236,7 +231,7 @@ namespace Astra
             }
 
             if (board.isRepetition(pv_node) || board.isDraw())
-                return drawScore(nodes);
+                return VALUE_DRAW;
         }
 
         // dive into quiescence search if depth is less than 1
@@ -275,45 +270,7 @@ namespace Astra
             else if (ent.bound == UPPER_BOUND && tt_score <= alpha)
                 return tt_score;
         }
-       
-        if (in_check)
-            eval = ss->static_eval = VALUE_NONE;
-        else
-        {
-            // use tt score for better evaluation
-            if (tt_hit)
-            {
-                eval = tt_score;
-                if (eval == VALUE_NONE)
-                    eval = Eval::evaluate(board);
 
-                ss->static_eval = eval;
-
-                if (tt_score != VALUE_NONE) 
-                {
-                    if (ent.bound == EXACT_BOUND)
-                        eval = tt_score;
-                    else if (ent.bound == LOWER_BOUND && eval < tt_score)
-                        eval = tt_score;
-                    else if (ent.bound == UPPER_BOUND && eval > tt_score)
-                        eval = tt_score;
-                }
-            } else if (!ss->skipped) {
-                eval = ss->static_eval = Eval::evaluate(board);
-                tt.store(hash, NO_MOVE, scoreToTT(eval, ss->ply), -1, NO_BOUND);
-            }
-
-            // check for improvement
-            if (ss->ply >= 2)
-            {
-                if (ss->ply >= 4 && (ss - 2)->static_eval == VALUE_NONE)
-                    // if ss - 2 eval was not calculated, use ss - 4 eval
-                    improving = ss->static_eval > (ss - 4)->static_eval || (ss - 4)->static_eval == VALUE_NONE;
-                else
-                    improving = ss->static_eval > (ss - 2)->static_eval || (ss - 2)->static_eval == VALUE_NONE;
-            }
-        }
-   
         // tablebase probing
         if (use_tb && !root_node)
         {
@@ -360,7 +317,46 @@ namespace Astra
                 }
             }
         }
+       
+        // set eval and static eval
+        if (in_check)
+            eval = ss->static_eval = VALUE_NONE;
+        else
+        {
+            // use tt score for better evaluation
+            if (tt_hit)
+            {
+                eval = tt_score;
+                if (eval == VALUE_NONE)
+                    eval = Eval::evaluate(board);
 
+                ss->static_eval = eval;
+
+                if (tt_score != VALUE_NONE) 
+                {
+                    if (ent.bound == EXACT_BOUND)
+                        eval = tt_score;
+                    else if (ent.bound == LOWER_BOUND && eval < tt_score)
+                        eval = tt_score;
+                    else if (ent.bound == UPPER_BOUND && eval > tt_score)
+                        eval = tt_score;
+                }
+            } else if (!ss->skipped) {
+                eval = ss->static_eval = Eval::evaluate(board);
+                tt.store(hash, NO_MOVE, scoreToTT(eval, ss->ply), -1, NO_BOUND);
+            }
+
+            // check for improvement
+            if (ss->ply >= 2)
+            {
+                if (ss->ply >= 4 && (ss - 2)->static_eval == VALUE_NONE)
+                    // if ss - 2 eval was not calculated, use ss - 4 eval
+                    improving = ss->static_eval > (ss - 4)->static_eval || (ss - 4)->static_eval == VALUE_NONE;
+                else
+                    improving = ss->static_eval > (ss - 2)->static_eval || (ss - 2)->static_eval == VALUE_NONE;
+            }
+        }
+   
         // internal iterative reduction
         if (!in_check && !ss->skipped && !tt_hit && depth >= 4 && pv_node)
             depth--;
@@ -563,8 +559,8 @@ namespace Astra
                 r += !pv_node;
                 // decrease reduction when move gives check
                 r -= board.inCheck();
-                // decrease reduction when move is killer or counter
-                r -= (mp.killer1 == move || mp.killer2 == move || mp.counter == move);
+                // decrease reduction when move is killer 
+                r -= (mp.killer1 == move || mp.killer2 == move);
               
                 int lmr_depth = std::clamp(new_depth - r, 1, new_depth + 1);
 
@@ -656,7 +652,7 @@ namespace Astra
         const bool in_check = board.inCheck();
 
         if (board.isRepetition(pv_node) || board.isDraw())
-            return drawScore(nodes);
+            return VALUE_DRAW;
 
         Score best_score = -VALUE_MATE + ss->ply;
         int eval = ss->static_eval;
@@ -678,6 +674,7 @@ namespace Astra
                 return tt_score;
         }
 
+        // set eval and static eval
         if (in_check) 
             eval = ss->static_eval = VALUE_NONE;
         else
@@ -709,9 +706,9 @@ namespace Astra
             }
 
             // stand pat
-            if (eval >= beta)
+            if (eval >= beta) 
                 return eval;
-            if (eval > alpha)
+            if (eval > alpha) 
                 alpha = eval;
 
             best_score = eval;
@@ -757,9 +754,8 @@ namespace Astra
                     best_move = move;
                 }
 
-                if (score >= beta)
-                    // cut-off
-                    break;
+                if (score >= beta) 
+                    break; // cut-off
             }
         }
 
