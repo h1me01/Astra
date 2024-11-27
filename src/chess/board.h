@@ -77,7 +77,7 @@ namespace Chess
         void refreshAccumulator();
 
         U64 occupancy(Color c) const;
-        U64 attackers(Color c, Square s, U64 occ) const;
+        U64 attackersTo(Color c, Square s, U64 occ) const;
         U64 diagSliders(Color c) const;
         U64 orthSliders(Color c) const;
 
@@ -135,7 +135,7 @@ namespace Chess
 
     inline bool Board::inCheck() const
     {
-        return attackers(~stm, kingSq(stm), occupancy(WHITE) | occupancy(BLACK));
+        return attackersTo(~stm, kingSq(stm), occupancy(WHITE) | occupancy(BLACK));
     }
 
     inline bool Board::isCapture(const Move &m) const

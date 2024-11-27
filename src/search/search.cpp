@@ -364,14 +364,6 @@ namespace Astra
         // only use pruning when not in check and pv node
         if (!in_check && !pv_node)
         {
-            // razoring
-            if (depth <= rzr_depth && eval + rzr_depth_mult * depth < alpha)
-            {
-                Score score = qSearch(alpha, beta, ss);
-                if (score <= alpha)
-                    return score;
-            }
-
             // reverse futility pruning
             if (!ss->skipped 
                 && depth <= rfp_depth 
@@ -379,6 +371,14 @@ namespace Astra
                 && eval - rfp_depth_mult * (depth - improving) >= beta)
             {
                 return (eval + beta) / 2;
+            }
+
+            // razoring
+            if (depth <= rzr_depth && eval + rzr_depth_mult * depth <= alpha)
+            {
+                Score score = qSearch(alpha, beta, ss);
+                if (score <= alpha)
+                    return score;
             }
 
             // null move pruning
@@ -419,9 +419,6 @@ namespace Astra
                 Move move = NO_MOVE;
                 while ((move = movepicker.nextMove(true)) != NO_MOVE)
                 {
-                    if (move == ss->skipped || !board.isLegal(move))
-                        continue;
-
                     nodes++;
                     ss->curr_move = move;
                     board.makeMove(move, true);
@@ -455,7 +452,7 @@ namespace Astra
         
         while ((move = mp.nextMove(skip_quiets)) != NO_MOVE)
         {
-            if (move == ss->skipped || !board.isLegal(move))
+            if (move == ss->skipped)
                 continue;
 
             bool is_cap = board.isCapture(move);
@@ -726,9 +723,6 @@ namespace Astra
 
         while ((move = mp.nextMove(skip_quiets)) != NO_MOVE)
         {
-            if (!board.isLegal(move))
-                continue;
-
             if (best_score > VALUE_TB_LOSS_IN_MAX_PLY)
             {
                 if (!in_check && futility <= alpha && board.isCapture(move) && !board.see(move, 1)) 

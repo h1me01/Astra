@@ -363,7 +363,7 @@ namespace Chess
             // if checker is either a pawn or a knight, the only legal moves are to capture it
             if (checker_piece == makePiece(them, KNIGHT))
             {
-                can_capture = board.attackers(Us, checker_sq, occ) & ~board.pinned;
+                can_capture = board.attackersTo(Us, checker_sq, occ) & ~board.pinned;
                 while (can_capture)
                     *moves++ = Move(popLsb(can_capture), checker_sq);
                 return moves;

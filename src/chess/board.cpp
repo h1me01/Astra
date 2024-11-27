@@ -236,7 +236,7 @@ namespace Chess
         return occ;
     }
 
-    U64 Board::attackers(Color c, Square s, const U64 occ) const
+    U64 Board::attackersTo(Color c, Square s, const U64 occ) const
     {
         Piece pawn = c == WHITE ? WHITE_PAWN : BLACK_PAWN;
         Piece knight = c == WHITE ? WHITE_KNIGHT : BLACK_KNIGHT;
@@ -244,9 +244,8 @@ namespace Chess
         Piece rook = c == WHITE ? WHITE_ROOK : BLACK_ROOK;
         Piece queen = c == WHITE ? WHITE_QUEEN : BLACK_QUEEN;
         Piece king = c == WHITE ? WHITE_KING : BLACK_KING;
-        Color opp_color = c == WHITE ? BLACK : WHITE;
 
-        U64 attacks = pawnAttacks(opp_color, s) & piece_bb[pawn];
+        U64 attacks = pawnAttacks(~c, s) & piece_bb[pawn];
         attacks |= getAttacks(KNIGHT, s, occ) & piece_bb[knight];
         attacks |= getAttacks(BISHOP, s, occ) & (piece_bb[bishop] | piece_bb[queen]);
         attacks |= getAttacks(ROOK, s, occ) & (piece_bb[rook] | piece_bb[queen]);
@@ -308,7 +307,7 @@ namespace Chess
         if (mt == NORMAL) 
         {
             piece_bb[pc_from] ^= SQUARE_BB[from] | SQUARE_BB[to];
-            all_attackers = attackers(stm, opp_king_sq, occ);
+            all_attackers = attackersTo(stm, opp_king_sq, occ);
         }
         else // promotions
         {
@@ -318,7 +317,7 @@ namespace Chess
             piece_bb[pc_from] ^= SQUARE_BB[from];
             piece_bb[prom_pc] |= SQUARE_BB[to];
 
-            all_attackers = attackers(stm, opp_king_sq, occ);
+            all_attackers = attackersTo(stm, opp_king_sq, occ);
 
             piece_bb[prom_pc] = orig_prom_bb;
         }
@@ -354,7 +353,7 @@ namespace Chess
             occ |= SQUARE_BB[to];
 
             piece_bb[pc_from] ^= SQUARE_BB[from] | SQUARE_BB[to];
-            U64 all_attackers = attackers(~stm, ksq, occ);    
+            U64 all_attackers = attackersTo(~stm, ksq, occ);    
             piece_bb[pc_from] = pc_from_bb;
         
             return !all_attackers;
@@ -366,14 +365,14 @@ namespace Chess
             Direction step = to > from ? WEST : EAST;
 
             for (Square s = to; s != from; s += step) 
-                if (attackers(~stm, ksq, occ))
+                if (attackersTo(~stm, ksq, occ))
                     return false;
             
             return true;
         }
 
         if (typeOf(pc_from) == KING) 
-            return !attackers(~stm, to, occ);
+            return !attackersTo(~stm, to, occ);
 
         occ ^= SQUARE_BB[from] | SQUARE_BB[to];
         piece_bb[pc_from] ^= SQUARE_BB[from] | SQUARE_BB[to];
@@ -384,7 +383,7 @@ namespace Chess
             occ ^= SQUARE_BB[to];
         }
 
-        U64 all_attackers = attackers(~stm, ksq, occ);
+        U64 all_attackers = attackersTo(~stm, ksq, occ);
 
         piece_bb[pc_from] = pc_from_bb;
         piece_bb[pc_to] = pc_to_bb;
@@ -638,7 +637,7 @@ namespace Chess
 
         U64 occ = occupancy(WHITE) | occupancy(BLACK);
         occ = occ ^ (1ULL << from) ^ (1ULL << to);
-        U64 all_attackers = (attackers(WHITE, to, occ) | attackers(BLACK, to, occ)) & occ;
+        U64 all_attackers = (attackersTo(WHITE, to, occ) | attackersTo(BLACK, to, occ)) & occ;
 
         U64 queens = getPieceBB(WHITE, QUEEN) | getPieceBB(BLACK, QUEEN);
         U64 rooks = getPieceBB(WHITE, ROOK) | getPieceBB(BLACK, ROOK) | queens;
