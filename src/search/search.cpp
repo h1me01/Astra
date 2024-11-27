@@ -419,7 +419,7 @@ namespace Astra
                 Move move = NO_MOVE;
                 while ((move = movepicker.nextMove(true)) != NO_MOVE)
                 {
-                    if (move == ss->skipped)
+                    if (move == ss->skipped || !board.isLegal(move))
                         continue;
 
                     nodes++;
@@ -455,7 +455,7 @@ namespace Astra
         
         while ((move = mp.nextMove(skip_quiets)) != NO_MOVE)
         {
-            if (move == ss->skipped)
+            if (move == ss->skipped || !board.isLegal(move))
                 continue;
 
             bool is_cap = board.isCapture(move);
@@ -726,6 +726,9 @@ namespace Astra
 
         while ((move = mp.nextMove(skip_quiets)) != NO_MOVE)
         {
+            if (!board.isLegal(move))
+                continue;
+
             if (best_score > VALUE_TB_LOSS_IN_MAX_PLY)
             {
                 if (!in_check && futility <= alpha && board.isCapture(move) && !board.see(move, 1)) 

@@ -136,7 +136,7 @@ namespace Chess
         VALUE_TB_LOSS_IN_MAX_PLY = -VALUE_TB_WIN_IN_MAX_PLY
     };
 
-    enum MoveFlags
+    enum MoveType
     {
         NORMAL = 0,
         CASTLING = 1,
@@ -160,12 +160,12 @@ namespace Chess
         constexpr explicit Move(uint16_t m) : move(m) {}
 
         constexpr Move(const Move &other) : score(other.score), move(other.move) {}
-        constexpr Move(Square from, Square to, MoveFlags mf = NORMAL) : move(mf << 12 | from << 6 | to) {}
+        constexpr Move(Square from, Square to, MoveType mt = NORMAL) : move(mt << 12 | from << 6 | to) {}
 
         Square to() const { return Square(move & 0x3f); }
         Square from() const { return Square(move >> 6 & 0x3f); }
 
-        MoveFlags flag() const { return MoveFlags(move >> 12); }
+        MoveType type() const { return MoveType(move >> 12); }
 
         int to_from() const { return move & 0xffff; }
 

@@ -44,6 +44,7 @@ namespace Chess
 
         for (const Move& move : moves)
         {
+            assert(board.isLegal(move));
             board.makeMove(move);
             nodes += perft(board, depth - 1);
             board.unmakeMove(move);

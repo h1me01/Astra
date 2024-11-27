@@ -91,6 +91,7 @@ namespace Chess
         bool nonPawnMat(Color c) const;
         bool isCapture(const Move& m) const;
         bool givesCheck(const Move& m);
+        bool isLegal(const Move& m);
 
         bool isRepetition(bool is_pv) const;
         bool isInsufficientMaterial() const;
@@ -99,7 +100,7 @@ namespace Chess
         bool see(Move& move, int threshold);
 
     private:
-        U64 piece_bb[NUM_PIECES];
+        U64 piece_bb[NUM_PIECES + 1];
         Piece board[NUM_SQUARES];
         Color stm;
         U64 hash;
@@ -113,12 +114,8 @@ namespace Chess
 
     inline U64 Board::getPieceBB(Color c, PieceType pt) const
     {
+        assert(pt != NO_PIECE_TYPE);
         Piece piece = makePiece(c, pt);
-        if (piece == NO_PIECE)
-        {
-            std::cerr << "Invalid piece type" << std::endl;
-            return 0;
-        }
         return piece_bb[piece];
     }
 
@@ -143,7 +140,7 @@ namespace Chess
 
     inline bool Board::isCapture(const Move &m) const
     {
-        return board[m.to()] != NO_PIECE || m.flag() == EN_PASSANT;
+        return board[m.to()] != NO_PIECE || m.type() == EN_PASSANT;
     }
 
     inline void Board::putPiece(Piece p, Square s, bool update_nnue)

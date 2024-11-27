@@ -264,6 +264,7 @@ namespace Chess
         return piece_bb[knight] | piece_bb[bishop] | piece_bb[rook] | piece_bb[queen];
     }
 
+    // currently only support quiet moves (used in movepicker)
     bool Board::givesCheck(const Move& m)  
     {
         if(isCapture(m))
@@ -271,26 +272,26 @@ namespace Chess
     
         Square from = m.from();
         Square to = m.to();
-        MoveFlags mf = m.flag();
+        MoveType mt = m.type();
 
-        Piece pc_from = board[from];
+        Piece pc_from = pieceAt(from);
 
         const Square opp_king_sq = kingSq(~stm);
         U64 occ = occupancy(WHITE) | occupancy(BLACK);
 
-        if (mf == CASTLING)
+        if (mt == CASTLING)
         {
             Square rook_from, rook_to;
 
-            if (to == g1 || to == g8) // kingside
+            if (to == relativeSquare(stm, g1)) // kingside
             {
-                rook_from = stm == WHITE ? h1 : h8;
-                rook_to = stm == WHITE ? f1 : f8;
+                rook_from = relativeSquare(stm, h1);
+                rook_to = relativeSquare(stm, f1);
             }
             else // queenside
             {
-                rook_from = stm == WHITE ? a1 : a8;
-                rook_to = stm == WHITE ? d1 : d8;
+                rook_from =relativeSquare(stm, a1);
+                rook_to = relativeSquare(stm, d1);
             }
 
             occ ^= SQUARE_BB[from] | SQUARE_BB[to];
@@ -302,16 +303,16 @@ namespace Chess
         occ ^= SQUARE_BB[from] | SQUARE_BB[to];
         U64 all_attackers;
 
-        U64 pc_orig_bb = piece_bb[pc_from];
+        U64 pc_from_bb = piece_bb[pc_from];
 
-        if (mf == NORMAL) 
+        if (mt == NORMAL) 
         {
             piece_bb[pc_from] ^= SQUARE_BB[from] | SQUARE_BB[to];
             all_attackers = attackers(stm, opp_king_sq, occ);
         }
         else // promotions
         {
-            Piece prom_pc = makePiece(stm, typeOfPromotion(mf));
+            Piece prom_pc = makePiece(stm, typeOfPromotion(mt));
             U64 orig_prom_bb = piece_bb[prom_pc];
 
             piece_bb[pc_from] ^= SQUARE_BB[from];
@@ -322,14 +323,78 @@ namespace Chess
             piece_bb[prom_pc] = orig_prom_bb;
         }
 
-        piece_bb[pc_from] = pc_orig_bb;
+        piece_bb[pc_from] = pc_from_bb;
 
         return all_attackers;
     }
 
+    bool Board::isLegal(const Move &m)
+    {
+        Square from = m.from();
+        Square to = m.to();
+        Square ksq = kingSq(stm);
+        MoveType mt = m.type();
+        Piece pc_from = pieceAt(from);
+        Piece pc_to = pieceAt(to);
+
+        assert(pc_from != NO_PIECE);
+
+        U64 pc_from_bb = piece_bb[pc_from];
+        U64 pc_to_bb = piece_bb[pc_to];
+        U64 occ = occupancy(WHITE) | occupancy(BLACK);
+
+        if (mt == EN_PASSANT) 
+        {
+            Square cap_sq = Square(to ^ 8);
+
+            assert(board[cap_sq] == makePiece(~stm, PAWN));
+            assert(pieceAt(to) == NO_PIECE);
+
+            occ ^= SQUARE_BB[from] | SQUARE_BB[cap_sq];
+            occ |= SQUARE_BB[to];
+
+            piece_bb[pc_from] ^= SQUARE_BB[from] | SQUARE_BB[to];
+            U64 all_attackers = attackers(~stm, ksq, occ);    
+            piece_bb[pc_from] = pc_from_bb;
+        
+            return !all_attackers;
+        }
+
+        if (mt == CASTLING) 
+        {
+            to = relativeSquare(stm, to > from ? g1 : c1);
+            Direction step = to > from ? WEST : EAST;
+
+            for (Square s = to; s != from; s += step) 
+                if (attackers(~stm, ksq, occ))
+                    return false;
+            
+            return true;
+        }
+
+        if (typeOf(pc_from) == KING) 
+            return !attackers(~stm, to, occ);
+
+        occ ^= SQUARE_BB[from] | SQUARE_BB[to];
+        piece_bb[pc_from] ^= SQUARE_BB[from] | SQUARE_BB[to];
+
+        if (pc_to != NO_PIECE) 
+        {
+            piece_bb[pc_to] ^= SQUARE_BB[to]; 
+            occ ^= SQUARE_BB[to];
+        }
+
+        U64 all_attackers = attackers(~stm, ksq, occ);
+
+        piece_bb[pc_from] = pc_from_bb;
+        piece_bb[pc_to] = pc_to_bb;
+
+        return !all_attackers;
+    }
+
     void Board::makeMove(const Move &m, bool update_nnue)
     {
-        const MoveFlags mf = m.flag();
+        const MoveType mt = m.type();
         const Square from = m.from();
         const Square to = m.to();
         const Piece pc_from = board[from];
@@ -365,27 +430,27 @@ namespace Chess
         if (update_nnue)
             accumulators.push();
 
-        if (mf == CASTLING)
+        if (mt == CASTLING)
         {
             Square rook_from, rook_to;
 
-            if (to == g1 || to == g8) // kingside
+            if (to == relativeSquare(stm, g1)) // kingside
             {
-                rook_from = stm == WHITE ? h1 : h8;
-                rook_to = stm == WHITE ? f1 : f8;
+                rook_from = relativeSquare(stm, h1);
+                rook_to = relativeSquare(stm, f1);
             }
             else // queenside
             {
-                rook_from = stm == WHITE ? a1 : a8;
-                rook_to = stm == WHITE ? d1 : d8;
+                rook_from =relativeSquare(stm, a1);
+                rook_to = relativeSquare(stm, d1);
             }
 
             movePiece(from, to, update_nnue); // move king
             movePiece(rook_from, rook_to, update_nnue);
         }
-        else if (mf >= PR_KNIGHT)
+        else if (mt >= PR_KNIGHT)
         {
-            const PieceType prom_type = typeOfPromotion(mf);
+            const PieceType prom_type = typeOfPromotion(mt);
 
             hash ^= Zobrist::psq[pc_from][from];
             removePiece(from, update_nnue);
@@ -407,7 +472,7 @@ namespace Chess
             removePiece(to, update_nnue);
             movePiece(from, to, update_nnue);
         }
-        else if (!is_capture || mf == EN_PASSANT)
+        else if (!is_capture || mt == EN_PASSANT)
         {
             const auto ep_sq = Square(to ^ 8);
 
@@ -421,7 +486,7 @@ namespace Chess
                     hash ^= Zobrist::ep[fileOf(ep_sq)];
                 }
             }
-            else if (mf == EN_PASSANT)
+            else if (mt == EN_PASSANT)
             {
                 hash ^= Zobrist::psq[makePiece(~stm, PAWN)][ep_sq];
                 removePiece(ep_sq, update_nnue);
@@ -443,7 +508,7 @@ namespace Chess
     {
         stm = ~stm;
 
-        const MoveFlags mf = m.flag();
+        const MoveType mt = m.type();
         const Square from = m.from();
         const Square to = m.to();
 
@@ -452,25 +517,25 @@ namespace Chess
         if (accumulators.size())
             accumulators.pop();
 
-        if (mf == CASTLING)
+        if (mt == CASTLING)
         {
             Square rook_from, rook_to;
 
-            if (to == g1 || to == g8) // kingside
+            if (to == relativeSquare(stm, g1)) // kingside
             {
-                rook_from = stm == WHITE ? f1 : f8;
-                rook_to = stm == WHITE ? h1 : h8;
+                rook_from = relativeSquare(stm, f1);
+                rook_to = relativeSquare(stm, h1);
             }
             else // queenside
             {
-                rook_from = stm == WHITE ? d1 : d8;
-                rook_to = stm == WHITE ? a1 : a8;
+                rook_from =relativeSquare(stm, d1);
+                rook_to = relativeSquare(stm, a1);
             }
 
             movePiece(to, from, false); // move king
             movePiece(rook_from, rook_to, false);
         }
-        else if (mf >= PR_KNIGHT)
+        else if (mt >= PR_KNIGHT)
         {
             removePiece(to, false);
             putPiece(makePiece(stm, PAWN), from, false);
@@ -483,11 +548,11 @@ namespace Chess
             movePiece(to, from, false);
             putPiece(captured, to, false);
         }
-        else if (captured == NO_PIECE || mf == EN_PASSANT)
+        else if (captured == NO_PIECE || mt == EN_PASSANT)
         {
             movePiece(to, from, false);
 
-            if (mf == EN_PASSANT)
+            if (mt == EN_PASSANT)
                 putPiece(makePiece(~stm, PAWN), Square(to ^ 8), false);
         }
 

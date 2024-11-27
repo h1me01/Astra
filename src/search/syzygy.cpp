@@ -105,7 +105,7 @@ namespace Astra
         MoveList moves(board);
         for (auto m : moves)
         {
-            bool is_prom = typeOfPromotion(m.flag()) == prom_type;
+            bool is_prom = typeOfPromotion(m.type()) == prom_type;
 
             if (from == m.from() && to == m.to() && (is_prom || !isPromotion(m)))
                 return {s, m};

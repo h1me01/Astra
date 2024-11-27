@@ -129,7 +129,7 @@ namespace Astra
         {
             ml[i].score = 0;
 
-            PieceType captured = ml[i].flag() == EN_PASSANT ? PAWN : typeOf(board.pieceAt(ml[i].to()));
+            PieceType captured = ml[i].type() == EN_PASSANT ? PAWN : typeOf(board.pieceAt(ml[i].to()));
 
             if (st == Q_SEARCH && !in_check)
             {
@@ -139,7 +139,7 @@ namespace Astra
                     ml[i].score += (ml[i] == tt_move) * 1e8;
                 }
                 else if(board.givesCheck(ml[i])) 
-                    ml[i].score = 0 * 1e6;
+                    ml[i].score = 0*1e6;
 
                 continue; // don't score non checker quiet moves
             }

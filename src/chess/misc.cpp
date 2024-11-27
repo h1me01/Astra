@@ -62,7 +62,7 @@ namespace Chess
 
         if (isPromotion(m))
         {
-            const PieceType pt = typeOfPromotion(m.flag());
+            const PieceType pt = typeOfPromotion(m.type());
             os << PIECE_STR[pt + 6];
         }
 

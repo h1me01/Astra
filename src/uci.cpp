@@ -287,34 +287,34 @@ namespace UCI
         Square from = squareFromString(str_move.substr(0, 2));
         Square to = squareFromString(str_move.substr(2, 2));
         Piece p_from = board.pieceAt(from);
-        MoveFlags mf = NORMAL;
+        MoveType mt = NORMAL;
 
         if (typeOf(p_from) == PAWN)
         {
             if (board.history[board.getPly()].ep_sq == to)
-                mf = EN_PASSANT;
+                mt = EN_PASSANT;
             else if (rankOf(to) == 0 || rankOf(to) == 7)
             {
                 char promotion = tolower(str_move[4]);
 
-                mf = PR_QUEEN;
+                mt = PR_QUEEN;
                 if (promotion == 'r')
-                    mf = PR_ROOK;
+                    mt = PR_ROOK;
                 else if (promotion == 'b')
-                    mf = PR_BISHOP;
+                    mt = PR_BISHOP;
                 else if (promotion == 'n')
-                    mf = PR_KNIGHT;
+                    mt = PR_KNIGHT;
             }
         }
         else if (typeOf(p_from) == KING)
         {
             if ((from == e1 && to == g1) || (from == e8 && to == g8))
-                mf = CASTLING;
+                mt = CASTLING;
             else if ((from == e1 && to == c1) || (from == e8 && to == c8))
-                mf = CASTLING;
+                mt = CASTLING;
         }
 
-        return Move(from, to, mf);
+        return Move(from, to, mt);
     }
 
 } // namespace UCI
