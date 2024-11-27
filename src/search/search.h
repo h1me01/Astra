@@ -10,7 +10,7 @@ namespace Astra
     struct Stack
     {
         uint16_t ply;
-        Score eval = VALUE_NONE;
+        Score static_eval = VALUE_NONE;
         Move curr_move = NO_MOVE;
         Move skipped = NO_MOVE;
     };

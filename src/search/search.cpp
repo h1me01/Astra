@@ -41,6 +41,8 @@ namespace Astra
     PARAM(hp_depth, 5, 4, 6, 1);
     PARAM(history_bonus_margin, 76, 55, 100, 5);
 
+    PARAM(qfp_margin, 110, 60, 150, 10);
+
     // search helper
 
     Score drawScore(U64 nodes) 
@@ -206,12 +208,14 @@ namespace Astra
 
         pv_table[ss->ply].length = ss->ply;
 
+        // variables
         const Color stm = board.getTurn();
         const bool in_check = board.inCheck();
 
         const bool root_node = ss->ply == 0;
         const bool pv_node = beta - alpha != 1;
 
+        // check for terminal states
         if (!root_node)
         {   
             // mate distance pruning
@@ -245,24 +249,25 @@ namespace Astra
         if (pv_node && ss->ply > sel_depth)
             sel_depth = ss->ply; // heighest depth a pv node has reached
 
-        const Move skipped = ss->skipped;
+        // variables
+        int eval = ss->static_eval;
+        bool improving = false;
+
+        Score max_score = VALUE_MATE;
+        Score best_score = -VALUE_MATE;
 
         // look up in transposition table
         TTEntry ent;
-        const U64 hash = board.getHash();
-        const bool tt_hit = tt.lookup(ent, hash);
-        const Score tt_score = tt_hit ? scoreFromTT(ent.score, ss->ply) : Score(VALUE_NONE);
+        U64 hash = board.getHash();
+        bool tt_hit = tt.lookup(ent, hash);
+        Score tt_score = tt_hit ? scoreFromTT(ent.score, ss->ply) : Score(VALUE_NONE);
 
-        if (!root_node 
-            && !pv_node 
-            && !skipped 
+        if (!pv_node 
             && tt_hit 
+            && !ss->skipped 
             && ent.depth >= depth 
-            && tt_score != VALUE_NONE
-            && (ss - 1)->curr_move != NULL_MOVE)
+            && tt_score != VALUE_NONE)
         {
-            ss->eval = tt_score;
-
             if (ent.bound == EXACT_BOUND)
                 return tt_score;
             else if (ent.bound == LOWER_BOUND && tt_score >= beta)
@@ -270,23 +275,45 @@ namespace Astra
             else if (ent.bound == UPPER_BOUND && tt_score <= alpha)
                 return tt_score;
         }
+       
+        if (in_check)
+            eval = ss->static_eval = VALUE_NONE;
         else
-            ss->eval = in_check ? Score(VALUE_NONE) : Eval::evaluate(board);
-
-        // use tt score for better evaluation
-        if (tt_hit && ss->eval != VALUE_NONE && tt_score != VALUE_NONE)
         {
-            if (ent.bound == EXACT_BOUND)
-                ss->eval = tt_score;
-            else if (ent.bound == LOWER_BOUND && ss->eval < tt_score)
-                ss->eval = tt_score;
-            else if (ent.bound == UPPER_BOUND && ss->eval > tt_score)
-                ss->eval = tt_score;
+            // use tt score for better evaluation
+            if (tt_hit)
+            {
+                eval = tt_score;
+                if (eval == VALUE_NONE)
+                    eval = Eval::evaluate(board);
+
+                ss->static_eval = eval;
+
+                if (tt_score != VALUE_NONE) 
+                {
+                    if (ent.bound == EXACT_BOUND)
+                        eval = tt_score;
+                    else if (ent.bound == LOWER_BOUND && eval < tt_score)
+                        eval = tt_score;
+                    else if (ent.bound == UPPER_BOUND && eval > tt_score)
+                        eval = tt_score;
+                }
+            } else if (!ss->skipped) {
+                eval = ss->static_eval = Eval::evaluate(board);
+                tt.store(hash, NO_MOVE, scoreToTT(eval, ss->ply), -1, NO_BOUND);
+            }
+
+            // check for improvement
+            if (ss->ply >= 2)
+            {
+                if (ss->ply >= 4 && (ss - 2)->static_eval == VALUE_NONE)
+                    // if ss - 2 eval was not calculated, use ss - 4 eval
+                    improving = ss->static_eval > (ss - 4)->static_eval || (ss - 4)->static_eval == VALUE_NONE;
+                else
+                    improving = ss->static_eval > (ss - 2)->static_eval || (ss - 2)->static_eval == VALUE_NONE;
+            }
         }
    
-        Score max_score = VALUE_INFINITE;
-        Score best_score = -VALUE_INFINITE;
-
         // tablebase probing
         if (use_tb && !root_node)
         {
@@ -334,50 +361,40 @@ namespace Astra
             }
         }
 
-        // check for improvement
-        bool improving = false;
-        if (ss->ply >= 2) 
-        { 
-            if (ss->ply >= 4 && (ss - 2)->eval == VALUE_NONE) 
-                // if ss - 2 eval was not calculated, use ss - 4 eval
-                improving = ss->eval > (ss - 4)->eval || (ss - 4)->eval == VALUE_NONE;
-            else
-                improving = ss->eval > (ss - 2)->eval || (ss - 2)->eval == VALUE_NONE;        
-        }
-
         // internal iterative reduction
-        if (!in_check && !skipped && !tt_hit && depth >= 4 && pv_node)
+        if (!in_check && !ss->skipped && !tt_hit && depth >= 4 && pv_node)
             depth--;
 
         // only use pruning when not in check and pv node
         if (!in_check && !pv_node)
         {
             // razoring
-            if (depth <= rzr_depth && ss->eval + rzr_depth_mult * depth < alpha)
+            if (depth <= rzr_depth && eval + rzr_depth_mult * depth < alpha)
             {
                 Score score = qSearch(alpha, beta, ss);
-                if (score < alpha)
+                if (score <= alpha)
                     return score;
             }
 
             // reverse futility pruning
-            if (depth <= rfp_depth 
-                && ss->eval < VALUE_TB_WIN_IN_MAX_PLY
-                && ss->eval - rfp_depth_mult * (depth - improving) >= beta)
+            if (!ss->skipped 
+                && depth <= rfp_depth 
+                && eval < VALUE_TB_WIN_IN_MAX_PLY
+                && eval - rfp_depth_mult * (depth - improving) >= beta)
             {
-                return (ss->eval + beta) / 2;
+                return (eval + beta) / 2;
             }
 
             // null move pruning
             if (depth >= 4  
-                && !skipped 
-                && ss->eval >= beta
+                && !ss->skipped 
+                && eval >= beta
                 && board.nonPawnMat(stm) 
                 && (ss - 1)->curr_move != NULL_MOVE)
             {
-                assert(ss->eval - beta >= 0);
+                assert(eval - beta >= 0);
 
-                int R = nmp_base + depth / nmp_depth_div + std::min(int(nmp_min), (ss->eval - beta) / nmp_div);
+                int R = nmp_base + depth / nmp_depth_div + std::min(int(nmp_min), (eval - beta) / nmp_div);
 
                 ss->curr_move = NULL_MOVE;
 
@@ -389,7 +406,7 @@ namespace Astra
                 {
                     // don't return unproven mate scores
                     if (score >= VALUE_TB_WIN_IN_MAX_PLY)
-                        return beta;
+                        score = beta;
 
                     return score;
                 }
@@ -410,6 +427,7 @@ namespace Astra
                         continue;
 
                     nodes++;
+                    ss->curr_move = move;
                     board.makeMove(move, true);
 
                     Score score = -qSearch(-beta_cut, -beta_cut + 1, ss + 1);
@@ -421,8 +439,8 @@ namespace Astra
 
                     if (score >= beta_cut)
                     {
-                        tt.store(hash, move, scoreToTT(score, ss->ply), depth - 3, LOWER_BOUND);
-                        return beta_cut;
+                        tt.store(hash, move, scoreToTT(score, ss->ply), depth - 3, LOWER_BOUND);  
+                        return score; 
                     }
                 }
             }
@@ -433,7 +451,7 @@ namespace Astra
         bool skip_quiets = false;
         bool is_ttmove_cap = board.isCapture(ent.move);
 
-        int move_moves = 0, q_count = 0, c_count = 0;
+        int made_moves = 0, q_count = 0, c_count = 0;
 
         Move q_moves[64];
         Move c_moves[64];
@@ -441,17 +459,17 @@ namespace Astra
         
         while ((move = mp.nextMove(skip_quiets)) != NO_MOVE)
         {
-            if (move == skipped)
+            if (move == ss->skipped)
                 continue;
 
             int extension = 0;
 
             bool is_cap = board.isCapture(move);
             
-            if (!root_node && best_score > VALUE_TB_LOSS_IN_MAX_PLY)
+            if (best_score > VALUE_TB_LOSS_IN_MAX_PLY) 
             {
                 int history_score = is_cap ? history.getCHScore(board, move) : history.getQHScore(stm, move); 
-                int r = REDUCTIONS[depth][move_moves + 1] + !improving - history_score / hp_div;
+                int r = REDUCTIONS[depth][made_moves + 1] + !improving - history_score / hp_div;
 
                 int lmr_depth = std::max(1, depth - r);
                 
@@ -461,7 +479,7 @@ namespace Astra
                     continue;
 
                 // late move pruning
-                if (q_count > (4 + depth * depth)) 
+                if (!root_node && q_count > (4 + depth * depth)) 
                     skip_quiets = true;
 
                 if (!is_cap && !isPromotion(move)) 
@@ -473,7 +491,7 @@ namespace Astra
                     // futility pruning
                     if (!in_check 
                         && lmr_depth <= fp_depth 
-                        && ss->eval + fp_base + lmr_depth * fp_mult <= alpha) 
+                        && eval + fp_base + lmr_depth * fp_mult <= alpha) 
                     {
                         skip_quiets = true;
                     }
@@ -485,7 +503,7 @@ namespace Astra
             else 
                 q_moves[q_count++] = move;
 
-            move_moves++;
+            made_moves++;
 
             // print current move information
             if (id == 0 
@@ -495,18 +513,18 @@ namespace Astra
             {
                 std::cout << "info depth " << depth
                           << " currmove " << move
-                          << " currmovenumber " << move_moves << std::endl;
+                          << " currmovenumber " << made_moves << std::endl;
             }
 
             // singular extensions
             if (!root_node 
-                && depth >= 6 
                 && tt_hit 
+                && depth >= 6 
+                && !ss->skipped 
                 && ent.move == move 
-                && !skipped 
-                && std::abs(tt_score) < VALUE_TB_WIN_IN_MAX_PLY 
+                && ent.depth >= depth - 3
                 && ent.bound & LOWER_BOUND 
-                && ent.depth >= depth - 3)
+                && std::abs(tt_score) < VALUE_TB_WIN_IN_MAX_PLY)
             {
                 Score sbeta = tt_score - 3 * depth;
                 int sdepth = (depth - 1) / 2;
@@ -528,16 +546,15 @@ namespace Astra
             const int new_depth = depth - 1 + extension;
           
             nodes++;
+            ss->curr_move = move;
             board.makeMove(move, true);
            
-            ss->curr_move = move;
-
             Score score = VALUE_NONE;
 
             // late move reduction
-            if (depth > 1 && move_moves > 3 && (!pv_node || !is_cap))
+            if (depth > 1 && made_moves > 3 && (!pv_node || !is_cap))
             {
-                int r = REDUCTIONS[depth][move_moves + 1];
+                int r = REDUCTIONS[depth][made_moves + 1];
                 // increase when tt move is capture
                 r += is_ttmove_cap;
                 // reduce when not improving
@@ -563,12 +580,12 @@ namespace Astra
                     history.updateContH(board, move, ss, bonus);
                 }
             }
-            else if (!pv_node || move_moves > 1)
+            else if (!pv_node || made_moves > 1)
                 // full-depth search if lmr was skipped
                 score = -negamax(new_depth, -alpha - 1, -alpha, ss + 1);
 
             // principal variation search
-            if (pv_node && ((score > alpha && score < beta) || move_moves == 1))
+            if (pv_node && ((score > alpha && score < beta) || made_moves == 1))
                 score = -negamax(new_depth, -beta, -alpha, ss + 1);
 
             board.unmakeMove(move);
@@ -600,17 +617,16 @@ namespace Astra
         // check for mate and stalemate
         if (mp.getMoveCount() == 0)
         {
-            if (skipped != NO_MOVE)
-                best_score = alpha;
+            if (ss->skipped != NO_MOVE)
+                return alpha;
             else
-                best_score = in_check ? -VALUE_MATE + ss->ply : VALUE_DRAW;
+                return in_check ? -VALUE_MATE + ss->ply : VALUE_DRAW;
         }
 
-        if (pv_node)
-            best_score = std::min(best_score, max_score);
+        best_score = std::min(best_score, max_score);
 
         // store in transposition table
-        if (!skipped)
+        if (!ss->skipped)
         {
             Bound bound;
             if (best_score >= beta)
@@ -637,13 +653,14 @@ namespace Astra
             return Eval::evaluate(board);
 
         const bool pv_node = beta - alpha != 1;
-        const Color stm = board.getTurn();
         const bool in_check = board.inCheck();
 
         if (board.isRepetition(pv_node) || board.isDraw())
             return drawScore(nodes);
 
-        Score stand_pat, best_score;
+        Score best_score = -VALUE_MATE + ss->ply;
+        int eval = ss->static_eval;
+        int futility = -VALUE_MATE;
 
         // look up in transposition table
         TTEntry ent;
@@ -651,10 +668,7 @@ namespace Astra
         const bool tt_hit = tt.lookup(ent, hash);
         const Score tt_score = tt_hit ? scoreFromTT(ent.score, ss->ply) : Score(VALUE_NONE);
 
-        if (!pv_node 
-            && tt_hit 
-            && tt_score != VALUE_NONE
-            && ent.bound != NO_BOUND)
+        if (!pv_node && tt_hit && tt_score != VALUE_NONE)
         {
             if (ent.bound == EXACT_BOUND)
                 return tt_score;
@@ -662,31 +676,47 @@ namespace Astra
                 return tt_score;
             else if (ent.bound == UPPER_BOUND && tt_score <= alpha)
                 return tt_score;
-
-            stand_pat = tt_score;
-            best_score = tt_score;
         }
+
+        if (in_check) 
+            eval = ss->static_eval = VALUE_NONE;
         else
         {
-            stand_pat = Eval::evaluate(board);
-            best_score = stand_pat;
-        }
+            // use tt score for better evaluation
+            if (tt_hit)
+            {
+                eval = tt_score;
 
-        // use tt score for better evaluation
-        if (tt_hit && tt_score != VALUE_NONE)
-        {
-            if (ent.bound == EXACT_BOUND)
-                best_score = tt_score;
-            else if (ent.bound == LOWER_BOUND && stand_pat < tt_score)
-                best_score = tt_score;
-            else if (ent.bound == UPPER_BOUND && stand_pat > tt_score)
-                best_score = tt_score;
-        }
+                if (eval == VALUE_NONE)
+                    eval = Eval::evaluate(board);
+                
+                ss->static_eval = eval;
 
-        if (best_score >= beta)
-            return best_score;
-        if (best_score > alpha)
-            alpha = best_score;
+                if (tt_score != VALUE_NONE) 
+                {
+                    if (ent.bound == EXACT_BOUND)
+                        eval = tt_score;
+                    else if (ent.bound == LOWER_BOUND && eval < tt_score)
+                        eval = tt_score;
+                    else if (ent.bound == UPPER_BOUND && eval > tt_score)
+                        eval = tt_score;
+                }
+            } 
+            else 
+            {
+                eval = ss->static_eval = Eval::evaluate(board);
+                tt.store(hash, NO_MOVE, scoreToTT(eval, ss->ply), -1, NO_BOUND);
+            }
+
+            // stand pat
+            if (eval >= beta)
+                return eval;
+            if (eval > alpha)
+                alpha = eval;
+
+            best_score = eval;
+            futility = eval + qfp_margin;
+        }
 
         MovePicker mp(Q_SEARCH, board, history, ss, ent.move, in_check);
 
@@ -695,17 +725,14 @@ namespace Astra
 
         while ((move = mp.nextMove()) != NO_MOVE)
         {
-            if (best_score > VALUE_TB_LOSS_IN_MAX_PLY && !in_check)
+            if (best_score > VALUE_TB_LOSS_IN_MAX_PLY)
             {
-                // delta pruning
-                PieceType captured = move.flag() == EN_PASSANT ? PAWN : typeOf(board.pieceAt(move.to()));
-                if (!isPromotion(move) 
-                    && board.nonPawnMat(stm) 
-                    && stand_pat + 400 + PIECE_VALUES[captured] < alpha)
+                if (!in_check && futility <= alpha && board.isCapture(move) && !board.see(move, 1)) 
                 {
+                    best_score = std::max(best_score, Score(futility));
                     continue;
                 }
-
+                
                 // see pruning
                 if (!board.see(move, 0))
                     continue;
