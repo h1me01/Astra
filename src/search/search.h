@@ -2,7 +2,6 @@
 #define SEARCH_H
 
 #include "tt.h"
-#include "pvtable.h"
 #include "history.h"
 #include "timeman.h"
 
@@ -14,6 +13,15 @@ namespace Astra
         Score eval = VALUE_NONE;
         Move curr_move = NO_MOVE;
         Move skipped = NO_MOVE;
+    };
+
+    struct PVLine
+    {
+        Move pv[MAX_PLY + 1];
+        uint8_t length;
+
+        Move& operator[](int depth) { return pv[depth]; }
+        Move operator[](int depth) const { return pv[depth]; }
     };
 
     void initReductions();
@@ -40,13 +48,15 @@ namespace Astra
         Move start();
 
     private:
-        PVTable pv_table;
+        PVLine pv_table[MAX_PLY + 1];
        
         TimeMan tm; 
 
         Score aspSearch(int depth, Score prev_eval, Stack *ss);
         Score negamax(int depth, Score alpha, Score beta, Stack *ss);
         Score qSearch(Score alpha, Score beta, Stack *ss);
+
+        void updatePV(int ply, Move m);
 
         bool isLimitReached(int depth) const;
         void printUciInfo(Score result, int depth, PVLine &pv_line) const;

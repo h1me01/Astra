@@ -61,11 +61,11 @@ namespace Astra
                 return killer2;
             [[fallthrough]];
         case COUNTER:
-            stage = REST;
+            stage = QUIET_AND_BAD_CAP;
             if (!skip_quiets && counter != NO_MOVE && counter != killer1 && counter != killer2)
                 return counter;
             [[fallthrough]];
-        case REST:
+        case QUIET_AND_BAD_CAP:
             while (idx < ml_size)
             {
                 partialInsertionSort(idx);
@@ -88,7 +88,7 @@ namespace Astra
                 Move move = ml[idx];
                 idx++;
                 
-                if (board.isCapture(move) || board.givesCheck(move))
+                if (board.isCapture(move) /*|| board.givesCheck(move)*/)
                     return move;
             }
 
@@ -130,8 +130,8 @@ namespace Astra
 
             if (st == Q_SEARCH && !in_check)
             {
-                if (captured != NO_PIECE_TYPE)
-                    ml[i].score = 1e7 * board.see(ml[i], 0) + PIECE_VALUES[captured] + history.getCHScore(board, ml[i]);
+                if (captured != NO_PIECE_TYPE) 
+                    ml[i].score = 1e6 + 1e7 * board.see(ml[i], 0) + PIECE_VALUES[captured] + history.getCHScore(board, ml[i]);
 
                 continue; // don't score quiet moves
             }

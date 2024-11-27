@@ -264,9 +264,67 @@ namespace Chess
         return piece_bb[knight] | piece_bb[bishop] | piece_bb[rook] | piece_bb[queen];
     }
 
-    bool Board::givesCheck(const Move& m) const 
+    bool Board::givesCheck(const Move& m)  
     {
-        return false;
+        if(isCapture(m))
+            return false;
+    
+        Square from = m.from();
+        Square to = m.to();
+        MoveFlags mf = m.flag();
+
+        Piece pc_from = board[from];
+
+        const Square opp_king_sq = kingSq(~stm);
+        U64 occ = occupancy(WHITE) | occupancy(BLACK);
+
+        if (mf == CASTLING)
+        {
+            Square rook_from, rook_to;
+
+            if (to == g1 || to == g8) // kingside
+            {
+                rook_from = stm == WHITE ? h1 : h8;
+                rook_to = stm == WHITE ? f1 : f8;
+            }
+            else // queenside
+            {
+                rook_from = stm == WHITE ? a1 : a8;
+                rook_to = stm == WHITE ? d1 : d8;
+            }
+
+            occ ^= SQUARE_BB[from] | SQUARE_BB[to];
+            occ ^= SQUARE_BB[rook_from] | SQUARE_BB[rook_to];
+
+            return SQUARE_BB[opp_king_sq] & getAttacks(ROOK, rook_to, occ);
+        }
+        
+        occ ^= SQUARE_BB[from] | SQUARE_BB[to];
+        U64 all_attackers;
+
+        U64 pc_orig_bb = piece_bb[pc_from];
+
+        if (mf == NORMAL) 
+        {
+            piece_bb[pc_from] ^= SQUARE_BB[from] | SQUARE_BB[to];
+            all_attackers = attackers(stm, opp_king_sq, occ);
+        }
+        else // promotions
+        {
+            Piece prom_pc = makePiece(stm, typeOfPromotion(mf));
+            U64 orig_prom_bb = piece_bb[prom_pc];
+
+            piece_bb[pc_from] ^= SQUARE_BB[from];
+            piece_bb[prom_pc] |= SQUARE_BB[to];
+
+            all_attackers = attackers(stm, opp_king_sq, occ);
+
+            piece_bb[prom_pc] = orig_prom_bb;
+        }
+
+        piece_bb[pc_from] = pc_orig_bb;
+
+        return all_attackers;
     }
 
     void Board::makeMove(const Move &m, bool update_nnue)

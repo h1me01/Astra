@@ -20,7 +20,7 @@ namespace Astra
         KILLER1,
         KILLER2,
         COUNTER,
-        REST,
+        QUIET_AND_BAD_CAP,
 
         Q_MOVES,
 

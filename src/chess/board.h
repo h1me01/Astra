@@ -90,7 +90,7 @@ namespace Chess
         bool inCheck() const;
         bool nonPawnMat(Color c) const;
         bool isCapture(const Move& m) const;
-        bool givesCheck(const Move& m) const;
+        bool givesCheck(const Move& m);
 
         bool isRepetition(bool is_pv) const;
         bool isInsufficientMaterial() const;
@@ -158,7 +158,7 @@ namespace Chess
     inline void Board::removePiece(Square s, bool update_nnue)
     {
         const Piece p = board[s];
-        piece_bb[p] &= ~SQUARE_BB[s];
+        piece_bb[p] ^= SQUARE_BB[s];
         board[s] = NO_PIECE;
 
         if (update_nnue)

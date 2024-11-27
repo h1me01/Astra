@@ -66,6 +66,9 @@ namespace Astra
 
     Search::Search(const std::string &fen) : board(fen) 
     {
+        for (auto& pvLine : pv_table)
+            pvLine.length = 0;
+
         tt.clear();
     }
 
@@ -110,14 +113,14 @@ namespace Astra
             if (isLimitReached(depth))
                 break;
 
-            best_move_changes = best_move != pv_table(0)(0); 
+            best_move_changes = best_move != pv_table[0][0]; 
             avg_eval += result;
 
-            best_move = pv_table(0)(0);
+            best_move = pv_table[0][0];
 
             if (id == 0) 
             {
-                printUciInfo(result, depth, pv_table(0)); 
+                printUciInfo(result, depth, pv_table[0]); 
 
                 // skip time managament if no time is set
                 if (!limit.time.optimum || !limit.time.max)
@@ -201,7 +204,7 @@ namespace Astra
         if (ss->ply >= MAX_PLY)
             return Eval::evaluate(board);
 
-        pv_table(ss->ply).length = ss->ply;
+        pv_table[ss->ply].length = ss->ply;
 
         const Color stm = board.getTurn();
         const bool in_check = board.inCheck();
@@ -581,8 +584,8 @@ namespace Astra
                     alpha = score;
                     best_move = move;
                     
-                    // update pv
-                    pv_table.updatePV(ss->ply, best_move);
+                    // update best move
+                    updatePV(ss->ply, best_move);
                 }
 
                 if (score >= beta)
@@ -746,6 +749,18 @@ namespace Astra
         return best_score;
     }
 
+    void Search::updatePV(int ply, Move m)
+    {
+        PVLine& current_pv = pv_table[ply];
+        current_pv[ply] = m;
+
+        uint8_t next_length = pv_table[ply + 1].length;
+        for (int next_ply = ply + 1; next_ply < next_length; next_ply++)
+            current_pv[next_ply] = pv_table[ply + 1][next_ply];
+            
+        current_pv.length = next_length;
+    }
+
     bool Search::isLimitReached(const int depth) const
     {
         if (limit.infinite)
@@ -790,7 +805,7 @@ namespace Astra
 
         // print the pv
         for (int i = 0; i < pv_line.length; i++)
-            std::cout << " " << pv_line(i);
+            std::cout << " " << pv_line[i];
 
         std::cout << std::endl;
     }
