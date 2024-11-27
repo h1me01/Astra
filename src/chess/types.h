@@ -125,15 +125,12 @@ namespace Chess
         VALUE_DRAW = 0,
 
         VALUE_MATE = 32000,
-        VALUE_MIN_MATE = VALUE_MATE - MAX_PLY,
 
         VALUE_INFINITE = 32001,
         VALUE_NONE = 32002,
 
-        VALUE_TB_WIN = VALUE_MIN_MATE,
-        VALUE_TB_LOSS = -VALUE_TB_WIN,
+        VALUE_TB_WIN = VALUE_MATE,
         VALUE_TB_WIN_IN_MAX_PLY = VALUE_TB_WIN - MAX_PLY,
-        VALUE_TB_LOSS_IN_MAX_PLY = -VALUE_TB_WIN_IN_MAX_PLY
     };
 
     enum MoveType

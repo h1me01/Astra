@@ -92,7 +92,7 @@ namespace Astra
     {
         if (s >= VALUE_TB_WIN_IN_MAX_PLY)
             return s + ply;
-        if (s <= VALUE_TB_LOSS_IN_MAX_PLY)
+        if (s <= -VALUE_TB_WIN_IN_MAX_PLY)
             return s - ply;
         return s;
     }
@@ -103,7 +103,7 @@ namespace Astra
             return VALUE_NONE;
         if (s >= VALUE_TB_WIN_IN_MAX_PLY)
             return s - ply;
-        if (s <= VALUE_TB_LOSS_IN_MAX_PLY)
+        if (s <= -VALUE_TB_WIN_IN_MAX_PLY)
             return s + ply;
         return s;
     }

@@ -257,11 +257,7 @@ namespace Astra
         bool tt_hit = tt.lookup(ent, hash);
         Score tt_score = tt_hit ? scoreFromTT(ent.score, ss->ply) : Score(VALUE_NONE);
 
-        if (!pv_node 
-            && tt_hit 
-            && !ss->skipped 
-            && ent.depth >= depth 
-            && tt_score != VALUE_NONE)
+        if (!pv_node && tt_hit && !ss->skipped && ent.depth >= depth && tt_score != VALUE_NONE)
         {
             if (ent.bound == EXACT_BOUND)
                 return tt_score;
@@ -281,20 +277,20 @@ namespace Astra
                 Bound bound = NO_BOUND;
                 tb_hits++;
 
-                switch (tb_score)
+                if (tb_score == VALUE_TB_WIN) 
                 {
-                case VALUE_TB_WIN:
-                    tb_score = VALUE_MIN_MATE - ss->ply - 1;
+                    tb_score = VALUE_TB_WIN - ss->ply - 1;
                     bound = LOWER_BOUND;
-                    break;
-                case VALUE_TB_LOSS:
-                    tb_score = -VALUE_MIN_MATE + ss->ply + 1;
+                } 
+                else if (tb_score == -VALUE_TB_WIN) 
+                {
+                    tb_score = -VALUE_TB_WIN + ss->ply + 1;
                     bound = UPPER_BOUND;
-                    break;
-                default:
+                } 
+                else 
+                {
                     tb_score = 0;
                     bound = EXACT_BOUND;
-                    break;
                 }
 
                 if (bound == EXACT_BOUND ||
@@ -365,15 +361,11 @@ namespace Astra
         if (!in_check && !pv_node)
         {
             // reverse futility pruning
-            if (!ss->skipped 
-                && depth <= rfp_depth 
-                && eval < VALUE_TB_WIN_IN_MAX_PLY
-                && eval - rfp_depth_mult * (depth - improving) >= beta)
-            {
+            int rfp_margin = rfp_depth_mult * (depth - improving);
+            if (!ss->skipped && depth <= rfp_depth && eval < VALUE_TB_WIN_IN_MAX_PLY && eval - rfp_margin >= beta)
                 return (eval + beta) / 2;
-            }
 
-            // razoring
+            // razoring (search works without this)
             if (depth <= rzr_depth && eval + rzr_depth_mult * depth <= alpha)
             {
                 Score score = qSearch(alpha, beta, ss);
@@ -382,14 +374,8 @@ namespace Astra
             }
 
             // null move pruning
-            if (depth >= 4  
-                && !ss->skipped 
-                && eval >= beta
-                && board.nonPawnMat(stm) 
-                && (ss - 1)->curr_move != NULL_MOVE)
+            if (depth >= 4 && !ss->skipped && eval >= beta && board.nonPawnMat(stm) && (ss - 1)->curr_move != NULL_MOVE)
             {
-                assert(eval - beta >= 0);
-
                 int R = nmp_base + depth / nmp_depth_div + std::min(int(nmp_min), (eval - beta) / nmp_div);
 
                 ss->curr_move = NULL_MOVE;
@@ -410,7 +396,7 @@ namespace Astra
 
             // probcut
             int beta_cut = beta + probcut_margin;
-            if (depth > 3 
+            if (depth > 3
                 && std::abs(beta) < VALUE_TB_WIN_IN_MAX_PLY 
                 && !(ent.depth >= depth - 3 && tt_score != VALUE_NONE && tt_score < beta_cut))
             {
@@ -455,12 +441,14 @@ namespace Astra
             if (move == ss->skipped)
                 continue;
 
+            made_moves++;
+
             bool is_cap = board.isCapture(move);
             
-            if (!root_node && best_score > VALUE_TB_LOSS_IN_MAX_PLY) 
+            if (!root_node && best_score > -VALUE_TB_WIN_IN_MAX_PLY) 
             {
                 int history_score = is_cap ? history.getCHScore(board, move) : history.getQHScore(stm, move); 
-                int r = REDUCTIONS[depth][made_moves + 1] + !improving - history_score / hp_div;
+                int r = REDUCTIONS[depth][made_moves] + !improving - history_score / hp_div;
 
                 int lmr_depth = std::max(1, depth - r);
                 
@@ -480,12 +468,8 @@ namespace Astra
                         skip_quiets = true;
                     
                     // futility pruning
-                    if (!in_check 
-                        && lmr_depth <= fp_depth 
-                        && eval + fp_base + lmr_depth * fp_mult <= alpha) 
-                    {
+                    if (!in_check && lmr_depth <= fp_depth && eval + fp_base + lmr_depth * fp_mult <= alpha) 
                         skip_quiets = true;
-                    }
                 }
             }
 
@@ -494,13 +478,8 @@ namespace Astra
             else 
                 q_moves[q_count++] = move;
 
-            made_moves++;
-
             // print current move information
-            if (id == 0 
-                && root_node 
-                && tm.elapsedTime() > 5000 
-                && !threads.isStopped())
+            if (id == 0 && root_node && tm.elapsedTime() > 5000 && !threads.isStopped())
             {
                 std::cout << "info depth " << depth
                           << " currmove " << move
@@ -545,7 +524,7 @@ namespace Astra
             Score score = VALUE_NONE;
 
             // late move reduction
-            if (depth > 1 && made_moves > 1 + 2 * pv_node && (!pv_node || !is_cap))
+            if (depth > 1 && made_moves > 1 + 2 * root_node && (!pv_node || !is_cap))
             {
                 int r = REDUCTIONS[depth][made_moves + 1];
                 // increase when tt move is capture
@@ -597,7 +576,8 @@ namespace Astra
                     best_move = move;
                     
                     // update best move
-                    updatePV(ss->ply, best_move);
+                    if(pv_node)
+                        updatePV(ss->ply, best_move);
                 }
 
                 if (score >= beta)
@@ -723,7 +703,7 @@ namespace Astra
 
         while ((move = mp.nextMove(skip_quiets)) != NO_MOVE)
         {
-            if (best_score > VALUE_TB_LOSS_IN_MAX_PLY)
+            if (best_score > -VALUE_TB_WIN_IN_MAX_PLY)
             {
                 if (!in_check && futility <= alpha && board.isCapture(move) && !board.see(move, 1)) 
                 {
@@ -744,7 +724,7 @@ namespace Astra
 
             assert(score > -VALUE_INFINITE && score < VALUE_INFINITE);
 
-            if (score > VALUE_TB_LOSS_IN_MAX_PLY)
+            if (score > -VALUE_TB_WIN_IN_MAX_PLY)
                 skip_quiets = true;
 
             // update the best score
@@ -814,7 +794,7 @@ namespace Astra
                   << " seldepth " << threads.getSelDepth()
                   << " score ";
 
-        if (abs(result) >= VALUE_MIN_MATE)
+        if (abs(result) >= VALUE_MATE - MAX_PLY)
             std::cout << "mate " << (VALUE_MATE - abs(result) + 1) / 2 * (result > 0 ? 1 : -1);
         else
             std::cout << "cp " << result;
