@@ -36,7 +36,7 @@ namespace Astra
         Move nextMove(bool skip_quiets = false);
 
         int getMoveCount() { return ml.size(); }
-        
+
     private:
         int stage = TT;
 
