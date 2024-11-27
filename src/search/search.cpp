@@ -460,7 +460,7 @@ namespace Astra
 
             bool is_cap = board.isCapture(move);
             
-            if (best_score > VALUE_TB_LOSS_IN_MAX_PLY) 
+            if (!root_node && best_score > VALUE_TB_LOSS_IN_MAX_PLY) 
             {
                 int history_score = is_cap ? history.getCHScore(board, move) : history.getQHScore(stm, move); 
                 int r = REDUCTIONS[depth][made_moves + 1] + !improving - history_score / hp_div;
@@ -473,7 +473,7 @@ namespace Astra
                     continue;
 
                 // late move pruning
-                if (!root_node && q_count > (4 + depth * depth)) 
+                if (q_count > (4 + depth * depth)) 
                     skip_quiets = true;
 
                 if (!is_cap && !isPromotion(move)) 
