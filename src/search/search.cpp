@@ -559,9 +559,7 @@ namespace Astra
                 r += !pv_node;
                 // decrease reduction when move gives check
                 r -= board.inCheck();
-                // decrease reduction when move is killer 
-                r -= (mp.killer1 == move || mp.killer2 == move);
-              
+
                 int lmr_depth = std::clamp(new_depth - r, 1, new_depth + 1);
 
                 score = -negamax(lmr_depth, -alpha - 1, -alpha, ss + 1);
