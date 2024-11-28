@@ -699,9 +699,7 @@ namespace Astra
         Move best_move = NO_MOVE;
         Move move = NO_MOVE;
 
-        bool skip_quiets = !in_check;
-
-        while ((move = mp.nextMove(skip_quiets)) != NO_MOVE)
+        while ((move = mp.nextMove(false)) != NO_MOVE)
         {
             if (best_score > -VALUE_TB_WIN_IN_MAX_PLY)
             {
@@ -723,9 +721,6 @@ namespace Astra
             board.unmakeMove(move);
 
             assert(score > -VALUE_INFINITE && score < VALUE_INFINITE);
-
-            if (score > -VALUE_TB_WIN_IN_MAX_PLY)
-                skip_quiets = true;
 
             // update the best score
             if (score > best_score)
