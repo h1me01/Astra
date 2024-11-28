@@ -58,7 +58,7 @@ namespace Astra
         TimeMan tm; 
 
         Score aspSearch(int depth, Score prev_eval, Stack *ss);
-        Score negamax(int depth, Score alpha, Score beta, Stack *ss);
+        Score negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_node);
         Score qSearch(int depth, Score alpha, Score beta, Stack *ss);
 
         void updatePV(int ply, Move m);
