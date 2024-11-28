@@ -198,9 +198,6 @@ namespace Astra
         if (isLimitReached(depth))
             return beta;
 
-        if (ss->ply >= MAX_PLY)
-            return Eval::evaluate(board);
-
         pv_table[ss->ply].length = ss->ply;
 
         // variables
@@ -229,6 +226,9 @@ namespace Astra
                 if (beta <= mating_value)
                     return mating_value; // alpha cut-off
             }
+
+            if (ss->ply >= MAX_PLY - 1)
+                return in_check ? 0 : Eval::evaluate(board);
 
             if (board.isRepetition(pv_node) || board.isDraw())
                 return VALUE_DRAW;
@@ -365,7 +365,7 @@ namespace Astra
             if (!ss->skipped && depth <= rfp_depth && eval < VALUE_TB_WIN_IN_MAX_PLY && eval - rfp_margin >= beta)
                 return (eval + beta) / 2;
 
-            // razoring (search works without this)
+            // razoring
             if (depth <= rzr_depth && eval + rzr_depth_mult * depth <= alpha)
             {
                 Score score = qSearch(alpha, beta, ss);
@@ -628,14 +628,14 @@ namespace Astra
         if (isLimitReached(1))
             return beta;
 
-        if (ss->ply > MAX_PLY)
-            return Eval::evaluate(board);
-
         const bool pv_node = beta - alpha != 1;
         const bool in_check = board.inCheck();
 
         if (board.isRepetition(pv_node) || board.isDraw())
             return VALUE_DRAW;
+
+        if (ss->ply >= MAX_PLY - 1)
+            return in_check ? 0 : Eval::evaluate(board);
 
         Score best_score = -VALUE_MATE + ss->ply;
         int eval = ss->static_eval;
