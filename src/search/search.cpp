@@ -445,15 +445,15 @@ namespace Astra
 
             bool is_cap = board.isCapture(move);
 
-            int cap_score = 0;
+            int history_score = 0;
             if (is_cap) 
-                cap_score = history.getCHScore(board, move);
+                history_score = history.getCHScore(board, move);
+            else 
+                history_score = history.getQHScore(stm, move);
             
             if (!root_node && best_score > -VALUE_TB_WIN_IN_MAX_PLY) 
             {
-                int history_score = is_cap ? cap_score : history.getQHScore(stm, move); 
                 int r = REDUCTIONS[depth][made_moves] + !improving - history_score / hp_div;
-
                 int lmr_depth = std::max(1, depth - r);
                 
                 // see pruning
@@ -528,7 +528,7 @@ namespace Astra
             Score score = VALUE_NONE;
 
             // late move reduction
-            if (depth > 1 && made_moves > 1 + 2 * root_node && (!pv_node || !is_cap))
+            if (depth > 1 && made_moves > 1 + pv_node * 2 && (!pv_node || !is_cap))
             {
                 int r = REDUCTIONS[depth][made_moves + 1];
                 // increase when tt move is capture
@@ -540,7 +540,7 @@ namespace Astra
                 // decrease when move gives check
                 r -= board.inCheck();
                 // decrease in high history scores
-                r -= cap_score / hp_div;
+                r -= history_score / hp_div;
                 // decrease when move is a killer
                 r -= (move == mp.killer1 || move == mp.killer2);
 
@@ -602,7 +602,8 @@ namespace Astra
                 return in_check ? -VALUE_MATE + ss->ply : VALUE_DRAW;
         }
 
-        best_score = std::min(best_score, max_score);
+        if (pv_node)
+            best_score = std::min(best_score, max_score);
 
         // store in transposition table
         if (!ss->skipped)
@@ -737,7 +738,7 @@ namespace Astra
                     best_move = move;
                 }
 
-                if (score >= alpha) 
+                if (score >= beta) 
                     break; // cut-off
             }
         }
