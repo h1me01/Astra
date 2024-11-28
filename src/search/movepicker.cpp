@@ -164,8 +164,8 @@ namespace Astra
                 Square to = ml[i].to();
                 ml[i].score += 2 * (ss - 1)->cont_history[pc][to];
                 ml[i].score += 2 * (ss - 2)->cont_history[pc][to];
-                ml[i].score += 2 * (ss - 4)->cont_history[pc][to];
-                ml[i].score += 2 * (ss - 6)->cont_history[pc][to];
+                ml[i].score += (ss - 4)->cont_history[pc][to];
+                ml[i].score += (ss - 6)->cont_history[pc][to];
             }
 
             assert(ml[i].score > INT_MIN && ml[i].score < INT_MAX);
