@@ -293,9 +293,7 @@ namespace Astra
                     bound = EXACT_BOUND;
                 }
 
-                if (bound == EXACT_BOUND ||
-                    (bound == LOWER_BOUND && tb_score >= beta) ||
-                    (bound == UPPER_BOUND && tb_score <= alpha))
+                if (bound == EXACT_BOUND || (bound == LOWER_BOUND && tb_score >= beta) || (bound == UPPER_BOUND && tb_score <= alpha))
                 {
                     tt.store(hash, NO_MOVE, scoreToTT(tb_score, ss->ply), depth + 6, bound);
                     return tb_score;

@@ -405,7 +405,7 @@ namespace Chess
         assert(from >= 0 && from < NUM_SQUARES);
         assert(to >= 0 && to < NUM_SQUARES);
         assert(typeOf(pc_to) != KING);
-        assert(typeOf(pc_from) != NO_PIECE_TYPE);
+        assert(pt != NO_PIECE_TYPE);
 
         game_ply++;
         history[game_ply] = StateInfo(history[game_ply - 1]);
