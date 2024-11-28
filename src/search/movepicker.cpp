@@ -140,7 +140,7 @@ namespace Astra
                     assert(ml[i].score > 1e6);
                 }
                 else if(board.givesCheck(ml[i])) 
-                    ml[i].score = 1e6;
+                    ml[i].score = 0*1e6;
 
                 continue; // don't score non checker quiet moves
             }
@@ -159,10 +159,13 @@ namespace Astra
             else
             {
                 ml[i].score = 2 * history.getQHScore(board.getTurn(), ml[i]);
-                ml[i].score += 2 * history.getContHScore(board, ml[i], (ss - 1)->curr_move);
-                ml[i].score += 2 * history.getContHScore(board, ml[i], (ss - 2)->curr_move);
-                ml[i].score += history.getContHScore(board, ml[i], (ss - 4)->curr_move);
-                ml[i].score += history.getContHScore(board, ml[i], (ss - 6)->curr_move);
+                
+                Piece pc = board.pieceAt(ml[i].from());
+                Square to = ml[i].to();
+                ml[i].score += 2 * (ss - 1)->cont_history[pc][to];
+                ml[i].score += 2 * (ss - 2)->cont_history[pc][to];
+                ml[i].score += 2 * (ss - 4)->cont_history[pc][to];
+                ml[i].score += 2 * (ss - 6)->cont_history[pc][to];
             }
 
             assert(ml[i].score > INT_MIN && ml[i].score < INT_MAX);

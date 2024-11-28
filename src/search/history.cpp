@@ -18,7 +18,6 @@ namespace Astra
     History::History()
     {
         std::memset(quiet_history, 0, sizeof(quiet_history));
-        std::memset(cont_history, 0, sizeof(cont_history));
         std::memset(capt_history, 0, sizeof(capt_history));
 
         // set to NO_MOVE
@@ -41,13 +40,6 @@ namespace Astra
         assert(p != NO_PIECE); 
         assert(captured != NO_PIECE_TYPE);
         return capt_history[p][move.to()][captured];
-    }
-
-    int History::getContHScore(const Board &board, Move &move, const Move &prev_move) const
-    {
-        Piece p = board.pieceAt(move.from());
-        Piece prev_p = board.pieceAt(prev_move.from());
-        return cont_history[prev_p][prev_move.to()][p][move.to()];
     }
 
     Move History::getCounterMove(Move move) const
@@ -113,6 +105,9 @@ namespace Astra
         PieceType captured = move.type() == EN_PASSANT ? PAWN : typeOf(board.pieceAt(move.to()));
         Piece curr_piece = board.pieceAt(move.from());
 
+        assert(curr_piece != NO_PIECE);
+        assert(captured != NO_PIECE_TYPE);
+
         int16_t &score = capt_history[curr_piece][move.to()][captured];
         score += bonus - score * std::abs(bonus) / 16384;
     }
@@ -124,18 +119,13 @@ namespace Astra
         int offsets[] = {-1, -2, -4, -6}; 
         for (int offset : offsets) {
             if ((ss + offset)->curr_move != NO_MOVE) {
-                Move prev_move = (ss + offset)->curr_move;
-                Piece prev_piece = board.pieceAt(prev_move.from());
-
-                int16_t &score = cont_history[prev_piece][prev_move.to()][curr_piece][move.to()];
+                int16_t &score = (ss - 1)->cont_history[curr_piece][move.to()];
                 score += bonus - score * std::abs(bonus) / 16384;
             }
         }
     }
 
     int16_t History::quiet_history[NUM_COLORS][NUM_SQUARES][NUM_SQUARES]{};
-
-    int16_t History::cont_history[NUM_PIECES + 1][NUM_SQUARES][NUM_PIECES + 1][NUM_SQUARES]{};
 
     int16_t History::capt_history[NUM_PIECES + 1][NUM_SQUARES][NUM_PIECE_TYPES]{};
 

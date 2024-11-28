@@ -18,7 +18,6 @@ namespace Astra
 
         int getQHScore(Color c, Move &move) const;
         int getCHScore(const Board &board, Move &move) const;
-        int getContHScore(const Board &board, Move &move, const Move &prev_move) const;
 
         Move getCounterMove(Move move) const;
         Move getKiller1(int ply) const { return killer1[ply]; }
@@ -34,7 +33,6 @@ namespace Astra
         Move counters[NUM_SQUARES][NUM_SQUARES];
 
         static int16_t quiet_history[NUM_COLORS][NUM_SQUARES][NUM_SQUARES];
-        static int16_t cont_history[NUM_PIECES + 1][NUM_SQUARES][NUM_PIECES + 1][NUM_SQUARES];
         static int16_t capt_history[NUM_PIECES + 1][NUM_SQUARES][NUM_PIECE_TYPES];
     };
 
