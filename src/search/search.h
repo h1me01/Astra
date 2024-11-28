@@ -55,7 +55,7 @@ namespace Astra
 
         Score aspSearch(int depth, Score prev_eval, Stack *ss);
         Score negamax(int depth, Score alpha, Score beta, Stack *ss);
-        Score qSearch(Score alpha, Score beta, Stack *ss);
+        Score qSearch(int depth, Score alpha, Score beta, Stack *ss);
 
         void updatePV(int ply, Move m);
 

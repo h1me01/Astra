@@ -31,7 +31,7 @@ namespace Astra
     class MovePicker
     {
     public:
-        MovePicker(SearchType st, Board &board, History &history, Stack *ss, Move &tt_move, bool in_check = false);
+        MovePicker(SearchType st, Board &board, History &history, Stack *ss, Move &tt_move, bool in_check = false, bool gen_checks = true);
 
         Move nextMove(bool skip_quiets);
 
@@ -51,11 +51,11 @@ namespace Astra
 
         Move tt_move = NO_MOVE;
         Move ml_tt_move = NO_MOVE;
-
     
         Move counter = NO_MOVE;
 
         bool in_check;
+        bool gen_checks;
 
         int idx = 0;
         int ml_size;

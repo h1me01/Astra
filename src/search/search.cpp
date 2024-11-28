@@ -236,7 +236,7 @@ namespace Astra
 
         // dive into quiescence search if depth is less than 1
         if (depth <= 0)
-            return qSearch(alpha, beta, ss);
+            return qSearch(0, alpha, beta, ss);
 
         (ss + 1)->skipped = NO_MOVE;
 
@@ -368,7 +368,7 @@ namespace Astra
             // razoring
             if (depth <= rzr_depth && eval + rzr_depth_mult * depth <= alpha)
             {
-                Score score = qSearch(alpha, beta, ss);
+                Score score = qSearch(0, alpha, beta, ss);
                 if (score <= alpha)
                     return score;
             }
@@ -409,7 +409,7 @@ namespace Astra
                     ss->curr_move = move;
                     board.makeMove(move, true);
 
-                    Score score = -qSearch(-beta_cut, -beta_cut + 1, ss + 1);
+                    Score score = -qSearch(0, -beta_cut, -beta_cut + 1, ss + 1);
 
                     if (score >= beta_cut)
                         score = -negamax(depth - 4, -beta_cut, -beta_cut + 1, ss + 1);
@@ -621,7 +621,7 @@ namespace Astra
         return best_score;
     }
 
-    Score Search::qSearch(Score alpha, Score beta, Stack *ss)
+    Score Search::qSearch(int depth, Score alpha, Score beta, Stack *ss)
     {
         assert(alpha < beta);
 
@@ -698,7 +698,7 @@ namespace Astra
             futility = eval + qfp_margin;
         }
 
-        MovePicker mp(Q_SEARCH, board, history, ss, ent.move, in_check);
+        MovePicker mp(Q_SEARCH, board, history, ss, ent.move, in_check, depth >= -1);
 
         Move best_move = NO_MOVE;
         Move move = NO_MOVE;
@@ -721,7 +721,7 @@ namespace Astra
             nodes++;
 
             board.makeMove(move, true);
-            Score score = -qSearch(-beta, -alpha, ss + 1);
+            Score score = -qSearch(depth - 1, -beta, -alpha, ss + 1);
             board.unmakeMove(move);
 
             assert(score > -VALUE_INFINITE && score < VALUE_INFINITE);
@@ -737,7 +737,7 @@ namespace Astra
                     best_move = move;
                 }
 
-                if (score >= beta) 
+                if (score >= alpha) 
                     break; // cut-off
             }
         }

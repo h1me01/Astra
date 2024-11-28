@@ -2,8 +2,8 @@
 
 namespace Astra
 {
-    MovePicker::MovePicker(SearchType st, Board &board, History &history, Stack *ss, Move &tt_move, bool in_check)
-        : st(st), board(board), history(history), ss(ss), ml(board), tt_move(tt_move), in_check(in_check)
+    MovePicker::MovePicker(SearchType st, Board &board, History &history, Stack *ss, Move &tt_move, bool in_check, bool gen_checks)
+        : st(st), board(board), history(history), ss(ss), ml(board), tt_move(tt_move), in_check(in_check), gen_checks(gen_checks)
     {
         if (st == PC_SEARCH)
             stage = GOOD_CAPTURES;
@@ -88,7 +88,7 @@ namespace Astra
                 Move move = ml[idx];
                 idx++;
 
-                if (move.score <= 0)
+                if (move.score <= 0 || (!board.isCapture(move) && !gen_checks))
                     break; 
 
                 return move;
@@ -139,8 +139,8 @@ namespace Astra
                     ml[i].score += (ml[i] == tt_move) * 1e8;
                     assert(ml[i].score > 1e6);
                 }
-                else if(board.givesCheck(ml[i])) 
-                    ml[i].score = 1e6;
+                else if(board.givesCheck(ml[i]))  
+                    ml[i].score = 1e6; 
                 
                 continue; // don't score non checker quiet moves
             }
