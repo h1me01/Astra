@@ -23,7 +23,7 @@ namespace Astra
         // set to NO_MOVE
         std::memset(counters, 0, sizeof(counters));
 
-        // set to with NO_MOVE
+        // set to NO_MOVE
         std::fill_n(killer1, MAX_PLY, NO_MOVE);
         std::fill_n(killer2, MAX_PLY, NO_MOVE);
     }
