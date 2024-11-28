@@ -105,8 +105,8 @@ namespace Astra
         PieceType captured = move.type() == EN_PASSANT ? PAWN : typeOf(board.pieceAt(move.to()));
         Piece curr_piece = board.pieceAt(move.from());
 
-        assert(curr_piece != NO_PIECE);
         assert(captured != NO_PIECE_TYPE);
+        assert(curr_piece != NO_PIECE);
 
         int16_t &score = capt_history[curr_piece][move.to()][captured];
         score += bonus - score * std::abs(bonus) / 16384;

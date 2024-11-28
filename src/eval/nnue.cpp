@@ -55,7 +55,7 @@ namespace NNUE
         if (view == BLACK)
             s = Square(s ^ 56);
 
-        return int(s) + typeOf(p) * 64 + (colorOf(p) != view) * 64 * 6;
+        return s + typeOf(p) * 64 + (colorOf(p) != view) * 64 * 6;
     }
 
     // nnue

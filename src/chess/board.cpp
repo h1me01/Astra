@@ -511,6 +511,8 @@ namespace Chess
         const Square from = m.from();
         const Square to = m.to();
 
+        assert(pieceAt(to) != NO_PIECE);
+
         const Piece captured = history[game_ply].captured;
 
         if (accumulators.size())
@@ -588,15 +590,9 @@ namespace Chess
         int limit = game_ply - history[game_ply].half_move_clock - 1;
 
         for (int i = game_ply - 2; i >= 0 && i >= limit; i -= 2)
-        {
             if (history[i].hash == hash)
-            {
                 if (++count == 1 + is_pv)
-                {
                     return true;
-                }
-            }
-        }
 
         return false;
     }
@@ -626,7 +622,7 @@ namespace Chess
         PieceType attacker = typeOf(pieceAt(from));
         PieceType victim = typeOf(pieceAt(to));
         int swap = PIECE_VALUES[victim] - threshold;
-
+        
         if (swap < 0)
             return false;
 
