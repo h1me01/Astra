@@ -19,7 +19,7 @@ namespace Astra
     PARAM(rzr_depth, 3, 3, 5, 1);
     PARAM(rzr_depth_mult, 159, 150, 250, 15);
     
-    PARAM(rfp_depth, 10, 7, 11, 1);
+    PARAM(rfp_depth, 10, 9, 11, 1);
     PARAM(rfp_depth_mult, 75, 50, 100, 5);
 
     PARAM(nmp_base, 5, 4, 5, 1);
@@ -32,7 +32,7 @@ namespace Astra
     PARAM(see_cap_margin, 100, 85, 110, 3);
     PARAM(see_quiet_margin, 90, 75, 100, 3);
 
-    PARAM(fp_depth, 10, 7, 11, 1);
+    PARAM(fp_depth, 10, 9, 11, 1);
     PARAM(fp_base, 146, 120, 180, 10);
     PARAM(fp_mult, 101, 85, 110, 5);
 
@@ -665,7 +665,6 @@ namespace Astra
             if (tt_hit)
             {
                 eval = tt_score;
-
                 if (eval == VALUE_NONE)
                     eval = Eval::evaluate(board);
                 
