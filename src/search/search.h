@@ -11,8 +11,12 @@ namespace Astra
     {
         uint16_t ply;
         Score static_eval = VALUE_NONE;
+        
         Move curr_move = NO_MOVE;
         Move skipped = NO_MOVE;
+        Move killer1 = NO_MOVE;
+        Move killer2 = NO_MOVE;
+        
         int16_t cont_history[NUM_PIECES + 1][NUM_SQUARES] {};
     };
 

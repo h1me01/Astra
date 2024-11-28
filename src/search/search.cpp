@@ -10,38 +10,37 @@
 namespace Astra
 {
     // search parameters
-    PARAM(lmr_base, 100, 80, 130, 8);
-    PARAM(lmr_div, 180, 150, 200, 8);
+    PARAM(lmr_base, 101, 80, 130, 8);
+    PARAM(lmr_div, 184, 150, 200, 8);
 
     PARAM(asp_depth, 8, 6, 9, 1);
-    PARAM(asp_window, 8, 5, 20, 3);
+    PARAM(asp_window, 12, 5, 20, 3);
 
-    PARAM(rzr_depth, 3, 3, 5, 1);
-    PARAM(rzr_depth_mult, 159, 150, 250, 15);
+    PARAM(rzr_depth, 4, 3, 5, 1);
+    PARAM(rzr_depth_mult, 164, 150, 250, 15);
 
-    PARAM(rfp_depth, 10, 9, 11, 1);
-    PARAM(rfp_depth_mult, 75, 50, 100, 5);
+    PARAM(rfp_depth, 11, 9, 11, 1);
+    PARAM(rfp_depth_mult, 77, 50, 100, 5);
 
-    PARAM(nmp_base, 5, 4, 5, 1);
     PARAM(nmp_min, 4, 3, 6, 1);
     PARAM(nmp_depth_div, 6, 3, 6, 1);
-    PARAM(nmp_div, 214, 200, 220, 2);
+    PARAM(nmp_div, 213, 200, 220, 2);
 
-    PARAM(probcut_margin, 142, 130, 180, 8);
+    PARAM(probcut_margin, 141, 130, 180, 8);
 
-    PARAM(see_cap_margin, 100, 85, 110, 3);
-    PARAM(see_quiet_margin, 90, 75, 100, 3);
+    PARAM(see_cap_margin, 99, 85, 110, 3);
+    PARAM(see_quiet_margin, 91, 75, 100, 3);
 
     PARAM(fp_depth, 10, 9, 11, 1);
-    PARAM(fp_base, 146, 120, 180, 10);
-    PARAM(fp_mult, 101, 85, 110, 5);
+    PARAM(fp_base, 132, 120, 180, 10);
+    PARAM(fp_mult, 99, 85, 110, 5);
 
-    PARAM(hp_margin, 3780, 2500, 5000, 400);
-    PARAM(hp_div, 5962, 5000, 8500, 400);
-    PARAM(hp_depth, 5, 4, 6, 1);
+    PARAM(hp_margin, 4216, 2500, 5000, 400);
+    PARAM(hp_div, 5979, 5000, 8500, 400);
+    PARAM(hp_depth, 6, 4, 6, 1);
     PARAM(history_bonus_margin, 76, 55, 100, 5);
 
-    PARAM(qfp_margin, 110, 60, 150, 10);
+    PARAM(qfp_margin, 109, 60, 150, 10);
 
     // search helper
 
@@ -376,7 +375,7 @@ namespace Astra
             // null move pruning
             if (depth >= 4 && !ss->skipped && eval >= beta && board.nonPawnMat(stm) && (ss - 1)->curr_move != NULL_MOVE)
             {
-                int R = nmp_base + depth / nmp_depth_div + std::min(int(nmp_min), (eval - beta) / nmp_div);
+                int R = 4 + depth / nmp_depth_div + std::min(int(nmp_min), (eval - beta) / nmp_div);
 
                 ss->curr_move = NULL_MOVE;
 

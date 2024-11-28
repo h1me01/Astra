@@ -150,9 +150,9 @@ namespace Astra
             // add 1e7 when in check so we play captures before quiet moves
             else if (captured != NO_PIECE_TYPE) 
                 ml[i].score = in_check * 1e7 + 1e7 * board.see(ml[i], 0) + PIECE_VALUES[captured] + history.getCHScore(board, ml[i]);
-            else if (ml[i] == history.getKiller1(ss->ply) && !in_check)
+            else if (ml[i] == ss->killer1 && !in_check)
                 killer1 = ml[i];
-            else if (ml[i] == history.getKiller2(ss->ply) && !in_check)
+            else if (ml[i] == ss->killer2 && !in_check)
                 killer2 = ml[i];
             else if (history.getCounterMove((ss - 1)->curr_move) == ml[i] && !in_check)
                 counter = ml[i];

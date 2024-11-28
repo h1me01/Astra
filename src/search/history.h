@@ -20,16 +20,12 @@ namespace Astra
         int getCHScore(const Board &board, Move &move) const;
 
         Move getCounterMove(Move move) const;
-        Move getKiller1(int ply) const { return killer1[ply]; }
-        Move getKiller2(int ply) const { return killer2[ply]; }
 
         void updateHH(Move &move, Color c, int bonus);
         void updateCH(Board& board, Move &move, int bonus);
         void updateContH(Board &board, Move &move, Stack *ss, int bonus);
 
     private:
-        Move killer1[MAX_PLY];
-        Move killer2[MAX_PLY];
         Move counters[NUM_SQUARES][NUM_SQUARES];
 
         static int16_t quiet_history[NUM_COLORS][NUM_SQUARES][NUM_SQUARES];

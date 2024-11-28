@@ -6,9 +6,9 @@
 
 namespace Astra
 {
-    PARAM(history_mult, 140, 100, 200, 8);
-    PARAM(history_minus, 25, 10, 40, 5);
-    PARAM(max_history_bonus, 1707, 1100, 1800, 50);
+    PARAM(history_mult, 141, 100, 200, 8);
+    PARAM(history_minus, 27, 10, 40, 5);
+    PARAM(max_history_bonus, 1701, 1100, 1800, 50);
 
     int historyBonus(int depth)
     {
@@ -22,10 +22,6 @@ namespace Astra
 
         // set to NO_MOVE
         std::memset(counters, 0, sizeof(counters));
-
-        // set to NO_MOVE
-        std::fill_n(killer1, MAX_PLY, NO_MOVE);
-        std::fill_n(killer2, MAX_PLY, NO_MOVE);
     }
 
     int History::getQHScore(Color c, Move &move) const
@@ -57,9 +53,9 @@ namespace Astra
             if (prev_move != NO_MOVE)
                 counters[prev_move.from()][prev_move.to()] = best;
 
-            if (best != killer1[ss->ply]) {
-                killer2[ss->ply] = killer1[ss->ply];
-                killer1[ss->ply] = best; 
+            if (best != ss->killer1) {
+                ss->killer2 = ss->killer1;
+                ss->killer1 = best; 
             }
 
             Color c = board.getTurn();
