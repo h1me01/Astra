@@ -38,7 +38,7 @@ namespace Astra
     PARAM(hp_margin, 4216, 2500, 5000, 400);
     PARAM(hp_div, 5979, 5000, 8500, 400);
     PARAM(hp_depth, 6, 4, 6, 1);
-    PARAM(history_bonus_margin, 76, 55, 100, 5);
+    PARAM(hbonus_margin, 76, 55, 100, 5);
 
     PARAM(qfp_margin, 109, 60, 150, 10);
 
@@ -197,6 +197,9 @@ namespace Astra
         if (isLimitReached(depth))
             return beta;
 
+        if (ss->ply >= MAX_PLY - 1)
+            return Eval::evaluate(board);
+
         pv_table[ss->ply].length = ss->ply;
 
         // variables
@@ -226,9 +229,6 @@ namespace Astra
                     return mating_value; // alpha cut-off
             }
 
-            if (ss->ply >= MAX_PLY - 1)
-                return in_check ? 0 : Eval::evaluate(board);
-
             if (board.isRepetition(pv_node) || board.isDraw())
                 return VALUE_DRAW;
         }
@@ -256,7 +256,7 @@ namespace Astra
         bool tt_hit = tt.lookup(ent, hash);
         Score tt_score = tt_hit ? scoreFromTT(ent.score, ss->ply) : Score(VALUE_NONE);
 
-        if (!pv_node && tt_hit && !ss->skipped && ent.depth >= depth && tt_score != VALUE_NONE)
+        if (!pv_node && !ss->skipped && tt_hit && ent.depth >= depth && tt_score != VALUE_NONE)
         {
             if (ent.bound == EXACT_BOUND)
                 return tt_score;
@@ -442,7 +442,7 @@ namespace Astra
             made_moves++;
 
             bool is_cap = board.isCapture(move);
-            bool is_killer = (move == mp.killer1 || move == mp.killer2);
+            bool is_killerOrCounter = (move == mp.killer1 || move == mp.killer2 || move == mp.counter);
 
             int history_score = 0;
             if (is_cap)
@@ -467,7 +467,7 @@ namespace Astra
                 if (!is_cap && !isPromotion(move))
                 {
                     // history pruning
-                    if (!is_killer && history_score < -hp_margin * depth && lmr_depth < hp_depth)
+                    if (!is_killerOrCounter && history_score < -hp_margin * depth && lmr_depth < hp_depth)
                         skip_quiets = true;
 
                     // futility pruning
@@ -522,7 +522,7 @@ namespace Astra
             Score score = VALUE_NONE;
 
             // late move reduction
-            if (depth > 1 && made_moves > 1 + pv_node * 2 && (!pv_node || !is_cap))
+            if (depth > 1 && made_moves > 1 + 2 * pv_node)
             {
                 int r = REDUCTIONS[depth][made_moves + 1];
                 // increase when tt move is capture
@@ -535,8 +535,8 @@ namespace Astra
                 r -= board.inCheck();
                 // decrease in high history scores
                 r -= history_score / hp_div;
-                // decrease when move is a killer
-                r -= is_killer;
+                // decrease when move is a killer or counter
+                r -= is_killerOrCounter;
 
                 int lmr_depth = std::clamp(new_depth - r, 1, new_depth + 1);
 
@@ -548,9 +548,7 @@ namespace Astra
                     if (lmr_depth < new_depth)
                         score = -negamax(new_depth, -alpha - 1, -alpha, ss + 1);
 
-                    int bonus = (score <= alpha ? -1 : score >= beta ? 1
-                                                                     : 0) *
-                                historyBonus(new_depth);
+                    int bonus = (score <= alpha ? -1 : score >= beta ? 1 : 0) * historyBonus(new_depth);
                     history.updateContH(board, move, ss, bonus);
                 }
             }
@@ -582,7 +580,7 @@ namespace Astra
 
                 if (score >= beta)
                 {
-                    history.update(board, move, ss, q_moves, q_count, c_moves, c_count, depth + (best_score > beta + history_bonus_margin));
+                    history.update(board, move, ss, q_moves, q_count, c_moves, c_count, depth + (best_score > beta + hbonus_margin));
                     // cut-off
                     break;
                 }
@@ -632,7 +630,7 @@ namespace Astra
             return VALUE_DRAW;
 
         if (ss->ply >= MAX_PLY - 1)
-            return in_check ? 0 : Eval::evaluate(board);
+            return Eval::evaluate(board);
 
         Score best_score = -VALUE_MATE + ss->ply;
         int eval = ss->static_eval;

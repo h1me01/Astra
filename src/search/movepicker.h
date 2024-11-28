@@ -39,6 +39,7 @@ namespace Astra
         
         Move killer1 = NO_MOVE;
         Move killer2 = NO_MOVE;
+        Move counter = NO_MOVE;
 
     private:
         int stage = TT;
@@ -52,8 +53,6 @@ namespace Astra
         Move tt_move = NO_MOVE;
         Move ml_tt_move = NO_MOVE;
     
-        Move counter = NO_MOVE;
-
         bool in_check;
         bool gen_checks;
 
