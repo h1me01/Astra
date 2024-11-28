@@ -26,7 +26,7 @@ namespace Astra
     PARAM(nmp_depth_div, 6, 3, 6, 1);
     PARAM(nmp_div, 213, 200, 220, 2);
 
-    PARAM(probcut_margin, 141, 130, 180, 8);
+    PARAM(probcut_margin, 141, 130, 180, 10);
 
     PARAM(see_cap_margin, 99, 85, 110, 3);
     PARAM(see_quiet_margin, 91, 75, 100, 3);
