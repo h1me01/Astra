@@ -42,9 +42,9 @@ namespace Astra
         return capt_history[p][move.to()][captured];
     }
 
-    Move History::getCounterMove(Move move) const
+    Move History::getCounterMove(Move prev_move) const
     {
-        return counters[move.from()][move.to()];
+        return counters[prev_move.from()][prev_move.to()];
     }
 
     void History::update(Board &board, Move &best, Stack *ss, Move *q_moves, int qc, Move *c_moves, int cc, int depth)
@@ -127,6 +127,6 @@ namespace Astra
 
     int16_t History::quiet_history[NUM_COLORS][NUM_SQUARES][NUM_SQUARES]{};
 
-    int16_t History::capt_history[NUM_PIECES + 1][NUM_SQUARES][NUM_PIECE_TYPES]{};
+    int16_t History::capt_history[NUM_PIECES][NUM_SQUARES][NUM_PIECE_TYPES]{};
 
 } // namespace Astra
