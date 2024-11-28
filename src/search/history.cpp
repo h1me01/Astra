@@ -38,6 +38,8 @@ namespace Astra
     {
         PieceType captured = move.type() == EN_PASSANT ? PAWN : typeOf(board.pieceAt(move.to()));
         Piece p = board.pieceAt(move.from());
+        assert(p != NO_PIECE); 
+        assert(captured != NO_PIECE_TYPE);
         return capt_history[p][move.to()][captured];
     }
 

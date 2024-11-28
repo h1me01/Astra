@@ -444,10 +444,14 @@ namespace Astra
             made_moves++;
 
             bool is_cap = board.isCapture(move);
+
+            int cap_score = 0;
+            if (is_cap) 
+                cap_score = history.getCHScore(board, move);
             
             if (!root_node && best_score > -VALUE_TB_WIN_IN_MAX_PLY) 
             {
-                int history_score = is_cap ? history.getCHScore(board, move) : history.getQHScore(stm, move); 
+                int history_score = is_cap ? cap_score : history.getQHScore(stm, move); 
                 int r = REDUCTIONS[depth][made_moves] + !improving - history_score / hp_div;
 
                 int lmr_depth = std::max(1, depth - r);
@@ -536,7 +540,7 @@ namespace Astra
                 // decrease when move gives check
                 r -= board.inCheck();
                 // decrease in high history scores
-                r -= history.getCHScore(board, move) / hp_div;
+                r -= cap_score / hp_div;
                 // decrease when move is a killer
                 r -= (move == mp.killer1 || move == mp.killer2);
 

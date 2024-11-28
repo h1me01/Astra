@@ -137,9 +137,10 @@ namespace Astra
                 {
                     ml[i].score = 1e7 + 1e7 * board.see(ml[i], 0) + PIECE_VALUES[captured] + history.getCHScore(board, ml[i]);
                     ml[i].score += (ml[i] == tt_move) * 1e8;
+                    assert(ml[i].score > 1e6);
                 }
                 else if(board.givesCheck(ml[i])) 
-                    ml[i].score = 0*1e6;
+                    ml[i].score = 1e6;
 
                 continue; // don't score non checker quiet moves
             }
@@ -148,7 +149,7 @@ namespace Astra
                 ml_tt_move = tt_move; 
             // add 1e7 when in check so we play the captures before quiet moves
             else if (captured != NO_PIECE_TYPE) 
-                ml[i].score = in_check * 1e7 + 1e7 * board.see(ml[i], 0) + PIECE_VALUES[captured] + history.getCHScore(board, ml[i]);
+                ml[i].score = in_check * 1e6 + 1e7 * board.see(ml[i], 0) + PIECE_VALUES[captured] + history.getCHScore(board, ml[i]);
             else if (ml[i] == history.getKiller1(ss->ply) && !in_check)
                 killer1 = ml[i];
             else if (ml[i] == history.getKiller2(ss->ply) && !in_check)
@@ -163,7 +164,9 @@ namespace Astra
                 ml[i].score += history.getContHScore(board, ml[i], (ss - 4)->curr_move);
                 ml[i].score += history.getContHScore(board, ml[i], (ss - 6)->curr_move);
             }
-        }
+
+            assert(ml[i].score > INT_MIN && ml[i].score < INT_MAX);
+        }      
     }
 
     void MovePicker::partialInsertionSort(int current_idx)
