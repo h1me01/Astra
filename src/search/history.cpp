@@ -19,7 +19,6 @@ namespace Astra
     {
         std::memset(quiet_history, 0, sizeof(quiet_history));
         std::memset(capt_history, 0, sizeof(capt_history));
-
         // set to NO_MOVE
         std::memset(counters, 0, sizeof(counters));
     }
@@ -33,7 +32,7 @@ namespace Astra
     {
         PieceType captured = move.type() == EN_PASSANT ? PAWN : typeOf(board.pieceAt(move.to()));
         Piece p = board.pieceAt(move.from());
-        assert(p != NO_PIECE); 
+        assert(p != NO_PIECE);
         assert(captured != NO_PIECE_TYPE);
         return capt_history[p][move.to()][captured];
     }
@@ -53,13 +52,14 @@ namespace Astra
             if (prev_move != NO_MOVE)
                 counters[prev_move.from()][prev_move.to()] = best;
 
-            if (best != ss->killer1) {
+            if (best != ss->killer1)
+            {
                 ss->killer2 = ss->killer1;
-                ss->killer1 = best; 
+                ss->killer1 = best;
             }
 
             Color c = board.getTurn();
-            if (depth > 1)
+            if (depth > 4 || qc > 1)
             {
                 updateHH(best, c, bonus);
                 updateContH(board, best, ss, bonus);
@@ -85,7 +85,6 @@ namespace Astra
             Move cap = c_moves[i];
             if (cap == best)
                 continue;
-
             updateCH(board, cap, -bonus);
         }
     }
@@ -112,17 +111,13 @@ namespace Astra
     {
         Piece curr_piece = board.pieceAt(move.from());
 
-        int offsets[] = {-1, -2, -4, -6}; 
-        for (int offset : offsets) {
-            if ((ss + offset)->curr_move != NO_MOVE) {
+        int offsets[] = {-1, -2, -4, -6};
+        for (int offset : offsets)
+            if ((ss + offset)->curr_move != NO_MOVE)
+            {
                 int16_t &score = (ss - 1)->cont_history[curr_piece][move.to()];
                 score += bonus - score * std::abs(bonus) / 16384;
             }
-        }
     }
-
-    int16_t History::quiet_history[NUM_COLORS][NUM_SQUARES][NUM_SQUARES]{};
-
-    int16_t History::capt_history[NUM_PIECES][NUM_SQUARES][NUM_PIECE_TYPES]{};
 
 } // namespace Astra

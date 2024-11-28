@@ -442,6 +442,7 @@ namespace Astra
             made_moves++;
 
             bool is_cap = board.isCapture(move);
+            bool is_killer = (move == mp.killer1 || move == mp.killer2);
 
             int history_score = 0;
             if (is_cap)
@@ -466,7 +467,7 @@ namespace Astra
                 if (!is_cap && !isPromotion(move))
                 {
                     // history pruning
-                    if (history_score < -hp_margin * depth && lmr_depth < hp_depth)
+                    if (!is_killer && history_score < -hp_margin * depth && lmr_depth < hp_depth)
                         skip_quiets = true;
 
                     // futility pruning
@@ -535,7 +536,7 @@ namespace Astra
                 // decrease in high history scores
                 r -= history_score / hp_div;
                 // decrease when move is a killer
-                r -= (move == mp.killer1 || move == mp.killer2);
+                r -= is_killer;
 
                 int lmr_depth = std::clamp(new_depth - r, 1, new_depth + 1);
 

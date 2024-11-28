@@ -28,8 +28,8 @@ namespace Astra
     private:
         Move counters[NUM_SQUARES][NUM_SQUARES];
 
-        static int16_t quiet_history[NUM_COLORS][NUM_SQUARES][NUM_SQUARES];
-        static int16_t capt_history[NUM_PIECES][NUM_SQUARES][NUM_PIECE_TYPES];
+        int16_t quiet_history[NUM_COLORS][NUM_SQUARES][NUM_SQUARES];
+        int16_t capt_history[NUM_PIECES][NUM_SQUARES][NUM_PIECE_TYPES];
     };
 
 } // namespace Astra
