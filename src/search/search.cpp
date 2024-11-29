@@ -10,37 +10,37 @@
 namespace Astra
 {
     // search parameters
-    PARAM(lmr_base, 101, 80, 130, 8);
-    PARAM(lmr_div, 184, 150, 200, 8);
+    PARAM(lmr_base, 97, 80, 130, 8);
+    PARAM(lmr_div, 185, 150, 200, 8);
 
-    PARAM(asp_depth, 8, 6, 9, 1);
-    PARAM(asp_window, 12, 5, 20, 3);
+    PARAM(asp_depth, 7, 6, 9, 1);
+    PARAM(asp_window, 13, 5, 20, 3);
 
     PARAM(rzr_depth, 4, 3, 5, 1);
-    PARAM(rzr_depth_mult, 164, 150, 250, 15);
+    PARAM(rzr_depth_mult, 174, 150, 250, 15);
 
     PARAM(rfp_depth, 11, 9, 11, 1);
-    PARAM(rfp_depth_mult, 77, 50, 100, 5);
+    PARAM(rfp_depth_mult, 79, 50, 100, 5);
 
     PARAM(nmp_min, 4, 3, 6, 1);
     PARAM(nmp_depth_div, 6, 3, 6, 1);
     PARAM(nmp_div, 213, 200, 220, 2);
 
-    PARAM(probcut_margin, 141, 130, 180, 10);
+    PARAM(probcut_margin, 144, 130, 180, 10);
 
-    PARAM(see_cap_margin, 99, 85, 110, 3);
-    PARAM(see_quiet_margin, 91, 75, 100, 3);
+    PARAM(see_cap_margin, 100, 85, 110, 3);
+    PARAM(see_quiet_margin, 90, 75, 100, 3);
 
     PARAM(fp_depth, 10, 9, 11, 1);
-    PARAM(fp_base, 132, 120, 180, 10);
-    PARAM(fp_mult, 99, 85, 110, 5);
+    PARAM(fp_base, 134, 120, 180, 10);
+    PARAM(fp_mult, 97, 85, 110, 5);
 
-    PARAM(hp_margin, 4216, 2500, 5000, 400);
-    PARAM(hp_div, 5979, 5000, 8500, 400);
-    PARAM(hp_depth, 6, 4, 6, 1);
-    PARAM(hbonus_margin, 76, 55, 100, 5);
+    PARAM(hp_margin, 4099, 2500, 5000, 400);
+    PARAM(hp_div, 6011, 5000, 8500, 400);
+    PARAM(hp_depth, 5, 4, 6, 1);
+    PARAM(hbonus_margin, 73, 55, 100, 5);
 
-    PARAM(qfp_margin, 109, 60, 150, 10);
+    PARAM(qfp_margin, 104, 60, 150, 10);
 
     // search helper
 
@@ -455,25 +455,25 @@ namespace Astra
                 int r = REDUCTIONS[depth][made_moves] + !improving - history_score / hp_div;
                 int lmr_depth = std::max(1, depth - r);
 
-                // see pruning
-                int see_margin = is_cap ? depth * see_cap_margin : lmr_depth * see_quiet_margin;
-                if (!board.see(move, -see_margin))
-                    continue;
-
-                // late move pruning
+                 // late move pruning
                 if (q_count > (4 + depth * depth))
                     skip_quiets = true;
 
                 if (!is_cap && !isPromotion(move))
                 {
                     // history pruning
-                    if (!is_killerOrCounter && history_score < -hp_margin * depth && lmr_depth < hp_depth)
+                    if (!is_killerOrCounter && history_score < -hp_margin * depth && lmr_depth < hp_depth) 
                         skip_quiets = true;
 
                     // futility pruning
                     if (!in_check && lmr_depth <= fp_depth && eval + fp_base + lmr_depth * fp_mult <= alpha)
                         skip_quiets = true;
                 }
+
+                // see pruning
+                int see_margin = is_cap ? depth * see_cap_margin : lmr_depth * see_quiet_margin;
+                if (!board.see(move, -see_margin))
+                    continue;
             }
 
             if (is_cap)
@@ -524,7 +524,7 @@ namespace Astra
             Score score = VALUE_NONE;
 
             // late move reduction
-            if (depth > 1 && made_moves > 1 + 2 * pv_node)
+            if (depth > 1 && made_moves > 1 + 2 * pv_node && !in_check)
             {
                 int r = REDUCTIONS[depth][made_moves];
                 // increase when tt move is a capture
@@ -577,7 +577,7 @@ namespace Astra
                     alpha = score;
                     best_move = move;
 
-                    // update best move
+                    // update best move when in pv node
                     if (pv_node)
                         updatePV(ss->ply, best_move);
                 }
@@ -753,7 +753,7 @@ namespace Astra
         return best_score;
     }
 
-    void Search::updatePV(int ply, Move m)
+    void Search::updatePV(int ply, Move& m)
     {
         PVLine &current_pv = pv_table[ply];
         current_pv[ply] = m;
