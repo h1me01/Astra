@@ -35,7 +35,7 @@ namespace Astra
 
         Move nextMove(bool skip_quiets);
 
-        int getMoveCount() { return ml.size(); }
+        int getMoveCount() { return ml_size; }
         
         Move killer1 = NO_MOVE;
         Move killer2 = NO_MOVE;
