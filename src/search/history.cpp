@@ -15,14 +15,6 @@ namespace Astra
         return std::min(int(max_history_bonus), history_mult * depth - history_minus);
     }
 
-    History::History()
-    {
-        std::memset(quiet_history, 0, sizeof(quiet_history));
-        std::memset(capt_history, 0, sizeof(capt_history));
-        // set to NO_MOVE
-        std::memset(counters, 0, sizeof(counters));
-    }
-
     int History::getQHScore(Color c, Move &move) const
     {
         return quiet_history[c][move.from()][move.to()];

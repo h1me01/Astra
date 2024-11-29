@@ -12,8 +12,6 @@ namespace Astra
     class History
     {
     public:
-        History();
-
         void update(Board &board, Move &move, Stack *ss, Move *q_moves, int qc, Move* c_moves, int cc, int depth);
 
         int getQHScore(Color c, Move &move) const;
@@ -28,8 +26,8 @@ namespace Astra
     private:
         Move counters[NUM_SQUARES][NUM_SQUARES];
 
-        int16_t quiet_history[NUM_COLORS][NUM_SQUARES][NUM_SQUARES];
-        int16_t capt_history[NUM_PIECES][NUM_SQUARES][NUM_PIECE_TYPES];
+        int16_t quiet_history[NUM_COLORS][NUM_SQUARES][NUM_SQUARES] {};
+        int16_t capt_history[NUM_PIECES][NUM_SQUARES][NUM_PIECE_TYPES] {};
     };
 
 } // namespace Astra

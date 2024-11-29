@@ -520,7 +520,7 @@ namespace Astra
             Score score = VALUE_NONE;
 
             // late move reduction
-            if (depth > 1 && made_moves > 1 && (!pv_node || !in_check))
+            if (depth > 1 && made_moves > 1 && !(pv_node && in_check))
             {
                 int r = REDUCTIONS[depth][made_moves];
                 // increase when tt move is a capture
@@ -548,7 +548,7 @@ namespace Astra
                     if (lmr_depth < new_depth)
                         score = -negamax(new_depth, -alpha - 1, -alpha, ss + 1, !cut_node);
 
-                    int bonus = (score <= alpha ? -1 : score >= beta ? 1 : 0) * historyBonus(new_depth);
+                    int bonus = score <= alpha ? -historyBonus(new_depth) : score >= beta ? historyBonus(new_depth) : 0;
                     history.updateContH(board, move, ss, bonus);
                 }
             }
