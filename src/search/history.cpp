@@ -111,11 +111,10 @@ namespace Astra
     {
         Piece curr_piece = board.pieceAt(move.from());
 
-        int offsets[] = {-1, -2, -4, -6};
-        for (int offset : offsets)
-            if ((ss + offset)->curr_move != NO_MOVE)
+        for (int offset : {1, 2, 4, 6})
+            if ((ss - offset)->curr_move != NO_MOVE)
             {
-                int16_t &score = (ss - 1)->cont_history[curr_piece][move.to()];
+                int16_t &score = (ss - offset)->cont_history[curr_piece][move.to()];
                 score += bonus - score * std::abs(bonus) / 16384;
             }
     }
