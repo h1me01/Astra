@@ -527,10 +527,10 @@ namespace Astra
                 r += is_ttmove_cap;
                 // increase when not improving
                 r += !improving;
-                // increase when not in pv
-                r += !pv_node;
                 // increase when expected to fail high
                 r += 2 * cut_node;
+                // decrease when in pv node
+                r -= pv_node;
                 // decrease when move gives check
                 r -= board.inCheck();
                 // decrease in high history scores
