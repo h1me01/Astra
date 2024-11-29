@@ -444,7 +444,7 @@ namespace Astra
             bool is_cap = board.isCapture(move);
             bool is_killerOrCounter = (move == mp.killer1 || move == mp.killer2 || move == mp.counter);
 
-            int history_score = 0;
+            int history_score;
             if (is_cap)
                 history_score = history.getCHScore(board, move);
             else
@@ -593,15 +593,9 @@ namespace Astra
 
         // check for mate and stalemate
         if (mp.getMoveCount() == 0)
-        {
-            if (ss->skipped != NO_MOVE)
-                return alpha;
-            else
-                return in_check ? -VALUE_MATE + ss->ply : VALUE_DRAW;
-        }
+            return ss->skipped != NO_MOVE ? alpha : in_check ? -VALUE_MATE + ss->ply : VALUE_DRAW;
 
-        if (pv_node)
-            best_score = std::min(best_score, max_score);
+        best_score = std::min(best_score, max_score);
 
         // store in transposition table
         if (!ss->skipped)
