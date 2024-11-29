@@ -524,7 +524,7 @@ namespace Astra
             Score score = VALUE_NONE;
 
             // late move reduction
-            if (depth > 1 && made_moves > 1 + 2 * pv_node && (!pv_node || !in_check))
+            if (depth > 1 && made_moves > 1 && (!pv_node || !in_check))
             {
                 int r = REDUCTIONS[depth][made_moves];
                 // increase when tt move is a capture

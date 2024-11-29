@@ -110,6 +110,10 @@ namespace Astra
     void History::updateContH(Board &board, Move &move, Stack *ss, int bonus)
     {
         Piece curr_piece = board.pieceAt(move.from());
+        if (curr_piece == NO_PIECE)
+            curr_piece = board.pieceAt(move.to());
+
+        assert(curr_piece != NO_PIECE);
 
         for (int offset : {1, 2, 4, 6})
             if ((ss - offset)->curr_move != NO_MOVE)
