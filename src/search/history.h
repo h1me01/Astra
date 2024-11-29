@@ -21,7 +21,7 @@ namespace Astra
 
         Move getCounterMove(Move move) const;
 
-        void updateHH(Move &move, Color c, int bonus);
+        void updateQH(Move &move, Color c, int bonus);
         void updateCH(Board& board, Move &move, int bonus);
         void updateContH(Board &board, Move &move, Stack *ss, int bonus);
 

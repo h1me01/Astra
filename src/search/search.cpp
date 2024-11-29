@@ -62,9 +62,6 @@ namespace Astra
 
     Search::Search(const std::string &fen) : board(fen)
     {
-        for (auto &pvLine : pv_table)
-            pvLine.length = 0;
-
         tt.clear();
     }
 
@@ -148,8 +145,8 @@ namespace Astra
 
     Score Search::aspSearch(int depth, Score prev_eval, Stack *ss)
     {
-        Score alpha = -VALUE_INFINITE;
-        Score beta = VALUE_INFINITE;
+        Score alpha = -VALUE_MATE;
+        Score beta = VALUE_MATE;
 
         // only use aspiration window when depth is higher or equal to 6
         int window = asp_window;
@@ -163,10 +160,10 @@ namespace Astra
         while (true)
         {
             if (alpha < -1500)
-                alpha = -VALUE_INFINITE;
+                alpha = -VALUE_MATE;
 
             if (beta > 1500)
-                beta = VALUE_INFINITE;
+                beta = VALUE_MATE;
 
             result = negamax(depth, alpha, beta, ss, false);
 
@@ -176,10 +173,10 @@ namespace Astra
             if (result <= alpha)
             {
                 beta = (alpha + beta) / 2;
-                alpha = std::max(alpha - window, -int(VALUE_INFINITE));
+                alpha = std::max(alpha - window, -int(VALUE_MATE));
             }
             else if (result >= beta)
-                beta = std::min(beta + window, int(VALUE_INFINITE));
+                beta = std::min(beta + window, int(VALUE_MATE));
             else
                 break;
 
@@ -209,6 +206,14 @@ namespace Astra
         const bool root_node = ss->ply == 0;
         const bool pv_node = beta - alpha != 1;
 
+        // dive into quiescence search if depth is less than 1
+        if (depth <= 0)
+            return qSearch(0, alpha, beta, ss);
+
+        // selective depth
+        if (pv_node && ss->ply > sel_depth)
+            sel_depth = ss->ply; // heighest depth a pv node has reached
+
         // check for terminal states
         if (!root_node)
         {
@@ -233,16 +238,6 @@ namespace Astra
                 return VALUE_DRAW;
         }
 
-        // dive into quiescence search if depth is less than 1
-        if (depth <= 0)
-            return qSearch(0, alpha, beta, ss);
-
-        (ss + 1)->skipped = NO_MOVE;
-
-        // selective depth
-        if (pv_node && ss->ply > sel_depth)
-            sel_depth = ss->ply; // heighest depth a pv node has reached
-
         // variables
         int eval = ss->static_eval;
         bool improving = false;
@@ -258,13 +253,16 @@ namespace Astra
 
         if (!pv_node && !ss->skipped && tt_hit && ent.depth >= depth && tt_score != VALUE_NONE)
         {
-            if (ent.bound == EXACT_BOUND)
-                return tt_score;
-            else if (ent.bound == LOWER_BOUND && tt_score >= beta)
-                return tt_score;
-            else if (ent.bound == UPPER_BOUND && tt_score <= alpha)
+            if (ent.bound == EXACT_BOUND || 
+                (ent.bound == LOWER_BOUND && tt_score >= beta) || 
+                (ent.bound == UPPER_BOUND && tt_score <= alpha))
                 return tt_score;
         }
+
+        // reset some variables
+        (ss + 1)->skipped = NO_MOVE;
+        (ss + 1)->killer1 = NO_MOVE;
+        (ss + 1)->killer2 = NO_MOVE;
 
         // tablebase probing
         if (use_tb && !root_node)
@@ -327,11 +325,9 @@ namespace Astra
 
                 if (tt_score != VALUE_NONE)
                 {
-                    if (ent.bound == EXACT_BOUND)
-                        eval = tt_score;
-                    else if (ent.bound == LOWER_BOUND && eval < tt_score)
-                        eval = tt_score;
-                    else if (ent.bound == UPPER_BOUND && eval > tt_score)
+                    if (ent.bound == EXACT_BOUND || 
+                        (ent.bound == LOWER_BOUND && eval < tt_score) || 
+                        (ent.bound == UPPER_BOUND && eval > tt_score))
                         eval = tt_score;
                 }
             }
@@ -618,9 +614,6 @@ namespace Astra
     {
         assert(alpha < beta);
 
-        if (isLimitReached(1))
-            return beta;
-
         const bool pv_node = beta - alpha != 1;
         const bool in_check = board.inCheck();
 
@@ -642,11 +635,9 @@ namespace Astra
 
         if (!pv_node && tt_hit && tt_score != VALUE_NONE)
         {
-            if (ent.bound == EXACT_BOUND)
-                return tt_score;
-            else if (ent.bound == LOWER_BOUND && tt_score >= beta)
-                return tt_score;
-            else if (ent.bound == UPPER_BOUND && tt_score <= alpha)
+            if (ent.bound == EXACT_BOUND || 
+                (ent.bound == LOWER_BOUND && tt_score >= beta) || 
+                (ent.bound == UPPER_BOUND && tt_score <= alpha))
                 return tt_score;
         }
 
@@ -666,11 +657,9 @@ namespace Astra
 
                 if (tt_score != VALUE_NONE)
                 {
-                    if (ent.bound == EXACT_BOUND)
-                        eval = tt_score;
-                    else if (ent.bound == LOWER_BOUND && eval < tt_score)
-                        eval = tt_score;
-                    else if (ent.bound == UPPER_BOUND && eval > tt_score)
+                    if (ent.bound == EXACT_BOUND || 
+                        (ent.bound == LOWER_BOUND && eval < tt_score) || 
+                        (ent.bound == UPPER_BOUND && eval > tt_score))
                         eval = tt_score;
                 }
             }

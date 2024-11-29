@@ -44,6 +44,7 @@ namespace Astra
 
     void History::update(Board &board, Move &best, Stack *ss, Move *q_moves, int qc, Move *c_moves, int cc, int depth)
     {
+        Color stm = board.getTurn();
         int bonus = historyBonus(depth);
 
         if (!board.isCapture(best))
@@ -58,28 +59,29 @@ namespace Astra
                 ss->killer1 = best;
             }
 
-            Color c = board.getTurn();
             if (depth > 4 || qc > 1)
             {
-                updateHH(best, c, bonus);
+                updateQH(best, stm, bonus);
                 updateContH(board, best, ss, bonus);
-            }
-
-            // history maluses
-            for (int i = 0; i < qc; i++)
-            {
-                Move quiet = q_moves[i];
-                if (quiet == best)
-                    continue;
-
-                updateHH(quiet, c, -bonus);
-                updateContH(board, quiet, ss, -bonus);
             }
         }
         else
             updateCH(board, best, bonus);
 
-        // update history for captures
+        // history maluses
+
+        // quiets
+        for (int i = 0; i < qc; i++)
+        {
+            Move quiet = q_moves[i];
+            if (quiet == best)
+                continue;
+
+            updateQH(quiet, stm, -bonus);
+            updateContH(board, quiet, ss, -bonus);
+        }
+
+        // captures
         for (int i = 0; i < cc; i++)
         {
             Move cap = c_moves[i];
@@ -89,7 +91,7 @@ namespace Astra
         }
     }
 
-    void History::updateHH(Move &move, Color c, int bonus)
+    void History::updateQH(Move &move, Color c, int bonus)
     {
         int16_t &score = quiet_history[c][move.from()][move.to()];
         score += bonus - score * std::abs(bonus) / 16384;
