@@ -613,6 +613,9 @@ namespace Astra
     {
         assert(alpha < beta);
 
+        if (isLimitReached(1))
+            return beta;
+
         const bool pv_node = beta - alpha != 1;
         const bool in_check = board.inCheck();
 
