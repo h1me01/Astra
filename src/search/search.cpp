@@ -10,37 +10,39 @@
 namespace Astra
 {
     // search parameters
-    PARAM(lmr_base, 97, 80, 130, 8);
-    PARAM(lmr_div, 185, 150, 200, 8);
+    PARAM(lmr_base, 97, 50, 120, 10);
+    PARAM(lmr_div, 185, 150, 200, 10);
 
-    PARAM(asp_depth, 7, 6, 9, 1);
-    PARAM(asp_window, 13, 5, 20, 3);
+    PARAM(asp_depth, 7, 5, 9, 1);
+    PARAM(asp_window, 13, 5, 40, 5);
 
     PARAM(rzr_depth, 4, 3, 5, 1);
     PARAM(rzr_depth_mult, 174, 150, 250, 15);
 
     PARAM(rfp_depth, 11, 9, 11, 1);
-    PARAM(rfp_depth_mult, 79, 50, 100, 5);
+    PARAM(rfp_depth_mult, 79, 60, 110, 12);
 
     PARAM(nmp_min, 4, 3, 6, 1);
-    PARAM(nmp_depth_div, 6, 3, 6, 1);
-    PARAM(nmp_div, 213, 200, 220, 2);
+    PARAM(nmp_depth_div, 6, 3, 15, 1);
+    PARAM(nmp_div, 213, 150, 250, 20);
 
-    PARAM(probcut_margin, 144, 130, 180, 10);
+    PARAM(probcut_margin, 144, 130, 180, 20);
 
-    PARAM(see_cap_margin, 100, 85, 110, 3);
-    PARAM(see_quiet_margin, 90, 75, 100, 3);
+    PARAM(see_cap_margin, 100, 70, 120, 10);
+    PARAM(see_quiet_margin, 90, 70, 120, 10);
+
+    PARAM(lmp_base, 4, 3, 6, 1);
 
     PARAM(fp_depth, 10, 9, 11, 1);
-    PARAM(fp_base, 134, 120, 180, 10);
-    PARAM(fp_mult, 97, 85, 110, 5);
+    PARAM(fp_base, 134, 120, 180, 15);
+    PARAM(fp_mult, 97, 70, 150, 10);
 
     PARAM(hp_margin, 4099, 2500, 5000, 400);
     PARAM(hp_div, 6011, 5000, 8500, 400);
     PARAM(hp_depth, 5, 4, 6, 1);
-    PARAM(hbonus_margin, 73, 55, 100, 5);
+    PARAM(hbonus_margin, 73, 65, 110, 10);
 
-    PARAM(qfp_margin, 104, 60, 150, 10);
+    PARAM(qfp_margin, 104, 60, 150, 15);
 
     // search helper
 
@@ -438,7 +440,6 @@ namespace Astra
             made_moves++;
 
             bool is_cap = board.isCapture(move);
-            bool is_killer = (move == mp.killer1 || move == mp.killer2);
 
             int history_score;
             if (is_cap)
@@ -450,26 +451,26 @@ namespace Astra
             {
                 int r = REDUCTIONS[depth][made_moves] + !improving - history_score / hp_div;
                 int lmr_depth = std::max(1, depth - r);
+             
+                // see pruning
+                int see_margin = is_cap ? depth * see_cap_margin : lmr_depth * see_quiet_margin;
+                if (!board.see(move, -see_margin))
+                    continue;
 
-                 // late move pruning
-                if (q_count > (4 + depth * depth))
+                // late move pruning
+                if (!in_check && !is_cap && q_count > (lmp_base + depth * depth))
                     skip_quiets = true;
 
                 if (!is_cap && !isPromotion(move))
                 {
                     // history pruning
-                    if (!is_killer && history_score < -hp_margin * depth && lmr_depth < hp_depth) 
+                    if (history_score < -hp_margin * depth && lmr_depth < hp_depth) 
                         skip_quiets = true;
 
                     // futility pruning
-                    if (!in_check && lmr_depth <= fp_depth && eval + fp_base + lmr_depth * fp_mult <= alpha)
+                    if (!in_check && lmr_depth <= fp_depth && eval + fp_base + lmr_depth * fp_mult <= alpha) 
                         skip_quiets = true;
                 }
-
-                // see pruning
-                int see_margin = is_cap ? depth * see_cap_margin : lmr_depth * see_quiet_margin;
-                if (!board.see(move, -see_margin))
-                    continue;
             }
 
             if (is_cap)
@@ -535,8 +536,6 @@ namespace Astra
                 r -= board.inCheck();
                 // decrease in high history scores
                 r -= history_score / hp_div;
-                // decrease when move is a killer or counter
-                r -= is_killer;
 
                 int lmr_depth = std::clamp(new_depth - r, 1, new_depth + 1);
 
