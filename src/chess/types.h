@@ -14,7 +14,7 @@ namespace Chess
 
     constexpr int MAX_PLY = 120;
 
-    const int PIECE_VALUES[] = {100, 325, 325, 500, 1000, 0, 0};
+    const int PIECE_VALUES[] = {100, 325, 325, 500, 1000, 30000, 0};
 
     enum Color
     {

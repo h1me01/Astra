@@ -10,21 +10,21 @@
 namespace Astra
 {
     // search parameters
-    PARAM(lmr_base, 101, 50, 120, 10);
-    PARAM(lmr_div, 185, 150, 200, 10);
+    PARAM(lmr_base, 100, 50, 120, 10);
+    PARAM(lmr_div, 175, 150, 200, 10);
 
-    PARAM(asp_depth, 8, 5, 9, 1);
-    PARAM(asp_window, 14, 5, 40, 5);
+    PARAM(asp_depth, 9, 5, 9, 1);
+    PARAM(asp_window, 11, 5, 40, 5);
 
-    PARAM(rzr_depth, 4, 3, 5, 1);
+    PARAM(rzr_depth, 3, 3, 5, 1);
     PARAM(rzr_depth_mult, 161, 150, 250, 15);
 
-    PARAM(rfp_depth, 11, 9, 11, 1);
-    PARAM(rfp_depth_mult, 60, 60, 110, 12);
+    PARAM(rfp_depth, 9, 9, 11, 1);
+    PARAM(rfp_depth_mult, 71, 60, 110, 12);
 
-    PARAM(nmp_min, 4, 3, 6, 1);
-    PARAM(nmp_depth_div, 6, 3, 15, 1);
-    PARAM(nmp_div, 200, 150, 250, 20);
+    PARAM(nmp_min, 3, 3, 6, 1);
+    PARAM(nmp_depth_div, 5, 3, 15, 1);
+    PARAM(nmp_div, 213, 150, 250, 20);
 
     PARAM(probcut_margin, 167, 130, 180, 20);
 
@@ -33,13 +33,13 @@ namespace Astra
 
     PARAM(lmp_base, 4, 3, 6, 1);
 
-    PARAM(fp_depth, 11, 9, 11, 1);
+    PARAM(fp_depth, 10, 9, 11, 1);
     PARAM(fp_base, 142, 120, 180, 15);
     PARAM(fp_mult, 107, 70, 150, 10);
 
     PARAM(hp_margin, 4180, 2500, 5000, 400);
     PARAM(hp_div, 6410, 5000, 8500, 400);
-    PARAM(hp_depth, 6, 4, 6, 1);
+    PARAM(hp_depth, 5, 4, 6, 1);
     PARAM(hbonus_margin, 71, 65, 110, 10);
 
     PARAM(qfp_margin, 109, 60, 150, 15);
@@ -182,7 +182,7 @@ namespace Astra
             else
                 break;
 
-            window += window / 3;
+            window += window / 2;
         }
 
         return result;
@@ -456,26 +456,29 @@ namespace Astra
                 int see_margin = is_cap ? depth * see_cap_margin : lmr_depth * see_quiet_margin;
                 if (!board.see(move, -see_margin))
                     continue;
-
-                // late move pruning
-                if (!in_check && !is_cap && q_count > (lmp_base + depth * depth))
-                    skip_quiets = true;
-
+                    
                 if (!is_cap && !isPromotion(move))
                 {
+                    // late move pruning
+                    if (q_count > (lmp_base + depth * depth))
+                        skip_quiets = true;
+
                     // history pruning
                     if (history_score < -hp_margin * depth && lmr_depth < hp_depth) 
                         skip_quiets = true;
 
                     // futility pruning
-                    if (!in_check && lmr_depth <= fp_depth && eval + fp_base + lmr_depth * fp_mult <= alpha) 
+                    if (!in_check && lmr_depth <= fp_depth && eval + fp_base + lmr_depth * fp_mult <= alpha)
+                    {
                         skip_quiets = true;
+                        continue;
+                    }
                 }
             }
 
-            if (is_cap)
+            if (is_cap && q_count < 64)
                 c_moves[c_count++] = move;
-            else
+            else if (q_count < 64)
                 q_moves[q_count++] = move;
 
             // print current move information
@@ -688,9 +691,11 @@ namespace Astra
 
         while ((move = mp.nextMove(false)) != NO_MOVE)
         {
-            if (best_score > -VALUE_TB_WIN_IN_MAX_PLY)
+            bool is_cap = board.isCapture(move);
+
+            if (best_score > -VALUE_TB_WIN_IN_MAX_PLY && board.isCapture(move))
             {
-                if (!in_check && futility <= alpha && board.isCapture(move) && !board.see(move, 1))
+                if (!in_check && futility <= alpha && is_cap && !board.see(move, 1))
                 {
                     best_score = std::max(best_score, Score(futility));
                     continue;
@@ -723,6 +728,9 @@ namespace Astra
                 if (score >= beta)
                     break; // cut-off
             }
+
+            if (best_score > -VALUE_TB_WIN_IN_MAX_PLY && !is_cap) 
+                break;
         }
 
         if (mp.getMoveCount() == 0)

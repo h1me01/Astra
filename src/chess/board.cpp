@@ -264,11 +264,11 @@ namespace Chess
     }
 
     // currently only support quiet moves (used in movepicker)
-    bool Board::givesCheck(const Move& m)  
+    bool Board::givesCheck(const Move &m)
     {
-        if(isCapture(m))
+        if (isCapture(m))
             return false;
-    
+
         Square from = m.from();
         Square to = m.to();
         MoveType mt = m.type();
@@ -289,7 +289,7 @@ namespace Chess
             }
             else // queenside
             {
-                rook_from =relativeSquare(stm, a1);
+                rook_from = relativeSquare(stm, a1);
                 rook_to = relativeSquare(stm, d1);
             }
 
@@ -298,13 +298,13 @@ namespace Chess
 
             return SQUARE_BB[opp_king_sq] & getAttacks(ROOK, rook_to, occ);
         }
-        
+
         occ ^= SQUARE_BB[from] | SQUARE_BB[to];
         U64 all_attackers;
 
         U64 pc_from_bb = piece_bb[pc_from];
 
-        if (mt == NORMAL) 
+        if (mt == NORMAL)
         {
             piece_bb[pc_from] ^= SQUARE_BB[from] | SQUARE_BB[to];
             all_attackers = attackersTo(stm, opp_king_sq, occ);
@@ -342,7 +342,7 @@ namespace Chess
         U64 pc_to_bb = piece_bb[pc_to];
         U64 occ = occupancy(WHITE) | occupancy(BLACK);
 
-        if (mt == EN_PASSANT) 
+        if (mt == EN_PASSANT)
         {
             Square cap_sq = Square(to ^ 8);
 
@@ -353,33 +353,33 @@ namespace Chess
             occ |= SQUARE_BB[to];
 
             piece_bb[pc_from] ^= SQUARE_BB[from] | SQUARE_BB[to];
-            U64 all_attackers = attackersTo(~stm, ksq, occ);    
+            U64 all_attackers = attackersTo(~stm, ksq, occ);
             piece_bb[pc_from] = pc_from_bb;
-        
+
             return !all_attackers;
         }
 
-        if (mt == CASTLING) 
+        if (mt == CASTLING)
         {
             to = relativeSquare(stm, to > from ? g1 : c1);
             Direction step = to > from ? WEST : EAST;
 
-            for (Square s = to; s != from; s += step) 
+            for (Square s = to; s != from; s += step)
                 if (attackersTo(~stm, ksq, occ))
                     return false;
-            
+
             return true;
         }
 
-        if (typeOf(pc_from) == KING) 
+        if (typeOf(pc_from) == KING)
             return !attackersTo(~stm, to, occ);
 
         occ ^= SQUARE_BB[from] | SQUARE_BB[to];
         piece_bb[pc_from] ^= SQUARE_BB[from] | SQUARE_BB[to];
 
-        if (pc_to != NO_PIECE) 
+        if (pc_to != NO_PIECE)
         {
-            piece_bb[pc_to] ^= SQUARE_BB[to]; 
+            piece_bb[pc_to] ^= SQUARE_BB[to];
             occ ^= SQUARE_BB[to];
         }
 
@@ -440,7 +440,7 @@ namespace Chess
             }
             else // queenside
             {
-                rook_from =relativeSquare(stm, a1);
+                rook_from = relativeSquare(stm, a1);
                 rook_to = relativeSquare(stm, d1);
             }
 
@@ -529,7 +529,7 @@ namespace Chess
             }
             else // queenside
             {
-                rook_from =relativeSquare(stm, d1);
+                rook_from = relativeSquare(stm, d1);
                 rook_to = relativeSquare(stm, a1);
             }
 
@@ -614,73 +614,91 @@ namespace Chess
         return history[game_ply].half_move_clock > 99 || isInsufficientMaterial();
     }
 
-    // static exchange evaluation from weiss
     bool Board::see(Move &move, int threshold)
     {
+        if (move.type() !=  NORMAL)
+            return true;
+
         Square from = move.from();
         Square to = move.to();
         PieceType attacker = typeOf(pieceAt(from));
         PieceType victim = typeOf(pieceAt(to));
-        int swap = PIECE_VALUES[victim] - threshold;
         
+        int swap = PIECE_VALUES[victim] - threshold;
         if (swap < 0)
             return false;
 
-        swap -= PIECE_VALUES[attacker];
+        swap = PIECE_VALUES[attacker] - swap;
 
-        if (swap >= 0)
+        if (swap <= 0)
             return true;
 
         U64 occ = occupancy(WHITE) | occupancy(BLACK);
-        occ = occ ^ (1ULL << from) ^ (1ULL << to);
-        U64 all_attackers = (attackersTo(WHITE, to, occ) | attackersTo(BLACK, to, occ)) & occ;
+        occ = occ ^ SQUARE_BB[from] ^ SQUARE_BB[to];
+        U64 all_attackers = attackersTo(WHITE, to, occ) | attackersTo(BLACK, to, occ);
 
-        U64 queens = getPieceBB(WHITE, QUEEN) | getPieceBB(BLACK, QUEEN);
-        U64 rooks = getPieceBB(WHITE, ROOK) | getPieceBB(BLACK, ROOK) | queens;
-        U64 bishops = getPieceBB(WHITE, BISHOP) | getPieceBB(BLACK, BISHOP) | queens;
+        U64 diag = diagSliders(WHITE) | diagSliders(BLACK);
+        U64 orth = orthSliders(WHITE) | orthSliders(BLACK);
 
-        Color c_from = colorOf(pieceAt(from));
-        Color c = ~c_from;
+        bool result = true;
 
+        Color stm = getTurn();
+
+        U64 mine, least_attacker;
         while (true)
         {
+            stm = ~stm;
             all_attackers &= occ;
 
-            U64 my_attackers = all_attackers & occupancy(c);
-            if (!my_attackers)
+            if (!(mine = (all_attackers & occupancy(stm))))
                 break;
 
-            int pt;
-            for (pt = 0; pt <= 5; pt++)
-            {
-                U64 w_pieces = getPieceBB(WHITE, PieceType(pt));
-                U64 b_pieces = getPieceBB(BLACK, PieceType(pt));
+            result = !result;
 
-                if (my_attackers & (w_pieces | b_pieces))
+            if ((least_attacker = mine & getPieceBB(stm, PAWN)))
+            {
+                if ((swap = PIECE_VALUES[PAWN] - swap) < result)
                     break;
+
+                occ ^= (least_attacker & -least_attacker);
+                all_attackers |= getBishopAttacks(to, occ) & diag;
             }
-
-            c = ~c;
-
-            if ((swap = -swap - 1 - PIECE_VALUES[pt]) >= 0)
+            else if ((least_attacker = mine & getPieceBB(stm, KNIGHT)))
             {
-                if (pt == KING && (all_attackers & occupancy(c)))
-                    c = ~c;
-                break;
+                if ((swap = PIECE_VALUES[KNIGHT] - swap) < result)
+                    break;
+
+                occ ^= (least_attacker & -least_attacker);
             }
+            else if ((least_attacker = mine & getPieceBB(stm, BISHOP)))
+            {
+                if ((swap = PIECE_VALUES[BISHOP] - swap) < result)
+                    break;
 
-            U64 w_pieces = getPieceBB(WHITE, PieceType(pt));
-            U64 b_pieces = getPieceBB(BLACK, PieceType(pt));
-            occ ^= (1ULL << (bsf(my_attackers & (w_pieces | b_pieces))));
+                occ ^= (least_attacker & -least_attacker);
+                all_attackers |= getBishopAttacks(to, occ) & diag;
+            }
+            else if ((least_attacker = mine & getPieceBB(stm, ROOK)))
+            {
+                if ((swap = PIECE_VALUES[ROOK] - swap) < result)
+                    break;
 
-            if (pt == PAWN || pt == BISHOP || pt == QUEEN)
-                all_attackers |= getBishopAttacks(to, occ) & bishops;
+                occ ^= (least_attacker & -least_attacker);
+                all_attackers |= getRookAttacks(to, occ) & orth;
+            }
+            else if ((least_attacker = mine & getPieceBB(stm, QUEEN)))
+            {
+                if ((swap = PIECE_VALUES[QUEEN] - swap) < result)
+                    break;
 
-            if (pt == ROOK || pt == QUEEN)
-                all_attackers |= getRookAttacks(to, occ) & rooks;
+                occ ^= (least_attacker & -least_attacker);
+                all_attackers |= (getBishopAttacks(to, occ) & diag) | (getRookAttacks(to, occ) & orth);
+            }
+            else
+                return (all_attackers & ~occupancy(stm)) ? result ^ 1 : result;
         }
 
-        return c != c_from;
+        return result;
     }
 
 } // namespace Chess
