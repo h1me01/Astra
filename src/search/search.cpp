@@ -10,39 +10,39 @@
 namespace Astra
 {
     // search parameters
-    PARAM(lmr_base, 97, 50, 120, 10);
+    PARAM(lmr_base, 101, 50, 120, 10);
     PARAM(lmr_div, 185, 150, 200, 10);
 
-    PARAM(asp_depth, 7, 5, 9, 1);
-    PARAM(asp_window, 13, 5, 40, 5);
+    PARAM(asp_depth, 8, 5, 9, 1);
+    PARAM(asp_window, 14, 5, 40, 5);
 
     PARAM(rzr_depth, 4, 3, 5, 1);
-    PARAM(rzr_depth_mult, 174, 150, 250, 15);
+    PARAM(rzr_depth_mult, 161, 150, 250, 15);
 
     PARAM(rfp_depth, 11, 9, 11, 1);
-    PARAM(rfp_depth_mult, 79, 60, 110, 12);
+    PARAM(rfp_depth_mult, 60, 60, 110, 12);
 
     PARAM(nmp_min, 4, 3, 6, 1);
     PARAM(nmp_depth_div, 6, 3, 15, 1);
-    PARAM(nmp_div, 213, 150, 250, 20);
+    PARAM(nmp_div, 200, 150, 250, 20);
 
-    PARAM(probcut_margin, 144, 130, 180, 20);
+    PARAM(probcut_margin, 167, 130, 180, 20);
 
-    PARAM(see_cap_margin, 100, 70, 120, 10);
-    PARAM(see_quiet_margin, 90, 70, 120, 10);
+    PARAM(see_cap_margin, 98, 70, 120, 10);
+    PARAM(see_quiet_margin, 91, 70, 120, 10);
 
     PARAM(lmp_base, 4, 3, 6, 1);
 
-    PARAM(fp_depth, 10, 9, 11, 1);
-    PARAM(fp_base, 134, 120, 180, 15);
-    PARAM(fp_mult, 97, 70, 150, 10);
+    PARAM(fp_depth, 11, 9, 11, 1);
+    PARAM(fp_base, 142, 120, 180, 15);
+    PARAM(fp_mult, 107, 70, 150, 10);
 
-    PARAM(hp_margin, 4099, 2500, 5000, 400);
-    PARAM(hp_div, 6011, 5000, 8500, 400);
-    PARAM(hp_depth, 5, 4, 6, 1);
-    PARAM(hbonus_margin, 73, 65, 110, 10);
+    PARAM(hp_margin, 4180, 2500, 5000, 400);
+    PARAM(hp_div, 6410, 5000, 8500, 400);
+    PARAM(hp_depth, 6, 4, 6, 1);
+    PARAM(hbonus_margin, 71, 65, 110, 10);
 
-    PARAM(qfp_margin, 104, 60, 150, 15);
+    PARAM(qfp_margin, 109, 60, 150, 15);
 
     // search helper
 
