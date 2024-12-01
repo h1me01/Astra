@@ -2,14 +2,14 @@
 
 namespace Astra
 {
-    TTable::TTable(int size_mb) : current_age(0), entries(nullptr)
+    TTable::TTable(U64 size_mb) : current_age(0), entries(nullptr)
     {
         init(size_mb);
     }
 
     TTable::~TTable() { delete[] entries; }
 
-    void TTable::init(int size_mb)
+    void TTable::init(U64 size_mb)
     {
         current_age = 0;
 
@@ -21,6 +21,7 @@ namespace Astra
 
         // find the next power of 2
         tt_size = 1ULL << (63 - __builtin_clzll(max_entries));
+        mask = tt_size - 1;
 
         entries = new TTEntry[tt_size];
         clear();
@@ -34,7 +35,7 @@ namespace Astra
 
     bool TTable::lookup(TTEntry& entry, U64 hash) const
     {
-        U64 idx = hash % tt_size;
+        U64 idx = hash & mask;
         if (entries[idx].hash == hash)
         {
             entry = entries[idx];
@@ -45,7 +46,7 @@ namespace Astra
 
     void TTable::store(U64 hash, Move move, Score score, int depth, Bound bound) const
     {
-        U64 idx = hash % tt_size;
+        U64 idx = hash & mask;
 
         if (!entries[idx].hash)
         {

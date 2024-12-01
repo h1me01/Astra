@@ -36,10 +36,10 @@ namespace Astra
     class TTable
     {
     public:
-        explicit TTable(int size_mb);
+        explicit TTable(U64 size_mb);
         ~TTable();
 
-        void init(int size_mb);
+        void init(U64 size_mb);
         void clear() const;
 
         bool lookup(TTEntry& entry, U64 hash) const;
@@ -52,6 +52,7 @@ namespace Astra
     private:
         uint8_t current_age;
         U64 tt_size{};
+        U64 mask{};
         TTEntry* entries;
     };
 
