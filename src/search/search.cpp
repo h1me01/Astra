@@ -693,7 +693,7 @@ namespace Astra
         {
             bool is_cap = board.isCapture(move);
 
-            if (best_score > -VALUE_TB_WIN_IN_MAX_PLY && board.isCapture(move))
+            if (best_score > -VALUE_TB_WIN_IN_MAX_PLY)
             {
                 if (!in_check && futility <= alpha && is_cap && !board.see(move, 1))
                 {
