@@ -56,24 +56,22 @@ namespace Astra
                 updateQH(best, stm, bonus);
                 updateContH(board, best, ss, bonus);
             }
+
+            // update quiets
+            for (int i = 0; i < qc; i++)
+            {
+                Move quiet = q_moves[i];
+                if (quiet == best)
+                    continue;
+
+                updateQH(quiet, stm, -bonus);
+                updateContH(board, quiet, ss, -bonus);
+            }
         }
         else
             updateCH(board, best, bonus);
 
-        // history maluses
-
-        // quiets
-        for (int i = 0; i < qc; i++)
-        {
-            Move quiet = q_moves[i];
-            if (quiet == best)
-                continue;
-
-            updateQH(quiet, stm, -bonus);
-            updateContH(board, quiet, ss, -bonus);
-        }
-
-        // captures
+        // update captures
         for (int i = 0; i < cc; i++)
         {
             Move cap = c_moves[i];

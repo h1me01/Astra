@@ -740,7 +740,7 @@ namespace Astra
             best_score = (best_score + beta) / 2;
 
         // store in transposition table
-        Bound bound = best_score >= beta ? LOWER_BOUND : UPPER_BOUND; // exact bounds can only be stored in pv search
+        Bound bound = best_score >= beta ? LOWER_BOUND : UPPER_BOUND; // no exact bound in qsearch
         tt.store(hash, best_move, scoreToTT(best_score, ss->ply), 0, bound);
 
         return best_score;
