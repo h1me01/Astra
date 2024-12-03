@@ -31,8 +31,6 @@ namespace Astra
     PARAM(see_cap_margin, 98, 70, 120, 10);
     PARAM(see_quiet_margin, 91, 70, 120, 10);
 
-    PARAM(lmp_base, 4, 3, 6, 1);
-
     PARAM(fp_depth, 10, 9, 11, 1);
     PARAM(fp_base, 142, 120, 180, 15);
     PARAM(fp_mult, 107, 70, 150, 10);
@@ -447,36 +445,32 @@ namespace Astra
             else
                 history_score = history.getQHScore(stm, move);
 
-            if (!root_node && best_score > -VALUE_TB_WIN_IN_MAX_PLY)
+            if (!root_node && board.nonPawnMat(stm) && best_score > -VALUE_TB_WIN_IN_MAX_PLY)
             {
-                int r = REDUCTIONS[depth][made_moves] + !improving - history_score / hp_div;
+                int r = REDUCTIONS[depth][made_moves] - history_score / hp_div;
                 int lmr_depth = std::max(1, depth - r);
-             
-                // see pruning
-                int see_margin = is_cap ? depth * see_cap_margin : lmr_depth * see_quiet_margin;
-                if (!board.see(move, -see_margin))
-                    continue;
-                    
+                                 
                 if (!is_cap && !isPromotion(move))
                 {
                     // late move pruning
-                    if (q_count > (lmp_base + depth * depth))
+                    if (q_count > (4 + depth * depth) / (2 - improving))
                         skip_quiets = true;
 
                     // history pruning
                     if (history_score < -hp_margin * depth && lmr_depth < hp_depth) 
-                        skip_quiets = true;
+                        continue;
 
                     // futility pruning
                     if (!in_check && lmr_depth <= fp_depth && eval + fp_base + lmr_depth * fp_mult <= alpha)
-                    {
-                        skip_quiets = true;
                         continue;
-                    }
                 }
+            
+                // see pruning
+                if (!board.see(move, -(is_cap ? depth * see_cap_margin : lmr_depth * see_quiet_margin)))
+                    continue;
             }
 
-            if (is_cap && q_count < 64)
+            if (is_cap && c_count < 64)
                 c_moves[c_count++] = move;
             else if (q_count < 64)
                 q_moves[q_count++] = move;
@@ -535,8 +529,6 @@ namespace Astra
                 r += 2 * cut_node;
                 // decrease when in pv node
                 r -= pv_node;
-                // decrease when move gives check
-                r -= board.inCheck();
                 // decrease in high history scores
                 r -= history_score / hp_div;
 
