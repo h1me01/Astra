@@ -14,7 +14,7 @@ namespace Astra
     PARAM(lmr_div, 185, 150, 200, 10);
 
     PARAM(asp_depth, 8, 5, 9, 1);
-    PARAM(asp_window, 11, 5, 40, 5);
+    PARAM(asp_window, 10, 5, 40, 5);
 
     PARAM(rzr_depth, 3, 3, 5, 1);
     PARAM(rzr_depth_mult, 161, 150, 250, 15);
@@ -446,9 +446,12 @@ namespace Astra
             else
                 history_score = history.getQHScore(stm, move);
 
+            int r = REDUCTIONS[depth][made_moves];
+            // decrease/increase based on history score
+            r -= history_score / hp_div;
+
             if (!root_node && board.nonPawnMat(stm) && best_score > -VALUE_TB_WIN_IN_MAX_PLY)
             {
-                int r = REDUCTIONS[depth][made_moves] - history_score / hp_div;
                 int lmr_depth = std::max(1, depth - r);
                 
                 if (!is_cap && !isPromotion(move))
@@ -521,7 +524,6 @@ namespace Astra
             // late move reduction
             if (depth > 1 && made_moves > 1 && !(pv_node && in_check))
             {
-                int r = REDUCTIONS[depth][made_moves];
                 // increase when tt move is a capture
                 r += is_ttmove_cap;
                 // increase when not improving
@@ -532,8 +534,6 @@ namespace Astra
                 r -= pv_node;
                 // decrease when move gives check
                 r -= board.inCheck();
-                // decrease/increase in high history scores
-                r -= history_score / hp_div;
 
                 int lmr_depth = std::clamp(new_depth - r, 1, new_depth + 1);
 
