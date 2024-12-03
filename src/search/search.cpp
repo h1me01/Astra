@@ -340,6 +340,7 @@ namespace Astra
             // check for improvement
             if (ss->ply >= 2)
             {
+                // if previous plies were in a check, consider it also an imrpvement
                 if (ss->ply >= 4 && (ss - 2)->static_eval == VALUE_NONE)
                     // if ss - 2 eval was not calculated, use ss - 4 eval
                     improving = ss->static_eval > (ss - 4)->static_eval || (ss - 4)->static_eval == VALUE_NONE;
