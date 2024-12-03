@@ -529,6 +529,7 @@ namespace Astra
                 r += 2 * cut_node;
                 // decrease when in pv node
                 r -= pv_node;
+                // decrease move gives check
                 r -= board.inCheck();
                 // decrease in high history scores
                 r -= history_score / hp_div;
