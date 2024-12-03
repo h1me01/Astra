@@ -180,7 +180,7 @@ namespace Astra
             else
                 break;
 
-            window += window / 2;
+            window += window / 3;
         }
 
         return result;
@@ -449,11 +449,11 @@ namespace Astra
             {
                 int r = REDUCTIONS[depth][made_moves] - history_score / hp_div;
                 int lmr_depth = std::max(1, depth - r);
-                                 
+                
                 if (!is_cap && !isPromotion(move))
                 {
                     // late move pruning
-                    if (q_count > (4 + depth * depth) / (2 - improving))
+                    if (q_count > (3 + depth * depth) / (2 - improving))
                         skip_quiets = true;
 
                     // history pruning
@@ -467,7 +467,7 @@ namespace Astra
             
                 // see pruning
                 if (!board.see(move, -(is_cap ? depth * see_cap_margin : lmr_depth * see_quiet_margin)))
-                    continue;
+                    continue;   
             }
 
             if (is_cap && c_count < 64)
