@@ -10,10 +10,10 @@
 namespace Astra
 {
     // search parameters
-    PARAM(lmr_base, 100, 50, 120, 10);
-    PARAM(lmr_div, 175, 150, 200, 10);
+    PARAM(lmr_base, 102, 50, 120, 10);
+    PARAM(lmr_div, 185, 150, 200, 10);
 
-    PARAM(asp_depth, 9, 5, 9, 1);
+    PARAM(asp_depth, 8, 5, 9, 1);
     PARAM(asp_window, 11, 5, 40, 5);
 
     PARAM(rzr_depth, 3, 3, 5, 1);
@@ -461,7 +461,7 @@ namespace Astra
                         continue;
 
                     // futility pruning
-                    if (!in_check && lmr_depth <= fp_depth && eval + fp_base + lmr_depth * fp_mult <= alpha)
+                    if (!in_check && lmr_depth <= fp_depth && eval + fp_base + lmr_depth * fp_mult <= alpha) 
                         continue;
                 }
             
@@ -529,6 +529,7 @@ namespace Astra
                 r += 2 * cut_node;
                 // decrease when in pv node
                 r -= pv_node;
+                r -= board.inCheck();
                 // decrease in high history scores
                 r -= history_score / hp_div;
 
