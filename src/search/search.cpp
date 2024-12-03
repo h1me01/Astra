@@ -200,11 +200,11 @@ namespace Astra
         pv_table[ss->ply].length = ss->ply;
 
         // variables
-        const Color stm = board.getTurn();
-        const bool in_check = board.inCheck();
-
         const bool root_node = ss->ply == 0;
         const bool pv_node = beta - alpha != 1;
+
+        const Color stm = board.getTurn();
+        const bool in_check = board.inCheck();
 
         // dive into quiescence search if depth is less than 1
         if (depth <= 0)
@@ -249,7 +249,7 @@ namespace Astra
         TTEntry ent;
         U64 hash = board.getHash();
         bool tt_hit = tt.lookup(ent, hash);
-        Score tt_score = tt_hit ? scoreFromTT(ent.score, ss->ply) : Score(VALUE_NONE);
+        const Score tt_score = tt_hit ? scoreFromTT(ent.score, ss->ply) : Score(VALUE_NONE);
 
         if (!pv_node && !ss->skipped && tt_hit && ent.depth >= depth && tt_score != VALUE_NONE)
         {
@@ -428,7 +428,7 @@ namespace Astra
         int made_moves = 0, q_count = 0, c_count = 0;
 
         Move q_moves[64];
-        Move c_moves[64];
+        Move c_moves[32];
         Move best_move = NO_MOVE, move = NO_MOVE;
 
         while ((move = mp.nextMove(skip_quiets)) != NO_MOVE)
@@ -471,7 +471,7 @@ namespace Astra
                     continue;   
             }
 
-            if (is_cap && c_count < 64)
+            if (is_cap && c_count < 32)
                 c_moves[c_count++] = move;
             else if (q_count < 64)
                 q_moves[q_count++] = move;
@@ -530,9 +530,9 @@ namespace Astra
                 r += 2 * cut_node;
                 // decrease when in pv node
                 r -= pv_node;
-                // decrease move gives check
+                // decrease when move gives check
                 r -= board.inCheck();
-                // decrease in high history scores
+                // decrease/increase in high history scores
                 r -= history_score / hp_div;
 
                 int lmr_depth = std::clamp(new_depth - r, 1, new_depth + 1);
@@ -569,7 +569,6 @@ namespace Astra
                 {
                     alpha = score;
                     best_move = move;
-
                     // update best move when in pv node
                     if (pv_node)
                         updatePV(ss->ply, best_move);
@@ -629,8 +628,8 @@ namespace Astra
 
         // look up in transposition table
         TTEntry ent;
-        const U64 hash = board.getHash();
-        const bool tt_hit = tt.lookup(ent, hash);
+        U64 hash = board.getHash();
+        bool tt_hit = tt.lookup(ent, hash);
         const Score tt_score = tt_hit ? scoreFromTT(ent.score, ss->ply) : Score(VALUE_NONE);
 
         if (!pv_node && tt_hit && tt_score != VALUE_NONE)
@@ -784,12 +783,11 @@ namespace Astra
         else
             std::cout << "cp " << result;
 
-        const U64 elapsed_time = tm.elapsedTime();
-        const U64 total_nodes = threads.getTotalNodes();
-        const U64 nps = total_nodes * 1000 / (elapsed_time + 1);
+        U64 elapsed_time = tm.elapsedTime();
+        U64 total_nodes = threads.getTotalNodes();
 
         std::cout << " nodes " << total_nodes
-                  << " nps " << nps
+                  << " nps " << total_nodes * 1000 / (elapsed_time + 1)
                   << " tbhits " << threads.getTotalTbHits()
                   << " hashfull " << tt.hashfull()
                   << " time " << elapsed_time
