@@ -10,30 +10,32 @@
 namespace Astra
 {
     // search parameters
-     PARAM(lmr_base, 100, 50, 120, 10);
-    PARAM(lmr_div, 197, 150, 200, 10);
+    PARAM(lmr_base, 98, 50, 120, 10);
+    PARAM(lmr_div, 177, 150, 200, 10);
 
-    PARAM(asp_depth, 8, 5, 9, 1);
-    PARAM(asp_window, 15, 5, 40, 5);
+    PARAM(asp_depth, 9, 5, 9, 1);
+    PARAM(asp_window, 10, 5, 40, 5);
 
     PARAM(rzr_depth, 5, 3, 5, 1);
-    PARAM(rzr_depth_mult, 154, 150, 250, 15);
+    PARAM(rzr_depth_mult, 173, 150, 250, 15);
 
     PARAM(rfp_depth, 9, 9, 11, 1);
     PARAM(rfp_depth_mult, 74, 60, 110, 12);
 
-    PARAM(nmp_min, 4, 3, 6, 1);
+    PARAM(nmp_min, 3, 3, 6, 1);
     PARAM(nmp_depth_div, 5, 3, 15, 1);
-    PARAM(nmp_div, 218, 150, 250, 20);
+    PARAM(nmp_div, 215, 150, 250, 20);
 
-    PARAM(probcut_margin, 180, 130, 180, 20);
+    PARAM(probcut_margin, 136, 130, 180, 20);
 
-    PARAM(see_cap_margin, 91, 70, 120, 10);
-    PARAM(see_quiet_margin, 96, 70, 120, 10);
+    PARAM(see_cap_margin, 97, 70, 120, 10);
+    PARAM(see_quiet_margin, 91, 70, 120, 10);
 
-    PARAM(fp_depth, 10, 9, 11, 1);
-    PARAM(fp_base, 133, 120, 180, 15);
-    PARAM(fp_mult, 123, 70, 150, 10);
+    PARAM(fp_depth, 9, 9, 11, 1);
+    PARAM(fp_base, 149, 120, 180, 15);
+    PARAM(fp_mult, 105, 70, 150, 10);
+
+    PARAM(zws_margin, 75, 60, 90, 8);
 
     PARAM(hp_margin, 4489, 2500, 5000, 400);
     PARAM(hp_div, 7035, 5000, 8500, 400);
@@ -158,10 +160,10 @@ namespace Astra
         Score result = VALUE_NONE;
         while (true)
         {
-            if (alpha < -1500)
+            if (alpha < -2000)
                 alpha = -VALUE_MATE;
 
-            if (beta > 1500)
+            if (beta > 2000)
                 beta = VALUE_MATE;
 
             result = negamax(depth, alpha, beta, ss, false);
@@ -329,7 +331,7 @@ namespace Astra
             }
 
             // check for improvement
-            if (ss->ply >= 2)
+            if (ss->ply >= 2 && ss->static_eval != VALUE_NONE)
             {
                 // if previous plies were in a check, consider it also an imrpvement
                 if (ss->ply >= 4 && (ss - 2)->static_eval == VALUE_NONE)
@@ -348,7 +350,7 @@ namespace Astra
         if (!in_check && !pv_node)
         {
             // reverse futility pruning
-            int rfp_margin = std::max(rfp_depth_mult * (depth - improving), 25);
+            int rfp_margin = std::max(rfp_depth_mult * (depth - improving), 20);
             if (!ss->skipped && depth <= rfp_depth && eval < VALUE_TB_WIN_IN_MAX_PLY && eval - rfp_margin >= beta)
                 return (eval + beta) / 2;
 
@@ -389,7 +391,7 @@ namespace Astra
                 MovePicker movepicker(PC_SEARCH, board, history, ss, ent.move);
 
                 Move move = NO_MOVE;
-                while ((move = movepicker.nextMove(true)) != NO_MOVE)
+                while ((move = movepicker.nextMove()) != NO_MOVE)
                 {
                     nodes++;
                     ss->curr_move = move;
@@ -413,7 +415,6 @@ namespace Astra
 
         MovePicker mp(N_SEARCH, board, history, ss, ent.move);
 
-        bool skip_quiets = false;
         bool is_ttmove_cap = board.isCapture(ent.move);
 
         int made_moves = 0, q_count = 0, c_count = 0;
@@ -422,7 +423,7 @@ namespace Astra
         Move c_moves[32];
         Move best_move = NO_MOVE, move = NO_MOVE;
 
-        while ((move = mp.nextMove(skip_quiets)) != NO_MOVE)
+        while ((move = mp.nextMove()) != NO_MOVE)
         {
             if (move == ss->skipped)
                 continue;
@@ -449,7 +450,7 @@ namespace Astra
                 {
                     // late move pruning
                     if (q_count > (3 + depth * depth) / (2 - improving))
-                        skip_quiets = true;
+                        continue;
 
                     // history pruning
                     if (history_score < -hp_margin * depth && lmr_depth < 5) 
@@ -504,7 +505,7 @@ namespace Astra
                     extension = -1;
             }
 
-            const int new_depth = depth - 1 + extension;
+            int new_depth = depth - 1 + extension;
 
             nodes++;
             ss->curr_move = move;
@@ -513,7 +514,7 @@ namespace Astra
             Score score = VALUE_NONE;
 
             // late move reduction
-            if (depth > 1 && made_moves > 1 && !(pv_node && in_check))
+            if (depth > 1 && made_moves > 1 && !in_check)
             {
                 // increase when tt move is a capture
                 r += is_ttmove_cap;
@@ -531,9 +532,12 @@ namespace Astra
                 score = -negamax(lmr_depth, -alpha - 1, -alpha, ss + 1, true);
 
                 // if late move reduction failed high and we actually reduced, do a research
-                if (score > alpha && r > 1)
+                if (score > alpha && lmr_depth < new_depth)
                 {
-                    if (lmr_depth < new_depth)
+                    new_depth += (score > best_score + zws_margin);
+                    new_depth -= (score < best_score + new_depth);
+
+                    if (new_depth > lmr_depth)
                         score = -negamax(new_depth, -alpha - 1, -alpha, ss + 1, !cut_node);
 
                     int bonus = score <= alpha ? -historyBonus(new_depth) : score >= beta ? historyBonus(new_depth) : 0;
@@ -545,7 +549,7 @@ namespace Astra
                 score = -negamax(new_depth, -alpha - 1, -alpha, ss + 1, !cut_node);
 
             // principal variation search
-            if (pv_node && ((score > alpha && score < beta) || made_moves == 1))
+            if (pv_node && (score > alpha || made_moves == 1))
                 score = -negamax(new_depth, -beta, -alpha, ss + 1, false);
 
             board.unmakeMove(move);
@@ -657,7 +661,7 @@ namespace Astra
         Move best_move = NO_MOVE;
         Move move = NO_MOVE;
 
-        while ((move = mp.nextMove(false)) != NO_MOVE)
+        while ((move = mp.nextMove()) != NO_MOVE)
         {
             bool is_cap = board.isCapture(move);
 

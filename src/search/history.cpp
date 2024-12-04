@@ -6,7 +6,7 @@
 
 namespace Astra
 {
-    PARAM(history_mult, 167, 100, 200, 10);
+    PARAM(history_mult, 155, 100, 200, 10);
     PARAM(history_minus, 23, 10, 100, 15);
     PARAM(max_history_bonus, 1715, 1100, 1800, 50);
 

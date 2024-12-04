@@ -33,7 +33,7 @@ namespace Astra
     public:
         MovePicker(SearchType st, Board &board, History &history, Stack *ss, Move &tt_move, bool in_check = false, bool gen_checks = true);
 
-        Move nextMove(bool skip_quiets);
+        Move nextMove();
 
         int getMoveCount() { return ml_size; }
         

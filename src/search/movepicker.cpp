@@ -19,7 +19,7 @@ namespace Astra
         scoreMoves();
     }
 
-    Move MovePicker::nextMove(bool skip_quiets)
+    Move MovePicker::nextMove()
     {
         switch (stage)
         {
@@ -76,9 +76,6 @@ namespace Astra
                 partialInsertionSort(idx);
                 Move move = ml[idx];
                 idx++;
-
-                if (!board.isCapture(move) && skip_quiets)
-                    continue;
 
                 // skip tt move, killers, and counter
                 if (move != ml_tt_move && move != killer1 && move != killer2 && move != counter)
