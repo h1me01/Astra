@@ -348,7 +348,7 @@ namespace Astra
         if (!in_check && !pv_node)
         {
             // reverse futility pruning
-            int rfp_margin = rfp_depth_mult * (depth - improving);
+            int rfp_margin = std::max(rfp_depth_mult * (depth - improving), 25);
             if (!ss->skipped && depth <= rfp_depth && eval < VALUE_TB_WIN_IN_MAX_PLY && eval - rfp_margin >= beta)
                 return (eval + beta) / 2;
 
