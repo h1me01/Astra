@@ -37,8 +37,7 @@ namespace Astra
 
     PARAM(hp_margin, 4488, 2500, 5000, 400);
     PARAM(hp_div, 6701, 5000, 8500, 400);
-    PARAM(hp_depth, 5, 4, 6, 1);
-    PARAM(hbonus_margin, 68, 65, 110, 10);
+    PARAM(hbonus_margin, 68, 65, 80, 5);
 
     PARAM(qfp_margin, 99, 60, 150, 15);
 
@@ -461,7 +460,7 @@ namespace Astra
                         skip_quiets = true;
 
                     // history pruning
-                    if (history_score < -hp_margin * depth && lmr_depth < hp_depth) 
+                    if (history_score < -hp_margin * depth && lmr_depth < 5) 
                         continue;
 
                     // futility pruning
@@ -492,7 +491,7 @@ namespace Astra
             // singular extensions
             if (!root_node && tt_hit && depth >= 6 
                 && !ss->skipped && ent.move == move && ent.depth >= depth - 3 
-                && ent.bound & LOWER_BOUND && std::abs(tt_score) < VALUE_TB_WIN_IN_MAX_PLY)
+                && (ent.bound & LOWER_BOUND) && std::abs(tt_score) < VALUE_TB_WIN_IN_MAX_PLY)
             {
                 Score sbeta = tt_score - 3 * depth;
                 int sdepth = (depth - 1) / 2;
