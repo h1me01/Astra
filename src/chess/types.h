@@ -120,10 +120,9 @@ namespace Chess
         RANK_8
     };
 
-    enum
+    enum : Score
     {
         VALUE_DRAW = 0,
-
         VALUE_MATE = 32000,
 
         VALUE_INFINITE = 32001,

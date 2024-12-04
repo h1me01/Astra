@@ -204,6 +204,7 @@ namespace Astra
 
         const Color stm = board.getTurn();
         const bool in_check = board.inCheck();
+        const int orig_alpha = alpha;
 
         // dive into quiescence search if depth is less than 1
         if (depth <= 0)
@@ -251,12 +252,8 @@ namespace Astra
         const Score tt_score = tt_hit ? scoreFromTT(ent.score, ss->ply) : Score(VALUE_NONE);
 
         if (!pv_node && !ss->skipped && tt_hit && ent.depth >= depth && tt_score != VALUE_NONE)
-        {
-            if (ent.bound == EXACT_BOUND || 
-                (ent.bound == LOWER_BOUND && tt_score >= beta) || 
-                (ent.bound == UPPER_BOUND && tt_score <= alpha))
+            if (ent.bound & (tt_score >= beta ? LOWER_BOUND : UPPER_BOUND))
                 return tt_score;
-        }
 
         // reset some variables
         (ss + 1)->skipped = NO_MOVE;
@@ -322,13 +319,8 @@ namespace Astra
 
                 ss->static_eval = eval;
 
-                if (tt_score != VALUE_NONE)
-                {
-                    if (ent.bound == EXACT_BOUND || 
-                        (ent.bound == LOWER_BOUND && eval < tt_score) || 
-                        (ent.bound == UPPER_BOUND && eval > tt_score))
-                        eval = tt_score;
-                }
+                if (tt_score != VALUE_NONE && (ent.bound & (tt_score > eval ? LOWER_BOUND : UPPER_BOUND)))
+                    eval = tt_score;
             }
             else if (!ss->skipped)
             {
@@ -527,7 +519,7 @@ namespace Astra
                 r += is_ttmove_cap;
                 // increase when not improving
                 r += !improving;
-                // increase when expected to fail high
+                // increase when in a cut node
                 r += 2 * cut_node;
                 // decrease when in pv node
                 r -= pv_node;
@@ -591,14 +583,7 @@ namespace Astra
         // store in transposition table
         if (!ss->skipped)
         {
-            Bound bound;
-            if (best_score >= beta)
-                bound = LOWER_BOUND;
-            else if (pv_node && best_move != NO_MOVE)
-                bound = EXACT_BOUND;
-            else
-                bound = UPPER_BOUND;
-
+            Bound bound = best_score >= beta ? LOWER_BOUND : best_score <= orig_alpha ? UPPER_BOUND : EXACT_BOUND;
             tt.store(hash, best_move, scoreToTT(best_score, ss->ply), depth, bound);
         }
 
@@ -631,13 +616,8 @@ namespace Astra
         bool tt_hit = tt.lookup(ent, hash);
         const Score tt_score = tt_hit ? scoreFromTT(ent.score, ss->ply) : Score(VALUE_NONE);
 
-        if (!pv_node && tt_hit && tt_score != VALUE_NONE)
-        {
-            if (ent.bound == EXACT_BOUND || 
-                (ent.bound == LOWER_BOUND && tt_score >= beta) || 
-                (ent.bound == UPPER_BOUND && tt_score <= alpha))
-                return tt_score;
-        }
+        if (!pv_node && tt_hit && tt_score != VALUE_NONE && (ent.bound & (tt_score >= beta ? LOWER_BOUND : UPPER_BOUND)))
+            return tt_score;
 
         // set eval and static eval
         if (in_check)
@@ -653,13 +633,8 @@ namespace Astra
 
                 ss->static_eval = eval;
 
-                if (tt_score != VALUE_NONE)
-                {
-                    if (ent.bound == EXACT_BOUND || 
-                        (ent.bound == LOWER_BOUND && eval < tt_score) || 
-                        (ent.bound == UPPER_BOUND && eval > tt_score))
-                        eval = tt_score;
-                }
+                if (tt_score != VALUE_NONE && (ent.bound & (tt_score > eval ? LOWER_BOUND : UPPER_BOUND)))
+                    eval = tt_score;
             }
             else
             {
@@ -722,12 +697,12 @@ namespace Astra
                     break; // cut-off
             }
 
-            if (best_score > -VALUE_TB_WIN_IN_MAX_PLY && !is_cap) 
+            if (best_score > -VALUE_TB_WIN_IN_MAX_PLY && in_check && !is_cap) 
                 break;
         }
 
-        if (mp.getMoveCount() == 0)
-            return in_check ? -VALUE_MATE + ss->ply : VALUE_DRAW;
+        if (mp.getMoveCount() == 0 && in_check)
+            return -VALUE_MATE + ss->ply;
 
         if (best_score >= beta && abs(best_score) < VALUE_TB_WIN_IN_MAX_PLY)
             best_score = (best_score + beta) / 2;

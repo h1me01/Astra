@@ -9,10 +9,10 @@ namespace Astra
 {
     enum Bound
     {
-        NO_BOUND,
-        UPPER_BOUND,
-        LOWER_BOUND,
-        EXACT_BOUND
+        NO_BOUND = 0,
+        LOWER_BOUND = 1,
+        UPPER_BOUND = 2,
+        EXACT_BOUND = 3
     };
 
     struct TTEntry
