@@ -10,34 +10,34 @@
 namespace Astra
 {
     // search parameters
-    PARAM(lmr_base, 100, 50, 120, 10);
-    PARAM(lmr_div, 191, 150, 200, 10);
+     PARAM(lmr_base, 100, 50, 120, 10);
+    PARAM(lmr_div, 197, 150, 200, 10);
 
     PARAM(asp_depth, 8, 5, 9, 1);
     PARAM(asp_window, 15, 5, 40, 5);
 
-    PARAM(rzr_depth, 4, 3, 5, 1);
-    PARAM(rzr_depth_mult, 155, 150, 250, 15);
+    PARAM(rzr_depth, 5, 3, 5, 1);
+    PARAM(rzr_depth_mult, 154, 150, 250, 15);
 
     PARAM(rfp_depth, 9, 9, 11, 1);
-    PARAM(rfp_depth_mult, 76, 60, 110, 12);
+    PARAM(rfp_depth_mult, 74, 60, 110, 12);
 
     PARAM(nmp_min, 4, 3, 6, 1);
     PARAM(nmp_depth_div, 5, 3, 15, 1);
-    PARAM(nmp_div, 235, 150, 250, 20);
+    PARAM(nmp_div, 218, 150, 250, 20);
 
-    PARAM(probcut_margin, 169, 130, 180, 20);
+    PARAM(probcut_margin, 180, 130, 180, 20);
 
-    PARAM(see_cap_margin, 101, 70, 120, 10);
-    PARAM(see_quiet_margin, 94, 70, 120, 10);
+    PARAM(see_cap_margin, 91, 70, 120, 10);
+    PARAM(see_quiet_margin, 96, 70, 120, 10);
 
     PARAM(fp_depth, 10, 9, 11, 1);
-    PARAM(fp_base, 124, 120, 180, 15);
-    PARAM(fp_mult, 121, 70, 150, 10);
+    PARAM(fp_base, 133, 120, 180, 15);
+    PARAM(fp_mult, 123, 70, 150, 10);
 
-    PARAM(hp_margin, 4488, 2500, 5000, 400);
-    PARAM(hp_div, 6701, 5000, 8500, 400);
-    PARAM(hbonus_margin, 68, 65, 80, 5);
+    PARAM(hp_margin, 4489, 2500, 5000, 400);
+    PARAM(hp_div, 7035, 5000, 8500, 400);
+    PARAM(hbonus_margin, 67, 65, 80, 5);
 
     PARAM(qfp_margin, 99, 60, 150, 15);
 
@@ -642,14 +642,14 @@ namespace Astra
                 tt.store(hash, NO_MOVE, scoreToTT(eval, ss->ply), -1, NO_BOUND);
             }
 
-            // stand pat
-            if (eval >= beta)
-                return eval;
-            if (eval > alpha)
-                alpha = eval;
-
             best_score = eval;
             futility = eval + qfp_margin;
+
+            // stand pat
+            if (best_score >= beta)
+                return best_score;
+            if (best_score > alpha)
+                alpha = best_score;
         }
 
         MovePicker mp(Q_SEARCH, board, history, ss, ent.move, in_check, depth >= -1);
