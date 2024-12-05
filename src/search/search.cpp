@@ -10,38 +10,38 @@
 namespace Astra
 {
     // search parameters
-    PARAM(lmr_base, 98, 50, 120, 10);
-    PARAM(lmr_div, 177, 150, 200, 10);
+    PARAM(lmr_base, 93, 50, 120, 10);
+    PARAM(lmr_div, 188, 150, 200, 10);
 
     PARAM(asp_depth, 9, 5, 9, 1);
-    PARAM(asp_window, 10, 5, 40, 5);
+    PARAM(asp_window, 12, 5, 40, 5);
 
-    PARAM(rzr_depth, 5, 3, 5, 1);
-    PARAM(rzr_depth_mult, 173, 150, 250, 15);
+    PARAM(rzr_depth, 3, 3, 5, 1);
+    PARAM(rzr_depth_mult, 184, 150, 250, 15);
 
-    PARAM(rfp_depth, 9, 9, 11, 1);
-    PARAM(rfp_depth_mult, 74, 60, 110, 12);
+    PARAM(rfp_depth, 10, 9, 11, 1);
+    PARAM(rfp_depth_mult, 66, 60, 110, 12);
 
-    PARAM(nmp_min, 3, 3, 6, 1);
+    PARAM(nmp_min, 6, 3, 6, 1);
     PARAM(nmp_depth_div, 5, 3, 15, 1);
-    PARAM(nmp_div, 215, 150, 250, 20);
+    PARAM(nmp_div, 203, 150, 250, 20);
 
-    PARAM(probcut_margin, 136, 130, 180, 20);
+    PARAM(probcut_margin, 153, 130, 180, 20);
 
-    PARAM(see_cap_margin, 97, 70, 120, 10);
-    PARAM(see_quiet_margin, 91, 70, 120, 10);
+    PARAM(see_cap_margin, 94, 70, 120, 10);
+    PARAM(see_quiet_margin, 103, 70, 120, 10);
 
-    PARAM(fp_depth, 9, 9, 11, 1);
-    PARAM(fp_base, 149, 120, 180, 15);
-    PARAM(fp_mult, 105, 70, 150, 10);
+    PARAM(fp_depth, 10, 9, 11, 1);
+    PARAM(fp_base, 171, 120, 180, 15);
+    PARAM(fp_mult, 128, 70, 150, 10);
 
-    PARAM(zws_margin, 75, 60, 90, 8);
+    PARAM(zws_margin, 72, 60, 90, 8);
 
-    PARAM(hp_margin, 4489, 2500, 5000, 400);
-    PARAM(hp_div, 7035, 5000, 8500, 400);
-    PARAM(hbonus_margin, 67, 65, 80, 5);
+    PARAM(hp_margin, 4678, 2500, 5000, 400);
+    PARAM(hp_div, 7129, 5000, 8500, 400);
+    PARAM(hbonus_margin, 68, 65, 80, 5);
 
-    PARAM(qfp_margin, 99, 60, 150, 15);
+    PARAM(qfp_margin, 90, 60, 150, 15);
 
     // search helper
 
@@ -94,8 +94,6 @@ namespace Astra
             (ss + i)->ply = i;
 
         int avg_eval = 0;
-
-        int best_move_changes = 0;
         Score previous_result = VALUE_NONE;
 
         Move best_move = NO_MOVE;
@@ -107,9 +105,7 @@ namespace Astra
             if (isLimitReached(depth))
                 break;
 
-            best_move_changes = best_move != pv_table[0][0];
             avg_eval += result;
-
             best_move = pv_table[0][0];
 
             if (id == 0)
@@ -127,10 +123,6 @@ namespace Astra
                 // increase time if eval is decreasing
                 if (result > -200 && result - previous_result < -20)
                     limit.time.optimum *= 1.10;
-
-                // increase optimum time if best move changes often
-                if (best_move_changes > 4)
-                    limit.time.optimum = limit.time.max * 0.75;
 
                 // stop search if more than 75% of our max time is reached
                 if (depth > 10 && tm.elapsedTime() > limit.time.max * 0.75)
@@ -331,27 +323,27 @@ namespace Astra
             }
 
             // check for improvement
-            if (ss->ply >= 2 && ss->static_eval != VALUE_NONE)
+            if (ss->static_eval != VALUE_NONE)
             {
-                // if previous plies were in a check, consider it also an imrpvement
-                if (ss->ply >= 4 && (ss - 2)->static_eval == VALUE_NONE)
+                if ((ss - 2)->static_eval == VALUE_NONE)
                     // if ss - 2 eval was not calculated, use ss - 4 eval
-                    improving = ss->static_eval > (ss - 4)->static_eval || (ss - 4)->static_eval == VALUE_NONE;
-                else
-                    improving = ss->static_eval > (ss - 2)->static_eval || (ss - 2)->static_eval == VALUE_NONE;
+                    improving = ss->static_eval > (ss - 2)->static_eval;
+                else if ((ss - 4)->static_eval != VALUE_NONE)
+                    improving = ss->static_eval > (ss - 4)->static_eval;
             }
         }
 
         // internal iterative reduction
-        if (!in_check && !ss->skipped && !tt_hit && depth >= 4 && (pv_node || cut_node))
+        if (!in_check && !tt_hit && depth >= 4 && (pv_node || cut_node))
             depth--;
 
         // only use pruning when not in check and pv node
         if (!in_check && !pv_node)
         {
+            assert(eval != VALUE_NONE);
             // reverse futility pruning
             int rfp_margin = std::max(rfp_depth_mult * (depth - improving), 20);
-            if (!ss->skipped && depth <= rfp_depth && eval < VALUE_TB_WIN_IN_MAX_PLY && eval - rfp_margin >= beta)
+            if (depth <= rfp_depth && eval < VALUE_TB_WIN_IN_MAX_PLY && eval - rfp_margin >= beta)
                 return (eval + beta) / 2;
 
             // razoring
@@ -493,16 +485,19 @@ namespace Astra
                 Score score = negamax(sdepth, sbeta - 1, sbeta, ss, cut_node);
                 ss->skipped = NO_MOVE;
 
-                if (score < sbeta)
-                    extension = 1;
+                if (score < sbeta) 
+                {
+                    if (!pv_node && score < sbeta - 14)
+                        extension = 2 + (!is_cap && score < sbeta - 48);
+                    else 
+                        extension = 1;
+                }
                 else if (sbeta >= beta)
                     return sbeta;
                 else if (tt_score >= beta)
                     extension = -2 + pv_node;
                 else if (cut_node)
                     extension = -2;
-                else if (tt_score <= alpha)
-                    extension = -1;
             }
 
             int new_depth = depth - 1 + extension;
@@ -514,7 +509,7 @@ namespace Astra
             Score score = VALUE_NONE;
 
             // late move reduction
-            if (depth > 1 && made_moves > 1 && !in_check)
+            if (depth > 1 && made_moves > 1 && !(pv_node && in_check))
             {
                 // increase when tt move is a capture
                 r += is_ttmove_cap;
