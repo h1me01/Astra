@@ -58,7 +58,7 @@ namespace Astra
         {
             if ((bound == EXACT_BOUND) || 
                 (entries[idx].hash != hash) ||
-                (entries[idx].getAge() != current_age) || 
+                (entries[idx].age != current_age) || 
                 (entries[idx].hash == hash && entries[idx].depth <= depth))
             {
                 entries[idx] = TTEntry(hash, depth, move, score, bound);

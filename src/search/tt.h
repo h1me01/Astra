@@ -28,9 +28,6 @@ namespace Astra
 
         TTEntry(U64 hash, int depth, Move move, Score score, Bound bound) :
             hash(hash), depth(depth), move(move), score(score), bound(bound) { }
-
-        uint8_t getAge() const { return age;}
-        void setAge(const uint8_t age) { this->age = age; }
     };
 
     class TTable

@@ -698,8 +698,8 @@ namespace Astra
                 break;
         }
 
-        if (mp.getMoveCount() == 0 && in_check)
-            return -VALUE_MATE + ss->ply;
+        if (mp.getMoveCount() == 0)
+            return in_check ? -VALUE_MATE + ss->ply : VALUE_DRAW;
 
         if (best_score >= beta && abs(best_score) < VALUE_TB_WIN_IN_MAX_PLY)
             best_score = (best_score + beta) / 2;
