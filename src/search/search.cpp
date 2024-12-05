@@ -86,7 +86,7 @@ namespace Astra
             tt.incrementAge();
 
         Stack stack[MAX_PLY + 6];
-        Stack *ss = stack + 6; // +6 to avoid stack underflow (history accesses ss - 2)
+        Stack *ss = stack + 6; // +6 for history
 
         for (int i = 6; i > 0; --i)
             (ss - i)->ply = i;
@@ -142,7 +142,6 @@ namespace Astra
         Score alpha = -VALUE_MATE;
         Score beta = VALUE_MATE;
 
-        // only use aspiration window when depth is higher or equal to 6
         int window = asp_window;
         if (depth >= asp_depth)
         {
