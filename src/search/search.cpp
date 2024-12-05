@@ -94,6 +94,7 @@ namespace Astra
             (ss + i)->ply = i;
 
         int avg_eval = 0;
+        int move_changes = 0;
         Score previous_result = VALUE_NONE;
 
         Move best_move = NO_MOVE;
@@ -108,13 +109,9 @@ namespace Astra
             avg_eval += result;
             best_move = pv_table[0][0];
 
-            if (id == 0)
+            if (id == 0 && depth >= 5 && limit.time.optimum)
             {
-                printUciInfo(result, depth, pv_table[0]);
-
-                // skip time managament if no time is set
-                if (!limit.time.optimum || !limit.time.max)
-                    continue;
+                move_changes += (pv_table[0][0] != best_move);
 
                 // increase time if eval is increasing
                 if (result + 30 < avg_eval / depth)
@@ -124,8 +121,12 @@ namespace Astra
                 if (result > -200 && result - previous_result < -20)
                     limit.time.optimum *= 1.10;
 
+                // increase optimum time if best move changes often
+                if (move_changes > 4) 
+                    limit.time.optimum = limit.time.max * 0.75;
+
                 // stop search if more than 75% of our max time is reached
-                if (depth > 10 && tm.elapsedTime() > limit.time.max * 0.75)
+                if (depth > 10 && tm.elapsedTime() > limit.time.max * 0.75) 
                     break;
             }
         }
@@ -175,6 +176,9 @@ namespace Astra
 
             window += window / 3.75;
         }
+
+        if (id == 0)
+            printUciInfo(result, depth, pv_table[0]);
 
         return result;
     }
