@@ -37,6 +37,8 @@ namespace Astra
 
         int getMoveCount() { return ml_size; }
         
+        Move ml_tt_move = NO_MOVE;
+
     private:
         int stage = TT;
 
@@ -47,7 +49,6 @@ namespace Astra
         MoveList ml;
 
         Move tt_move = NO_MOVE;
-        Move ml_tt_move = NO_MOVE;
         
         Move killer1 = NO_MOVE;
         Move killer2 = NO_MOVE;
