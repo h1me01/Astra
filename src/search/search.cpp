@@ -10,11 +10,11 @@
 namespace Astra
 {
     // search parameters
-    PARAM(lmr_base, 109, 50, 120, 10);
+    PARAM(lmr_base, 109, 80, 120, 10);
     PARAM(lmr_div, 185, 150, 200, 10);
 
     PARAM(asp_depth, 8, 5, 9, 1);
-    PARAM(asp_window, 5, 5, 30, 5);
+    PARAM(asp_window, 11, 5, 30, 5);
 
     PARAM(rzr_depth, 4, 3, 5, 1);
     PARAM(rzr_depth_mult, 174, 150, 250, 15);
@@ -22,9 +22,9 @@ namespace Astra
     PARAM(rfp_depth, 11, 9, 11, 1);
     PARAM(rfp_depth_mult, 78, 60, 110, 12);
 
-    PARAM(nmp_min, 3, 3, 6, 1);
+    PARAM(nmp_min, 4, 3, 6, 1);
     PARAM(nmp_depth_div, 5, 3, 15, 1);
-    PARAM(nmp_div, 211, 150, 250, 20);
+    PARAM(nmp_div, 211, 190, 235, 10);
 
     PARAM(probcut_margin, 165, 130, 180, 20);
 
@@ -483,7 +483,7 @@ namespace Astra
                 if (score < sbeta) 
                 {
                     if (!pv_node && score < sbeta - 14)
-                        extension = 2 + (!is_cap && score < sbeta - 132);
+                        extension = 2;
                     else 
                         extension = 1;
                 }
