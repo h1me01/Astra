@@ -323,14 +323,10 @@ namespace Astra
             }
 
             // check for improvement
-            if (ss->static_eval != VALUE_NONE)
-            {
-                if ((ss - 2)->static_eval == VALUE_NONE)
-                    // if ss - 2 eval was not calculated, use ss - 4 eval
-                    improving = ss->static_eval > (ss - 2)->static_eval;
-                else if ((ss - 4)->static_eval != VALUE_NONE)
-                    improving = ss->static_eval > (ss - 4)->static_eval;
-            }
+            if ((ss - 2)->static_eval != VALUE_NONE)
+                improving = ss->static_eval > (ss - 2)->static_eval;
+            else if ((ss - 4)->static_eval != VALUE_NONE)
+                improving = ss->static_eval > (ss - 4)->static_eval;
         }
 
         // internal iterative reduction
@@ -346,10 +342,10 @@ namespace Astra
                 return (eval + beta) / 2;
 
             // razoring
-            if (depth <= rzr_depth && eval + rzr_depth_mult * depth <= alpha)
+            if (depth <= rzr_depth && eval + rzr_depth_mult * depth < alpha)
             {
                 Score score = qSearch(0, alpha, beta, ss);
-                if (score <= alpha)
+                if (score < alpha)
                     return score;
             }
 
