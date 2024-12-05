@@ -340,7 +340,6 @@ namespace Astra
         // only use pruning when not in check and pv node
         if (!in_check && !pv_node)
         {
-            assert(eval != VALUE_NONE);
             // reverse futility pruning
             int rfp_margin = std::max(rfp_depth_mult * (depth - improving), 20);
             if (depth <= rfp_depth && eval < VALUE_TB_WIN_IN_MAX_PLY && eval - rfp_margin >= beta)
