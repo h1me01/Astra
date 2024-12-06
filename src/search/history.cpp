@@ -6,9 +6,9 @@
 
 namespace Astra
 {
-    PARAM(history_mult, 155, 130, 180, 8);
+    PARAM(history_mult, 152, 130, 180, 8);
     PARAM(history_minus, 29, 10, 50, 10);
-    PARAM(max_history_bonus, 1657, 1500, 1800, 50);
+    PARAM(max_history_bonus, 1645, 1500, 1800, 50);
 
     int historyBonus(int depth)
     {
@@ -90,27 +90,27 @@ namespace Astra
     void History::updateCH(Board &board, Move &move, int bonus)
     {
         PieceType captured = move.type() == EN_PASSANT ? PAWN : typeOf(board.pieceAt(move.to()));
-        Piece curr_piece = board.pieceAt(move.from());
+        Piece p = board.pieceAt(move.from());
 
         assert(captured != NO_PIECE_TYPE);
-        assert(curr_piece != NO_PIECE);
+        assert(p != NO_PIECE);
 
-        int16_t &score = capt_history[curr_piece][move.to()][captured];
+        int16_t &score = capt_history[p][move.to()][captured];
         score += bonus - score * std::abs(bonus) / 16384;
     }
 
     void History::updateContH(Board &board, Move &move, Stack *ss, int bonus)
     {
-        Piece curr_piece = board.pieceAt(move.from());
-        if (curr_piece == NO_PIECE)
-            curr_piece = board.pieceAt(move.to());
+        Piece p = board.pieceAt(move.from());
+        if (p == NO_PIECE)
+            p = board.pieceAt(move.to());
 
-        assert(curr_piece != NO_PIECE);
+        assert(p != NO_PIECE);
 
         for (int offset : {1, 2, 4, 6})
             if ((ss - offset)->curr_move != NO_MOVE)
             {
-                int16_t &score = (ss - offset)->cont_history[curr_piece][move.to()];
+                int16_t &score = (ss - offset)->cont_history[p][move.to()];
                 score += bonus - score * std::abs(bonus) / 16384;
             }
     }

@@ -93,6 +93,7 @@ namespace Astra
                 if (move.score <= 0)
                     break; 
 
+                assert(board.isCapture(move) || board.givesCheck(move));
                 return move;
             }
 
@@ -141,12 +142,12 @@ namespace Astra
                 else if(board.givesCheck(ml[i]) && gen_checks)  
                     ml[i].score = 1e6; 
                 
-                continue; // don't score non checker quiet moves
+                continue; // don't score non-checker quiet moves
             }
 
             if (ml[i] == tt_move && st != PC_SEARCH)
                 ml_tt_move = tt_move; 
-            // add 1e8 when in check so we play captures before quiet moves
+            // add 1e8 in qsearch when in check so we play captures before quiet moves
             else if (captured != NO_PIECE_TYPE) 
                 ml[i].score = in_check * 1e8 + 1e8 * board.see(ml[i], 0) + PIECE_VALUES[captured] + history.getCHScore(board, ml[i]);
             else if (ml[i] == ss->killer1 && !in_check)
