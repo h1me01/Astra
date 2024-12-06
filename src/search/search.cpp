@@ -14,7 +14,7 @@ namespace Astra
     PARAM(lmr_div, 177, 150, 200, 8);
 
     PARAM(asp_depth, 8, 5, 9, 1);
-    PARAM(asp_window, 15, 5, 30, 5);
+    PARAM(asp_window, 10, 5, 30, 5);
 
     PARAM(rzr_depth_mult, 173, 150, 250, 15);
     PARAM(rfp_depth_mult, 77, 60, 110, 10);
@@ -144,8 +144,8 @@ namespace Astra
         int window = asp_window;
         if (depth >= asp_depth)
         {
-            alpha = prev_eval - window;
-            beta = prev_eval + window;
+            alpha = std::max(prev_eval - window, -int(VALUE_MATE));
+            beta = std::min(prev_eval + window, int(VALUE_MATE));
         }
 
         Score result = VALUE_NONE;
@@ -560,7 +560,7 @@ namespace Astra
                         updatePV(ss->ply, best_move);
                 }
 
-                if (score >= beta)
+                if (alpha >= beta)
                 {
                     history.update(board, move, ss, q_moves, q_count, c_moves, c_count, depth + (best_score > beta + hbonus_margin));
                     // cut-off
@@ -688,7 +688,7 @@ namespace Astra
                     best_move = move;
                 }
 
-                if (score >= beta)
+                if (alpha >= beta)
                     break; // cut-off
             }
 

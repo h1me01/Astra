@@ -81,9 +81,7 @@ namespace UCI
                     std::cout << "Invalid value for option: " << name << std::endl;
             }
             else
-            {
                 options[name] = value;
-            }
         }
         else
         {
@@ -174,7 +172,6 @@ namespace UCI
             else if (token == "tune")
             {
                 //Astra::paramsToSpsa();
-                //std::cout << std::endl;
                 Astra::paramsToJSON();
             }
             else if (token == "setoption")
