@@ -10,38 +10,34 @@
 namespace Astra
 {
     // search parameters
-    PARAM(lmr_base, 109, 80, 120, 10);
-    PARAM(lmr_div, 185, 150, 200, 10);
+    PARAM(lmr_base, 98, 80, 120, 8);
+    PARAM(lmr_div, 177, 150, 200, 8);
 
     PARAM(asp_depth, 8, 5, 9, 1);
-    PARAM(asp_window, 11, 5, 30, 5);
+    PARAM(asp_window, 15, 5, 30, 5);
 
-    PARAM(rzr_depth, 4, 3, 5, 1);
-    PARAM(rzr_depth_mult, 174, 150, 250, 15);
+    PARAM(rzr_depth_mult, 173, 150, 250, 15);
+    PARAM(rfp_depth_mult, 77, 60, 110, 10);
 
-    PARAM(rfp_depth, 11, 9, 11, 1);
-    PARAM(rfp_depth_mult, 78, 60, 110, 12);
-
-    PARAM(nmp_min, 4, 3, 6, 1);
+    PARAM(nmp_min, 3, 3, 6, 1);
     PARAM(nmp_depth_div, 5, 3, 15, 1);
-    PARAM(nmp_div, 211, 190, 235, 10);
+    PARAM(nmp_div, 215, 190, 235, 10);
 
-    PARAM(probcut_margin, 165, 130, 180, 20);
+    PARAM(probcut_margin, 147, 130, 180, 20);
 
-    PARAM(see_cap_margin, 96, 70, 120, 10);
-    PARAM(see_quiet_margin, 97, 70, 120, 10);
+    PARAM(see_cap_margin, 97, 70, 120, 10);
+    PARAM(see_quiet_margin, 91, 70, 120, 10);
 
-    PARAM(fp_depth, 10, 9, 11, 1);
-    PARAM(fp_base, 169, 120, 180, 15);
-    PARAM(fp_mult, 128, 70, 150, 10);
+    PARAM(fp_base, 149, 120, 180, 15);
+    PARAM(fp_mult, 105, 70, 150, 10);
 
-    PARAM(zws_margin, 74, 60, 90, 8);
+    PARAM(zws_margin, 64, 60, 90, 8);
 
-    PARAM(hp_margin, 4531, 2500, 5000, 400);
-    PARAM(hp_div, 6803, 5000, 8500, 400);
-    PARAM(hbonus_margin, 66, 65, 80, 5);
+    PARAM(hp_margin, 4577, 2500, 5000, 400);
+    PARAM(hp_div, 7227, 5000, 8500, 400);
+    PARAM(hbonus_margin, 69, 65, 80, 5);
 
-    PARAM(qfp_margin, 96, 60, 150, 15);
+    PARAM(qfp_margin, 65, 60, 150, 15);
 
     // search helper
 
@@ -335,17 +331,20 @@ namespace Astra
         // internal iterative reduction
         if (!in_check && !tt_hit && depth >= 4 && (pv_node || cut_node))
             depth--;
+        // do qsearch if iir reduced depth to 0
+        if (depth <= 0)
+            return qSearch(0, alpha, beta, ss);
 
         // only use pruning when not in check and pv node
         if (!in_check && !pv_node)
         {
             // reverse futility pruning
             int rfp_margin = std::max(rfp_depth_mult * (depth - improving), 20);
-            if (depth <= rfp_depth && eval < VALUE_TB_WIN_IN_MAX_PLY && eval - rfp_margin >= beta)
+            if (depth <= 9 && eval < VALUE_TB_WIN_IN_MAX_PLY && eval - rfp_margin >= beta)
                 return (eval + beta) / 2;
 
             // razoring
-            if (depth <= rzr_depth && eval + rzr_depth_mult * depth < alpha)
+            if (depth <= 5 && eval + rzr_depth_mult * depth < alpha)
             {
                 Score score = qSearch(0, alpha, beta, ss);
                 if (score < alpha)
@@ -436,6 +435,12 @@ namespace Astra
             {
                 int lmr_depth = std::max(1, depth - r);
                 
+                // see pruning
+                int do_see = is_cap ? depth < 6 : lmr_depth < 7;
+                int see_margin = is_cap ? depth * see_cap_margin : lmr_depth * see_quiet_margin;
+                if (do_see && !board.see(move, -see_margin))
+                    continue; 
+
                 if (!is_cap && !isPromotion(move))
                 {
                     // late move pruning
@@ -447,13 +452,9 @@ namespace Astra
                         continue;
 
                     // futility pruning
-                    if (!in_check && lmr_depth <= fp_depth && eval + fp_base + lmr_depth * fp_mult <= alpha) 
+                    if (!in_check && lmr_depth <= 9 && eval + fp_base + lmr_depth * fp_mult <= alpha) 
                         continue;
-                }
-            
-                // see pruning
-                if (!board.see(move, -(is_cap ? depth * see_cap_margin : lmr_depth * see_quiet_margin)))
-                    continue;   
+                }  
             }
 
             if (is_cap && c_count < 32)
@@ -484,12 +485,7 @@ namespace Astra
                 ss->skipped = NO_MOVE;
 
                 if (score < sbeta) 
-                {
-                    if (!pv_node && score < sbeta - 14)
-                        extension = 2;
-                    else 
-                        extension = 1;
-                }
+                    extension = 1;
                 else if (sbeta >= beta)
                     return sbeta;
                 else if (tt_score >= beta)
