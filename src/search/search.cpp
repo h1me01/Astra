@@ -17,18 +17,18 @@ namespace Astra
     PARAM(asp_window, 10, 5, 30, 5);
 
     PARAM(rzr_depth_mult, 173, 150, 250, 15);
-    PARAM(rfp_depth_mult, 77, 60, 110, 10);
+    PARAM(rfp_depth_mult, 77, 60, 110, 8);
 
     PARAM(nmp_min, 3, 3, 6, 1);
     PARAM(nmp_depth_div, 5, 3, 15, 1);
-    PARAM(nmp_div, 215, 190, 235, 10);
+    PARAM(nmp_div, 215, 190, 235, 8);
 
-    PARAM(probcut_margin, 147, 130, 180, 20);
+    PARAM(probcut_margin, 147, 130, 180, 15);
 
-    PARAM(see_cap_margin, 97, 70, 120, 10);
-    PARAM(see_quiet_margin, 91, 70, 120, 10);
+    PARAM(see_cap_margin, 97, 70, 120, 8);
+    PARAM(see_quiet_margin, 91, 70, 120, 8);
 
-    PARAM(fp_base, 149, 120, 180, 15);
+    PARAM(fp_base, 149, 120, 180, 10);
     PARAM(fp_mult, 105, 70, 150, 10);
 
     PARAM(ext_margin, 132, 45, 150, 12);

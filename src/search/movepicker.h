@@ -40,7 +40,8 @@ namespace Astra
         Move ml_tt_move = NO_MOVE;
 
     private:
-        int stage = TT;
+        int idx = 0;
+        Stage stage = TT;
 
         SearchType st;
         Board &board;
@@ -49,16 +50,12 @@ namespace Astra
         MoveList ml;
 
         Move tt_move = NO_MOVE;
-        
         Move killer1 = NO_MOVE;
         Move killer2 = NO_MOVE;
-
         Move counter = NO_MOVE;
 
         bool in_check;
         bool gen_checks;
-
-        int idx = 0;
         int ml_size;
 
         void scoreMoves();
