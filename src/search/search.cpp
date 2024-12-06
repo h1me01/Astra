@@ -334,9 +334,6 @@ namespace Astra
         // internal iterative reduction
         if (!in_check && !tt_hit && depth >= 4 && (pv_node || cut_node))
             depth--;
-        // do qsearch if iir reduced depth to 0
-        if (depth <= 0)
-            return qSearch(0, alpha, beta, ss);
 
         // only use pruning when not in check and pv node
         if (!in_check && !pv_node)
@@ -377,7 +374,7 @@ namespace Astra
 
             // probcut
             int beta_cut = beta + probcut_margin;
-            if (depth > 3 && std::abs(beta) < VALUE_TB_WIN_IN_MAX_PLY 
+            if (depth > 4 && std::abs(beta) < VALUE_TB_WIN_IN_MAX_PLY 
                 && !(ent.depth >= depth - 3 && tt_score != VALUE_NONE && tt_score < beta_cut))
             {
                 MovePicker movepicker(PC_SEARCH, board, history, ss, ent.move);
@@ -437,9 +434,8 @@ namespace Astra
                 int lmr_depth = std::max(1, depth - r);
                 
                 // see pruning
-                int do_see = is_cap ? depth < 6 : lmr_depth < 7;
                 int see_margin = is_cap ? depth * see_cap_margin : lmr_depth * see_quiet_margin;
-                if (do_see && !board.see(move, -see_margin))
+                if (!board.see(move, -see_margin))
                     continue; 
 
                 if (!is_cap && !isPromotion(move))
@@ -508,7 +504,7 @@ namespace Astra
 
             Score score = VALUE_NONE;
 
-            // late move reduction
+            // late move reductions
             if (depth > 1 && made_moves > 1 && !(pv_node && in_check))
             {
                 // increase when tt move is a capture or promotion
