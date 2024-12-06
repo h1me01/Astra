@@ -31,6 +31,8 @@ namespace Astra
     PARAM(fp_base, 149, 120, 180, 15);
     PARAM(fp_mult, 105, 70, 150, 10);
 
+    PARAM(ext_margin, 132, 45, 150, 12);
+
     PARAM(zws_margin, 64, 60, 90, 8);
 
     PARAM(hp_margin, 4577, 2500, 5000, 400);
@@ -96,6 +98,7 @@ namespace Astra
         Move best_move = NO_MOVE;
         for (int depth = 1; depth < MAX_PLY; depth++)
         {
+            root_depth = depth;
             Score result = aspSearch(depth, previous_result, ss);
             previous_result = result;
 
@@ -404,8 +407,6 @@ namespace Astra
 
         MovePicker mp(N_SEARCH, board, history, ss, ent.move);
 
-        bool is_ttmove_cap = board.isCapture(ent.move);
-
         int made_moves = 0, q_count = 0, c_count = 0;
 
         Move q_moves[64];
@@ -473,7 +474,7 @@ namespace Astra
             int extension = 0;
 
             // singular extensions
-            if (!root_node && tt_hit && depth >= 6 
+            if (!root_node && depth >= 6 && ss->ply < 2 * root_depth
                 && !ss->skipped && ent.move == move && ent.depth >= depth - 3 
                 && (ent.bound & LOWER_BOUND) && std::abs(tt_score) < VALUE_TB_WIN_IN_MAX_PLY)
             {
@@ -484,8 +485,13 @@ namespace Astra
                 Score score = negamax(sdepth, sbeta - 1, sbeta, ss, cut_node);
                 ss->skipped = NO_MOVE;
 
-                if (score < sbeta) 
-                    extension = 1;
+                if (score < sbeta)  
+                {
+                    if (!pv_node && score < sbeta - 14)
+                        extension = 2 + (!is_cap && !isPromotion(move) && score < sbeta - ext_margin);
+                    else 
+                        extension = 1;
+                }
                 else if (sbeta >= beta)
                     return sbeta;
                 else if (tt_score >= beta)
@@ -505,8 +511,8 @@ namespace Astra
             // late move reduction
             if (depth > 1 && made_moves > 1 && !(pv_node && in_check))
             {
-                // increase when tt move is a capture
-                r += is_ttmove_cap;
+                // increase when tt move is a capture or promotion
+                r += board.isCapture(ent.move) || isPromotion(ent.move);
                 // increase when not improving
                 r += !improving;
                 // increase when in a cut node

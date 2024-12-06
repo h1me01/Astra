@@ -53,6 +53,7 @@ namespace Astra
         Move start();
 
     private:
+        int root_depth = 0;
         PVLine pv_table[MAX_PLY + 1];
        
         TimeMan tm; 
