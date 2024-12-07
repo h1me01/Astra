@@ -7,7 +7,6 @@ namespace Chess
 {
     constexpr U64 ooBlockersMask(Color c) { return c == WHITE ? 0x60 : 0x6000000000000000; }
     constexpr U64 oooBlockersMask(Color c) { return c == WHITE ? 0xe : 0xE00000000000000; }
-
     constexpr U64 ignoreOOODanger(Color c) { return c == WHITE ? 0x2 : 0x200000000000000; }
 
     // helper to generate quiet/capture moves
@@ -107,16 +106,12 @@ namespace Chess
 
         // checks if king would be in check if it moved to the castling square
         U64 possible_checks = (occ | board.danger) & ooBlockersMask(Us);
-        
-        bool allowed = board.history[ply].castle_rights.kingSide(Us);
-        if (!possible_checks && allowed)
+        if (!possible_checks && board.history[ply].castle_rights.kingSide(Us))
             *moves++ = Us == WHITE ? Move(e1, g1, CASTLING) : Move(e8, g8, CASTLING);
 
         // ignoreLongCastlingDanger is used to get rid of the danger on the possibleChecks or b8 square
         possible_checks = ((occ | (board.danger & ~ignoreOOODanger(Us))) & oooBlockersMask(Us));
-
-        allowed = board.history[ply].castle_rights.queenSide(Us);
-        if (!possible_checks && allowed)
+        if (!possible_checks && board.history[ply].castle_rights.queenSide(Us))
             *moves++ = Us == WHITE ? Move(e1, c1, CASTLING) : Move(e8, c8, CASTLING);
 
         return moves;

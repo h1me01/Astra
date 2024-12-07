@@ -125,13 +125,12 @@ namespace Chess
         bool isDraw() const;
 
         bool see(Move& move, int threshold);
-
     private:
-        U64 piece_bb[NUM_PIECES + 1];
+        U64 piece_bb[NUM_PIECES];
         Piece board[NUM_SQUARES];
         Color stm;
         U64 hash;
-        int game_ply;
+        int curr_ply;
         NNUE::Accumulators accumulators;
 
         void putPiece(Piece p, Square s, bool update_nnue);
@@ -142,17 +141,20 @@ namespace Chess
     inline U64 Board::getPieceBB(Color c, PieceType pt) const
     {
         assert(pt != NO_PIECE_TYPE);
-        Piece piece = makePiece(c, pt);
-        return piece_bb[piece];
+        return piece_bb[makePiece(c, pt)];
     }
 
-    inline Piece Board::pieceAt(Square s) const { return board[s]; }
+    inline Piece Board::pieceAt(Square s) const 
+    {
+        assert(s >= a1 && s <= h8); 
+        return board[s]; 
+    }
 
     inline Color Board::getTurn() const { return stm; }
 
-    inline int Board::getPly() const { return game_ply; }
+    inline int Board::getPly() const { return curr_ply; }
 
-    inline int Board::halfMoveClock() const { return history[game_ply].half_move_clock; }
+    inline int Board::halfMoveClock() const { return history[curr_ply].half_move_clock; }
 
     inline U64 Board::getHash() const { return hash; }
 
@@ -172,6 +174,9 @@ namespace Chess
 
     inline void Board::putPiece(Piece p, Square s, bool update_nnue)
     {
+        assert(p != NO_PIECE);
+        assert(s >= a1 && s <= h8);
+
         board[s] = p;
         piece_bb[p] |= SQUARE_BB[s];
 
@@ -181,7 +186,11 @@ namespace Chess
 
     inline void Board::removePiece(Square s, bool update_nnue)
     {
-        const Piece p = board[s];
+        assert(s >= a1 && s <= h8);
+
+        Piece p = board[s];
+        assert(p != NO_PIECE);
+
         piece_bb[p] ^= SQUARE_BB[s];
         board[s] = NO_PIECE;
 
@@ -191,7 +200,12 @@ namespace Chess
 
     inline void Board::movePiece(Square from, Square to, bool update_nnue)
     {
-        const Piece p = board[from];
+        assert(from >= a1 && from <= h8);
+        assert(to >= a1 && to <= h8);
+        assert(from != to);
+
+        Piece p = board[from];
+        assert(p != NO_PIECE);
 
         piece_bb[p] ^= SQUARE_BB[from] | SQUARE_BB[to];
         board[to] = p;

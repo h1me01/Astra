@@ -442,7 +442,7 @@ namespace Astra
                 if (!board.see(move, -see_margin))
                     continue; 
 
-                if (!is_cap && !isPromotion(move))
+                if (!is_cap && !isProm(move))
                 {
                     // late move pruning
                     if (q_count > (3 + depth * depth) / (2 - improving))
@@ -488,7 +488,7 @@ namespace Astra
                 if (score < sbeta)  
                 {
                     if (!pv_node && score < sbeta - 14)
-                        extension = 2 + (!is_cap && !isPromotion(move) && score < sbeta - ext_margin);
+                        extension = 2 + (!is_cap && !isProm(move) && score < sbeta - ext_margin);
                     else 
                         extension = 1;
                 }
@@ -512,7 +512,7 @@ namespace Astra
             if (depth > 1 && made_moves > 1 && !(pv_node && in_check))
             {
                 // increase when tt move is a capture or promotion
-                r += board.isCapture(ent.move) || isPromotion(ent.move);
+                r += board.isCapture(ent.move) || isProm(ent.move);
                 // increase when not improving
                 r += !improving;
                 // increase when in a cut node

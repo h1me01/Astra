@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <sstream>
+#include <cassert>
 #include "types.h"
 
 namespace Chess
@@ -20,20 +21,15 @@ namespace Chess
     {
         switch (mt)
         {
-        case PR_KNIGHT:
-            return KNIGHT;
-        case PR_BISHOP:
-            return BISHOP;
-        case PR_ROOK:
-            return ROOK;
-        case PR_QUEEN:
-            return QUEEN;
-        default:
-            return NO_PIECE_TYPE;
+        case PR_KNIGHT: return KNIGHT;
+        case PR_BISHOP: return BISHOP;
+        case PR_ROOK: return ROOK;
+        case PR_QUEEN: return QUEEN;
+        default: return NO_PIECE_TYPE;
         }
     }
 
-    inline bool isPromotion(const Move& m) { return m.type() >= PR_KNIGHT; }
+    inline bool isProm(const Move& m) { return m.type() >= PR_KNIGHT; }
 
     // prints the move
     std::ostream& operator<<(std::ostream& os, const Move& m);
@@ -43,8 +39,7 @@ namespace Chess
 
     constexpr Piece makePiece(Color c, PieceType pt)
     {
-        if (pt == NO_PIECE_TYPE)
-            return NO_PIECE;
+        assert(pt != NO_PIECE_TYPE);
         return Piece(pt + 6 * c);
     }
 
@@ -52,23 +47,16 @@ namespace Chess
 
     constexpr Color colorOf(Piece p) {  return p < 6 ? WHITE : BLACK; }
 
-    inline Square& operator++(Square& s)
-    {
-        s = Square(int(s) + 1);
-        return s;
-    }
+    inline Square& operator++(Square& s) { return s = Square(int(s) + 1); }
 
     constexpr Square operator+(Square s, Direction d) { return Square(int(s) + int(d)); }
-
     constexpr Square operator-(Square s, Direction d) { return Square(int(s) - int(d)); }
 
     constexpr Rank rankOf(Square s) { return Rank(s >> 3); }
-
     constexpr File fileOf(Square s) { return File(s & 0b111); }
 
     // gets the diagonal (a1 to h8) of the square
     constexpr int diagOf(Square s) { return 7 + rankOf(s) - fileOf(s); }
-
     // gets the anti-diagonal (h1 to a8) of the square
     constexpr int antiDiagOf(Square s) { return rankOf(s) + fileOf(s); }
 

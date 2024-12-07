@@ -9,8 +9,7 @@ namespace Chess
         {
             for (int file = 0; file < 8; ++file)
             {
-                int s = rank * 8 + file;
-                U64 mask = 1ULL << s;
+                U64 mask = 1ULL << (rank * 8 + file);
                 std::cout << ((b & mask) ? "1 " : "0 ");
             }
             std::cout << std::endl;
@@ -53,14 +52,14 @@ namespace Chess
 
     std::ostream& operator<<(std::ostream& os, const Move& m)
     {
-        if (m.raw() == 0)
+        if (!m)
             os << "NO MOVE";
-        else if (m.raw() == 65) 
+        else if (m == NULL_MOVE) 
             os << "NULL MOVE";
         else
             os << SQSTR[m.from()] << SQSTR[m.to()];
 
-        if (isPromotion(m))
+        if (isProm(m))
         {
             const PieceType pt = typeOfPromotion(m.type());
             os << PIECE_STR[pt + 6];

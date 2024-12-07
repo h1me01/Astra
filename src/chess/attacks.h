@@ -45,7 +45,7 @@ namespace Chess
 
     constexpr U64 PAWN_ATTACKS[NUM_COLORS][NUM_SQUARES] = {
         {
-            // white pawn getAttacks
+            // white pawn attacks
             0x200, 0x500, 0xa00, 0x1400,
             0x2800, 0x5000, 0xa000, 0x4000,
             0x20000, 0x50000, 0xa0000, 0x140000,
@@ -64,7 +64,7 @@ namespace Chess
             0x0, 0x0, 0x0, 0x0,
         },
         {
-            // black pawn getAttacks
+            // black pawn attacks
             0x0, 0x0, 0x0, 0x0,
             0x0, 0x0, 0x0, 0x0,
             0x2, 0x5, 0xa, 0x14,
@@ -135,10 +135,7 @@ namespace Chess
         }
     }
 
-    constexpr U64 pawnAttacks(Color c, Square s)
-    {
-        return PAWN_ATTACKS[c][s];
-    }
+    constexpr U64 pawnAttacks(Color c, Square s) { return PAWN_ATTACKS[c][s]; }
 
 } // namespace Chess
 

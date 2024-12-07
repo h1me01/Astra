@@ -34,7 +34,7 @@ namespace Chess
         WEST = -1,
         NORTH_WEST = 7,
         NORTH_NORTH = 16,
-        SOUTH_SOUTH = -16,
+        SOUTH_SOUTH = -16
     };
 
     enum PieceType
@@ -72,7 +72,7 @@ namespace Chess
         NUM_PIECES = 12
     };
 
-     enum Square
+    enum Square
     {
         a1, b1, c1, d1, e1, f1, g1, h1,
         a2, b2, c2, d2, e2, f2, g2, h2,
@@ -134,13 +134,13 @@ namespace Chess
 
     enum MoveType
     {
-        NORMAL = 0,
-        CASTLING = 1,
-        EN_PASSANT = 2,
-        PR_KNIGHT = 3,
-        PR_BISHOP = 4,
-        PR_ROOK = 5,
-        PR_QUEEN = 6,
+        NORMAL,
+        CASTLING,
+        EN_PASSANT,
+        PR_KNIGHT,
+        PR_BISHOP,
+        PR_ROOK,
+        PR_QUEEN,
     };
 
     // max number of possible legal moves in chess are 218
@@ -160,10 +160,7 @@ namespace Chess
 
         Square to() const { return Square(move & 0x3f); }
         Square from() const { return Square(move >> 6 & 0x3f); }
-
         MoveType type() const { return MoveType(move >> 12); }
-
-        int to_from() const { return move & 0xffff; }
 
         Move &operator=(const Move &m)
         {
@@ -179,7 +176,6 @@ namespace Chess
 
         bool operator==(const Move &m) const { return move == m.move; }
         bool operator!=(const Move &m) const { return move != m.move; }
-
         bool operator!() const { return move == 0; }
 
         int score = 0;
@@ -191,7 +187,6 @@ namespace Chess
         uint16_t move;
     };
 
-    // instead of Move() use this for clarity
     const auto NULL_MOVE = Move(65);
     const auto NO_MOVE = Move();
 

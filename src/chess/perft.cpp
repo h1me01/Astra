@@ -75,9 +75,9 @@ namespace Chess
                 total_time += diff.count();
 
                 if (nodes == testCase.nodes[i])
-                    std::cout << "Test passed!" << std::endl;
+                    std::cout << "Test passed" << std::endl;
                 else
-                    std::cerr << "\033[31mTest failed!\033[0m\n Expected nodes: " << testCase.nodes[i] << std::endl;
+                    std::cerr << "\033[31mTest failed\033[0m\n Expected nodes: " << testCase.nodes[i] << std::endl;
 
                 if (depth >= max_depth)
                     break;

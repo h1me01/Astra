@@ -17,20 +17,35 @@ namespace Astra
 
     int History::getQHScore(Color c, Move &move) const
     {
-        return quiet_history[c][move.from()][move.to()];
+        Square from = move.from();
+        Square to = move.to();
+
+        assert(from >= a1 && from <= h8);
+        assert(to >= a1 && to <= h8);
+        assert(from != to);
+
+        return quiet_history[c][from][to];
     }
 
     int History::getCHScore(const Board &board, Move &move) const
     {
         PieceType captured = move.type() == EN_PASSANT ? PAWN : typeOf(board.pieceAt(move.to()));
-        Piece p = board.pieceAt(move.from());
-        assert(p != NO_PIECE);
+        Piece pc = board.pieceAt(move.from());
+        
+        assert(pc != NO_PIECE);
         assert(captured != NO_PIECE_TYPE);
-        return capt_history[p][move.to()][captured];
+        
+        return capt_history[pc][move.to()][captured];
     }
 
     Move History::getCounterMove(Move prev_move) const
     {
+        Square from = prev_move.from();
+        Square to = prev_move.to();
+
+        assert(from >= a1 && from <= h8);
+        assert(to >= a1 && to <= h8);
+
         return counters[prev_move.from()][prev_move.to()];
     }
 
@@ -90,27 +105,27 @@ namespace Astra
     void History::updateCH(Board &board, Move &move, int bonus)
     {
         PieceType captured = move.type() == EN_PASSANT ? PAWN : typeOf(board.pieceAt(move.to()));
-        Piece p = board.pieceAt(move.from());
+        Piece pc = board.pieceAt(move.from());
 
         assert(captured != NO_PIECE_TYPE);
-        assert(p != NO_PIECE);
+        assert(pc != NO_PIECE);
 
-        int16_t &score = capt_history[p][move.to()][captured];
+        int16_t &score = capt_history[pc][move.to()][captured];
         score += bonus - score * std::abs(bonus) / 16384;
     }
 
     void History::updateContH(Board &board, Move &move, Stack *ss, int bonus)
     {
-        Piece p = board.pieceAt(move.from());
-        if (p == NO_PIECE)
-            p = board.pieceAt(move.to());
+        Piece pc = board.pieceAt(move.from());
+        if (pc == NO_PIECE)
+            pc = board.pieceAt(move.to());
 
-        assert(p != NO_PIECE);
+        assert(pc != NO_PIECE);
 
         for (int offset : {1, 2, 4, 6})
             if ((ss - offset)->curr_move != NO_MOVE)
             {
-                int16_t &score = (ss - offset)->cont_history[p][move.to()];
+                int16_t &score = (ss - offset)->cont_history[pc][move.to()];
                 score += bonus - score * std::abs(bonus) / 16384;
             }
     }

@@ -82,6 +82,7 @@ namespace Astra
                     return move;
             }
 
+            assert(idx == ml_size);
             return NO_MOVE;
         case Q_MOVES:
             while (idx < ml_size)

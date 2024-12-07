@@ -48,18 +48,18 @@ namespace Astra
     {
         U64 idx = hash & mask;
 
-        if (!entries[idx].hash)
+        if (!entries[idx].hash) // save if no entry is present
+
         {
-            // save if no entry is present
             entries[idx] = TTEntry(hash, depth, move, score, bound);
             entries[idx].age = current_age;
         }
         else
         {
-            if ((bound == EXACT_BOUND) || 
-                (entries[idx].hash != hash) ||
-                (entries[idx].age != current_age) || 
-                (entries[idx].hash == hash && entries[idx].depth <= depth))
+            if ((bound == EXACT_BOUND) || // save if exact bound
+                (entries[idx].hash != hash) || // save if hash is different
+                (entries[idx].age != current_age) || // save if age is different
+                (entries[idx].hash == hash && entries[idx].depth <= depth)) // save if depth is greater or equal
             {
                 entries[idx] = TTEntry(hash, depth, move, score, bound);
                 entries[idx].age = current_age;
@@ -76,7 +76,7 @@ namespace Astra
 
     void TTable::prefetch(U64 hash) const
     {
-        __builtin_prefetch(&entries[hash % tt_size]);
+        __builtin_prefetch(&entries[hash & mask]);
     }
 
     int TTable::hashfull() const

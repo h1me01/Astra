@@ -15,9 +15,9 @@ namespace Astra
         U64 queens;
         U64 kings;
         int fmc; // fifty move counter
-        bool any_castling;
         int ep_sq;
         bool stm;
+        bool any_castling;
         bool is_allowed = true;
     };
 
@@ -108,7 +108,7 @@ namespace Astra
         {
             bool is_prom = typeOfPromotion(m.type()) == prom_type;
 
-            if (from == m.from() && to == m.to() && (is_prom || !isPromotion(m)))
+            if (from == m.from() && to == m.to() && (is_prom || !isProm(m)))
                 return {s, m};
         }
 

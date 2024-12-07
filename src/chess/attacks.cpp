@@ -19,7 +19,7 @@ namespace Chess
         for (Square s = a1; s <= h8; ++s)
         {
             const U64 edges = ((MASK_RANK[FILE_A] | MASK_RANK[FILE_H]) & ~MASK_RANK[rankOf(s)]) |
-                ((MASK_FILE[FILE_A] | MASK_FILE[FILE_H]) & ~MASK_FILE[fileOf(s)]);
+                              ((MASK_FILE[FILE_A] | MASK_FILE[FILE_H]) & ~MASK_FILE[fileOf(s)]);
             ROOK_ATTACK_MASKS[s] = (MASK_RANK[rankOf(s)] ^ MASK_FILE[fileOf(s)]) & ~edges;
             ROOK_ATTACK_SHIFTS[s] = 64 - popCount(ROOK_ATTACK_MASKS[s]);
 
@@ -41,7 +41,7 @@ namespace Chess
         for (Square s = a1; s <= h8; ++s)
         {
             const U64 edges = ((MASK_RANK[FILE_A] | MASK_RANK[FILE_H]) & ~MASK_RANK[rankOf(s)]) |
-                ((MASK_FILE[FILE_A] | MASK_FILE[FILE_H]) & ~MASK_FILE[fileOf(s)]);
+                              ((MASK_FILE[FILE_A] | MASK_FILE[FILE_H]) & ~MASK_FILE[fileOf(s)]);
             BISHOP_ATTACK_MASKS[s] = (MASK_DIAGONAL[diagOf(s)] ^ MASK_ANTI_DIAGONAL[antiDiagOf(s)]) & ~edges;
             BISHOP_ATTACK_SHIFTS[s] = 64 - popCount(BISHOP_ATTACK_MASKS[s]);
 
