@@ -11,7 +11,7 @@ namespace Chess
 
         void init()
         {
-            PRNG rng(1070372); //70026072
+            PRNG rng(1070372); 
 
             for (int pc = WHITE_PAWN; pc <= BLACK_KING; pc++)
                 for (int sq = a1; sq <= h8; sq++)
