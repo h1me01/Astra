@@ -378,8 +378,8 @@ namespace Astra
 
             // probcut
             int beta_cut = beta + probcut_margin;
-            if (depth > 4 && std::abs(beta) < VALUE_TB_WIN_IN_MAX_PLY 
-                && !(ent.depth >= depth - 3 && tt_score != VALUE_NONE && tt_score < beta_cut))
+            if (depth > 4 && std::abs(beta) < VALUE_TB_WIN_IN_MAX_PLY && 
+                !(ent.depth >= depth - 3 && tt_score != VALUE_NONE && tt_score < beta_cut))
             {
                 MovePicker movepicker(PC_SEARCH, board, history, ss, ent.move);
 
@@ -421,7 +421,7 @@ namespace Astra
 
             made_moves++;
 
-            bool is_cap = board.isCapture(move);
+            bool is_cap = board.isCap(move);
 
             int history_score;
             if (is_cap)
@@ -512,7 +512,7 @@ namespace Astra
             if (depth > 1 && made_moves > 1 && !(pv_node && in_check))
             {
                 // increase when tt move is a capture or promotion
-                r += board.isCapture(ent.move) || isProm(ent.move);
+                r += board.isCap(ent.move) || isProm(ent.move);
                 // increase when not improving
                 r += !improving;
                 // increase when in a cut node
@@ -658,7 +658,7 @@ namespace Astra
 
         while ((move = mp.nextMove()) != NO_MOVE)
         {
-            bool is_cap = board.isCapture(move);
+            bool is_cap = board.isCap(move);
 
             if (best_score > -VALUE_TB_WIN_IN_MAX_PLY)
             {

@@ -225,7 +225,7 @@ namespace Chess
     // currently only supports quiet moves (used in movepicker)
     bool Board::givesCheck(const Move &m)
     {
-        if (isCapture(m))
+        if (isCap(m))
             return false;
 
         Square from = m.from();

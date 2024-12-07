@@ -45,7 +45,7 @@ namespace Astra
                     break; // done with good captures
                 }
 
-                assert(board.isCapture(move));
+                assert(board.isCap(move));
                 return move;
             }
 
@@ -94,7 +94,7 @@ namespace Astra
                 if (move.score <= 0)
                     break; 
 
-                assert(board.isCapture(move) || board.givesCheck(move));
+                assert(board.isCap(move) || board.givesCheck(move));
                 return move;
             }
 

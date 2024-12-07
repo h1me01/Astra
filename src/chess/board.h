@@ -116,7 +116,7 @@ namespace Chess
 
         bool inCheck() const;
         bool nonPawnMat(Color c) const;
-        bool isCapture(const Move& m) const;
+        bool isCap(const Move& m) const;
         bool givesCheck(const Move& m);
         bool isLegal(const Move& m);
 
@@ -167,7 +167,7 @@ namespace Chess
         return attackersTo(~stm, kingSq(stm), occupancy(WHITE) | occupancy(BLACK));
     }
 
-    inline bool Board::isCapture(const Move &m) const
+    inline bool Board::isCap(const Move &m) const
     {
         return board[m.to()] != NO_PIECE || m.type() == EN_PASSANT;
     }

@@ -54,7 +54,7 @@ namespace Astra
         Color stm = board.getTurn();
         int bonus = historyBonus(depth);
 
-        if (!board.isCapture(best))
+        if (!board.isCap(best))
         {
             Move prev_move = (ss - 1)->curr_move;
             if (prev_move != NO_MOVE)
