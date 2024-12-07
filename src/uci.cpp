@@ -180,7 +180,7 @@ namespace UCI
                 options.apply();
             }
             else if (token == "d")
-                board.print(board.getTurn());
+                board.print();
             else if (token == "stop")
                 Astra::threads.stopAll();
             else if (token == "quit")

@@ -114,7 +114,7 @@ namespace Chess
         accumulators = other.accumulators;
     }
 
-    void Board::print(Color c) const
+    void Board::print()
     {
         std::cout << "\n +---+---+---+---+---+---+---+---+\n";
 
@@ -123,7 +123,7 @@ namespace Chess
             for (int f = FILE_A; f <= FILE_H; ++f)
             {
                 int s;
-                if (c == WHITE)
+                if (stm == WHITE)
                     s = r * 8 + f;
                 else
                     s = (7 - r) * 8 + (7 - f);

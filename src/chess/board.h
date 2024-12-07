@@ -89,7 +89,7 @@ namespace Chess
 
         Board& operator=(const Board& other);
 
-        void print(Color c) const;
+        void print();
 
         std::string getFen() const;
 
