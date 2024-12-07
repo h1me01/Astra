@@ -49,7 +49,6 @@ namespace Astra
         U64 idx = hash & mask;
 
         if (!entries[idx].hash) // save if no entry is present
-
         {
             entries[idx] = TTEntry(hash, depth, move, score, bound);
             entries[idx].age = current_age;

@@ -63,13 +63,13 @@ namespace Chess
         for (int p = WHITE_PAWN; p <= BLACK_KING; p++)
         {
             U64 b = piece_bb[p];
-            while (b)
-                hash ^= Zobrist::psq[p][popLsb(b)];
+            while (b) 
+                hash ^= Zobrist::getPsq(Piece(p), popLsb(b));
         }
 
         if (history[curr_ply].ep_sq != NO_SQUARE)
-            hash ^= Zobrist::ep[fileOf(history[curr_ply].ep_sq)];
-        hash ^= Zobrist::castle[history[curr_ply].castle_rights.getHashIndex()];
+            hash ^= Zobrist::getEp(history[curr_ply].ep_sq);
+        hash ^= Zobrist::getCastle(history[curr_ply].castle_rights.getHashIndex());
         hash ^= Zobrist::side;
         history[curr_ply].hash = hash;
 
@@ -380,7 +380,7 @@ namespace Chess
         if (pt == PAWN || captured != NO_PIECE)
             history[curr_ply].half_move_clock = 0;
 
-        U64 curr_hash = hash ^ Zobrist::side;
+        hash ^= Zobrist::side;
 
         if (update_nnue)
             accumulators.push();
@@ -401,12 +401,12 @@ namespace Chess
                 rook_to = relativeSquare(stm, d1);
             }
 
-            // move rook
-            movePiece(rook_from, rook_to, update_nnue);        
-
             // update hash of rook
             Piece rook = pieceAt(rook_from);
-            curr_hash ^= Zobrist::psq[rook][rook_from] ^ Zobrist::psq[rook][rook_to];
+            hash ^= Zobrist::getPsq(rook, rook_from) ^ Zobrist::getPsq(rook, rook_to);
+
+            // move rook
+            movePiece(rook_from, rook_to, update_nnue);        
         } 
         
         if (captured != NO_PIECE) 
@@ -415,25 +415,25 @@ namespace Chess
             // remove captured piece from board
             removePiece(cap_sq, update_nnue);
             // remove captured piece from hash
-            curr_hash ^= Zobrist::psq[captured][cap_sq];
+            hash ^= Zobrist::getPsq(captured, cap_sq);
         }
     
         // update hash of moving piece
-        curr_hash ^= Zobrist::psq[pc][from] ^ Zobrist::psq[pc][to];
+        hash ^= Zobrist::getPsq(pc, from) ^ Zobrist::getPsq(pc, to);
 
         // reset ep square if exists
         if (history[curr_ply].ep_sq != NO_SQUARE)
         {
-            curr_hash ^= Zobrist::ep[fileOf(history[curr_ply].ep_sq)];
+            hash ^= Zobrist::getEp(history[curr_ply].ep_sq);
             history[curr_ply].ep_sq = NO_SQUARE;
         }
 
         // update castling rights
         if (history[curr_ply].castle_rights.onCastleSquare(from) || history[curr_ply].castle_rights.onCastleSquare(to))
         {
-            curr_hash ^= Zobrist::castle[history[curr_ply].castle_rights.getHashIndex()];
+            hash ^= Zobrist::getCastle(history[curr_ply].castle_rights.getHashIndex());
             history[curr_ply].castle_rights.mask &= ~(SQUARE_BB[from] | SQUARE_BB[to]);
-            curr_hash ^= Zobrist::castle[history[curr_ply].castle_rights.getHashIndex()];
+            hash ^= Zobrist::getCastle(history[curr_ply].castle_rights.getHashIndex());
         }
 
         // move piece 
@@ -446,8 +446,7 @@ namespace Chess
             if (std::abs(from - to) == 16 && (pawnAttacks(stm, ep_sq) & getPieceBB(~stm, PAWN))) 
             {
                 history[curr_ply].ep_sq = ep_sq;
-                // update hash
-                curr_hash ^= Zobrist::ep[fileOf(ep_sq)];
+                hash ^= Zobrist::getEp(ep_sq);
             }
             else if (mt >= PR_KNIGHT)
             {
@@ -462,19 +461,17 @@ namespace Chess
                 putPiece(prom_pc, to, update_nnue);
 
                 // update hash
-                curr_hash ^= Zobrist::psq[pc][to] ^ Zobrist::psq[prom_pc][to];
+                hash ^= Zobrist::getPsq(pc, to) ^ Zobrist::getPsq(prom_pc, to);
             }
         }
 
-        // set captured piece
-        history[curr_ply].captured = captured;
-
         stm = ~stm;
 
+        // set captured piece
+        history[curr_ply].captured = captured;
         // set hash
-        hash = curr_hash;
         history[curr_ply].hash = hash;
-
+    
         Astra::tt.prefetch(hash);
     }
 
@@ -539,7 +536,7 @@ namespace Chess
 
         if (history[curr_ply].ep_sq != NO_SQUARE) 
         {
-            hash ^= Zobrist::ep[fileOf(history[curr_ply].ep_sq)];
+            hash ^= Zobrist::getEp(history[curr_ply].ep_sq);
             history[curr_ply].ep_sq = NO_SQUARE;
         }
 

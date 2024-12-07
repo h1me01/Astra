@@ -26,12 +26,14 @@ namespace Chess
 
     namespace Zobrist
     {
-        extern U64 psq[NUM_PIECES][NUM_SQUARES];
-        extern U64 castle[16];
-        extern U64 ep[8];
         extern U64 side;
 
         void init();
+
+        U64 getPsq(Piece pc, Square sq);
+        U64 getCastle(int idx);
+        U64 getEp(Square sq);
+
     } // namespace Zobrist
 
 } // namespace Chess

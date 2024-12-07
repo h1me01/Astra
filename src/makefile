@@ -21,23 +21,23 @@ LDFLAGS := -lstdc++
 
 # Source files
 CHESS_SRC := chess/attacks.cpp \
-             chess/board.cpp \
-             chess/perft.cpp \
              chess/bitboard.cpp \
+             chess/board.cpp \
              chess/misc.cpp \
+             chess/perft.cpp \
              chess/zobrist.cpp
 
-EVAL_SRC := eval/nnue.cpp \
-            eval/eval.cpp
+EVAL_SRC := eval/eval.cpp \
+            eval/nnue.cpp
 
-SEARCH_SRC := search/search.cpp \
-              search/syzygy.cpp \
+SEARCH_SRC := search/history.cpp \
               search/movepicker.cpp \
+              search/search.cpp \
+              search/syzygy.cpp \
+              search/threads.cpp \
               search/tt.cpp \
-              search/tune.cpp \
-              search/history.cpp \
-              search/threads.cpp 
-
+              search/tune.cpp 
+              
 SYZYGY_SRC := fathom/tbprobe.cpp
 
 MAIN_SRC := main.cpp \
