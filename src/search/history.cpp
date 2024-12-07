@@ -46,7 +46,7 @@ namespace Astra
         assert(from >= a1 && from <= h8);
         assert(to >= a1 && to <= h8);
 
-        return counters[prev_move.from()][prev_move.to()];
+        return counters[from][to];
     }
 
     void History::update(Board &board, Move &best, Stack *ss, Move *q_moves, int qc, Move *c_moves, int cc, int depth)
