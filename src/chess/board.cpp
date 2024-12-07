@@ -6,16 +6,6 @@ namespace Chess
 {
     // helper
 
-    // get castling hash index for the zobrist key
-    int getCastleHashIndex(const U64 castle_mask)
-    {
-        bool wks = castle_mask & WHITE_OO_MASK;
-        bool wqs = castle_mask & WHITE_OOO_MASK;
-        bool bks = castle_mask & BLACK_OO_MASK;
-        bool bqs = castle_mask & BLACK_OOO_MASK;
-        return !wks + 2 * !wqs + 4 * !bks + 8 * !bqs;
-    }
-
     // represent castle rights correctly in fen notation
     bool castleNotationHelper(const std::ostringstream &fen_stream)
     {
@@ -41,22 +31,21 @@ namespace Chess
 
         stm = fen_parts[1] == "w" ? WHITE : BLACK;
 
-        history[game_ply].castle_mask = ALL_CASTLING_MASK;
         for (const char c : fen_parts[2])
         {
             switch (c)
             {
             case 'K':
-                history[game_ply].castle_mask &= ~WHITE_OO_MASK;
+                history[game_ply].castle_rights.mask |= WHITE_OO_MASK;
                 break;
             case 'Q':
-                history[game_ply].castle_mask &= ~WHITE_OOO_MASK;
+                history[game_ply].castle_rights.mask |= WHITE_OOO_MASK;
                 break;
             case 'k':
-                history[game_ply].castle_mask &= ~BLACK_OO_MASK;
+                history[game_ply].castle_rights.mask |= BLACK_OO_MASK;
                 break;
             case 'q':
-                history[game_ply].castle_mask &= ~BLACK_OOO_MASK;
+                history[game_ply].castle_rights.mask |= BLACK_OOO_MASK;
                 break;
             default:
                 break;
@@ -84,16 +73,13 @@ namespace Chess
         {
             U64 bb = piece_bb[p];
             while (bb)
-            {
-                const Square s = popLsb(bb);
-                hash ^= Zobrist::psq[p][s];
-            }
+                hash ^= Zobrist::psq[p][popLsb(bb)];
         }
 
-        if (history[game_ply].ep_sq == NO_SQUARE)
+        if (history[game_ply].ep_sq != NO_SQUARE)
             hash ^= Zobrist::ep[fileOf(history[game_ply].ep_sq)];
+        hash ^= Zobrist::castle[history[game_ply].castle_rights.getHashIndex()];
         hash ^= Zobrist::side;
-        hash ^= Zobrist::castle[getCastleHashIndex(history[game_ply].castle_mask)];
         history[game_ply].hash = hash;
 
         refreshAccumulator();
@@ -178,10 +164,10 @@ namespace Chess
         }
 
         fen << (stm == WHITE ? " w " : " b ")
-            << (history[game_ply].castle_mask & WHITE_OO_MASK ? "" : "K")
-            << (history[game_ply].castle_mask & WHITE_OOO_MASK ? "" : "Q")
-            << (history[game_ply].castle_mask & BLACK_OO_MASK ? "" : "k")
-            << (history[game_ply].castle_mask & BLACK_OOO_MASK ? "" : "q")
+            << (history[game_ply].castle_rights.kingSide(WHITE) ? "K" : "")
+            << (history[game_ply].castle_rights.queenSide(WHITE) ? "Q" : "")
+            << (history[game_ply].castle_rights.kingSide(BLACK) ? "k" : "")
+            << (history[game_ply].castle_rights.queenSide(BLACK) ? "q" : "")
             << (castleNotationHelper(fen) ? " " : "- ")
             << (history[game_ply].ep_sq == NO_SQUARE ? "-" : SQSTR[history[game_ply].ep_sq]);
 
@@ -286,6 +272,7 @@ namespace Chess
             {
                 rook_from = relativeSquare(stm, h1);
                 rook_to = relativeSquare(stm, f1);
+    
             }
             else // queenside
             {
@@ -396,41 +383,29 @@ namespace Chess
         const MoveType mt = m.type();
         const Square from = m.from();
         const Square to = m.to();
-        const Piece pc_from = board[from];
-        const Piece pc_to = board[to];
-        const PieceType pt = typeOf(pc_from);
+        const Piece pc = pieceAt(from);
+        const PieceType pt = typeOf(pc);
+        const Piece captured = mt == EN_PASSANT ? makePiece(~stm, PAWN) : pieceAt(to);
 
-        bool is_capture = pc_to != NO_PIECE;
-
-        assert(from >= 0 && from < NUM_SQUARES);
-        assert(to >= 0 && to < NUM_SQUARES);
-        assert(typeOf(pc_to) != KING);
-        assert(pt != NO_PIECE_TYPE);
+        assert(typeOf(captured) != KING);
+        assert(pc != NO_PIECE);
 
         game_ply++;
         history[game_ply] = StateInfo(history[game_ply - 1]);
         history[game_ply].half_move_clock++;
-
-        if (history[game_ply].ep_sq != NO_SQUARE)
-        {
-            hash ^= Zobrist::ep[fileOf(history[game_ply].ep_sq)];
-            history[game_ply].ep_sq = NO_SQUARE;
-        }
-
-        hash ^= Zobrist::castle[getCastleHashIndex(history[game_ply].castle_mask)];
-
-        // update castling rights
-        history[game_ply].castle_mask |= SQUARE_BB[from] | SQUARE_BB[to];
-
+   
         // reset half move clock if pawn move or capture
-        if (pt == PAWN || pc_to != NO_PIECE)
+        if (pt == PAWN || captured != NO_PIECE)
             history[game_ply].half_move_clock = 0;
+
+        U64 curr_hash = hash ^ Zobrist::side;
 
         if (update_nnue)
             accumulators.push();
 
-        if (mt == CASTLING)
+        if (mt == CASTLING) 
         {
+            assert(pt == KING);
             Square rook_from, rook_to;
 
             if (to == relativeSquare(stm, g1)) // kingside
@@ -444,79 +419,103 @@ namespace Chess
                 rook_to = relativeSquare(stm, d1);
             }
 
-            movePiece(from, to, update_nnue); // move king
-            movePiece(rook_from, rook_to, update_nnue);
-        }
-        else if (mt >= PR_KNIGHT)
+            // update hash
+            Piece rook = pieceAt(rook_from);
+            curr_hash ^= Zobrist::psq[rook][rook_from] ^ Zobrist::psq[rook][rook_to];
+
+            // move rook
+            movePiece(rook_from, rook_to, update_nnue);          
+        } 
+        else if (captured != NO_PIECE) 
         {
-            const PieceType prom_type = typeOfPromotion(mt);
+            Square cap_sqr = mt == EN_PASSANT ? Square(to ^ 8) : to;
 
-            hash ^= Zobrist::psq[pc_from][from];
-            removePiece(from, update_nnue);
-
-            if (is_capture)
-            {
-                history[game_ply].captured = pc_to;
-                hash ^= Zobrist::psq[pc_to][to];
-                removePiece(to, update_nnue);
-            }
-
-            hash ^= Zobrist::psq[makePiece(stm, prom_type)][to];
-            putPiece(makePiece(stm, prom_type), to, update_nnue);
+            // update hash
+            curr_hash ^= Zobrist::psq[captured][cap_sqr];
+            // remove captured piece
+            removePiece(cap_sqr, update_nnue);
         }
-        else if (is_capture)
+    
+        // update hash of moving piece
+        curr_hash ^= Zobrist::psq[pc][from] ^ Zobrist::psq[pc][to];
+
+        // reset ep square if exists
+        if (history[game_ply].ep_sq != NO_SQUARE)
         {
-            history[game_ply].captured = pc_to;
-            hash ^= Zobrist::psq[pc_to][to];
-            removePiece(to, update_nnue);
-            movePiece(from, to, update_nnue);
+            hash ^= Zobrist::ep[fileOf(history[game_ply].ep_sq)];
+            history[game_ply].ep_sq = NO_SQUARE;
         }
-        else if (!is_capture || mt == EN_PASSANT)
+
+        // update hash for castling rights
+        if (history[game_ply].castle_rights.onCastleSquare(from) || history[game_ply].castle_rights.onCastleSquare(to))
         {
-            const auto ep_sq = Square(to ^ 8);
-
-            if (pt == PAWN && std::abs(from - to) == 16) // double push
-            {
-                U64 ep_mask = pawnAttacks(stm, ep_sq);
-
-                if (ep_mask & getPieceBB(~stm, PAWN))
-                {
-                    history[game_ply].ep_sq = ep_sq;
-                    hash ^= Zobrist::ep[fileOf(ep_sq)];
-                }
-            }
-            else if (mt == EN_PASSANT)
-            {
-                hash ^= Zobrist::psq[makePiece(~stm, PAWN)][ep_sq];
-                removePiece(ep_sq, update_nnue);
-            }
-
-            movePiece(from, to, update_nnue);
+            curr_hash ^= Zobrist::castle[history[game_ply].castle_rights.getHashIndex()];
+            history[game_ply].castle_rights.mask &= ~(SQUARE_BB[from] | SQUARE_BB[to]);
+            curr_hash ^= Zobrist::castle[history[game_ply].castle_rights.getHashIndex()];
         }
 
-        hash ^= Zobrist::side;
-        hash ^= Zobrist::castle[getCastleHashIndex(history[game_ply].castle_mask)];
+        // move piece 
+        movePiece(from, to, update_nnue);
 
-        history[game_ply].hash = hash;
+        if (pt == PAWN)
+        {
+            // set ep square if double push can be captured by enemy pawn
+            auto ep_sq = Square(to ^ 8);
+            if (std::abs(from - to) == 16 && (pawnAttacks(stm, ep_sq) & getPieceBB(~stm, PAWN))) 
+            {
+                history[game_ply].ep_sq = ep_sq;
+                // update hash
+                hash ^= Zobrist::ep[fileOf(ep_sq)];
+            }
+            else if (mt >= PR_KNIGHT)
+            {
+                PieceType prom_type = typeOfPromotion(mt);
+                Piece prom_pc = makePiece(stm, prom_type);
+
+                assert(prom_type != PAWN);
+                assert(prom_pc != NO_PIECE);
+
+                // add promoted piece and remove pawn
+                removePiece(to, update_nnue);             
+                putPiece(prom_pc, to, update_nnue);
+
+                // update hash
+                curr_hash ^= Zobrist::psq[pc][to] ^ Zobrist::psq[prom_pc][to];
+            }
+        }
+
+        // set captured piece
+        history[game_ply].captured = captured;
+
         stm = ~stm;
+
+        // set hash
+        hash = curr_hash;
+        history[game_ply].hash = hash;
 
         Astra::tt.prefetch(hash);
     }
 
-    void Board::unmakeMove(const Move &m)
+    void Board::unmakeMove(const Move &m) 
     {
         stm = ~stm;
 
         const MoveType mt = m.type();
         const Square from = m.from();
         const Square to = m.to();
+        const Piece captured = history[game_ply].captured;
 
         assert(pieceAt(to) != NO_PIECE);
-
-        const Piece captured = history[game_ply].captured;
+        assert(pieceAt(from) == NO_PIECE || mt == CASTLING);
 
         if (accumulators.size())
             accumulators.pop();
+
+        if (mt >= PR_KNIGHT)
+        {
+            removePiece(to, false);
+            putPiece(makePiece(stm, PAWN), to, false);
+        }
 
         if (mt == CASTLING)
         {
@@ -536,25 +535,15 @@ namespace Chess
             movePiece(to, from, false); // move king
             movePiece(rook_from, rook_to, false);
         }
-        else if (mt >= PR_KNIGHT)
-        {
-            removePiece(to, false);
-            putPiece(makePiece(stm, PAWN), from, false);
-
-            if (captured != NO_PIECE)
-                putPiece(captured, to, false);
-        }
-        else if (captured != NO_PIECE)
-        {
-            movePiece(to, from, false);
-            putPiece(captured, to, false);
-        }
-        else if (captured == NO_PIECE || mt == EN_PASSANT)
+        else
         {
             movePiece(to, from, false);
 
-            if (mt == EN_PASSANT)
-                putPiece(makePiece(~stm, PAWN), Square(to ^ 8), false);
+            if (captured != NO_PIECE) 
+            {
+                Square cap_sqr = mt == EN_PASSANT ? Square(to ^ 8) : to;
+                putPiece(captured, cap_sqr, false);            
+            }
         }
 
         game_ply--;

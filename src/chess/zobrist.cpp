@@ -11,17 +11,18 @@ namespace Chess
 
         void init()
         {
-            PRNG rng(70026072);
+            PRNG rng(1070372); //70026072
 
-            for (auto& p : psq)
-                for (U64& s : p)
-                    s = rng.rand<U64>();
+            for (int pc = WHITE_PAWN; pc <= BLACK_KING; pc++)
+                for (int sq = a1; sq <= h8; sq++)
+                    psq[pc][sq] = rng.rand<U64>();
 
-            for (U64& f : ep)
-                f = rng.rand<U64>();
+            for (int f = FILE_A; f <= FILE_H; f++)
+                ep[f] = rng.rand<U64>();
 
-            for (U64& cr : castle)
-                cr = rng.rand<U64>();
+            castle[0] = 0;
+            for (int i = 1; i < 16; i++)
+                castle[i] = rng.rand<U64>();
 
             side = rng.rand<U64>();
         }

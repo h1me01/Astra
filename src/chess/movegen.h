@@ -5,9 +5,6 @@
 
 namespace Chess
 {
-    constexpr U64 ooMask(Color c) { return c == WHITE ? WHITE_OO_MASK : BLACK_OO_MASK; }
-    constexpr U64 oooMask(Color c) { return c == WHITE ? WHITE_OOO_MASK : BLACK_OOO_MASK; }
-
     constexpr U64 ooBlockersMask(Color c) { return c == WHITE ? 0x60 : 0x6000000000000000; }
     constexpr U64 oooBlockersMask(Color c) { return c == WHITE ? 0xe : 0xE00000000000000; }
 
@@ -106,22 +103,20 @@ namespace Chess
     template <Color Us>
     Move *genCastlingMoves(const Board &board, Move *moves, const U64 occ)
     {
-        const U64 castleMask = board.history[board.getPly()].castle_mask;
+        int ply = board.getPly();
 
         // checks if king would be in check if it moved to the castling square
         U64 possible_checks = (occ | board.danger) & ooBlockersMask(Us);
-        // checks if king and the h-rook have moved
-        U64 is_allowed = castleMask & ooMask(Us);
-
-        if (!(possible_checks | is_allowed))
+        
+        bool allowed = board.history[ply].castle_rights.kingSide(Us);
+        if (!possible_checks && allowed)
             *moves++ = Us == WHITE ? Move(e1, g1, CASTLING) : Move(e8, g8, CASTLING);
 
         // ignoreLongCastlingDanger is used to get rid of the danger on the possibleChecks or b8 square
         possible_checks = ((occ | (board.danger & ~ignoreOOODanger(Us))) & oooBlockersMask(Us));
 
-        is_allowed = castleMask & oooMask(Us);
-
-        if (!(possible_checks | is_allowed))
+        allowed = board.history[ply].castle_rights.queenSide(Us);
+        if (!possible_checks && allowed)
             *moves++ = Us == WHITE ? Move(e1, c1, CASTLING) : Move(e8, c8, CASTLING);
 
         return moves;

@@ -40,13 +40,14 @@ namespace Astra
         d.queens = board.getPieceBB(WHITE, QUEEN) | board.getPieceBB(BLACK, QUEEN);
         d.kings = board.getPieceBB(WHITE, KING) | board.getPieceBB(BLACK, KING);
 
-        d.fmc = board.history[board.getPly()].half_move_clock;
-        d.any_castling = popCount(board.history[board.getPly()].castle_mask) != 6;
+        int ply = board.getPly();
+        d.fmc = board.history[ply].half_move_clock;
+        d.any_castling = board.history[ply].castle_rights.any();
         
-        Square ep_sq = board.history[board.getPly()].ep_sq;
+        Square ep_sq = board.history[ply].ep_sq;
         d.ep_sq = ep_sq != NO_SQUARE ? ep_sq : 0;
         
-        d.ep_sq = board.history[board.getPly()].ep_sq;
+        d.ep_sq = board.history[ply].ep_sq;
         d.stm = board.getTurn() == WHITE;
 
         return d;

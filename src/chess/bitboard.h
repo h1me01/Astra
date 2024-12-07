@@ -123,6 +123,9 @@ namespace Chess
                 13, 18, 8, 12, 7, 6, 5, 63
         };
 
+        constexpr U64 ooMask(Color c) { return c == WHITE ? WHITE_OO_MASK : BLACK_OO_MASK; }
+        constexpr U64 oooMask(Color c) { return c == WHITE ? WHITE_OOO_MASK : BLACK_OOO_MASK; }
+
         // returns index of least significant bit in bitboard
         constexpr Square bsf(const U64 b)
         {

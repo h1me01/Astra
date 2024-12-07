@@ -9,23 +9,50 @@
 
 namespace Chess
 {
+    struct CastlingRights 
+    {
+        U64 mask;
+
+        CastlingRights() : mask(0) {}
+
+        bool kingSide(const Color c) const
+        {
+            return (mask & ooMask(c)) == ooMask(c);
+        }
+
+        bool queenSide(const Color c) const
+        {
+            return (mask & oooMask(c)) == oooMask(c);
+        }
+
+        bool any(const Color c) const { return kingSide(c) || queenSide(c); } 
+        bool any() const { return any(WHITE) || any(BLACK); }
+
+        bool onCastleSquare(Square s) const { return mask & SQUARE_BB[s]; }
+
+        int getHashIndex() const
+        {
+            return kingSide(WHITE) + 2 * queenSide(WHITE) + 4 * kingSide(BLACK) + 8 * queenSide(BLACK);
+        }
+    };
+
     struct StateInfo
     {
         U64 hash;
         Piece captured;
         Square ep_sq;
-        U64 castle_mask;
+        CastlingRights castle_rights;
         int half_move_clock;
 
-        StateInfo() : hash(0), captured(NO_PIECE), ep_sq(NO_SQUARE), castle_mask(0), half_move_clock(0) {}
+        StateInfo() : hash(0), captured(NO_PIECE), ep_sq(NO_SQUARE), half_move_clock(0) {}
 
         StateInfo(const StateInfo& prev)
         {
             hash = prev.hash;
             captured = NO_PIECE;
             ep_sq = NO_SQUARE;
-            castle_mask = prev.castle_mask;
             half_move_clock = prev.half_move_clock;
+            castle_rights = prev.castle_rights;
         }
 
         StateInfo& operator=(const StateInfo& other)
@@ -35,8 +62,8 @@ namespace Chess
                 hash = other.hash;
                 captured = other.captured;
                 ep_sq = other.ep_sq;
-                castle_mask = other.castle_mask;
                 half_move_clock = other.half_move_clock;
+                castle_rights = other.castle_rights;
             }
             return *this;
         }
@@ -169,9 +196,6 @@ namespace Chess
         piece_bb[p] ^= SQUARE_BB[from] | SQUARE_BB[to];
         board[to] = p;
         board[from] = NO_PIECE;
-
-        hash ^= Zobrist::psq[p][from];
-        hash ^= Zobrist::psq[p][to];
 
         if (update_nnue)
             NNUE::nnue.movePiece(getAccumulator(), p, from, to);
