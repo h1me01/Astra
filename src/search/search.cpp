@@ -102,14 +102,16 @@ namespace Astra
             Score result = aspSearch(depth, previous_result, ss);
             previous_result = result;
 
-            if (isLimitReached(depth))
-                break;
-
-            avg_eval += result;
-            best_move = pv_table[0][0];
-
-            if (id == 0 && depth >= 5 && limit.time.optimum)
+            if (isLimitReached(depth)) 
             {
+                if (pv_table[0][0] != NO_MOVE) 
+                    best_move = pv_table[0][0];
+                break;
+            }
+
+            if (id == 0 && depth >= 10 && limit.time.optimum)
+            {
+                avg_eval += result;
                 move_changes += (pv_table[0][0] != best_move);
 
                 // increase time if eval is increasing
@@ -125,9 +127,11 @@ namespace Astra
                     limit.time.optimum = limit.time.max * 0.75;
 
                 // stop search if more than 75% of our max time is reached
-                if (depth > 10 && tm.elapsedTime() > limit.time.max * 0.75) 
+                if (tm.elapsedTime() > limit.time.max * 0.75) 
                     break;
             }
+
+            best_move = pv_table[0][0];
         }
 
         if (id == 0)
