@@ -9,7 +9,7 @@
 
 namespace Chess
 {
-    struct CastlingRights 
+    struct CastlingRights
     {
         U64 mask;
 
@@ -25,7 +25,7 @@ namespace Chess
             return (mask & oooMask(c)) == oooMask(c);
         }
 
-        bool any(const Color c) const { return kingSide(c) || queenSide(c); } 
+        bool any(const Color c) const { return kingSide(c) || queenSide(c); }
         bool any() const { return any(WHITE) || any(BLACK); }
 
         bool onCastleSquare(Square s) const { return mask & SQUARE_BB[s]; }
@@ -43,10 +43,12 @@ namespace Chess
         Square ep_sq;
         CastlingRights castle_rights;
         int half_move_clock;
+        //U64 checkers;
+        //U64 pinned;
 
         StateInfo() : hash(0), captured(NO_PIECE), ep_sq(NO_SQUARE), half_move_clock(0) {}
 
-        StateInfo(const StateInfo& prev)
+        StateInfo(const StateInfo &prev)
         {
             hash = prev.hash;
             captured = NO_PIECE;
@@ -55,7 +57,7 @@ namespace Chess
             castle_rights = prev.castle_rights;
         }
 
-        StateInfo& operator=(const StateInfo& other)
+        StateInfo &operator=(const StateInfo &other)
         {
             if (this != &other)
             {
@@ -84,10 +86,10 @@ namespace Chess
         // contains all the possible squares that are not a capture
         U64 quiet_mask;
 
-        Board(const std::string& fen);
-        Board(const Board& other);
+        Board(const std::string &fen);
+        Board(const Board &other);
 
-        Board& operator=(const Board& other);
+        Board &operator=(const Board &other);
 
         void print();
 
@@ -100,7 +102,7 @@ namespace Chess
         int halfMoveClock() const;
         U64 getHash() const;
         Square kingSq(Color c) const;
-        NNUE::Accumulator& getAccumulator();
+        NNUE::Accumulator &getAccumulator();
         void refreshAccumulator();
 
         U64 occupancy(Color c) const;
@@ -108,23 +110,27 @@ namespace Chess
         U64 diagSliders(Color c) const;
         U64 orthSliders(Color c) const;
 
-        void makeMove(const Move& m, bool update_nnue = false);
-        void unmakeMove(const Move& m);
+        void makeMove(const Move &m, bool update_nnue = false);
+        void unmakeMove(const Move &m);
 
         void makeNullMove();
         void unmakeNullMove();
 
         bool inCheck() const;
         bool nonPawnMat(Color c) const;
-        bool isCap(const Move& m) const;
-        bool givesCheck(const Move& m);
-        bool isLegal(const Move& m);
+        bool isCap(const Move &m) const;
+        bool givesCheck(const Move &m);
+        bool isLegal(const Move &m);
 
         bool isRepetition(bool is_pv) const;
         bool isInsufficientMaterial() const;
         bool isDraw() const;
 
-        bool see(Move& move, int threshold);
+        bool see(Move &move, int threshold);
+
+        //U64 getCheckers() const { return history[curr_ply].checkers; }
+        //U64 getPinned() const { return history[curr_ply].pinned; }
+
     private:
         U64 piece_bb[NUM_PIECES];
         Piece board[NUM_SQUARES];
@@ -136,6 +142,8 @@ namespace Chess
         void putPiece(Piece p, Square s, bool update_nnue);
         void removePiece(Square s, bool update_nnue);
         void movePiece(Square from, Square to, bool update_nnue);
+
+       // void initCheckersAndPinned();
     };
 
     inline U64 Board::getPieceBB(Color c, PieceType pt) const
@@ -144,10 +152,10 @@ namespace Chess
         return piece_bb[makePiece(c, pt)];
     }
 
-    inline Piece Board::pieceAt(Square s) const 
+    inline Piece Board::pieceAt(Square s) const
     {
-        assert(s >= a1 && s <= h8); 
-        return board[s]; 
+        assert(s >= a1 && s <= h8);
+        return board[s];
     }
 
     inline Color Board::getTurn() const { return stm; }
@@ -160,7 +168,7 @@ namespace Chess
 
     inline Square Board::kingSq(Color c) const { return bsf(getPieceBB(c, KING)); }
 
-    inline NNUE::Accumulator& Board::getAccumulator() { return accumulators.back(); }
+    inline NNUE::Accumulator &Board::getAccumulator() { return accumulators.back(); }
 
     inline bool Board::inCheck() const
     {
@@ -214,7 +222,37 @@ namespace Chess
         if (update_nnue)
             NNUE::nnue.movePiece(getAccumulator(), p, from, to);
     }
+    /*
+    inline void Board::initCheckersAndPinned()
+    {
+        const Square ksq = kingSq(stm);
+        const Color them = ~stm;
+        const U64 their_occ = occupancy(them);
+        const U64 our_occ = occupancy(stm);
+     
+        // enemy pawns attacks at our king
+        history[curr_ply].checkers = pawnAttacks(stm, ksq) & getPieceBB(them, PAWN);
+        // enemy knights attacks at our king
+        history[curr_ply].checkers |= getAttacks(KNIGHT, ksq, our_occ | their_occ) & getPieceBB(them, KNIGHT);
+
+        // potential enemy bishop, rook and queen attacks at our king
+        U64 candidates = (getAttacks(ROOK, ksq, their_occ) & orthSliders(them)) | (getAttacks(BISHOP, ksq, their_occ) & diagSliders(them));
+
+        history[curr_ply].pinned = 0;
+        while (candidates)
+        {
+            Square s = popLsb(candidates);
+            U64 blockers = SQUARES_BETWEEN[ksq][s] & our_occ;
+            // if between the enemy slider attack and our king is no of our pieces
+            // add the enemy piece to the checkers bitboard
+            if (!blockers)
+                history[curr_ply].checkers ^= SQUARE_BB[s];
+            else if (sparsePopCount(blockers) == 1)
+                // if there is only one of our piece between them, add our piece to the pinned
+                history[curr_ply].pinned ^= blockers;
+        }
+    }*/
 
 } // namespace Chess
 
-#endif //BOARD_H
+#endif // BOARD_H
