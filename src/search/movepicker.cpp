@@ -85,7 +85,7 @@ namespace Astra
                 if (move.score < 1e7)
                     break; // done with good captures
 
-                assert(board.isCap(move));
+                assert(board.isCap(move) || move.type() == PR_QUEEN);
                 return move;
             }
 
@@ -100,7 +100,7 @@ namespace Astra
                 if (move.score <= 0)
                     break; 
 
-                assert(board.isCap(move) || board.givesCheck(move));
+                assert(board.isCap(move) || board.givesCheck(move) || move.type() == PR_QUEEN);
                 return move;
             }
 
@@ -131,20 +131,24 @@ namespace Astra
 
             PieceType captured = ml[i].type() == EN_PASSANT ? PAWN : typeOf(board.pieceAt(ml[i].to()));
             bool is_cap = captured != NO_PIECE_TYPE;
+            bool is_qprom = ml[i].type() == PR_QUEEN;
 
             if (st == PC_SEARCH) 
             {
                 if (is_cap) 
                     ml[i].score = 1e7 * board.see(ml[i], 0) + PIECE_VALUES[captured] + 5000 * isProm(ml[i]);
+                else if (ml[i].type() == PR_QUEEN)
+                    ml[i].score = 1e7 * board.see(ml[i], 0);
                 continue;
             }
 
             if (st == Q_SEARCH)
             {
-                if (is_cap) 
+                if (is_cap || is_qprom) 
                 {
-                    ml[i].score = 1e7 + 1e7 * board.see(ml[i], 0) + PIECE_VALUES[captured] + history.getCHScore(board, ml[i]);
-                    ml[i].score += (ml[i] == tt_move) * 1e8;
+                    ml[i].score = (ml[i] == tt_move) * 1e8;
+                    ml[i].score += 1e7 + 1e7 * board.see(ml[i], 0) + PIECE_VALUES[captured];
+                    ml[i].score += is_qprom ? history.getQHScore(board.getTurn(), ml[i]) : history.getCHScore(board, ml[i]);
                     continue;
                 } 
                 
