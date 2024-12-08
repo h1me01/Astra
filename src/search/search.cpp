@@ -442,7 +442,7 @@ namespace Astra
                 if (!board.see(move, -see_margin))
                     continue; 
 
-                if (!is_cap && !isProm(move))
+                if (!is_cap && move.type() != PR_QUEEN)
                 {
                     // late move pruning
                     if (q_count > (3 + depth * depth) / (2 - improving))

@@ -22,10 +22,10 @@ namespace Astra
         COUNTER,
         QUIET_AND_BAD_CAP,
 
-        Q_MOVES,
+        PC_MOVES,
 
-        Q_IN_CHECK_TT_MOVE,
-        Q_IN_CHECK_REST
+        Q_MOVES,
+        Q_IN_CHECK_MOVES
     };
 
     class MovePicker
@@ -55,9 +55,10 @@ namespace Astra
         Move counter = NO_MOVE;
 
         bool in_check;
-        bool gen_checks;
+        bool use_checker;
         int ml_size;
 
+        int getQuietScore(Move& m);
         void scoreMoves();
         void partialInsertionSort(int current_idx);
     };
