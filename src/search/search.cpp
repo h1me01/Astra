@@ -696,7 +696,7 @@ namespace Astra
                     break; // cut-off
             }
 
-            if (best_score > -VALUE_TB_WIN_IN_MAX_PLY && in_check && !is_cap && mp.ml_tt_move != move) 
+            if (best_score > -VALUE_TB_WIN_IN_MAX_PLY && in_check && !is_cap && ent.move != move) 
                 break;
         }
 
