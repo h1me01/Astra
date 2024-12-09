@@ -10,36 +10,36 @@
 namespace Astra
 {
     // search parameters
-    PARAM(lmr_base, 103, 80, 120, 8);
-    PARAM(lmr_div, 183, 150, 200, 8);
+    PARAM(lmr_base, 100, 80, 120, 8);
+    PARAM(lmr_div, 180, 150, 200, 8);
 
-    PARAM(asp_depth, 8, 5, 9, 1);
-    PARAM(asp_window, 11, 5, 30, 5);
+    PARAM(asp_depth, 9, 5, 9, 1);
+    PARAM(asp_window, 8, 5, 30, 5);
 
-    PARAM(rzr_depth_mult, 185, 150, 250, 15);
-    PARAM(rfp_depth_mult, 70, 60, 110, 8);
+    PARAM(rzr_depth_mult, 190, 150, 250, 15);
+    PARAM(rfp_depth_mult, 62, 60, 110, 8);
 
     PARAM(nmp_min, 3, 3, 6, 1);
-    PARAM(nmp_depth_div, 6, 3, 15, 1);
-    PARAM(nmp_div, 222, 190, 235, 8);
+    PARAM(nmp_depth_div, 7, 3, 15, 1);
+    PARAM(nmp_div, 231, 190, 235, 8);
 
     PARAM(probcut_margin, 154, 130, 180, 15);
 
-    PARAM(see_cap_margin, 95, 70, 120, 8);
-    PARAM(see_quiet_margin, 99, 70, 120, 8);
+    PARAM(see_cap_margin, 100, 70, 120, 8);
+    PARAM(see_quiet_margin, 96, 70, 120, 8);
 
-    PARAM(fp_base, 150, 120, 180, 10);
+    PARAM(fp_base, 152, 120, 180, 10);
     PARAM(fp_mult, 106, 70, 150, 10);
 
-    PARAM(ext_margin, 144, 45, 150, 12);
+    PARAM(ext_margin, 134, 45, 150, 12);
 
-    PARAM(zws_margin, 71, 60, 90, 8);
+    PARAM(zws_margin, 76, 60, 90, 8);
 
-    PARAM(hp_margin, 4822, 2500, 5000, 400);
-    PARAM(hp_div, 7718, 5000, 8500, 400);
-    PARAM(hbonus_margin, 72, 65, 80, 5);
+    PARAM(hp_margin, 4800, 2500, 5000, 400);
+    PARAM(hp_div, 7320, 5000, 8500, 400);
+    PARAM(hbonus_margin, 73, 65, 80, 5);
 
-    PARAM(qfp_margin, 80, 60, 150, 15);
+    PARAM(qfp_margin, 85, 60, 150, 15);
 
     // search helper
 
@@ -381,10 +381,11 @@ namespace Astra
             if (depth > 4 && std::abs(beta) < VALUE_TB_WIN_IN_MAX_PLY && 
                 !(ent.depth >= depth - 3 && tt_score != VALUE_NONE && tt_score < beta_cut))
             {
-                MovePicker movepicker(PC_SEARCH, board, history, ss, ent.move);
+                MovePicker mp(PC_SEARCH, board, history, ss, ent.move);
+                mp.see_cutoff = beta_cut > eval;
 
                 Move move = NO_MOVE;
-                while ((move = movepicker.nextMove()) != NO_MOVE)
+                while ((move = mp.nextMove()) != NO_MOVE)
                 {
                     nodes++;
                     ss->curr_move = move;

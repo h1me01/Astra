@@ -6,9 +6,9 @@
 
 namespace Astra
 {
-    PARAM(history_mult, 152, 130, 180, 8);
-    PARAM(history_minus, 29, 10, 50, 10);
-    PARAM(max_history_bonus, 1645, 1500, 1800, 50);
+    PARAM(history_mult, 150, 130, 180, 8);
+    PARAM(history_minus, 37, 10, 50, 10);
+    PARAM(max_history_bonus, 1646, 1500, 1800, 50);
 
     int historyBonus(int depth)
     {

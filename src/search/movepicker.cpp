@@ -7,7 +7,7 @@ namespace Astra
     {
         if (st == PC_SEARCH)
             stage = PC_MOVES;
-        else if (st == Q_SEARCH) 
+        else if (st == Q_SEARCH)
             stage = in_check ? Q_IN_CHECK_MOVES : Q_MOVES;
 
         ml_size = ml.size();
@@ -19,11 +19,11 @@ namespace Astra
         switch (stage)
         {
         case TT:
-            stage = GOOD_CAPTURES;
+            stage = GOOD_NOISY;
             if (ml_tt_move != NO_MOVE)
                 return tt_move;
             [[fallthrough]];
-        case GOOD_CAPTURES:
+        case GOOD_NOISY:
             while (idx < ml_size)
             {
                 partialInsertionSort(idx);
@@ -34,13 +34,13 @@ namespace Astra
                 if (move == ml_tt_move)
                     continue;
 
-                if (move.score < 1e7) 
+                if (move.score < 1e7)
                 {
                     idx--;
                     break; // done with good captures
                 }
 
-                assert(board.isCap(move));
+                assert(board.isCap(move) || move.type() == PR_QUEEN);
                 return move;
             }
 
@@ -58,11 +58,11 @@ namespace Astra
                 return killer2;
             [[fallthrough]];
         case COUNTER:
-            stage = QUIET_AND_BAD_CAP;
+            stage = QUIET_AND_BAD_NOISY;
             if (counter != NO_MOVE && counter != ml_tt_move && counter != killer1 && counter != killer2)
                 return counter;
             [[fallthrough]];
-        case QUIET_AND_BAD_CAP:
+        case QUIET_AND_BAD_NOISY:
             while (idx < ml_size)
             {
                 partialInsertionSort(idx);
@@ -98,7 +98,7 @@ namespace Astra
                 idx++;
 
                 if (move.score <= 0)
-                    break; 
+                    break;
 
                 assert(board.isCap(move) || board.givesCheck(move) || move.type() == PR_QUEEN);
                 return move;
@@ -133,50 +133,42 @@ namespace Astra
             bool is_cap = captured != NO_PIECE_TYPE;
             bool is_qprom = ml[i].type() == PR_QUEEN;
 
-            if (st == PC_SEARCH) 
-            {
-                if (is_cap) 
-                    ml[i].score = 1e7 * board.see(ml[i], 0) + PIECE_VALUES[captured] + 5000 * isProm(ml[i]);
-                else if (ml[i].type() == PR_QUEEN)
-                    ml[i].score = 1e7 * board.see(ml[i], 0);
-                continue;
-            }
+            if (st == PC_SEARCH && (is_cap || is_qprom))
+                ml[i].score = 1e7 * board.see(ml[i], see_cutoff) + PIECE_VALUES[captured] + 5000 * isProm(ml[i]);
 
             if (st == Q_SEARCH)
             {
-                if (is_cap || is_qprom) 
+                if (is_cap || is_qprom)
                 {
-                    ml[i].score = (ml[i] == tt_move) * 1e8;
-                    ml[i].score += 1e7 + 1e7 * board.see(ml[i], 0) + PIECE_VALUES[captured];
-                    ml[i].score += is_qprom ? history.getQHScore(board.getTurn(), ml[i]) : history.getCHScore(board, ml[i]);
-                    continue;
-                } 
-                
-                if (in_check) 
-                {
-                    ml[i].score = 1e8 * (ml[i] == tt_move) + getQuietScore(ml[i]);
-                    continue;
+                    int score = is_qprom ? 0 : history.getCHScore(board, ml[i]) / 16 + PIECE_VALUES[captured];
+                    ml[i].score += 1e7 + 1e7 * board.see(ml[i], -score / 2) + score;
+                    ml[i].score += (ml[i] == tt_move) * 1e8;
                 }
-
-                if (use_checker && board.givesCheck(ml[i])) 
-                    ml[i].score = 1e6; 
-
-                continue;
+                else if (in_check)
+                    ml[i].score = (ml[i] == tt_move) * 1e8 + getQuietScore(ml[i]);
+                else if (use_checker && board.givesCheck(ml[i]))
+                    ml[i].score = 1e6;
             }
 
-            if (ml[i] == tt_move)
-                ml_tt_move = tt_move; 
-            else if (is_cap) 
-                ml[i].score = 1e8 * board.see(ml[i], 0) + PIECE_VALUES[captured] + history.getCHScore(board, ml[i]);
-            else if (ml[i] == ss->killer1)
-                killer1 = ml[i];
-            else if (ml[i] == ss->killer2)
-                killer2 = ml[i];
-            else if (history.getCounterMove((ss - 1)->curr_move) == ml[i])
-                counter = ml[i];
-            else
-                ml[i].score = getQuietScore(ml[i]);
-        }      
+            if (st == N_SEARCH)
+            {
+                if (ml[i] == tt_move)
+                    ml_tt_move = tt_move;
+                else if (is_cap || is_qprom)
+                {
+                    int score = is_qprom ? 0 : history.getCHScore(board, ml[i]) / 16 + PIECE_VALUES[captured];
+                    ml[i].score = 1e8 * board.see(ml[i], -score / 2) + score;
+                }
+                else if (ml[i] == ss->killer1)
+                    killer1 = ml[i];
+                else if (ml[i] == ss->killer2)
+                    killer2 = ml[i];
+                else if (history.getCounterMove((ss - 1)->curr_move) == ml[i])
+                    counter = ml[i];
+                else
+                    ml[i].score = getQuietScore(ml[i]);
+            }
+        }
     }
 
     int MovePicker::getQuietScore(Move &m)
@@ -185,12 +177,12 @@ namespace Astra
 
         Piece pc = board.pieceAt(m.from());
         Square to = m.to();
-        
+
         score += 2 * (ss - 1)->cont_history[pc][to];
         score += 2 * (ss - 2)->cont_history[pc][to];
         score += (ss - 4)->cont_history[pc][to];
         score += (ss - 6)->cont_history[pc][to];
-        
+
         return score;
     }
 

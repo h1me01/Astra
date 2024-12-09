@@ -16,11 +16,11 @@ namespace Astra
     enum Stage : int
     {
         TT,
-        GOOD_CAPTURES,
+        GOOD_NOISY,
         KILLER1,
         KILLER2,
         COUNTER,
-        QUIET_AND_BAD_CAP,
+        QUIET_AND_BAD_NOISY,
 
         PC_MOVES,
 
@@ -31,6 +31,8 @@ namespace Astra
     class MovePicker
     {
     public:
+        int see_cutoff = 0;
+
         MovePicker(SearchType st, Board &board, History &history, Stack *ss, Move &tt_move, bool in_check = false, bool gen_checks = true);
 
         Move nextMove();
