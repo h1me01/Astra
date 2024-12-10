@@ -134,14 +134,13 @@ namespace Astra
             bool is_qprom = ml[i].type() == PR_QUEEN;
 
             if (st == PC_SEARCH && (is_cap || is_qprom))
-                ml[i].score = 1e7 * board.see(ml[i], see_cutoff) + PIECE_VALUES[captured] + 5000 * isProm(ml[i]);
+                ml[i].score = 1e7 * board.see(ml[i], see_cutoff) + PIECE_VALUES[captured] + 1000 * isProm(ml[i]);
 
             if (st == Q_SEARCH)
             {
                 if (is_cap || is_qprom)
                 {
-                    int score = is_qprom ? 0 : history.getCHScore(board, ml[i]) / 16 + PIECE_VALUES[captured];
-                    ml[i].score += 1e7 + 1e7 * board.see(ml[i], -score / 2) + score;
+                    ml[i].score += 1e7 + 1e7 * board.see(ml[i], 0) + PIECE_VALUES[captured] + (is_qprom ? 0 : history.getCHScore(board, ml[i]));
                     ml[i].score += (ml[i] == tt_move) * 1e8;
                 }
                 else if (in_check)
@@ -155,10 +154,7 @@ namespace Astra
                 if (ml[i] == tt_move)
                     ml_tt_move = tt_move;
                 else if (is_cap || is_qprom)
-                {
-                    int score = is_qprom ? 0 : history.getCHScore(board, ml[i]) / 16 + PIECE_VALUES[captured];
-                    ml[i].score = 1e8 * board.see(ml[i], -score / 2) + score;
-                }
+                    ml[i].score = 1e8 * board.see(ml[i], 0) + PIECE_VALUES[captured] + (is_qprom ? 0 : history.getCHScore(board, ml[i]));
                 else if (ml[i] == ss->killer1)
                     killer1 = ml[i];
                 else if (ml[i] == ss->killer2)
