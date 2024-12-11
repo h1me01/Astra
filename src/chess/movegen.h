@@ -34,72 +34,6 @@ namespace Chess
     }
 
     template <Color Us>
-    U64 diagPawnAttacks(const U64 pawns)
-    {
-        return Us == WHITE ? shift(NORTH_WEST, pawns) | shift(NORTH_EAST, pawns) : shift(SOUTH_WEST, pawns) | shift(SOUTH_EAST, pawns);
-    }
-
-    template <Color Us>
-    void initDangerMask(Board &board, U64 occ)
-    {
-        constexpr Color them = ~Us;
-
-        // enemy king attacks
-        board.danger = getAttacks(KING, board.kingSq(them), occ);
-        // enemy pawns attacks
-        board.danger |= diagPawnAttacks<them>(board.getPieceBB(them, PAWN));
-
-        // enemy knights attacks
-        U64 their_knights = board.getPieceBB(them, KNIGHT);
-        while (their_knights)
-            board.danger |= getAttacks(KNIGHT, popLsb(their_knights), occ);
-
-        // exclude our king from the occupancy, because checks should not be included
-        occ ^= SQUARE_BB[board.kingSq(Us)];
-
-        // enemy bishop and queen attacks
-        U64 their_diag_sliders = board.diagSliders(them);
-        while (their_diag_sliders)
-            board.danger |= getAttacks(BISHOP, popLsb(their_diag_sliders), occ);
-
-        // enemy rook and queen attacks
-        U64 their_orth_sliders = board.orthSliders(them);
-        while (their_orth_sliders)
-            board.danger |= getAttacks(ROOK, popLsb(their_orth_sliders), occ);
-    }
-
-    template <Color Us>
-    void initCheckerMask(Board &board, const Square king_sq)
-    {
-        constexpr Color them = ~Us;
-        const U64 their_occ = board.occupancy(them);
-        const U64 our_occ = board.occupancy(Us);
-
-        // enemy pawns attacks at our king
-        board.checkers = pawnAttacks(Us, king_sq) & board.getPieceBB(them, PAWN);
-        ;
-        // enemy knights attacks at our king
-        board.checkers |= getAttacks(KNIGHT, king_sq, our_occ | their_occ) & board.getPieceBB(them, KNIGHT);
-
-        // potential enemy bishop, rook and queen attacks at our king
-        U64 candidates = (getAttacks(ROOK, king_sq, their_occ) & board.orthSliders(them)) | (getAttacks(BISHOP, king_sq, their_occ) & board.diagSliders(them));
-
-        board.pinned = 0;
-        while (candidates)
-        {
-            const Square s = popLsb(candidates);
-            U64 blockers = SQUARES_BETWEEN[king_sq][s] & our_occ;
-            // if between the enemy slider attack and our king is no of our pieces
-            // add the enemy piece to the checkers bitboard
-            if (blockers == 0)
-                board.checkers ^= SQUARE_BB[s];
-            else if ((blockers & (blockers - 1)) == 0)
-                // if there is only one of our piece between them, add our piece to the pinned
-                board.pinned ^= blockers;
-        }
-    }
-
-    template <Color Us>
     Move *genCastlingMoves(const Board &board, Move *moves, const U64 occ)
     {
         int ply = board.getPly();
@@ -118,7 +52,7 @@ namespace Chess
     }
 
     template <Color Us>
-    Move *genPieceMoves(const Board &board, Move *moves, const U64 occ, const int num_checkers)
+    Move *genPieceMoves(const Board &board, Move *moves, U64 occ, U64 cap_mask, U64 q_mask, const int num_checkers)
     {
         Square s;    // used to store square
         U64 attacks; // used to store piece attack squares;
@@ -136,8 +70,8 @@ namespace Chess
                 // only include getAttacks that are aligned with our king
                 attacks = getAttacks(typeOf(board.pieceAt(s)), s, occ) & LINE[our_king_sq][s];
 
-                moves = make(moves, s, attacks & board.capture_mask);
-                moves = make(moves, s, attacks & board.quiet_mask);
+                moves = make(moves, s, attacks & cap_mask);
+                moves = make(moves, s, attacks & q_mask);
             }
         }
 
@@ -148,8 +82,8 @@ namespace Chess
             s = popLsb(our_knights);
             attacks = getAttacks(KNIGHT, s, occ);
 
-            moves = make(moves, s, attacks & board.capture_mask);
-            moves = make(moves, s, attacks & board.quiet_mask);
+            moves = make(moves, s, attacks & cap_mask);
+            moves = make(moves, s, attacks & q_mask);
         }
 
         // bishops and queens
@@ -159,8 +93,8 @@ namespace Chess
             s = popLsb(our_diag_sliders);
             attacks = getAttacks(BISHOP, s, occ);
 
-            moves = make(moves, s, attacks & board.capture_mask);
-            moves = make(moves, s, attacks & board.quiet_mask);
+            moves = make(moves, s, attacks & cap_mask);
+            moves = make(moves, s, attacks & q_mask);
         }
 
         // rooks and queens
@@ -170,15 +104,15 @@ namespace Chess
             s = popLsb(our_orth_sliders);
             attacks = getAttacks(ROOK, s, occ);
 
-            moves = make(moves, s, attacks & board.capture_mask);
-            moves = make(moves, s, attacks & board.quiet_mask);
+            moves = make(moves, s, attacks & cap_mask);
+            moves = make(moves, s, attacks &q_mask);
         }
 
         return moves;
     }
 
     template <Color Us>
-    Move *genPawnMoves(const Board &board, Move *moves, const U64 occ, const int num_checkers)
+    Move *genPawnMoves(const Board &board, Move *moves, U64 occ, U64 cap_mask, U64 q_mask, const int num_checkers)
     {
         constexpr Color them = ~Us;
         const Square ep_sq = board.history[board.getPly()].ep_sq;
@@ -198,7 +132,7 @@ namespace Chess
 
                 if (rankOf(s) == relativeRank(Us, RANK_7))
                 {
-                    U64 attacks = pawnAttacks(Us, s) & board.capture_mask & LINE[our_king_sq][s];
+                    U64 attacks = pawnAttacks(Us, s) & cap_mask & LINE[our_king_sq][s];
                     // quiet promotions are impossible since it would leave the king in check
                     while (attacks)
                     {
@@ -211,7 +145,7 @@ namespace Chess
                 }
                 else
                 {
-                    const U64 attacks = pawnAttacks(Us, s) & board.capture_mask & LINE[s][our_king_sq];
+                    const U64 attacks = pawnAttacks(Us, s) & cap_mask & LINE[s][our_king_sq];
                     moves = make(moves, s, attacks);
 
                     const U64 single_push = shift(relativeDir(Us, NORTH), SQUARE_BB[s]) & ~occ & LINE[our_king_sq][s];
@@ -252,9 +186,9 @@ namespace Chess
         // single pawn pushes
         U64 single_push = shift(relativeDir(Us, NORTH), our_pawns) & ~occ;
         // double pawn pushes (only the ones that are on rank 3/6 are considered)
-        U64 double_push = shift(relativeDir(Us, NORTH), single_push & MASK_RANK[relativeRank(Us, RANK_3)]) & board.quiet_mask;
+        U64 double_push = shift(relativeDir(Us, NORTH), single_push & MASK_RANK[relativeRank(Us, RANK_3)]) & q_mask;
         // quiet mask is applied later, to consider the possibility of a double push blocking a check
-        single_push &= board.quiet_mask;
+        single_push &= q_mask;
 
         while (single_push)
         {
@@ -269,14 +203,14 @@ namespace Chess
         }
 
         // captures
-        U64 left_captures = shift(relativeDir(Us, NORTH_WEST), our_pawns) & board.capture_mask;
+        U64 left_captures = shift(relativeDir(Us, NORTH_WEST), our_pawns) & cap_mask;
         while (left_captures)
         {
             s = popLsb(left_captures);
             *moves++ = Move(s - relativeDir(Us, NORTH_WEST), s);
         }
 
-        U64 right_captures = shift(relativeDir(Us, NORTH_EAST), our_pawns) & board.capture_mask;
+        U64 right_captures = shift(relativeDir(Us, NORTH_EAST), our_pawns) & cap_mask;
         while (right_captures)
         {
             s = popLsb(right_captures);
@@ -291,14 +225,14 @@ namespace Chess
             U64 attacks;
 
             // quiet promotions
-            attacks = shift(relativeDir(Us, NORTH), our_pawns) & board.quiet_mask;
+            attacks = shift(relativeDir(Us, NORTH), our_pawns) & q_mask;
             moves = makePromotions<Us, NORTH>(moves, attacks);
 
             // promotion captures
-            attacks = shift(relativeDir(Us, NORTH_WEST), our_pawns) & board.capture_mask;
+            attacks = shift(relativeDir(Us, NORTH_WEST), our_pawns) & cap_mask;
             moves = makePromotions<Us, NORTH_WEST>(moves, attacks);
 
-            attacks = shift(relativeDir(Us, NORTH_EAST), our_pawns) & board.capture_mask;
+            attacks = shift(relativeDir(Us, NORTH_EAST), our_pawns) & cap_mask;
             moves = makePromotions<Us, NORTH_EAST>(moves, attacks);
         }
 
@@ -315,8 +249,8 @@ namespace Chess
         const U64 their_occ = board.occupancy(them);
         const U64 occ = our_occ | their_occ;
 
-        initDangerMask<Us>(board, occ);
-        initCheckerMask<Us>(board, our_king_sq);
+        board.initThreats();
+        board.initCheckersAndPinned();
 
         // generate king moves
         const U64 attacks = getAttacks(KING, our_king_sq, occ) & ~(our_occ | board.danger);
@@ -328,6 +262,8 @@ namespace Chess
         const int num_checkers = sparsePopCount(board.checkers);
         if (num_checkers == 2)
             return moves;
+
+        U64 cap_mask, q_mask;
 
         // single check
         if (num_checkers == 1)
@@ -360,22 +296,22 @@ namespace Chess
             }
 
             // we must capture the checking piece
-            board.capture_mask = board.checkers;
+            cap_mask = board.checkers;
             // or we block it
-            board.quiet_mask = SQUARES_BETWEEN[our_king_sq][checker_sq];
+            q_mask = SQUARES_BETWEEN[our_king_sq][checker_sq];
         }
         else
         {
             // we can capture any enemy piece
-            board.capture_mask = their_occ;
+            cap_mask = their_occ;
             // we can move to any square which is not occupied
-            board.quiet_mask = ~occ;
+            q_mask = ~occ;
 
             moves = genCastlingMoves<Us>(board, moves, occ);
         }
 
-        moves = genPieceMoves<Us>(board, moves, occ, num_checkers);
-        moves = genPawnMoves<Us>(board, moves, occ, num_checkers);
+        moves = genPieceMoves<Us>(board, moves, occ, cap_mask, q_mask, num_checkers);
+        moves = genPawnMoves<Us>(board, moves, occ, cap_mask, q_mask, num_checkers);
 
         return moves;
     }

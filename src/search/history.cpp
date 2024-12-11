@@ -15,19 +15,30 @@ namespace Astra
         return std::min(int(max_history_bonus), history_mult * depth - history_minus);
     }
 
-    int History::getQHScore(Color c, Move &move) const
+    int History::getHistoryHeuristic(Color stm, Move move) const
     {
         Square from = move.from();
         Square to = move.to();
-
-        assert(from >= a1 && from <= h8);
-        assert(to >= a1 && to <= h8);
-        assert(from != to);
-
-        return quiet_history[c][from][to];
+        return hh[stm][from][to];
     }
 
-    int History::getCHScore(const Board &board, Move &move) const
+    int History::getQuietHistory(const Board& board, const Stack* ss, Move &move) const
+    {
+        Square from = move.from();
+        Square to = move.to();
+        Piece pc = board.pieceAt(from);
+
+        assert(pc != NO_PIECE);
+
+        std::cout <<  (ss - 4)->cont_history[pc][to] << std::endl;
+
+        return hh[board.getTurn()][from][to] +
+                (ss - 1)->cont_history[pc][to] +
+                (ss - 2)->cont_history[pc][to] +
+                (ss - 4)->cont_history[pc][to];
+    }
+
+    int History::getCaptureHistory(const Board &board, Move &move) const
     {
         PieceType captured = move.type() == EN_PASSANT ? PAWN : typeOf(board.pieceAt(move.to()));
         Piece pc = board.pieceAt(move.from());
@@ -35,7 +46,7 @@ namespace Astra
         assert(pc != NO_PIECE);
         assert(captured != NO_PIECE_TYPE);
         
-        return capt_history[pc][move.to()][captured];
+        return ch[pc][move.to()][captured];
     }
 
     Move History::getCounterMove(Move prev_move) const
@@ -59,7 +70,7 @@ namespace Astra
             Move prev_move = (ss - 1)->curr_move;
             if (prev_move != NO_MOVE)
                 counters[prev_move.from()][prev_move.to()] = best;
-
+            
             if (best != ss->killer1)
             {
                 ss->killer2 = ss->killer1;
@@ -98,7 +109,7 @@ namespace Astra
 
     void History::updateQH(Move &move, Color c, int bonus)
     {
-        int16_t &score = quiet_history[c][move.from()][move.to()];
+        int16_t &score = hh[c][move.from()][move.to()];
         score += bonus - score * std::abs(bonus) / 16384;
     }
 
@@ -110,7 +121,7 @@ namespace Astra
         assert(captured != NO_PIECE_TYPE);
         assert(pc != NO_PIECE);
 
-        int16_t &score = capt_history[pc][move.to()][captured];
+        int16_t &score = ch[pc][move.to()][captured];
         score += bonus - score * std::abs(bonus) / 16384;
     }
 

@@ -43,8 +43,6 @@ namespace Chess
         Square ep_sq;
         CastlingRights castle_rights;
         int half_move_clock;
-        //U64 checkers;
-        //U64 pinned;
 
         StateInfo() : hash(0), captured(NO_PIECE), ep_sq(NO_SQUARE), half_move_clock(0) {}
 
@@ -75,16 +73,12 @@ namespace Chess
     {
     public:
         StateInfo history[1024];
-        // contains squares of enemy pieces that check our king
+        // enemy pieces that check our king
         U64 checkers;
-        // contains squares of our pieces that are pinned
+        // squares of our pinned pieces
         U64 pinned;
-        // contains potential danger squares for our king
+        // potential danger squares for our king
         U64 danger;
-        // contains all the possible capture squares
-        U64 capture_mask;
-        // contains all the possible squares that are not a capture
-        U64 quiet_mask;
 
         Board(const std::string &fen);
         Board(const Board &other);
@@ -128,12 +122,14 @@ namespace Chess
 
         bool see(Move &move, int threshold);
 
-        //U64 getCheckers() const { return history[curr_ply].checkers; }
-        //U64 getPinned() const { return history[curr_ply].pinned; }
-
+        U64 getThreats(PieceType pt) const;
+        
+        void initThreats();
+        void initCheckersAndPinned();
     private:
         U64 piece_bb[NUM_PIECES];
         Piece board[NUM_SQUARES];
+        U64 threats[NUM_PIECE_TYPES];
         Color stm;
         U64 hash;
         int curr_ply;
@@ -143,7 +139,7 @@ namespace Chess
         void removePiece(Square s, bool update_nnue);
         void movePiece(Square from, Square to, bool update_nnue);
 
-       // void initCheckersAndPinned();
+       
     };
 
     inline U64 Board::getPieceBB(Color c, PieceType pt) const
@@ -170,6 +166,12 @@ namespace Chess
 
     inline NNUE::Accumulator &Board::getAccumulator() { return accumulators.back(); }
 
+    inline U64 Board::getThreats(PieceType pt) const 
+    { 
+        assert(pt != NO_PIECE_TYPE);
+        return threats[pt]; 
+    }
+
     inline bool Board::inCheck() const
     {
         return attackersTo(~stm, kingSq(stm), occupancy(WHITE) | occupancy(BLACK));
@@ -183,7 +185,6 @@ namespace Chess
     inline void Board::putPiece(Piece p, Square s, bool update_nnue)
     {
         assert(p != NO_PIECE);
-        assert(s >= a1 && s <= h8);
 
         board[s] = p;
         piece_bb[p] |= SQUARE_BB[s];
@@ -194,8 +195,6 @@ namespace Chess
 
     inline void Board::removePiece(Square s, bool update_nnue)
     {
-        assert(s >= a1 && s <= h8);
-
         Piece p = board[s];
         assert(p != NO_PIECE);
 
@@ -208,10 +207,6 @@ namespace Chess
 
     inline void Board::movePiece(Square from, Square to, bool update_nnue)
     {
-        assert(from >= a1 && from <= h8);
-        assert(to >= a1 && to <= h8);
-        assert(from != to);
-
         Piece p = board[from];
         assert(p != NO_PIECE);
 
@@ -222,7 +217,52 @@ namespace Chess
         if (update_nnue)
             NNUE::nnue.movePiece(getAccumulator(), p, from, to);
     }
-    /*
+
+    inline void Board::initThreats()
+    {
+        Color them = ~stm;
+        U64 occ = (occupancy(WHITE) | occupancy(BLACK)) ^ SQUARE_BB[kingSq(stm)]; // our king must be excluded
+
+        danger = 0;
+        
+        // pawn attacks
+        U64 pawns = getPieceBB(them, PAWN);
+        threats[PAWN] = them == WHITE ? shift(NORTH_WEST, pawns) | shift(NORTH_EAST, pawns) : shift(SOUTH_WEST, pawns) | shift(SOUTH_EAST, pawns);
+        danger |= threats[PAWN];
+
+        // knight attacks
+        threats[KNIGHT] = 0;
+        U64 knights = getPieceBB(them, KNIGHT);
+        while(knights)
+            threats[KNIGHT] |= getAttacks(KNIGHT, popLsb(knights), occ);
+        danger |= threats[KNIGHT];
+
+        // bishop attacks
+        threats[BISHOP] = 0;
+        U64 bishops = getPieceBB(them, BISHOP);
+        while(bishops)
+            threats[BISHOP] |= getAttacks(BISHOP, popLsb(bishops), occ);
+        danger |= threats[BISHOP];
+
+        // rook attacks
+        threats[ROOK] = 0;
+        U64 rooks = getPieceBB(them, ROOK);
+        while(rooks)
+            threats[ROOK] |= getAttacks(ROOK, popLsb(rooks), occ);
+        danger |= threats[ROOK];
+
+        // queen attacks
+        threats[QUEEN] = 0;
+        U64 queens = getPieceBB(them, QUEEN);
+        while(queens)
+            threats[QUEEN] |= getAttacks(QUEEN, popLsb(queens), occ);
+        danger |= threats[QUEEN];
+
+        // king attacks
+        threats[KING] = getAttacks(KING, kingSq(them), occ);
+        danger |= threats[KING];
+    }
+
     inline void Board::initCheckersAndPinned()
     {
         const Square ksq = kingSq(stm);
@@ -231,27 +271,26 @@ namespace Chess
         const U64 our_occ = occupancy(stm);
      
         // enemy pawns attacks at our king
-        history[curr_ply].checkers = pawnAttacks(stm, ksq) & getPieceBB(them, PAWN);
+        checkers = pawnAttacks(stm, ksq) & getPieceBB(them, PAWN);
         // enemy knights attacks at our king
-        history[curr_ply].checkers |= getAttacks(KNIGHT, ksq, our_occ | their_occ) & getPieceBB(them, KNIGHT);
+        checkers |= getAttacks(KNIGHT, ksq, our_occ | their_occ) & getPieceBB(them, KNIGHT);
 
         // potential enemy bishop, rook and queen attacks at our king
         U64 candidates = (getAttacks(ROOK, ksq, their_occ) & orthSliders(them)) | (getAttacks(BISHOP, ksq, their_occ) & diagSliders(them));
 
-        history[curr_ply].pinned = 0;
+        pinned = 0;
         while (candidates)
         {
             Square s = popLsb(candidates);
             U64 blockers = SQUARES_BETWEEN[ksq][s] & our_occ;
-            // if between the enemy slider attack and our king is no of our pieces
-            // add the enemy piece to the checkers bitboard
             if (!blockers)
-                history[curr_ply].checkers ^= SQUARE_BB[s];
+                // if no of out pieces is between the enemy slider, then add that piece as checker
+                checkers ^= SQUARE_BB[s];
             else if (sparsePopCount(blockers) == 1)
-                // if there is only one of our piece between them, add our piece to the pinned
-                history[curr_ply].pinned ^= blockers;
+                // if we have only one blocker, add that piece as pinned
+                pinned ^= blockers;
         }
-    }*/
+    }
 
 } // namespace Chess
 

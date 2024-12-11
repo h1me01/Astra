@@ -58,6 +58,9 @@ namespace Chess
                 putPiece(Piece(PIECE_STR.find(c)), Square(sqr++), true);
         }
 
+        //initThreats();
+        //initCheckersAndPinned();
+
         // initialize hash
         hash = 0ULL;
         for (int p = WHITE_PAWN; p <= BLACK_KING; p++)
@@ -83,6 +86,9 @@ namespace Chess
             curr_ply = other.curr_ply;
             stm = other.stm;
             hash = other.hash;
+            checkers = other.checkers;
+            pinned = other.pinned;
+            danger = other.danger;
 
             std::copy(std::begin(other.piece_bb), std::end(other.piece_bb), std::begin(piece_bb));
             std::copy(std::begin(other.board), std::end(other.board), std::begin(board));
@@ -98,6 +104,9 @@ namespace Chess
         curr_ply = other.curr_ply;
         stm = other.stm;
         hash = other.hash;
+        checkers = other.checkers;
+        pinned = other.pinned;
+        danger = other.danger;
 
         std::copy(std::begin(other.piece_bb), std::end(other.piece_bb), std::begin(piece_bb));
         std::copy(std::begin(other.board), std::end(other.board), std::begin(board));
@@ -472,6 +481,9 @@ namespace Chess
         // set hash
         history[curr_ply].hash = hash;
     
+        //initThreats();
+        //initCheckersAndPinned();
+
         Astra::tt.prefetch(hash);
     }
 
@@ -548,6 +560,9 @@ namespace Chess
         stm = ~stm;
 
         Astra::tt.prefetch(hash);
+
+        //initThreats();
+        //initCheckersAndPinned();
     }
 
     void Board::unmakeNullMove()

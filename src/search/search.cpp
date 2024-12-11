@@ -36,7 +36,7 @@ namespace Astra
     PARAM(zws_margin, 76, 60, 90, 8);
 
     PARAM(hp_margin, 4800, 2500, 5000, 400);
-    PARAM(hp_div, 7320, 5000, 8500, 400);
+    PARAM(hp_div, 8192, 7000, 8500, 400);
     PARAM(hbonus_margin, 73, 65, 80, 5);
 
     PARAM(qfp_margin, 85, 60, 150, 15);
@@ -83,11 +83,9 @@ namespace Astra
         if (id == 0)
             tt.incrementAge();
 
-        Stack stack[MAX_PLY + 6];
-        Stack *ss = stack + 6; // +6 for history
+        Stack stack[MAX_PLY + 6]; // +6 for history
+        Stack *ss = stack + 6; 
 
-        for (int i = 6; i > 0; --i)
-            (ss - i)->ply = i;
         for (int i = 0; i < MAX_PLY; ++i)
             (ss + i)->ply = i;
 
@@ -336,15 +334,14 @@ namespace Astra
         }
 
         // internal iterative reduction
-        if (!in_check && !tt_hit && depth >= 4 && (pv_node || cut_node))
+        if (!ss->skipped && !in_check && !tt_hit && depth >= 4 && (pv_node || cut_node))
             depth--;
 
         // only use pruning when not in check and pv node
         if (!in_check && !pv_node)
         {
             // reverse futility pruning
-            int rfp_margin = std::max(rfp_depth_mult * (depth - improving), 20);
-            if (depth <= 9 && eval < VALUE_TB_WIN_IN_MAX_PLY && eval - rfp_margin >= beta)
+            if (depth <= 9 && eval < VALUE_TB_WIN_IN_MAX_PLY && eval - std::max(rfp_depth_mult * (depth - improving), 20) >= beta)
                 return (eval + beta) / 2;
 
             // razoring
@@ -426,9 +423,9 @@ namespace Astra
 
             int history_score;
             if (is_cap)
-                history_score = history.getCHScore(board, move);
+                history_score = history.getCaptureHistory(board, move);
             else
-                history_score = history.getQHScore(stm, move);
+                history_score = history.getQuietHistory(board, ss, move);
 
             int r = REDUCTIONS[depth][made_moves];
             // decrease/increase based on history score
