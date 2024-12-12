@@ -30,8 +30,6 @@ namespace Astra
 
         assert(pc != NO_PIECE);
 
-        std::cout <<  (ss - 4)->cont_history[pc][to] << std::endl;
-
         return hh[board.getTurn()][from][to] +
                 (ss - 1)->cont_history[pc][to] +
                 (ss - 2)->cont_history[pc][to] +

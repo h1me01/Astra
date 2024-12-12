@@ -12,7 +12,8 @@ namespace Chess
     };
 
     // Positions from https://www.chessprogramming.org/Perft_Results
-    std::vector<TestCase> test_cases = {
+    std::vector<TestCase> test_cases = 
+    {
         {
             STARTING_FEN, {20, 400, 8902, 197281, 4865609, 119060324, 3195901860, 84998978956}
         },
@@ -33,16 +34,39 @@ namespace Chess
         }
     };
 
+    int num_ep_moves = 0;
+    int num_pr_moves = 0;
+    int num_q_moves = 0;
+    int num_c_moves = 0;
+    int num_cs_moves = 0;
 
-    U64 perft(Board& board, int depth)
+    U64 perft(Board &board, int depth)
     {
         U64 nodes = 0;
-        MoveList moves(board);
+        MoveList moves;
+        moves.init<LEGALS>(board);
 
         if (depth == 1)
+        {
+            /*
+            for (auto &m : moves)
+            {
+                if (m.type() == EN_PASSANT)
+                    num_ep_moves++;
+                else if (m.type() == CASTLING)
+                    num_cs_moves++;
+                else if (m.type() >= PR_KNIGHT)
+                    num_pr_moves++;
+                else if (board.isCap(m))
+                    num_c_moves++;
+                else
+                    num_q_moves++;
+            }
+            */
             return moves.size();
+        }
 
-        for (const Move& move : moves)
+        for (const Move &move : moves)
         {
             board.makeMove(move);
             nodes += perft(board, depth - 1);
@@ -56,11 +80,11 @@ namespace Chess
     {
         double total_time = 0;
 
-        for (const auto& testCase : test_cases)
+        for (const auto &testCase : test_cases)
         {
-            Board board(testCase.fen);
-
             std::cout << "\nFen: " << testCase.fen << std::endl;
+
+            Board board(testCase.fen);
 
             for (size_t i = 0; i < testCase.nodes.size(); ++i)
             {
@@ -75,7 +99,18 @@ namespace Chess
                 total_time += diff.count();
 
                 if (nodes == testCase.nodes[i])
+                {
                     std::cout << "Test passed" << std::endl;
+                    /*
+                    std::cout << "Test passed" << std::endl;
+                    std::cout << "Num EP: " << num_ep_moves << std::endl;
+                    std::cout << "Num CS: " << num_cs_moves << std::endl;
+                    std::cout << "Num PR: " << num_pr_moves << std::endl;
+                    std::cout << "Num C: " << num_c_moves << std::endl;
+                    std::cout << "Num Q: " << num_q_moves << std::endl;
+                    num_ep_moves = num_cs_moves = num_pr_moves = num_c_moves = num_q_moves = 0;
+                    */
+                }
                 else
                     std::cerr << "\033[31mTest failed\033[0m\n Expected nodes: " << testCase.nodes[i] << std::endl;
 

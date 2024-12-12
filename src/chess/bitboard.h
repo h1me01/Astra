@@ -101,9 +101,6 @@ namespace Chess
                 0x0000000010020200, 0x0000000404080200, 0x0000040404040400, 0x0002020202020200
         };
 
-        extern U64 SQUARES_BETWEEN[NUM_SQUARES][NUM_SQUARES];
-        extern U64 LINE[NUM_SQUARES][NUM_SQUARES];
-
         constexpr U64 WHITE_OO_MASK = 0x90;
         constexpr U64 WHITE_OOO_MASK = 0x11;
 
@@ -127,7 +124,7 @@ namespace Chess
         constexpr U64 oooMask(Color c) { return c == WHITE ? WHITE_OOO_MASK : BLACK_OOO_MASK; }
 
         // returns index of least significant bit in bitboard
-        constexpr Square bsf(const U64 b)
+        constexpr Square lsb(const U64 b)
         {
                 return Square(DEBRUIJN64[0x03f79d71b4cb0a89 * (b ^ (b - 1)) >> 58]);
         }

@@ -103,7 +103,8 @@ namespace Astra
         const auto from = Square(TB_GET_FROM(result));
         const auto to = Square(TB_GET_TO(result));
 
-        MoveList moves(board);
+        MoveList moves;
+        moves.init<LEGALS>(board);
         for (auto m : moves)
         {
             bool is_prom = typeOfPromotion(m.type()) == prom_type;

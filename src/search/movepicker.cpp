@@ -3,8 +3,9 @@
 namespace Astra
 {
     MovePicker::MovePicker(SearchType st, Board &board, History &history, Stack *ss, Move &tt_move, bool in_check, bool gen_checks)
-        : st(st), board(board), history(history), ss(ss), ml(board), tt_move(tt_move), in_check(in_check), use_checker(gen_checks)
+        : st(st), board(board), history(history), ss(ss), tt_move(tt_move), in_check(in_check), use_checker(gen_checks)
     {
+        ml.init<LEGALS>(board);
         if (st == PC_SEARCH)
             stage = PC_MOVES;
         else if (st == Q_SEARCH)

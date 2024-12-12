@@ -2,9 +2,6 @@
 
 namespace Chess
 {
-    U64 SQUARES_BETWEEN[NUM_SQUARES][NUM_SQUARES];
-    U64 LINE[NUM_SQUARES][NUM_SQUARES];
-
     int popCount(U64 b)
     {
         b = b - ((b >> 1) & 0x5555555555555555);
@@ -27,9 +24,9 @@ namespace Chess
 
     Square popLsb(U64& b)
     {
-        int lsb = bsf(b);
+        int n = lsb(b);
         b &= b - 1;
-        return Square(lsb);
+        return Square(n);
     }
 
     U64 reverse(U64 b)

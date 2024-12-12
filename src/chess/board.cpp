@@ -58,8 +58,8 @@ namespace Chess
                 putPiece(Piece(PIECE_STR.find(c)), Square(sqr++), true);
         }
 
-        //initThreats();
-        //initCheckersAndPinned();
+        initThreats();
+        initCheckersAndPinned();
 
         // initialize hash
         hash = 0ULL;
@@ -86,9 +86,6 @@ namespace Chess
             curr_ply = other.curr_ply;
             stm = other.stm;
             hash = other.hash;
-            checkers = other.checkers;
-            pinned = other.pinned;
-            danger = other.danger;
 
             std::copy(std::begin(other.piece_bb), std::end(other.piece_bb), std::begin(piece_bb));
             std::copy(std::begin(other.board), std::end(other.board), std::begin(board));
@@ -104,9 +101,6 @@ namespace Chess
         curr_ply = other.curr_ply;
         stm = other.stm;
         hash = other.hash;
-        checkers = other.checkers;
-        pinned = other.pinned;
-        danger = other.danger;
 
         std::copy(std::begin(other.piece_bb), std::end(other.piece_bb), std::begin(piece_bb));
         std::copy(std::begin(other.board), std::end(other.board), std::begin(board));
@@ -114,7 +108,7 @@ namespace Chess
         accumulators = other.accumulators;
     }
 
-    void Board::print()
+    void Board::print() const
     {
         std::cout << "\n +---+---+---+---+---+---+---+---+\n";
 
@@ -217,11 +211,11 @@ namespace Chess
 
     U64 Board::attackersTo(Color c, Square s, const U64 occ) const
     {
-        U64 attacks = pawnAttacks(~c, s) & piece_bb[makePiece(c, PAWN)];
-        attacks |= getAttacks(KNIGHT, s, occ) & piece_bb[makePiece(c, KNIGHT)];
-        attacks |= getAttacks(BISHOP, s, occ) & (piece_bb[makePiece(c, BISHOP)] | piece_bb[makePiece(c, QUEEN)]);
-        attacks |= getAttacks(ROOK, s, occ) & (piece_bb[makePiece(c, ROOK)] | piece_bb[makePiece(c, QUEEN)]);
-        attacks |= getAttacks(KING, s, occ) & piece_bb[makePiece(c, KING)];
+        U64 attacks = pawnAttacks(~c, s) & getPieceBB(c, PAWN);
+        attacks |= getAttacks(KNIGHT, s, occ) & getPieceBB(c, KNIGHT);
+        attacks |= getAttacks(BISHOP, s, occ) & (getPieceBB(c, BISHOP) | getPieceBB(c, QUEEN));
+        attacks |= getAttacks(ROOK, s, occ) & (getPieceBB(c, ROOK) | getPieceBB(c, QUEEN));
+        attacks |= getAttacks(KING, s, occ) & getPieceBB(c, KING);
         return attacks;
     }
 
@@ -243,13 +237,10 @@ namespace Chess
         Piece pc = pieceAt(from);
 
         assert(pc != NO_PIECE);
-        assert(from >= a1 && from <= h8);
-        assert(to >= a1 && to <= h8);
-        assert(from != to);
-
+        
         const Square opp_ksq = kingSq(~stm);
         assert(pieceAt(opp_ksq) == makePiece(~stm, KING));
-        U64 occ = occupancy(WHITE) | occupancy(BLACK);
+        U64 occ = occupancy();
 
         if (mt == CASTLING)
         {
@@ -300,73 +291,33 @@ namespace Chess
         return attackers;
     }
 
-    bool Board::isLegal(const Move &m)
+    // only checks ep and pinned piece moves
+    bool Board::isLegal(const Move &m) const
     {
         Square from = m.from();
         Square to = m.to();
         Square ksq = kingSq(stm);
-        MoveType mt = m.type();
         Piece pc = pieceAt(from);
-        Piece captured = pieceAt(to);
 
         assert(pc != NO_PIECE);
-        assert(from >= a1 && from <= h8);
-        assert(to >= a1 && to <= h8);
-        assert(from != to);
-        assert(typeOf(captured) != KING);
         assert(pieceAt(ksq) == makePiece(stm, KING));
 
-        U64 pc_from_bb = piece_bb[pc];
-        U64 pc_to_bb = piece_bb[captured];
-        U64 occ = occupancy(WHITE) | occupancy(BLACK);
-
-        if (mt == EN_PASSANT)
+        if (m.type() == EN_PASSANT)
         {
             Square cap_sq = Square(to ^ 8);
+            U64 occ = (occupancy() ^ SQUARE_BB[from] ^ SQUARE_BB[cap_sq]) | SQUARE_BB[to];
 
             assert(board[cap_sq] == makePiece(~stm, PAWN));
             assert(pieceAt(to) == NO_PIECE);
 
-            occ ^= SQUARE_BB[from] | SQUARE_BB[cap_sq];
-            occ |= SQUARE_BB[to];
-
-            piece_bb[pc] ^= SQUARE_BB[from] | SQUARE_BB[to];
-            U64 all_attackers = attackersTo(~stm, ksq, occ);
-            piece_bb[pc] = pc_from_bb;
-
-            return !all_attackers;
+            U64 attackers = getAttacks(BISHOP, ksq, occ) & (getPieceBB(~stm, BISHOP) | getPieceBB(~stm, QUEEN));
+            attackers |= getAttacks(ROOK, ksq, occ) & (getPieceBB(~stm, ROOK) | getPieceBB(~stm, QUEEN));
+            // only legal if no discovered check occurs after ep capture
+            return !attackers;
         }
 
-        if (mt == CASTLING)
-        {
-            to = relativeSquare(stm, to > from ? g1 : c1);
-            Direction step = to > from ? WEST : EAST;
-
-            for (Square s = to; s != from; s += step)
-                if (attackersTo(~stm, ksq, occ))
-                    return false;
-
-            return true;
-        }
-
-        if (typeOf(pc) == KING)
-            return !attackersTo(~stm, to, occ);
-
-        occ ^= SQUARE_BB[from] | SQUARE_BB[to];
-        piece_bb[pc] ^= SQUARE_BB[from] | SQUARE_BB[to];
-
-        if (captured != NO_PIECE)
-        {
-            piece_bb[captured] ^= SQUARE_BB[to];
-            occ ^= SQUARE_BB[to];
-        }
-
-        U64 all_attackers = attackersTo(~stm, ksq, occ);
-
-        piece_bb[pc] = pc_from_bb;
-        piece_bb[captured] = pc_to_bb;
-
-        return !all_attackers;
+        // only legal if not pinned or moving in the direction of the pin
+        return !(history[curr_ply].pinned & SQUARE_BB[from]) || (LINE[from][ksq] & SQUARE_BB[to]);
     }
 
     void Board::makeMove(const Move &m, bool update_nnue)
@@ -481,8 +432,8 @@ namespace Chess
         // set hash
         history[curr_ply].hash = hash;
     
-        //initThreats();
-        //initCheckersAndPinned();
+        initThreats();
+        initCheckersAndPinned();
 
         Astra::tt.prefetch(hash);
     }
@@ -559,10 +510,10 @@ namespace Chess
         
         stm = ~stm;
 
+        initThreats();
+        initCheckersAndPinned();
+        
         Astra::tt.prefetch(hash);
-
-        //initThreats();
-        //initCheckersAndPinned();
     }
 
     void Board::unmakeNullMove()
@@ -626,7 +577,7 @@ namespace Chess
         if (swap <= 0)
             return true;
 
-        U64 occ = occupancy(WHITE) | occupancy(BLACK);
+        U64 occ = occupancy();
         occ = occ ^ SQUARE_BB[from] ^ SQUARE_BB[to];
         U64 attackers = attackersTo(WHITE, to, occ) | attackersTo(BLACK, to, occ);
 
