@@ -58,8 +58,8 @@ namespace Chess
         StateInfo(const StateInfo &prev)
         {
             hash = prev.hash;
-            captured = NO_PIECE;
-            ep_sq = NO_SQUARE;
+            captured = prev.captured;
+            ep_sq = prev.ep_sq;
             half_move_clock = prev.half_move_clock;
             castle_rights = prev.castle_rights;
         }
@@ -116,15 +116,13 @@ namespace Chess
 
         bool inCheck() const;
         bool nonPawnMat(Color c) const;
-        bool isCap(const Move &m) const;
-        bool givesCheck(const Move &m);
         bool isLegal(const Move &m) const;
+        bool isPseudoLegal(const Move &m) const;
 
         bool isRepetition(bool is_pv) const;
         bool isInsufficientMaterial() const;
         bool isDraw() const;
-
-        bool see(Move &move, int threshold);
+        bool see(Move &m, int threshold) const;
 
         U64 getThreats(PieceType pt) const;
         
@@ -178,12 +176,7 @@ namespace Chess
 
     inline bool Board::inCheck() const
     {
-        return attackersTo(~stm, kingSq(stm), occupancy(WHITE) | occupancy(BLACK));
-    }
-
-    inline bool Board::isCap(const Move &m) const
-    {
-        return board[m.to()] != NO_PIECE || m.type() == EN_PASSANT;
+        return history[curr_ply].checkers;
     }
 
     inline void Board::putPiece(Piece p, Square s, bool update_nnue)
@@ -289,7 +282,7 @@ namespace Chess
         const U64 our_occ = occupancy(stm);
 
         // enemy pawns attacks at our king
-        history[curr_ply].checkers = pawnAttacks(stm, ksq) & getPieceBB(them, PAWN);
+        history[curr_ply].checkers = getPawnAttacks(stm, ksq) & getPieceBB(them, PAWN);
         // enemy knights attacks at our king
         history[curr_ply].checkers |= getAttacks(KNIGHT, ksq, our_occ | their_occ) & getPieceBB(them, KNIGHT);
 

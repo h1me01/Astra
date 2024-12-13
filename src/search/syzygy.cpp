@@ -21,7 +21,7 @@ namespace Astra
         bool is_allowed = true;
     };
 
-    ProbeData getProbeData(Board &board) {
+    ProbeData getProbeData(const Board &board) {
         ProbeData d;
 
         d.w_occ = board.occupancy(WHITE);
@@ -54,7 +54,7 @@ namespace Astra
     }
 
 
-    Score probeWDL(Board &board)
+    Score probeWDL(const Board &board)
     {
         ProbeData d = getProbeData(board);
 
@@ -75,7 +75,7 @@ namespace Astra
         return VALUE_NONE;
     }
 
-    std::pair<Score, Move> probeDTZ(Board &board)
+    std::pair<Score, Move> probeDTZ(const Board &board)
     {
         ProbeData d = getProbeData(board);
 
@@ -104,7 +104,7 @@ namespace Astra
         const auto to = Square(TB_GET_TO(result));
 
         MoveList moves;
-        moves.init<LEGALS>(board);
+        moves.gen<LEGALS>(board);
         for (auto m : moves)
         {
             bool is_prom = typeOfPromotion(m.type()) == prom_type;

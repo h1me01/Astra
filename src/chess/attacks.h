@@ -99,7 +99,7 @@ namespace Chess
 
     inline U64 slidingAttacks(Square s, const U64 occ, const U64 mask)
     {
-        // uses hyperbola quintessence algorithm
+        // hyperbola quintessence algorithm
         const U64 mask_occ = mask & occ;
         return ((mask_occ - SQUARE_BB[s] * 2) ^ (reverse(reverse(mask_occ) - reverse(SQUARE_BB[s]) * 2))) & mask;
     }
@@ -138,7 +138,7 @@ namespace Chess
         }
     }
 
-    constexpr U64 pawnAttacks(Color c, Square s) { return PAWN_ATTACKS[c][s]; }
+    constexpr U64 getPawnAttacks(Color c, Square s) { return PAWN_ATTACKS[c][s]; }
 
 } // namespace Chess
 

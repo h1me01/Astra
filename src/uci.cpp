@@ -283,27 +283,31 @@ namespace UCI
     {
         Square from = squareFromString(str_move.substr(0, 2));
         Square to = squareFromString(str_move.substr(2, 2));
-        Piece p_from = board.pieceAt(from);
-        MoveType mt = NORMAL;
+        Piece pc = board.pieceAt(from);
+        Piece captured = board.pieceAt(to);
+        MoveType mt = QUIET;
 
-        if (typeOf(p_from) == PAWN)
+        if (captured != NO_PIECE)
+            mt = CAPTURE;
+
+        if (typeOf(pc) == PAWN)
         {
             if (board.history[board.getPly()].ep_sq == to)
                 mt = EN_PASSANT;
-            else if (rankOf(to) == 0 || rankOf(to) == 7)
+            else if (rankOf(to) == RANK_1 || rankOf(to) == RANK_8)
             {
-                char promotion = tolower(str_move[4]);
+                char prom_type = tolower(str_move[4]);
 
-                mt = PR_QUEEN;
-                if (promotion == 'r')
-                    mt = PR_ROOK;
-                else if (promotion == 'b')
-                    mt = PR_BISHOP;
-                else if (promotion == 'n')
-                    mt = PR_KNIGHT;
+                mt = captured != NO_PIECE ? PC_QUEEN : PQ_QUEEN;
+                if (prom_type == 'r')
+                    mt = MoveType(mt - 1);
+                else if (prom_type == 'b')
+                    mt = MoveType(mt - 2);
+                else if (prom_type == 'n')
+                    mt = MoveType(mt - 3);
             }
         }
-        else if (typeOf(p_from) == KING)
+        else if (typeOf(pc) == KING)
         {
             if ((from == e1 && to == g1) || (from == e8 && to == g8))
                 mt = CASTLING;

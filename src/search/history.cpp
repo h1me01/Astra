@@ -49,13 +49,7 @@ namespace Astra
 
     Move History::getCounterMove(Move prev_move) const
     {
-        Square from = prev_move.from();
-        Square to = prev_move.to();
-
-        assert(from >= a1 && from <= h8);
-        assert(to >= a1 && to <= h8);
-
-        return counters[from][to];
+        return counters[prev_move.from()][prev_move.to()];
     }
 
     void History::update(Board &board, Move &best, Stack *ss, Move *q_moves, int qc, Move *c_moves, int cc, int depth)
@@ -63,7 +57,7 @@ namespace Astra
         Color stm = board.getTurn();
         int bonus = historyBonus(depth);
 
-        if (!board.isCap(best))
+        if (!isCap(best))
         {
             Move prev_move = (ss - 1)->curr_move;
             if (prev_move != NO_MOVE)
@@ -81,7 +75,7 @@ namespace Astra
                 updateContH(board, best, ss, bonus);
             }
 
-            // update quiets
+            // update quiet maluses
             for (int i = 0; i < qc; i++)
             {
                 Move quiet = q_moves[i];
@@ -95,7 +89,7 @@ namespace Astra
         else
             updateCH(board, best, bonus);
 
-        // update captures
+        // update capture maluses
         for (int i = 0; i < cc; i++)
         {
             Move cap = c_moves[i];

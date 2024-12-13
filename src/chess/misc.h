@@ -21,15 +21,26 @@ namespace Chess
     {
         switch (mt)
         {
-        case PR_KNIGHT: return KNIGHT;
-        case PR_BISHOP: return BISHOP;
-        case PR_ROOK: return ROOK;
-        case PR_QUEEN: return QUEEN;
-        default: return NO_PIECE_TYPE;
+        case PQ_KNIGHT: 
+        case PC_KNIGHT:
+            return KNIGHT;
+        case PQ_BISHOP: 
+        case PC_BISHOP:
+            return BISHOP;
+        case PQ_ROOK: 
+        case PC_ROOK:
+            return ROOK;
+        case PQ_QUEEN:
+        case PC_QUEEN: 
+            return QUEEN;
+        default: 
+            return NO_PIECE_TYPE;
         }
     }
 
-    inline bool isProm(const Move& m) { return m.type() >= PR_KNIGHT; }
+    inline bool isProm(const Move& m) { return m.type() >= PQ_KNIGHT; }
+
+    inline bool isCap(const Move& m) { return m.type() == CAPTURE || m.type() == EN_PASSANT || m.type() >= PC_KNIGHT; }
 
     // prints the move
     std::ostream& operator<<(std::ostream& os, const Move& m);
@@ -37,11 +48,7 @@ namespace Chess
     // gets the opposite color
     constexpr Color operator~(Color c) { return Color(c ^ BLACK); }
 
-    constexpr Piece makePiece(Color c, PieceType pt)
-    {
-        assert(pt != NO_PIECE_TYPE);
-        return Piece(pt + 6 * c);
-    }
+    constexpr Piece makePiece(Color c, PieceType pt) { return Piece(pt + 6 * c); }
 
     constexpr PieceType typeOf(Piece p) { return PIECE_TO_PIECE_TYPE[p]; }
 
@@ -70,10 +77,8 @@ namespace Chess
         return c == WHITE ? r : Rank(RANK_8 - r);
     }
 
-    constexpr Direction relativeDir(Color c, Direction d)
-    {
-        return Direction(c == WHITE ? d : -d);
-    }
+    constexpr U64 ooBlockersMask(Color c) { return c == WHITE ? 0x60 : 0x6000000000000000; }
+    constexpr U64 oooBlockersMask(Color c) { return c == WHITE ? 0xe : 0xE00000000000000; }
 
 } // namespace Chess
 

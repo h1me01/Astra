@@ -44,7 +44,7 @@ namespace Chess
     {
         U64 nodes = 0;
         MoveList moves;
-        moves.init<LEGALS>(board);
+        moves.gen<LEGALS>(board);
 
         if (depth == 1)
         {

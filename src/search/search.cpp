@@ -372,7 +372,7 @@ namespace Astra
                     return score;
                 }
             }
-
+            
             // probcut
             int beta_cut = beta + probcut_margin;
             if (depth > 4 && std::abs(beta) < VALUE_TB_WIN_IN_MAX_PLY && 
@@ -381,9 +381,12 @@ namespace Astra
                 MovePicker mp(PC_SEARCH, board, history, ss, ent.move);
                 mp.see_cutoff = beta_cut > eval;
 
-                Move move = NO_MOVE;
+                Move move = NO_MOVE;                
                 while ((move = mp.nextMove()) != NO_MOVE)
                 {
+                    if (!board.isLegal(move))
+                        continue;
+                    
                     nodes++;
                     ss->curr_move = move;
                     board.makeMove(move, true);
@@ -414,15 +417,15 @@ namespace Astra
 
         while ((move = mp.nextMove()) != NO_MOVE)
         {
+            if (!board.isLegal(move))
+                continue;
             if (move == ss->skipped)
                 continue;
 
             made_moves++;
 
-            bool is_cap = board.isCap(move);
-
             int history_score;
-            if (is_cap)
+            if (isCap(move))
                 history_score = history.getCaptureHistory(board, move);
             else
                 history_score = history.getQuietHistory(board, ss, move);
@@ -436,15 +439,15 @@ namespace Astra
                 int lmr_depth = std::max(1, depth - r);
                 
                 // see pruning
-                int see_margin = is_cap ? depth * see_cap_margin : lmr_depth * see_quiet_margin;
+                int see_margin = isCap(move) ? depth * see_cap_margin : lmr_depth * see_quiet_margin;
                 if (!board.see(move, -see_margin))
                     continue; 
 
-                if (!is_cap && move.type() != PR_QUEEN)
+                if (!isCap(move) && move.type() != PQ_QUEEN)
                 {
                     // late move pruning
                     if (q_count > (3 + depth * depth) / (2 - improving))
-                        continue;
+                        mp.skip_quiets = true;
 
                     // history pruning
                     if (history_score < -hp_margin * depth && lmr_depth < 5) 
@@ -456,7 +459,7 @@ namespace Astra
                 }  
             }
 
-            if (is_cap && c_count < 32)
+            if (isCap(move) && c_count < 32)
                 c_moves[c_count++] = move;
             else if (q_count < 64)
                 q_moves[q_count++] = move;
@@ -486,7 +489,7 @@ namespace Astra
                 if (score < sbeta)  
                 {
                     if (!pv_node && score < sbeta - 14)
-                        extension = 2 + (!is_cap && !isProm(move) && score < sbeta - ext_margin);
+                        extension = 2 + (!isCap(move) && !isProm(move) && score < sbeta - ext_margin);
                     else 
                         extension = 1;
                 }
@@ -510,7 +513,7 @@ namespace Astra
             if (depth > 1 && made_moves > 1 && !in_check)
             { 
                 // increase when tt move is a capture or promotion
-                r += board.isCap(ent.move) || isProm(ent.move);
+                r += isCap(ent.move) || isProm(ent.move);
                 // increase when not improving
                 r += !improving;
                 // increase when in a cut node
@@ -572,7 +575,7 @@ namespace Astra
         }
 
         // check for mate and stalemate
-        if (mp.getMoveCount() == 0)
+        if (made_moves == 0)
             return ss->skipped != NO_MOVE ? alpha : in_check ? -VALUE_MATE + ss->ply : VALUE_DRAW;
 
         best_score = std::min(best_score, max_score);
@@ -654,13 +657,17 @@ namespace Astra
         Move best_move = NO_MOVE;
         Move move = NO_MOVE;
 
+        int made_moves = 0;
         while ((move = mp.nextMove()) != NO_MOVE)
         {
-            bool is_cap = board.isCap(move);
+            if (!board.isLegal(move))
+                continue;   
+
+            made_moves++;
 
             if (best_score > -VALUE_TB_WIN_IN_MAX_PLY)
             {
-                if (!in_check && futility <= alpha && is_cap && !board.see(move, 1))
+                if (!in_check && futility <= alpha && isCap(move) && !board.see(move, 1))
                 {
                     best_score = std::max(best_score, Score(futility));
                     continue;
@@ -694,12 +701,12 @@ namespace Astra
                     break; // cut-off
             }
 
-            if (best_score > -VALUE_TB_WIN_IN_MAX_PLY && in_check && !is_cap && ent.move != move) 
-                break;
+            if (best_score > -VALUE_TB_WIN_IN_MAX_PLY) 
+                mp.skip_quiets = true;
         }
 
-        if (mp.getMoveCount() == 0)
-            return in_check ? -VALUE_MATE + ss->ply : VALUE_DRAW;
+        if (in_check && made_moves == 0)
+            return -VALUE_MATE + ss->ply;
 
         if (best_score >= beta && abs(best_score) < VALUE_TB_WIN_IN_MAX_PLY)
             best_score = (best_score + beta) / 2;

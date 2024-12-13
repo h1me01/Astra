@@ -49,10 +49,12 @@ namespace Chess
         NUM_PIECE_TYPES = 6
     };
 
-    constexpr PieceType PIECE_TO_PIECE_TYPE[13] = {
+    constexpr PieceType PIECE_TO_PIECE_TYPE[13] = 
+    {
         PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING,
         PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING,
-        NO_PIECE_TYPE};
+        NO_PIECE_TYPE
+    };
 
     enum Piece
     {
@@ -85,7 +87,8 @@ namespace Chess
         NO_SQUARE, NUM_SQUARES = 64
     };
 
-    const std::string SQSTR[65] = {
+    const std::string SQSTR[65] = 
+    {
         "a1", "b1", "c1", "d1", "e1", "f1", "g1", "h1",
         "a2", "b2", "c2", "d2", "e2", "f2", "g2", "h2",
         "a3", "b3", "c3", "d3", "e3", "f3", "g3", "h3",
@@ -94,7 +97,8 @@ namespace Chess
         "a6", "b6", "c6", "d6", "e6", "f6", "g6", "h6",
         "a7", "b7", "c7", "d7", "e7", "f7", "g7", "h7",
         "a8", "b8", "c8", "d8", "e8", "f8", "g8", "h8",
-        "None"};
+        "None"
+    };
 
     enum File
     {
@@ -134,13 +138,18 @@ namespace Chess
 
     enum MoveType
     {
-        NORMAL,
+        QUIET,
+        CAPTURE,
         CASTLING,
         EN_PASSANT,
-        PR_KNIGHT,
-        PR_BISHOP,
-        PR_ROOK,
-        PR_QUEEN,
+        PQ_KNIGHT,
+        PQ_BISHOP,
+        PQ_ROOK,
+        PQ_QUEEN,
+        PC_KNIGHT,
+        PC_BISHOP,
+        PC_ROOK,
+        PC_QUEEN
     };
 
     // max number of possible legal moves in chess are 218
@@ -156,7 +165,7 @@ namespace Chess
         constexpr explicit Move(uint16_t m) : move(m) {}
 
         constexpr Move(const Move &other) : score(other.score), move(other.move) {}
-        constexpr Move(Square from, Square to, MoveType mt = NORMAL) : move(mt << 12 | from << 6 | to) {}
+        constexpr Move(Square from, Square to, MoveType mt) : move(mt << 12 | from << 6 | to) {}
 
         Square to() const { return Square(move & 0x3f); }
         Square from() const { return Square(move >> 6 & 0x3f); }
