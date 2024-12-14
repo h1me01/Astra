@@ -441,28 +441,27 @@ namespace Astra
             {
                 int lmr_depth = std::max(1, depth - r);
                 
-                // see pruning
-                int see_margin = isCap(move) ? depth * see_cap_margin : lmr_depth * see_quiet_margin;
-                if (!board.see(move, -see_margin))
-                    continue; 
+                // late move pruning
+                if (!isCap(move) && q_count > (3 + depth * depth) / (2 - improving))
+                    mp.skip_quiets = true;
 
                 if (!isCap(move) && move.type() != PQ_QUEEN)
                 {
-                    // late move pruning
-                    if (q_count > (3 + depth * depth) / (2 - improving))
-                        mp.skip_quiets = true;
-
                     // history pruning
                     if (history_score < -hp_margin * depth && lmr_depth < 5) 
-                        mp.skip_quiets = true;
-
-                    // futility pruning
-                    if (!in_check && lmr_depth <= 9 && eval + fp_base + lmr_depth * fp_mult <= alpha) 
                     {
                         mp.skip_quiets = true;
                         continue;
                     }
+                    // futility pruning
+                    if (!in_check && lmr_depth <= 9 && eval + fp_base + lmr_depth * fp_mult <= alpha) 
+                        mp.skip_quiets = true;
                 }  
+
+                // see pruning
+                int see_margin = isCap(move) ? depth * see_cap_margin : lmr_depth * see_quiet_margin;
+                if (!board.see(move, -see_margin))
+                    continue; 
             }
 
             if (isCap(move) && c_count < 32)
