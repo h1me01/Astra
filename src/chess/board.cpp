@@ -137,7 +137,7 @@ namespace Chess
 
         std::cout << "   a   b   c   d   e   f   g   h\n";
         std::cout << "\nFen: " << getFen() << std::endl;
-        std::cout << "Hash key: " << std::hex << hash << "\n\n";
+        std::cout << "Hash key: " << std::hex << hash << std::dec << "\n\n";
     }
 
     std::string Board::getFen() const
@@ -266,7 +266,8 @@ namespace Chess
         const Square from = m.from();
         const Square to = m.to();
         const Square ksq = kingSq(stm);
-        
+        const Square ep_sq = history[curr_ply].ep_sq;
+
         const Piece pc = pieceAt(from);
         const PieceType pt = typeOf(pc);
         
@@ -284,9 +285,33 @@ namespace Chess
         // move must exist, piece must exist, piece must match the current stm
         if (!m || pc == NO_PIECE || colorOf(pc) != stm)
             return false;
+        // if double check then only king can move
+        if (sparsePopCount(checkers) > 1 && pt != KING)
+            return false;
+        // if capture move, then target square must be occupied by enemy piece
+        if (mt != EN_PASSANT && isCap(m) && pieceAt(to) == NO_PIECE)
+            return false;
+        // if quiet move, then target square must be empty 
+        if (!isCap(m) && pieceAt(to) != NO_PIECE)
+            return false;
+        // if ep move, then ep square must be the same
+        if (mt == EN_PASSANT && ep_sq != to)
+            return false;
+        // if ep move, then pawn on ep square must be a enemy pawn
+        if (mt == EN_PASSANT && pieceAt(ep_sq) != makePiece(~stm, PAWN))
+            return false;
+        // we must not capture our own piece
+        if (SQUARE_BB[to] & us_bb)
+            return false;
+        // king can't move to danger squares
+        if (pt == KING && (SQUARE_BB[to] & danger))
+            return false;
 
         if (mt == CASTLING)
         {
+            if (pt != KING)
+                return false;
+
             // can't castle when in check or when no castling rights are present
             if (checkers || !history[curr_ply].castle_rights.any(stm))
                 return false;
@@ -306,8 +331,7 @@ namespace Chess
 
         if (isProm(m))
         {
-            // promotions can't resolve double checks
-            if (sparsePopCount(checkers) > 1)
+            if (pt != PAWN)
                 return false;
 
             U64 targets = checkers ? SQUARES_BETWEEN[ksq][lsb(checkers)] | checkers : -1ULL;
@@ -317,25 +341,9 @@ namespace Chess
             return (rank & attacks & targets) & SQUARE_BB[to];
         }
 
-        // if capture move, then target square must be occupied by enemy piece
-        if (mt != EN_PASSANT && isCap(m) && pieceAt(to) == NO_PIECE)
-            return false;
-        // if quiet move, then target square must be empty 
-        if (!isCap(m) && pieceAt(to) != NO_PIECE)
-            return false;
-        // if ep move, then ep square must be the same
-        if (mt == EN_PASSANT && history[curr_ply].ep_sq != to)
-            return false;
-        // if we must not capture our own piece
-        if (SQUARE_BB[to] & us_bb)
-            return false;
-        // king can't move to danger squares
-        if (pt == KING && (SQUARE_BB[to] & danger))
-            return false;
-
         if (pt == PAWN)
         {
-            // no promotion moves allowed here
+            // no promotion moves allowed here since we already handled them
             if (SQUARE_BB[to] & (MASK_RANK[RANK_1] | MASK_RANK[RANK_8]))
                 return false;
 
@@ -346,7 +354,7 @@ namespace Chess
                 // is single push?
                 bool singe_push = (Square(from + up) == to) && pieceAt(to) == NO_PIECE;
                 // is double push?
-                bool double_push = (std::abs(from - to) == 16) && pieceAt(from + up) == NO_PIECE && pieceAt(to) == NO_PIECE;
+                bool double_push = (Square(from + 2 * up) == to) && pieceAt(to) == NO_PIECE && pieceAt(to - up) == NO_PIECE;
 
                 // if none of the conditions above are met, then it's not pseudo legal
                 if (!capture && !singe_push && !double_push)
@@ -360,10 +368,6 @@ namespace Chess
         // check for blockers/captures of the checker
         if (checkers && pt != KING)
         {
-            // double checks can't be resolved trough capture or blocking
-            if (sparsePopCount(checkers) > 1)
-                return false;
-
             U64 target = SQUARES_BETWEEN[ksq][lsb(checkers)] | checkers;
             Square cap_sq = mt == EN_PASSANT ? Square(to ^ 8) : to;
             
@@ -390,6 +394,8 @@ namespace Chess
         curr_ply++;
         history[curr_ply] = StateInfo(history[curr_ply - 1]);
         history[curr_ply].half_move_clock++;
+
+        history[curr_ply].temp = m;
 
         // reset half move clock if pawn move or capture
         if (pt == PAWN || captured != NO_PIECE)

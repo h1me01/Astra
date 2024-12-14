@@ -38,6 +38,7 @@ namespace Chess
 
     struct StateInfo
     {
+        Move temp;
         U64 hash;
         Piece captured;
         Square ep_sq;
@@ -57,6 +58,7 @@ namespace Chess
 
         StateInfo(const StateInfo &prev)
         {
+            temp = prev.temp;
             hash = prev.hash;
             captured = prev.captured;
             ep_sq = prev.ep_sq;
@@ -68,6 +70,7 @@ namespace Chess
         {
             if (this != &other)
             {
+                temp = other.temp;
                 hash = other.hash;
                 captured = other.captured;
                 ep_sq = other.ep_sq;
