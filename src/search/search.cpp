@@ -449,13 +449,14 @@ namespace Astra
                 {
                     // history pruning
                     if (history_score < -hp_margin * depth && lmr_depth < 5) 
+                        mp.skip_quiets = true;
+
+                    // futility pruning
+                    if (!in_check && lmr_depth <= 9 && eval + fp_base + lmr_depth * fp_mult <= alpha) 
                     {
                         mp.skip_quiets = true;
                         continue;
                     }
-                    // futility pruning
-                    if (!in_check && lmr_depth <= 9 && eval + fp_base + lmr_depth * fp_mult <= alpha) 
-                        mp.skip_quiets = true;
                 }  
 
                 // see pruning
