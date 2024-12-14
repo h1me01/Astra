@@ -10,36 +10,36 @@
 namespace Astra
 {
     // search parameters
-    PARAM(lmr_base, 100, 80, 120, 8);
-    PARAM(lmr_div, 180, 150, 200, 8);
+    PARAM(lmr_base, 95, 80, 120, 8);
+    PARAM(lmr_div, 182, 150, 200, 8);
 
     PARAM(asp_depth, 9, 5, 9, 1);
-    PARAM(asp_window, 8, 5, 30, 5);
+    PARAM(asp_window, 10, 5, 30, 5);
 
-    PARAM(rzr_depth_mult, 190, 150, 250, 15);
-    PARAM(rfp_depth_mult, 62, 60, 110, 8);
+    PARAM(rzr_depth_mult, 195, 150, 250, 15);
+    PARAM(rfp_depth_mult, 60, 60, 110, 8);
 
     PARAM(nmp_min, 3, 3, 6, 1);
     PARAM(nmp_depth_div, 7, 3, 15, 1);
-    PARAM(nmp_div, 231, 190, 235, 8);
+    PARAM(nmp_div, 230, 190, 235, 8);
 
-    PARAM(probcut_margin, 154, 130, 180, 15);
+    PARAM(probcut_margin, 157, 130, 180, 15);
 
     PARAM(see_cap_margin, 100, 70, 120, 8);
-    PARAM(see_quiet_margin, 96, 70, 120, 8);
+    PARAM(see_quiet_margin, 99, 70, 120, 8);
 
-    PARAM(fp_base, 152, 120, 180, 10);
-    PARAM(fp_mult, 106, 70, 150, 10);
+    PARAM(fp_base, 155, 120, 180, 10);
+    PARAM(fp_mult, 99, 70, 150, 10);
 
-    PARAM(ext_margin, 134, 45, 150, 12);
+    PARAM(ext_margin, 131, 45, 150, 12);
 
-    PARAM(zws_margin, 76, 60, 90, 8);
+    PARAM(zws_margin, 80, 60, 90, 8);
 
-    PARAM(hp_margin, 4800, 2500, 5000, 400);
-    PARAM(hp_div, 8192, 7000, 8500, 400);
-    PARAM(hbonus_margin, 73, 65, 80, 5);
+    PARAM(hp_margin, 4630, 2500, 5000, 400);
+    PARAM(hp_div, 8147, 7000, 8500, 400);
+    PARAM(hbonus_margin, 74, 65, 80, 5);
 
-    PARAM(qfp_margin, 85, 60, 150, 15);
+    PARAM(qfp_margin, 93, 60, 150, 15);
 
     // search helper
 
@@ -96,16 +96,16 @@ namespace Astra
         Move best_move = NO_MOVE;
         for (int depth = 1; depth < MAX_PLY; depth++)
         {
+            // reset pv
+            for (auto& pv_line : pv_table)
+                pv_line.length = 0;
+
             root_depth = depth;
             Score result = aspSearch(depth, previous_result, ss);
             previous_result = result;
 
             if (isLimitReached(depth)) 
-            {
-                if (pv_table[0][0] != NO_MOVE) 
-                    best_move = pv_table[0][0];
                 break;
-            }
 
             if (id == 0 && depth >= 10 && limit.time.optimum)
             {
@@ -566,7 +566,7 @@ namespace Astra
                     alpha = score;
                     best_move = move;
                     // update best move when in pv node
-                    if (pv_node)
+                    if (id == 0 && pv_node)
                         updatePV(ss->ply, best_move);
                 }
 
@@ -784,9 +784,12 @@ namespace Astra
                   << " pv";
 
         // print the pv
-        for (int i = 0; i < pv_line.length; i++)
-            std::cout << " " << pv_line[i];
-
+        if (pv_line.length)
+            for (int i = 0; i < pv_line.length; i++)
+                std::cout << " " << pv_line[i];
+        else
+            std::cout << " " << pv_line[0];
+       
         std::cout << std::endl;
     }
 

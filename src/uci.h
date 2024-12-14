@@ -1,6 +1,7 @@
 #ifndef UCI_H
 #define UCI_H
 
+#include <fstream>
 #include <unordered_map>
 #include "search/search.h"
 
@@ -49,17 +50,23 @@ namespace UCI
     {
     public :
         Uci();
-
+        ~Uci(); 
+        
         void loop(int argc, char** argv);
 
     private:
         Board board;
         Options options;
+        std::ofstream logFile; 
 
         void updatePosition(std::istringstream& is);
         void go(std::istringstream& is);
 
         Move getMove(const std::string& str_move) const;
+
+        void openLog(const std::string& filename = "astra_log.txt");
+        void closeLog();
+        void writeLog(const std::string& message);
     };
 
 } // namespace UCI

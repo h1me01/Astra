@@ -331,13 +331,14 @@ namespace Chess
 
         if (isProm(m))
         {
+            // make sure we move a pawn
             if (pt != PAWN)
                 return false;
 
             U64 targets = checkers ? SQUARES_BETWEEN[ksq][lsb(checkers)] | checkers : -1ULL;
             U64 rank = MASK_RANK[relativeRank(stm, RANK_8)];
             U64 attacks = (shift(up, SQUARE_BB[from]) & ~occ) | (getPawnAttacks(stm, from) & them_bb);
-
+    	    // only pseudo legal, if target range is reachable
             return (rank & attacks & targets) & SQUARE_BB[to];
         }
 

@@ -131,12 +131,20 @@ namespace UCI
         options.add("SyzygyPath", Option("string", "", "", 0, 0));
 #endif
         options.apply();
+
+        //openLog();
+    }
+
+    Uci::~Uci()
+    {
+        //closeLog();
     }
 
     void Uci::loop(int argc, char **argv)
     {
-        if (argc > 1 && strncmp(argv[1], "bench", 5) == 0) {
-            Bench::bench(2); 
+        if (argc > 1 && strncmp(argv[1], "bench", 5) == 0)
+        {
+            Bench::bench(2);
             return;
         }
 
@@ -145,6 +153,8 @@ namespace UCI
 
         while (std::getline(std::cin, line))
         {
+            //writeLog(line);
+
             std::istringstream is(line);
             token.clear();
             is >> std::skipws >> token;
@@ -171,7 +181,7 @@ namespace UCI
                 Bench::bench(13);
             else if (token == "tune")
             {
-                //Astra::paramsToSpsa();
+                // Astra::paramsToSpsa();
                 Astra::paramsToJSON();
             }
             else if (token == "setoption")
@@ -267,9 +277,9 @@ namespace UCI
         const int64_t time_left = stm == WHITE ? w_time : b_time;
         const int inc = stm == WHITE ? w_inc : b_inc;
 
-        if (move_time != 0) 
+        if (move_time != 0)
         {
-            limit.time.optimum = move_time; 
+            limit.time.optimum = move_time;
             limit.time.max = move_time;
         }
         else if (time_left != 0)
@@ -316,6 +326,31 @@ namespace UCI
         }
 
         return Move(from, to, mt);
+    }
+
+    void Uci::openLog(const std::string &filename)
+    {
+        logFile.open(filename, std::ios::app);
+        writeLog("=== New Session Started ===");
+    }
+
+    void Uci::closeLog()
+    {
+        if (logFile.is_open())
+        {
+            writeLog("=== Session Ended ===");
+            logFile.close();
+        }
+    }
+
+    void Uci::writeLog(const std::string &message)
+    {
+        if (logFile.is_open())
+        {
+            auto now = std::chrono::system_clock::now();
+            auto time = std::chrono::system_clock::to_time_t(now);
+            logFile << std::ctime(&time) << ": " << message << std::endl;
+        }
     }
 
 } // namespace UCI
