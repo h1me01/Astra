@@ -194,7 +194,7 @@ namespace Astra
         if (ss->ply >= MAX_PLY - 1)
             return adjustEval(Eval::evaluate(board));
 
-        pv_table[ss->ply].length = ss->ply;
+        pv_table[ss->ply].length = 0;
 
         // variables
         const bool root_node = ss->ply == 0;
@@ -565,16 +565,21 @@ namespace Astra
                 {
                     alpha = score;
                     best_move = move;
+                    
                     // update best move when in pv node
                     if (id == 0 && pv_node)
-                        updatePV(ss->ply, best_move);
+                    {
+                        pv_table[ss->ply][0] = move;
+                        for (int i = 0; i < pv_table[ss->ply + 1].length; i++)
+                            pv_table[ss->ply][i + 1] = pv_table[ss->ply + 1][i];
+                        pv_table[ss->ply].length = pv_table[ss->ply + 1].length + 1;
+                    }
                 }
 
                 if (alpha >= beta)
                 {
                     history.update(board, move, ss, q_moves, q_count, c_moves, c_count, depth + (best_score > beta + hbonus_margin));
-                    // cut-off
-                    break;
+                    break; // cut-off
                 }
             }
         }
@@ -730,18 +735,6 @@ namespace Astra
         return (200 - board.halfMoveClock()) * eval / 200;
     }
 
-    void Search::updatePV(int ply, Move& m)
-    {
-        PVLine &current_pv = pv_table[ply];
-        current_pv[ply] = m;
-
-        uint8_t next_length = pv_table[ply + 1].length;
-        for (int next_ply = ply + 1; next_ply < next_length; next_ply++)
-            current_pv[next_ply] = pv_table[ply + 1][next_ply];
-
-        current_pv.length = next_length;
-    }
-
     bool Search::isLimitReached(const int depth) const
     {
         if (limit.infinite)
@@ -750,13 +743,18 @@ namespace Astra
         if (threads.isStopped())
             return true;
 
-        if (limit.time.optimum != 0 && tm.elapsedTime() > limit.time.optimum)
-            return true;
-
         if (limit.nodes != 0 && nodes >= limit.nodes)
             return true;
 
         if (depth > limit.depth)
+            return true;
+
+        int elapsed_time = tm.elapsedTime();
+
+        if (limit.time.optimum != 0 && elapsed_time > limit.time.optimum)
+            return true;
+
+        if (limit.time.max != 0 && elapsed_time > limit.time.max)
             return true;
 
         return false;
@@ -784,11 +782,8 @@ namespace Astra
                   << " pv";
 
         // print the pv
-        if (pv_line.length)
-            for (int i = 0; i < pv_line.length; i++)
-                std::cout << " " << pv_line[i];
-        else
-            std::cout << " " << pv_line[0];
+        for (int i = 0; i < pv_line.length; i++)
+            std::cout << " " << pv_line[i];
        
         std::cout << std::endl;
     }

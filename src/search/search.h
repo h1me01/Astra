@@ -63,8 +63,6 @@ namespace Astra
         Score qSearch(int depth, Score alpha, Score beta, Stack *ss);
 
         int adjustEval(Score eval) const;
-        void updatePV(int ply, Move& m);
-
         bool isLimitReached(int depth) const;
         void printUciInfo(Score result, int depth, PVLine &pv_line) const;
     };
