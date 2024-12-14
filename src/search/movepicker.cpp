@@ -48,7 +48,7 @@ namespace Astra
                 if (move == tt_move)
                     continue;
 
-                if (!board.see(move, -move.score / 64))
+                if (!board.see(move, -move.score / 16))
                 {
                     // add to bad noisy
                     ml_bad_noisy.add(move);
@@ -107,7 +107,7 @@ namespace Astra
             while (idx < ml_bad_noisy.size())
             {
                 partialInsertionSort(ml_bad_noisy, idx);
-                Move move = ml_main[idx];
+                Move move = ml_bad_noisy[idx];
                 idx++;
 
                 // skip tt move
@@ -243,15 +243,15 @@ namespace Astra
             const Square from = ml_main[i].from();
             const Square to = ml_main[i].to();
 
-            ml_main[i].score = 2 * history.getHistoryHeuristic(board.getTurn(), ml_main[i]);
-            ml_main[i].score += 2 * (ss - 1)->cont_history[pc][to];
-            ml_main[i].score += 2 * (ss - 2)->cont_history[pc][to];
-            ml_main[i].score += (ss - 4)->cont_history[pc][to];
-            ml_main[i].score += (ss - 6)->cont_history[pc][to];
+            ml_main[i].score = history.getHistoryHeuristic(board.getTurn(), ml_main[i]);
+            ml_main[i].score += (ss - 1)->cont_history[pc][to];
+            ml_main[i].score += (ss - 2)->cont_history[pc][to];
+            ml_main[i].score += (ss - 4)->cont_history[pc][to] / 2;
+            ml_main[i].score += (ss - 6)->cont_history[pc][to] / 2;
 
             if (pt != PAWN && pt != KING)
             {
-                U64 danger = board.history[board.getPly()].threats[pt];
+                U64 danger = board.history[board.getPly()].threats[std::max(0, pt - BISHOP)];
 
                 if (danger & SQUARE_BB[from]) // if move is a threat
                     ml_main[i].score += 16384;
@@ -269,7 +269,7 @@ namespace Astra
             
             PieceType captured = ml_main[i].type() == EN_PASSANT ? PAWN : typeOf(board.pieceAt(ml_main[i].to()));
             bool is_cap = captured != NO_PIECE_TYPE; // quiet queen prom is not a capture
-            
+
             ml_main[i].score = PIECE_VALUES[captured] + isProm(ml_main[i]) * 8192 + (is_cap ? history.getCaptureHistory(board, ml_main[i]) : 0);
         }
     }
