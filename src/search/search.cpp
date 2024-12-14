@@ -454,11 +454,14 @@ namespace Astra
 
                     // history pruning
                     if (history_score < -hp_margin * depth && lmr_depth < 5) 
-                        continue;
+                        mp.skip_quiets = true;
 
                     // futility pruning
                     if (!in_check && lmr_depth <= 9 && eval + fp_base + lmr_depth * fp_mult <= alpha) 
+                    {
+                        mp.skip_quiets = true;
                         continue;
+                    }
                 }  
             }
 
@@ -513,7 +516,7 @@ namespace Astra
             Score score = VALUE_NONE;
 
             // late move reductions
-            if (depth > 1 && made_moves > 1 && !in_check)
+            if (depth > 1 && made_moves > 1 && !(pv_node && in_check))
             { 
                 // increase when tt move is a capture or promotion
                 r += isCap(ent.move) || isProm(ent.move);
