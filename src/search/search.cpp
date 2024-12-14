@@ -751,10 +751,10 @@ namespace Astra
 
         int elapsed_time = tm.elapsedTime();
 
-        if (limit.time.optimum != 0 && elapsed_time > limit.time.optimum)
+        if (limit.time.optimum != 0 && elapsed_time >= limit.time.optimum)
             return true;
 
-        if (limit.time.max != 0 && elapsed_time > limit.time.max)
+        if (limit.time.max != 0 && elapsed_time >= limit.time.max)
             return true;
 
         return false;
@@ -784,7 +784,7 @@ namespace Astra
         // print the pv
         for (int i = 0; i < pv_line.length; i++)
             std::cout << " " << pv_line[i];
-       
+
         std::cout << std::endl;
     }
 

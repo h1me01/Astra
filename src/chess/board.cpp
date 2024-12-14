@@ -266,17 +266,16 @@ namespace Chess
         const Square from = m.from();
         const Square to = m.to();
         const Square ksq = kingSq(stm);
-        const Square ep_sq = history[curr_ply].ep_sq;
 
         const Piece pc = pieceAt(from);
         const PieceType pt = typeOf(pc);
-        
+
         const MoveType mt = m.type();
-        
+
         const U64 us_bb = occupancy(stm);
         const U64 them_bb = occupancy(~stm);
         const U64 occ = us_bb | them_bb;
-        
+
         const U64 checkers = history[curr_ply].checkers;
         const U64 danger = history[curr_ply].danger;
 
@@ -291,14 +290,8 @@ namespace Chess
         // if capture move, then target square must be occupied by enemy piece
         if (mt != EN_PASSANT && isCap(m) && pieceAt(to) == NO_PIECE)
             return false;
-        // if quiet move, then target square must be empty 
+        // if quiet move, then target square must be empty
         if (!isCap(m) && pieceAt(to) != NO_PIECE)
-            return false;
-        // if ep move, then ep square must be the same
-        if (mt == EN_PASSANT && ep_sq != to)
-            return false;
-        // if ep move, then pawn on ep square must be a enemy pawn
-        if (mt == EN_PASSANT && pieceAt(ep_sq) != makePiece(~stm, PAWN))
             return false;
         // we must not capture our own piece
         if (SQUARE_BB[to] & us_bb)
@@ -309,6 +302,7 @@ namespace Chess
 
         if (mt == CASTLING)
         {
+            // make sure we move a king
             if (pt != KING)
                 return false;
 
@@ -329,6 +323,24 @@ namespace Chess
             return false;
         }
 
+        if (mt == EN_PASSANT)
+        {
+            Square ep_sq = history[curr_ply].ep_sq;
+
+            // make sure we move a pawn
+            if (pt != PAWN)
+                return false;
+            // to square must not be occupied
+            if (pieceAt(to) != NO_PIECE)
+                return false;
+            // ep square must be the same
+            if (ep_sq != to)
+                return false;
+            // pawn on ep square must be a enemy pawn
+            if (pieceAt(ep_sq) != makePiece(~stm, PAWN))
+                return false;
+        }
+
         if (isProm(m))
         {
             // make sure we move a pawn
@@ -338,29 +350,27 @@ namespace Chess
             U64 targets = checkers ? SQUARES_BETWEEN[ksq][lsb(checkers)] | checkers : -1ULL;
             U64 rank = MASK_RANK[relativeRank(stm, RANK_8)];
             U64 attacks = (shift(up, SQUARE_BB[from]) & ~occ) | (getPawnAttacks(stm, from) & them_bb);
-    	    // only pseudo legal, if target range is reachable
+            // only pseudo legal, if target range is reachable
             return (rank & attacks & targets) & SQUARE_BB[to];
         }
 
-        if (pt == PAWN)
+        if (pt == PAWN && mt != EN_PASSANT)
         {
             // no promotion moves allowed here since we already handled them
             if (SQUARE_BB[to] & (MASK_RANK[RANK_1] | MASK_RANK[RANK_8]))
                 return false;
 
-            if (mt != EN_PASSANT)
-            {
-                // is capture?
-                bool capture = getPawnAttacks(stm, from) & them_bb & SQUARE_BB[to]; 
-                // is single push?
-                bool singe_push = (Square(from + up) == to) && pieceAt(to) == NO_PIECE;
-                // is double push?
-                bool double_push = (Square(from + 2 * up) == to) && pieceAt(to) == NO_PIECE && pieceAt(to - up) == NO_PIECE;
+            // is capture?
+            bool capture = getPawnAttacks(stm, from) & them_bb & SQUARE_BB[to];
+            // is single push?
+            bool singe_push = (Square(from + up) == to) && pieceAt(to) == NO_PIECE;
+            // is double push?
+            bool double_push = relativeRank(stm, RANK_2) == rankOf(from) && (Square(from + 2 * up) == to) && 
+                                pieceAt(to) == NO_PIECE && pieceAt(to - up) == NO_PIECE;
 
-                // if none of the conditions above are met, then it's not pseudo legal
-                if (!capture && !singe_push && !double_push)
-                    return false;
-            }
+            // if none of the conditions above are met, then it's not pseudo legal
+            if (!capture && !singe_push && !double_push)
+                return false;
         }
         // if a non pawn piece's target range isn't reachable, then it's not pseudo legal
         else if (!(getAttacks(pt, from, occ) & SQUARE_BB[to]))
@@ -371,7 +381,7 @@ namespace Chess
         {
             U64 target = SQUARES_BETWEEN[ksq][lsb(checkers)] | checkers;
             Square cap_sq = mt == EN_PASSANT ? Square(to ^ 8) : to;
-            
+
             // if move can't capture/block the checker, then it's not pseudo legal
             if (!(target & SQUARE_BB[cap_sq]))
                 return false;
