@@ -192,7 +192,7 @@ namespace Astra
             return beta;
 
         if (ss->ply >= MAX_PLY - 1)
-            return Eval::evaluate(board);
+            return adjustEval(Eval::evaluate(board));
 
         pv_table[ss->ply].length = ss->ply;
 
@@ -317,12 +317,15 @@ namespace Astra
 
                 ss->static_eval = eval;
 
+                eval = adjustEval(eval);
+
                 if (tt_score != VALUE_NONE && (ent.bound & (tt_score > eval ? LOWER_BOUND : UPPER_BOUND)))
                     eval = tt_score;
             }
             else if (!ss->skipped)
             {
                 eval = ss->static_eval = Eval::evaluate(board);
+                eval = adjustEval(eval);
                 tt.store(hash, NO_MOVE, scoreToTT(eval, ss->ply), -1, NO_BOUND);
             }
 
@@ -604,7 +607,7 @@ namespace Astra
             return VALUE_DRAW;
 
         if (ss->ply >= MAX_PLY - 1)
-            return Eval::evaluate(board);
+            return adjustEval(Eval::evaluate(board));
 
         Score best_score = -VALUE_MATE + ss->ply;
         int eval = ss->static_eval;
@@ -632,6 +635,7 @@ namespace Astra
                     eval = Eval::evaluate(board);
 
                 ss->static_eval = eval;
+                eval = adjustEval(eval);
 
                 if (tt_score != VALUE_NONE && (ent.bound & (tt_score > eval ? LOWER_BOUND : UPPER_BOUND)))
                     eval = tt_score;
@@ -639,6 +643,7 @@ namespace Astra
             else
             {
                 eval = ss->static_eval = Eval::evaluate(board);
+                eval = adjustEval(eval);
                 tt.store(hash, NO_MOVE, scoreToTT(eval, ss->ply), -1, NO_BOUND);
             }
 
@@ -716,6 +721,11 @@ namespace Astra
         tt.store(hash, best_move, scoreToTT(best_score, ss->ply), 0, bound);
 
         return best_score;
+    }
+
+    int Search::adjustEval(Score eval) const
+    {
+        return (200 - board.halfMoveClock()) * eval / 200;
     }
 
     void Search::updatePV(int ply, Move& m)

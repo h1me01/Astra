@@ -62,6 +62,7 @@ namespace Astra
         Score negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_node);
         Score qSearch(int depth, Score alpha, Score beta, Stack *ss);
 
+        int adjustEval(Score eval) const;
         void updatePV(int ply, Move& m);
 
         bool isLimitReached(int depth) const;
