@@ -9,8 +9,6 @@ namespace Astra
 
     void ThreadPool::launchWorkers(const Board &board, const Limits &limit, int worker_count, bool use_tb)
     {
-        stopAll(); // stop all threads
-
         stop = false;
 
         threads.clear();
@@ -25,7 +23,7 @@ namespace Astra
         }
 
         for (int i = 0; i < worker_count; i++)
-            running_threads.emplace_back(&Search::start, std::ref(threads[i]));   
+            running_threads.emplace_back(&Search::start, std::ref(threads[i]));
     }
 
     void ThreadPool::stopAll()

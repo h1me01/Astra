@@ -38,7 +38,6 @@ namespace Chess
 
     struct StateInfo
     {
-        Move temp;
         U64 hash;
         Piece captured;
         Square ep_sq;
@@ -46,11 +45,11 @@ namespace Chess
         int half_move_clock;
         
         // enemy pieces that check our king
-        U64 checkers;
+        U64 checkers = 0;
         // squares of our pinned pieces
-        U64 pinned;
+        U64 pinned = 0;
         // potential danger squares for our king
-        U64 danger;
+        U64 danger = 0;
         
         U64 threats[NUM_PIECE_TYPES];
 
@@ -58,24 +57,28 @@ namespace Chess
 
         StateInfo(const StateInfo &prev)
         {
-            temp = prev.temp;
             hash = prev.hash;
             captured = prev.captured;
             ep_sq = prev.ep_sq;
             half_move_clock = prev.half_move_clock;
             castle_rights = prev.castle_rights;
+            checkers = prev.checkers;
+            pinned = prev.pinned;
+            danger = prev.danger;
         }
 
         StateInfo &operator=(const StateInfo &other)
         {
             if (this != &other)
             {
-                temp = other.temp;
                 hash = other.hash;
                 captured = other.captured;
                 ep_sq = other.ep_sq;
                 half_move_clock = other.half_move_clock;
                 castle_rights = other.castle_rights;
+                checkers = other.checkers;
+                pinned = other.pinned;
+                danger = other.danger;
             }
             return *this;
         }

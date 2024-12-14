@@ -395,8 +395,6 @@ namespace Chess
         history[curr_ply] = StateInfo(history[curr_ply - 1]);
         history[curr_ply].half_move_clock++;
 
-        history[curr_ply].temp = m;
-
         // reset half move clock if pawn move or capture
         if (pt == PAWN || captured != NO_PIECE)
             history[curr_ply].half_move_clock = 0;
