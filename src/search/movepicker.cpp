@@ -247,16 +247,22 @@ namespace Astra
             ml_main[i].score += (ss - 1)->cont_history[pc][to];
             ml_main[i].score += (ss - 2)->cont_history[pc][to];
             ml_main[i].score += (ss - 4)->cont_history[pc][to] / 2;
-            ml_main[i].score += (ss - 6)->cont_history[pc][to] / 2;
+            ml_main[i].score += (ss - 6)->cont_history[pc][to] / 4;
 
             if (pt != PAWN && pt != KING)
             {
-                U64 danger = board.history[board.getPly()].threats[std::max(0, pt - BISHOP)];
+                U64 danger;
+                if (pt == QUEEN)
+                    danger = board.getThreats(ROOK);
+                else if (pt == ROOK)
+                    danger = board.getThreats(BISHOP) | board.getThreats(KNIGHT);
+                else
+                    danger = board.getThreats(PAWN);
 
-                if (danger & SQUARE_BB[from]) // if move is a threat
-                    ml_main[i].score += 16384;
-                else if (danger & SQUARE_BB[to]) // if move is blocking a threat
-                    ml_main[i].score -= 16384;
+                if (danger & SQUARE_BB[from]) 
+                    ml_main[i].score += 16384 + 16384 * (pt == QUEEN);
+                else if (danger & SQUARE_BB[to])
+                    ml_main[i].score -= 16384 + 16384 * (pt == QUEEN);
             }
         }
     }

@@ -8,7 +8,7 @@ namespace Astra
 {
     PARAM(history_mult, 150, 130, 180, 8);
     PARAM(history_minus, 37, 10, 50, 10);
-    PARAM(max_history_bonus, 1646, 1500, 1800, 50);
+    PARAM(max_history_bonus, 1646, 1100, 1800, 50);
 
     int historyBonus(int depth)
     {
@@ -30,10 +30,8 @@ namespace Astra
 
         assert(pc != NO_PIECE);
 
-        return hh[board.getTurn()][from][to] +
-                (ss - 1)->cont_history[pc][to] +
-                (ss - 2)->cont_history[pc][to] +
-                (ss - 4)->cont_history[pc][to];
+        return hh[board.getTurn()][from][to] + (ss - 1)->cont_history[pc][to] +
+              (ss - 2)->cont_history[pc][to] + (ss - 4)->cont_history[pc][to];
     }
 
     int History::getCaptureHistory(const Board &board, Move &move) const
@@ -69,13 +67,13 @@ namespace Astra
                 ss->killer1 = best;
             }
 
-            if (depth > 4 || qc > 1)
+            if (depth > 3)
             {
                 updateQH(best, stm, bonus);
                 updateContH(board, best, ss, bonus);
             }
 
-            // update quiet maluses
+            // quiet maluses
             for (int i = 0; i < qc; i++)
             {
                 Move quiet = q_moves[i];
@@ -89,7 +87,7 @@ namespace Astra
         else
             updateCH(board, best, bonus);
 
-        // update capture maluses
+        // capture maluses
         for (int i = 0; i < cc; i++)
         {
             Move cap = c_moves[i];

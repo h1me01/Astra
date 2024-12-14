@@ -129,7 +129,7 @@ namespace Chess
         bool isInsufficientMaterial() const;
         bool isDraw() const;
         bool see(Move &m, int threshold) const;
-
+        
         U64 getThreats(PieceType pt) const;
         
     private:
