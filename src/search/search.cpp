@@ -4,43 +4,11 @@
 #include "syzygy.h"
 #include "threads.h"
 #include "movepicker.h"
-#include "tune.h"
 #include "../eval/eval.h"
+#include "tune.h"
 
 namespace Astra
 {
-    // search parameters
-    PARAM(lmr_base, 89, 80, 120, 8);
-    PARAM(lmr_div, 176, 150, 200, 8);
-
-    PARAM(asp_depth, 9, 5, 9, 1);
-    PARAM(asp_window, 10, 5, 30, 5);
-
-    PARAM(rzr_depth_mult, 196, 150, 250, 15);
-    PARAM(rfp_depth_mult, 67, 60, 110, 8);
-
-    PARAM(nmp_min, 4, 3, 6, 1);
-    PARAM(nmp_depth_div, 7, 3, 15, 1);
-    PARAM(nmp_div, 222, 190, 235, 8);
-
-    PARAM(probcut_margin, 153, 130, 180, 15);
-
-    PARAM(see_cap_margin, 96, 70, 120, 8);
-    PARAM(see_quiet_margin, 99, 70, 120, 8);
-
-    PARAM(fp_base, 155, 120, 180, 10);
-    PARAM(fp_mult, 97, 70, 150, 10);
-
-    PARAM(ext_margin, 138, 45, 150, 12);
-
-    PARAM(zws_margin, 83, 60, 90, 8);
-
-    PARAM(hp_margin, 4499, 2500, 5000, 400);
-    PARAM(hp_div, 8016, 7000, 8500, 400);
-    PARAM(hbonus_margin, 75, 65, 80, 5);
-
-    PARAM(qfp_margin, 98, 60, 150, 15);
-
     // search helper
 
     int REDUCTIONS[MAX_PLY][MAX_MOVES];
@@ -378,7 +346,7 @@ namespace Astra
             
             // probcut
             int beta_cut = beta + probcut_margin;
-            if (depth > 4 && std::abs(beta) < VALUE_TB_WIN_IN_MAX_PLY && 
+            if (depth > 5 && std::abs(beta) < VALUE_TB_WIN_IN_MAX_PLY && 
                 !(ent.depth >= depth - 3 && tt_score != VALUE_NONE && tt_score < beta_cut))
             {
                 MovePicker mp(PC_SEARCH, board, history, ss, ent.move);

@@ -1,14 +1,11 @@
 #include "history.h"
 #include "search.h"
+#include "tune.h"
 
 #include <cstring> // for memset
-#include "tune.h"
 
 namespace Astra
 {
-    PARAM(history_mult, 148, 130, 180, 8);
-    PARAM(history_minus, 50, 10, 50, 10);
-    PARAM(max_history_bonus, 1607, 1100, 1800, 50);
 
     int historyBonus(int depth)
     {
