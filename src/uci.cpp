@@ -273,6 +273,8 @@ namespace UCI
             }
         }
 
+        Astra::threads.stopAll();
+
         Color stm = board.getTurn();
         const int64_t time_left = stm == WHITE ? w_time : b_time;
         const int inc = stm == WHITE ? w_inc : b_inc;

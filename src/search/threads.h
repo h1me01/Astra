@@ -21,7 +21,7 @@ namespace Astra
         // stop running all threads
         std::atomic<bool> stop{false};
 
-        std::vector<Search> threads;
+        std::vector<std::unique_ptr<Search>> threads;
         std::vector<std::thread> running_threads;
     };
 

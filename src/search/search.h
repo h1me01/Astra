@@ -11,13 +11,13 @@ namespace Astra
     {
         uint16_t ply;
         Score static_eval = VALUE_NONE;
-        
+
         Move skipped = NO_MOVE;
         Move killer1 = NO_MOVE;
         Move killer2 = NO_MOVE;
         Move curr_move = NO_MOVE;
 
-        int16_t cont_history[NUM_PIECES + 1][NUM_SQUARES] {};
+        int16_t cont_history[NUM_PIECES + 1][NUM_SQUARES]{};
     };
 
     struct PVLine
@@ -25,7 +25,7 @@ namespace Astra
         Move pv[MAX_PLY + 1];
         uint8_t length = 0;
 
-        Move& operator[](int depth) { return pv[depth]; }
+        Move &operator[](int depth) { return pv[depth]; }
         Move operator[](int depth) const { return pv[depth]; }
     };
 
@@ -43,20 +43,20 @@ namespace Astra
 
         U64 nodes = 0;
         U64 tb_hits = 0;
-        
-        uint8_t sel_depth = 0;
+
+        int sel_depth = 0;
 
         Limits limit;
 
         Search(const std::string &fen);
 
-        Move start();
+        Move bestMove();
 
     private:
         int root_depth = 0;
         PVLine pv_table[MAX_PLY + 1];
-       
-        TimeMan tm; 
+
+        TimeMan tm;
 
         Score aspSearch(int depth, Score prev_eval, Stack *ss);
         Score negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_node);
