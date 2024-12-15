@@ -55,9 +55,9 @@ namespace Chess
                     num_ep_moves++;
                 else if (m.type() == CASTLING)
                     num_cs_moves++;
-                else if (m.type() >= PR_KNIGHT)
+                else if (isProm(m))
                     num_pr_moves++;
-                else if (board.isCap(m))
+                else if (isCap(m))
                     num_c_moves++;
                 else
                     num_q_moves++;
@@ -102,13 +102,12 @@ namespace Chess
                 {
                     std::cout << "Test passed" << std::endl;
                     /*
-                    std::cout << "Test passed" << std::endl;
-                    std::cout << "Num EP: " << num_ep_moves << std::endl;
-                    std::cout << "Num CS: " << num_cs_moves << std::endl;
-                    std::cout << "Num PR: " << num_pr_moves << std::endl;
-                    std::cout << "Num C: " << num_c_moves << std::endl;
-                    std::cout << "Num Q: " << num_q_moves << std::endl;
-                    num_ep_moves = num_cs_moves = num_pr_moves = num_c_moves = num_q_moves = 0;
+                    std::cout << "Number of en passant moves: " << num_ep_moves << std::endl;
+                    std::cout << "Number of promotion moves: " << num_pr_moves << std::endl;
+                    std::cout << "Number of castling moves: " << num_cs_moves << std::endl;
+                    std::cout << "Number of capture moves: " << num_c_moves << std::endl;
+                    std::cout << "Number of quiet moves: " << num_q_moves << std::endl;
+                    num_ep_moves = num_pr_moves = num_cs_moves = num_c_moves = num_q_moves = 0;
                     */
                 }
                 else
