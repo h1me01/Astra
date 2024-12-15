@@ -440,7 +440,7 @@ namespace Astra
             // increase when not improving
             r += !improving;
 
-            if (!root_node && board.nonPawnMat(stm) && best_score > -VALUE_TB_WIN_IN_MAX_PLY)
+            if (!root_node && best_score > -VALUE_TB_WIN_IN_MAX_PLY)
             {
                 int lmr_depth = std::max(1, depth - r);
 
