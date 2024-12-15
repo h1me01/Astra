@@ -356,7 +356,7 @@ namespace Astra
             }
 
             // null move pruning
-            if (depth >= 4 && !ss->skipped && eval >= beta && board.nonPawnMat(stm) && (ss - 1)->curr_move != NULL_MOVE)
+            if (depth >= 3 && !ss->skipped && eval >= beta && board.nonPawnMat(stm) && (ss - 1)->curr_move != NULL_MOVE)
             {
                 int R = 4 + depth / nmp_depth_div + std::min(int(nmp_min), (eval - beta) / nmp_div);
 
@@ -436,6 +436,8 @@ namespace Astra
             int r = REDUCTIONS[depth][made_moves];
             // decrease/increase based on history score
             r -= history_score / hp_div;
+            // increase when not improving
+            r += !improving;
 
             if (!root_node && best_score > -VALUE_TB_WIN_IN_MAX_PLY)
             {
@@ -513,12 +515,10 @@ namespace Astra
             Score score = VALUE_NONE;
 
             // late move reductions
-            if (depth > 1 && made_moves > 1 && !(pv_node && in_check))
+            if (depth > 1 && made_moves > 1 + 2 * root_node && (!pv_node || !isCap(move)))
             { 
                 // increase when tt move is a capture or promotion
                 r += isCap(ent.move) || isProm(ent.move);
-                // increase when not improving
-                r += !improving;
                 // increase when in a cut node
                 r += 2 * cut_node;
                 // decrease when in pv node
