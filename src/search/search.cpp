@@ -106,6 +106,8 @@ namespace Astra
 
             if (isLimitReached(depth)) 
                 break;
+            
+            best_move = pv_table[0][0];
 
             if (id == 0 && depth >= 10 && limit.time.optimum)
             {
@@ -128,8 +130,6 @@ namespace Astra
                 if (tm.elapsedTime() > limit.time.max * 0.75) 
                     break;
             }
-
-            best_move = pv_table[0][0];
         }
 
         if (id == 0)
