@@ -22,7 +22,7 @@ namespace Astra
         return hh[stm][from][to];
     }
 
-    int History::getQuietHistory(const Board& board, const Stack* ss, Move &move) const
+    int History::getQuietHistory(const Board &board, const Stack *ss, Move &move) const
     {
         Square from = move.from();
         Square to = move.to();
@@ -31,17 +31,17 @@ namespace Astra
         assert(pc != NO_PIECE);
 
         return hh[board.getTurn()][from][to] + (ss - 1)->cont_history[pc][to] +
-              (ss - 2)->cont_history[pc][to] + (ss - 4)->cont_history[pc][to];
+               (ss - 2)->cont_history[pc][to] + (ss - 4)->cont_history[pc][to];
     }
 
     int History::getCaptureHistory(const Board &board, Move &move) const
     {
         PieceType captured = move.type() == EN_PASSANT ? PAWN : typeOf(board.pieceAt(move.to()));
         Piece pc = board.pieceAt(move.from());
-        
+
         assert(pc != NO_PIECE);
         assert(captured != NO_PIECE_TYPE);
-        
+
         return ch[pc][move.to()][captured];
     }
 
@@ -60,14 +60,16 @@ namespace Astra
             Move prev_move = (ss - 1)->curr_move;
             if (prev_move != NO_MOVE)
                 counters[prev_move.from()][prev_move.to()] = best;
-            
+
             if (best != ss->killer1)
             {
                 ss->killer2 = ss->killer1;
                 ss->killer1 = best;
             }
 
-            if (depth > 3)
+            // credits to ethereal
+            // only increase best move if it wasn't trivial
+            if (depth > 3 || qc > 1)
             {
                 updateQH(best, stm, bonus);
                 updateContH(board, best, ss, bonus);

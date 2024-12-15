@@ -534,7 +534,7 @@ namespace Astra
                 // if late move reduction failed high and we actually reduced, do a research
                 if (score > alpha && r > 1)
                 {
-                    // credit to stockfish
+                    // credits to stockfish
                     new_depth += (score > best_score + zws_margin);
                     new_depth -= (score < best_score + new_depth);
 
