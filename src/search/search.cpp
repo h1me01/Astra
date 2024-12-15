@@ -516,7 +516,7 @@ namespace Astra
             Score score = VALUE_NONE;
 
             // late move reductions
-            if (depth > 1 && made_moves > 1 + 2 * root_node && (!pv_node || !isCap(move)))
+            if (depth > 2 && made_moves > 1 + 2 * root_node && (!pv_node || !isCap(move)))
             { 
                 // increase when tt move is a capture or promotion
                 r += isCap(ent.move) || isProm(ent.move);
