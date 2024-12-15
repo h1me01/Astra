@@ -132,7 +132,7 @@ namespace Chess
         // returns number of bits in the bitboard
         int popCount(U64 b);
 
-        // returns number of bits in the bitboard.
+        // returns number of bits in the bitboard
         // faster than popCount when the bitboard has few bits
         int sparsePopCount(U64 b);
 

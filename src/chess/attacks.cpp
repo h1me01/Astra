@@ -76,7 +76,7 @@ namespace Chess
             PSEUDO_LEGAL_ATTACKS[QUEEN][s] = PSEUDO_LEGAL_ATTACKS[ROOK][s] | PSEUDO_LEGAL_ATTACKS[BISHOP][s];
         }
 
-        // init squares between and line (defined in bitboard.h)
+        // init squares between and line 
         for (Square s1 = a1; s1 <= h8; ++s1)
         {
             for (Square s2 = a1; s2 <= h8; ++s2)
