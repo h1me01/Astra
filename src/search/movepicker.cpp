@@ -58,19 +58,19 @@ namespace Astra
                 return move;
             }
 
-            stage = KILLER1;
+            stage = PLAY_KILLER1;
             [[fallthrough]];
-        case KILLER1:
-            stage = KILLER2;
+        case PLAY_KILLER1:
+            stage = PLAY_KILLER2;
             if (!skip_quiets && board.isPseudoLegal(killer1) && killer1 != tt_move)
                 return killer1;
             [[fallthrough]];
-        case KILLER2:
-            stage = COUNTER;
+        case PLAY_KILLER2:
+            stage = PLAY_COUNTER;
             if (!skip_quiets && board.isPseudoLegal(killer2) && killer2 != tt_move)
                 return killer2;
             [[fallthrough]];
-        case COUNTER:
+        case PLAY_COUNTER:
             stage = GEN_QUIETS;
             if (!skip_quiets && board.isPseudoLegal(counter) && counter != tt_move && counter != killer1 && counter != killer2)
                 return counter;
