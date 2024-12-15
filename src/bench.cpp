@@ -4,7 +4,7 @@
 #include <string>
 #include <memory>
 #include "bench.h"
-#include "search/search.h"
+#include "search/threads.h"
 
 namespace Bench
 {
@@ -50,6 +50,8 @@ namespace Bench
 
     void bench(int depth)
     {
+        Astra::threads.stop = false;
+        
         U64 nodes = 0;
         Astra::Limits limits;
         limits.depth = depth;
