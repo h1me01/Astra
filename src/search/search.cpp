@@ -10,36 +10,36 @@
 namespace Astra
 {
     // search parameters
-    PARAM(lmr_base, 95, 80, 120, 8);
-    PARAM(lmr_div, 182, 150, 200, 8);
+    PARAM(lmr_base, 89, 80, 120, 8);
+    PARAM(lmr_div, 176, 150, 200, 8);
 
     PARAM(asp_depth, 9, 5, 9, 1);
     PARAM(asp_window, 10, 5, 30, 5);
 
-    PARAM(rzr_depth_mult, 195, 150, 250, 15);
-    PARAM(rfp_depth_mult, 60, 60, 110, 8);
+    PARAM(rzr_depth_mult, 196, 150, 250, 15);
+    PARAM(rfp_depth_mult, 67, 60, 110, 8);
 
-    PARAM(nmp_min, 3, 3, 6, 1);
+    PARAM(nmp_min, 4, 3, 6, 1);
     PARAM(nmp_depth_div, 7, 3, 15, 1);
-    PARAM(nmp_div, 230, 190, 235, 8);
+    PARAM(nmp_div, 222, 190, 235, 8);
 
-    PARAM(probcut_margin, 157, 130, 180, 15);
+    PARAM(probcut_margin, 153, 130, 180, 15);
 
-    PARAM(see_cap_margin, 100, 70, 120, 8);
+    PARAM(see_cap_margin, 96, 70, 120, 8);
     PARAM(see_quiet_margin, 99, 70, 120, 8);
 
     PARAM(fp_base, 155, 120, 180, 10);
-    PARAM(fp_mult, 99, 70, 150, 10);
+    PARAM(fp_mult, 97, 70, 150, 10);
 
-    PARAM(ext_margin, 131, 45, 150, 12);
+    PARAM(ext_margin, 138, 45, 150, 12);
 
-    PARAM(zws_margin, 80, 60, 90, 8);
+    PARAM(zws_margin, 83, 60, 90, 8);
 
-    PARAM(hp_margin, 4630, 2500, 5000, 400);
-    PARAM(hp_div, 8147, 7000, 8500, 400);
-    PARAM(hbonus_margin, 74, 65, 80, 5);
+    PARAM(hp_margin, 4499, 2500, 5000, 400);
+    PARAM(hp_div, 8016, 7000, 8500, 400);
+    PARAM(hbonus_margin, 75, 65, 80, 5);
 
-    PARAM(qfp_margin, 93, 60, 150, 15);
+    PARAM(qfp_margin, 98, 60, 150, 15);
 
     // search helper
 
@@ -440,23 +440,20 @@ namespace Astra
             if (!root_node && best_score > -VALUE_TB_WIN_IN_MAX_PLY)
             {
                 int lmr_depth = std::max(1, depth - r);
-                
+
                 // late move pruning
-                if (!isCap(move) && q_count > (3 + depth * depth) / (2 - improving))
+                if (!pv_node && q_count > (3 + depth * depth) / (2 - improving))
                     mp.skip_quiets = true;
 
-                if (!isCap(move) && move.type() != PQ_QUEEN)
+                if (!pv_node && !isCap(move) && move.type() != PQ_QUEEN)
                 {
                     // history pruning
                     if (history_score < -hp_margin * depth && lmr_depth < 5) 
-                        mp.skip_quiets = true;
+                        continue;
 
                     // futility pruning
                     if (!in_check && lmr_depth <= 9 && eval + fp_base + lmr_depth * fp_mult <= alpha) 
-                    {
                         mp.skip_quiets = true;
-                        continue;
-                    }
                 }  
 
                 // see pruning
@@ -495,7 +492,7 @@ namespace Astra
                 if (score < sbeta)  
                 {
                     if (!pv_node && score < sbeta - 14)
-                        extension = 2 + (!isCap(move) && !isProm(move) && score < sbeta - ext_margin);
+                        extension = 2 + (!isCap(move) && move.type() != PQ_QUEEN && score < sbeta - ext_margin);
                     else 
                         extension = 1;
                 }
@@ -534,8 +531,9 @@ namespace Astra
                 score = -negamax(lmr_depth, -alpha - 1, -alpha, ss + 1, true);
 
                 // if late move reduction failed high and we actually reduced, do a research
-                if (score > alpha && lmr_depth < new_depth)
+                if (score > alpha && r > 1)
                 {
+                    // credit to stockfish
                     new_depth += (score > best_score + zws_margin);
                     new_depth -= (score < best_score + new_depth);
 
@@ -551,7 +549,7 @@ namespace Astra
                 score = -negamax(new_depth, -alpha - 1, -alpha, ss + 1, !cut_node);
 
             // principal variation search
-            if (pv_node && (score > alpha || made_moves == 1))
+            if (pv_node && ((score > alpha && (root_node || score < beta)) || made_moves == 1))
                 score = -negamax(new_depth, -beta, -alpha, ss + 1, false);
 
             board.unmakeMove(move);
@@ -740,21 +738,16 @@ namespace Astra
     {
         if (limit.infinite)
             return false;
-
         if (threads.isStopped())
             return true;
-
         if (limit.nodes != 0 && nodes >= limit.nodes)
             return true;
-
         if (depth > limit.depth)
             return true;
 
         int elapsed_time = tm.elapsedTime();
-
         if (limit.time.optimum != 0 && elapsed_time >= limit.time.optimum)
             return true;
-
         if (limit.time.max != 0 && elapsed_time >= limit.time.max)
             return true;
 
