@@ -346,7 +346,7 @@ namespace Astra
             
             // probcut
             int beta_cut = beta + probcut_margin;
-            if (depth > 5 && std::abs(beta) < VALUE_TB_WIN_IN_MAX_PLY && 
+            if (depth > 4 && std::abs(beta) < VALUE_TB_WIN_IN_MAX_PLY && 
                 !(ent.depth >= depth - 3 && tt_score != VALUE_NONE && tt_score < beta_cut))
             {
                 MovePicker mp(PC_SEARCH, board, history, ss, ent.move);
