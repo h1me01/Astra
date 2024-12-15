@@ -312,7 +312,7 @@ namespace Astra
         if (!in_check && !pv_node)
         {
             // reverse futility pruning
-            if (depth <= 9 && eval < VALUE_TB_WIN_IN_MAX_PLY && eval - std::max(rfp_depth_mult * (depth - improving), 20) >= beta)
+            if (depth <= 8 && eval < VALUE_TB_WIN_IN_MAX_PLY && eval - std::max(rfp_depth_mult * (depth - improving), 20) >= beta)
                 return (eval + beta) / 2;
 
             // razoring
