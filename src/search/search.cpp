@@ -1,11 +1,11 @@
 #include <cmath>
 #include <algorithm>
 #include "search.h"
+#include "tune.h"
 #include "syzygy.h"
 #include "threads.h"
 #include "movepicker.h"
 #include "../eval/eval.h"
-#include "tune.h"
 
 namespace Astra
 {
