@@ -1,4 +1,5 @@
 #include "movepicker.h"
+#include <unordered_set>
 
 namespace Astra
 {
@@ -130,6 +131,7 @@ namespace Astra
                 if (move == tt_move)
                     continue;
 
+                assert(isCap(move) || move.type() == PQ_QUEEN);
                 return move;
             }
 
@@ -231,12 +233,15 @@ namespace Astra
             idx = 0;
             stage = Q_IN_CHECK_PLAY_QUIETS;
             
-            ml_main.gen<QUIETS>(board);
-            scoreQuietMoves();
-            
+            if (!skip_quiets)
+            {
+                ml_main.gen<QUIETS>(board);
+                scoreQuietMoves();
+            }
+
             [[fallthrough]];
         case Q_IN_CHECK_PLAY_QUIETS:
-            while (idx < ml_main.size())
+            while (idx < ml_main.size() && !skip_quiets)
             {
                 partialInsertionSort(ml_main, idx);
                 Move move = ml_main[idx];
