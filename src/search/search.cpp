@@ -156,8 +156,7 @@ namespace Astra
         assert(alpha < beta);
         assert(ss->ply >= 0);
 
-        if (isLimitReached(depth))
-            return beta;
+        if (isLimitReached(depth)) return 0;
 
         if (ss->ply >= MAX_PLY - 1)
             return adjustEval(Eval::evaluate(board));
@@ -524,6 +523,8 @@ namespace Astra
 
             assert(score > -VALUE_INFINITE && score < VALUE_INFINITE);
 
+            if (isLimitReached(depth)) return 0;
+
             if (score > best_score)
             {
                 best_score = score;
@@ -571,8 +572,7 @@ namespace Astra
     {
         assert(alpha < beta);
 
-        if (isLimitReached(1))
-            return beta;
+        if (isLimitReached(1)) return 0;
 
         const bool pv_node = beta - alpha != 1;
         const bool in_check = board.inCheck();
@@ -664,6 +664,8 @@ namespace Astra
             board.unmakeMove(move);
 
             assert(score > -VALUE_INFINITE && score < VALUE_INFINITE);
+
+            if (isLimitReached(1)) return 0;
 
             // update the best score
             if (score > best_score)
