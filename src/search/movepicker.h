@@ -46,7 +46,7 @@ namespace Astra
         bool skip_quiets = false;
         int see_cutoff = 0;
 
-        MovePicker(SearchType st, const Board &board, const History &history, const Stack *ss, Move &tt_move, bool in_check = false, bool gen_checks = false);
+        MovePicker(SearchType st, const Board &board, const History &history, const Stack *ss, Move &tt_move, bool gen_checks = false);
 
         Move nextMove();
         
@@ -66,7 +66,6 @@ namespace Astra
         Move killer2 = NO_MOVE;
         Move counter = NO_MOVE;
 
-        bool in_check;
         bool gen_checkers;
 
         void scoreQuietMoves();

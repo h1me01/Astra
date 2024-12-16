@@ -449,7 +449,8 @@ namespace Astra
             int extension = 0;
 
             // singular extensions
-            if (!root_node && depth >= 6 && ss->ply < 2 * root_depth && !ss->skipped && ent.move == move && ent.depth >= depth - 3 && (ent.bound & LOWER_BOUND) && std::abs(tt_score) < VALUE_TB_WIN_IN_MAX_PLY)
+            if (!root_node && depth >= 6 && ss->ply < 2 * root_depth && !ss->skipped && ent.move == move 
+            && ent.depth >= depth - 3 && (ent.bound & LOWER_BOUND) && std::abs(tt_score) < VALUE_TB_WIN_IN_MAX_PLY)
             {
                 Score sbeta = tt_score - 3 * depth;
                 int sdepth = (depth - 1) / 2;
@@ -507,8 +508,7 @@ namespace Astra
                     if (new_depth > lmr_depth)
                         score = -negamax(new_depth, -alpha - 1, -alpha, ss + 1, !cut_node);
 
-                    int bonus = score <= alpha ? -historyBonus(new_depth) : score >= beta ? historyBonus(new_depth)
-                                                                                          : 0;
+                    int bonus = score <= alpha ? -historyBonus(new_depth) : score >= beta ? historyBonus(new_depth) : 0;
                     history.updateContH(board, move, ss, bonus);
                 }
             }
@@ -553,16 +553,14 @@ namespace Astra
 
         // check for mate and stalemate
         if (made_moves == 0)
-            return ss->skipped != NO_MOVE ? alpha : in_check ? -VALUE_MATE + ss->ply
-                                                             : VALUE_DRAW;
+            return ss->skipped != NO_MOVE ? alpha : in_check ? -VALUE_MATE + ss->ply : VALUE_DRAW;
 
         best_score = std::min(best_score, max_score);
 
         // store in transposition table
         if (!ss->skipped)
         {
-            Bound bound = best_score >= beta ? LOWER_BOUND : best_score <= orig_alpha ? UPPER_BOUND
-                                                                                      : EXACT_BOUND;
+            Bound bound = best_score >= beta ? LOWER_BOUND : best_score <= orig_alpha ? UPPER_BOUND : EXACT_BOUND;
             tt.store(hash, best_move, scoreToTT(best_score, ss->ply), depth, bound);
         }
 
@@ -633,7 +631,7 @@ namespace Astra
                 alpha = best_score;
         }
 
-        MovePicker mp(Q_SEARCH, board, history, ss, ent.move, in_check, depth >= -1);
+        MovePicker mp(Q_SEARCH, board, history, ss, ent.move, depth >= -1);
 
         Move best_move = NO_MOVE;
         Move move = NO_MOVE;

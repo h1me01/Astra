@@ -2,13 +2,13 @@
 
 namespace Astra
 {
-    MovePicker::MovePicker(SearchType st, const Board &board, const History &history, const Stack *ss, Move &tt_move, bool in_check, bool gen_checkers)
-        : st(st), board(board), history(history), ss(ss), tt_move(tt_move), in_check(in_check), gen_checkers(gen_checkers)
+    MovePicker::MovePicker(SearchType st, const Board &board, const History &history, const Stack *ss, Move &tt_move, bool gen_checkers)
+        : st(st), board(board), history(history), ss(ss), tt_move(tt_move), gen_checkers(gen_checkers)
     {
         if (st == PC_SEARCH)
             stage = PC_GEN_NOISY;
         else if (st == Q_SEARCH)
-            stage = in_check ? Q_IN_CHECK_TT : Q_GEN_NOISY;
+            stage = board.inCheck() ? Q_IN_CHECK_TT : Q_GEN_NOISY;
         else 
             stage = TT;
 
@@ -62,17 +62,17 @@ namespace Astra
             [[fallthrough]];
         case PLAY_KILLER1:
             stage = PLAY_KILLER2;
-            if (!skip_quiets && board.isPseudoLegal(killer1) && killer1 != tt_move)
+            if (!skip_quiets && killer1 != tt_move && board.isPseudoLegal(killer1))
                 return killer1;
             [[fallthrough]];
         case PLAY_KILLER2:
             stage = PLAY_COUNTER;
-            if (!skip_quiets && board.isPseudoLegal(killer2) && killer2 != tt_move)
+            if (!skip_quiets && killer2 != tt_move && board.isPseudoLegal(killer2))
                 return killer2;
             [[fallthrough]];
         case PLAY_COUNTER:
             stage = GEN_QUIETS;
-            if (!skip_quiets && board.isPseudoLegal(counter) && counter != tt_move && counter != killer1 && counter != killer2)
+            if (!skip_quiets && counter != tt_move && counter != killer1 && counter != killer2 && board.isPseudoLegal(counter))
                 return counter;
             [[fallthrough]];
         case GEN_QUIETS:
