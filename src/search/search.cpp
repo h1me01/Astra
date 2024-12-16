@@ -304,14 +304,15 @@ namespace Astra
         }
 
         // internal iterative reduction
-        if (!ss->skipped && !in_check && !tt_hit && depth >= 4 && (pv_node || cut_node))
+        if (!in_check && !tt_hit && depth >= 4 && (pv_node || cut_node))
             depth--;
 
         // only use pruning when not in check and pv node
         if (!in_check && !pv_node)
         {
             // reverse futility pruning
-            if (depth <= 8 && eval < VALUE_TB_WIN_IN_MAX_PLY && eval - std::max(rfp_depth_mult * (depth - improving), 20) >= beta)
+            int rfp_margin = std::max(rfp_depth_mult * (depth - (improving && !board.oppHasGoodCaptures())), 20);
+            if (depth <= 8 && eval < VALUE_TB_WIN_IN_MAX_PLY && eval - rfp_margin >= beta)
                 return (eval + beta) / 2;
 
             // razoring
@@ -354,7 +355,7 @@ namespace Astra
                 Move move = NO_MOVE;
                 while ((move = mp.nextMove()) != NO_MOVE)
                 {
-                    if (!board.isLegal(move))
+                    if (move == ss->skipped || !board.isLegal(move))
                         continue;
 
                     nodes++;
@@ -387,9 +388,7 @@ namespace Astra
 
         while ((move = mp.nextMove()) != NO_MOVE)
         {
-            if (!board.isLegal(move))
-                continue;
-            if (move == ss->skipped)
+            if (move == ss->skipped || !board.isLegal(move))
                 continue;
 
             made_moves++;
