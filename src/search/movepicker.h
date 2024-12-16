@@ -67,7 +67,6 @@ namespace Astra
 
         void scoreQuietMoves();
         void scoreNoisyMoves();
-        void partialInsertionSort(MoveList& ml, int current_idx);
     };
 
 } // namespace Astra

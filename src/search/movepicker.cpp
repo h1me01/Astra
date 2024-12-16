@@ -2,6 +2,19 @@
 
 namespace Astra
 {
+    void partialInsertionSort(MoveList& ml, int idx)
+    {
+        int best_idx = idx;
+
+        for (int i = 1 + idx; i < ml.size(); i++)
+            if (ml[i].score > ml[best_idx].score)
+                best_idx = i;
+
+        std::swap(ml[idx], ml[best_idx]);
+    }
+
+    // MovePicker class
+
     MovePicker::MovePicker(SearchType st, const Board &board, const History &history, const Stack *ss, Move &tt_move, bool gen_checkers)
         : st(st), board(board), history(history), ss(ss), tt_move(tt_move), gen_checkers(gen_checkers)
     {
@@ -34,8 +47,10 @@ namespace Astra
         case GEN_NOISY:
             idx = 0;
             stage = PLAY_GOOD_NOISY;
+
             ml_main.gen<NOISY>(board);
             scoreNoisyMoves();
+            
             [[fallthrough]];
         case PLAY_GOOD_NOISY:
             while (idx < ml_main.size())
@@ -102,6 +117,7 @@ namespace Astra
 
             idx = 0;
             stage = PLAY_BAD_NOISY;
+            
             [[fallthrough]];
         case PLAY_BAD_NOISY:
             while (idx < ml_bad_noisy.size())
@@ -121,8 +137,10 @@ namespace Astra
         case PC_GEN_NOISY:
             idx = 0;
             stage = PC_PLAY_GOOD_NOISY;
+            
             ml_main.gen<NOISY>(board);
             scoreNoisyMoves();
+            
             [[fallthrough]];
         case PC_PLAY_GOOD_NOISY:
             while (idx < ml_main.size())
@@ -141,8 +159,10 @@ namespace Astra
         case Q_GEN_NOISY:
             idx = 0;
             stage = Q_PLAY_NOISY;
+            
             ml_main.gen<NOISY>(board);
             scoreNoisyMoves();
+            
             [[fallthrough]];
         case Q_PLAY_NOISY:
             while (idx < ml_main.size())
@@ -157,6 +177,7 @@ namespace Astra
                 return NO_MOVE; // no more moves
 
             stage = Q_GEN_QUIET_CHECKERS;
+            
             [[fallthrough]];
         case Q_GEN_QUIET_CHECKERS:
             idx = 0;
@@ -181,8 +202,10 @@ namespace Astra
         case Q_IN_CHECK_GEN_NOISY:
             idx = 0;
             stage = Q_IN_CHECK_PLAY_NOISY;
+            
             ml_main.gen<NOISY>(board);
             scoreNoisyMoves();
+            
             [[fallthrough]];
         case Q_IN_CHECK_PLAY_NOISY:
             while (idx < ml_main.size())
@@ -202,12 +225,15 @@ namespace Astra
                 return NO_MOVE; // no more moves
 
             stage = Q_IN_CHECK_GEN_QUIETS;
+            
             [[fallthrough]];
         case Q_IN_CHECK_GEN_QUIETS:
             idx = 0;
             stage = Q_IN_CHECK_PLAY_QUIETS;
+            
             ml_main.gen<QUIETS>(board);
             scoreQuietMoves();
+            
             [[fallthrough]];
         case Q_IN_CHECK_PLAY_QUIETS:
             while (idx < ml_main.size())
@@ -278,17 +304,6 @@ namespace Astra
 
             ml_main[i].score = PIECE_VALUES[captured] + isProm(ml_main[i]) * 8192 + (is_cap ? history.getCaptureHistory(board, ml_main[i]) : 0);
         }
-    }
-
-    void MovePicker::partialInsertionSort(MoveList& ml, int current_idx)
-    {
-        int best_idx = current_idx;
-
-        for (int i = 1 + current_idx; i < ml.size(); i++)
-            if (ml[i].score > ml[best_idx].score)
-                best_idx = i;
-
-        std::swap(ml[current_idx], ml[best_idx]);
     }
 
 } // namespace Astra
