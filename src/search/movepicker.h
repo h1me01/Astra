@@ -51,20 +51,17 @@ namespace Astra
         Move nextMove();
         
     private:
-        int idx = 0;
-        Stage stage = TT;
+        int idx;
+        Stage stage;
 
         SearchType st;
         const Board &board;
         const History &history;
         const Stack *ss;
+
         MoveList ml_main;
         MoveList ml_bad_noisy;
-
-        Move tt_move = NO_MOVE;
-        Move killer1 = NO_MOVE;
-        Move killer2 = NO_MOVE;
-        Move counter = NO_MOVE;
+        Move tt_move, killer1, killer2, counter;
 
         bool gen_checkers;
 
