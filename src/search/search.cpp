@@ -523,8 +523,6 @@ namespace Astra
 
             assert(score > -VALUE_INFINITE && score < VALUE_INFINITE);
 
-            if (isLimitReached(depth)) return 0;
-
             if (score > best_score)
             {
                 best_score = score;
@@ -664,8 +662,6 @@ namespace Astra
             board.unmakeMove(move);
 
             assert(score > -VALUE_INFINITE && score < VALUE_INFINITE);
-
-            if (isLimitReached(1)) return 0;
 
             // update the best score
             if (score > best_score)
