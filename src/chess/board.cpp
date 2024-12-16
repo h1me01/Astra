@@ -4,8 +4,6 @@
 
 namespace Chess
 {
-    // helper
-
     // represent castle rights correctly in fen notation
     bool castleNotationHelper(const std::ostringstream &fen_stream)
     {
@@ -741,6 +739,96 @@ namespace Chess
         }
 
         return result;
+    }
+
+    // private member
+
+    void Board::initThreats()
+    {
+        Color them = ~stm;
+        U64 occ = occupancy() ^ SQUARE_BB[kingSq(stm)]; // king must be excluded so we don't block the slider attacks
+        
+        U64 danger = 0;
+        U64 threat = 0;
+
+        // pawn attacks
+        U64 pawns = getPieceBB(them, PAWN);
+        threat = them == WHITE ? shift(NORTH_WEST, pawns) | shift(NORTH_EAST, pawns) : shift(SOUTH_WEST, pawns) | shift(SOUTH_EAST, pawns);
+        danger = threat;
+
+        history[curr_ply].threats[PAWN] = threat;
+
+        // knight attacks
+        threat = 0;
+        U64 knights = getPieceBB(them, KNIGHT);
+        while(knights)
+            threat |= getAttacks(KNIGHT, popLsb(knights), occ);
+        danger |= threat;
+
+        history[curr_ply].threats[KNIGHT] = threat;
+
+        // bishop attacks
+        threat = 0;
+        U64 bishops = getPieceBB(them, BISHOP);
+        while(bishops)
+            threat |= getAttacks(BISHOP, popLsb(bishops), occ);
+        danger |= threat;
+
+        history[curr_ply].threats[BISHOP] = threat;
+
+        // rook attacks
+        threat = 0;
+        U64 rooks = getPieceBB(them, ROOK);
+        while(rooks)
+            threat |= getAttacks(ROOK, popLsb(rooks), occ);
+        danger |= threat;
+
+        history[curr_ply].threats[ROOK] = threat;
+
+        // queen attacks
+        threat = 0;
+        U64 queens = getPieceBB(them, QUEEN);
+        while(queens)
+            threat |= getAttacks(QUEEN, popLsb(queens), occ);
+        danger |= threat;
+
+        history[curr_ply].threats[QUEEN] = threat;
+
+        // king attacks
+        threat = getAttacks(KING, kingSq(them), occ);
+        danger |= threat;
+
+        history[curr_ply].threats[KING] = threat;
+        history[curr_ply].danger = danger;
+    }
+
+    void Board::initCheckersAndPinned()
+    {
+        const Square ksq = kingSq(stm);
+        const Color them = ~stm;
+        const U64 their_occ = occupancy(them);
+        const U64 our_occ = occupancy(stm);
+
+        // enemy pawns attacks at our king
+        history[curr_ply].checkers = getPawnAttacks(stm, ksq) & getPieceBB(them, PAWN);
+        // enemy knights attacks at our king
+        history[curr_ply].checkers |= getAttacks(KNIGHT, ksq, our_occ | their_occ) & getPieceBB(them, KNIGHT);
+
+        // potential enemy bishop, rook and queen attacks at our king
+        U64 candidates = (getAttacks(ROOK, ksq, their_occ) & orthSliders(them)) | (getAttacks(BISHOP, ksq, their_occ) & diagSliders(them));
+
+        history[curr_ply].pinned = 0;
+        while (candidates)
+        {
+            Square s = popLsb(candidates);
+            U64 blockers = SQUARES_BETWEEN[ksq][s] & our_occ;
+            if (!blockers)
+                // if no of out pieces is between the enemy slider, then add that piece as checker
+                history[curr_ply].checkers ^= SQUARE_BB[s];
+            else if (sparsePopCount(blockers) == 1)
+                // if we have only one blocker, add that piece as pinned
+                history[curr_ply].pinned ^= blockers;
+        }
     }
 
 } // namespace Chess

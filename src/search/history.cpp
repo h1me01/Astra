@@ -14,9 +14,7 @@ namespace Astra
 
     int History::getHistoryHeuristic(Color stm, Move move) const
     {
-        Square from = move.from();
-        Square to = move.to();
-        return hh[stm][from][to];
+        return hh[stm][move.from()][move.to()];
     }
 
     int History::getQuietHistory(const Board &board, const Stack *ss, Move &move) const

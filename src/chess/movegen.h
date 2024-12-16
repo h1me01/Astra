@@ -187,7 +187,7 @@ namespace Chess
             if (!not_free && board.history[ply].castle_rights.kingSide(us))
                 *ml++ = us == WHITE ? Move(e1, g1, CASTLING) : Move(e8, g8, CASTLING);
 
-            // be ignore the square b1/b8 since the king does move there
+            // ignore the square b1/b8 since the king does move there
             not_free = (occ | (danger & ~SQUARE_BB[relativeSquare(us, b1)])) & oooBlockersMask(us);
             if (!not_free && board.history[ply].castle_rights.queenSide(us))
                 *ml++ = us == WHITE ? Move(e1, c1, CASTLING) : Move(e8, c8, CASTLING);

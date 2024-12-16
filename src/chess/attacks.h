@@ -97,13 +97,6 @@ namespace Chess
     extern int BISHOP_ATTACK_SHIFTS[NUM_SQUARES];
     extern U64 BISHOP_ATTACKS[NUM_SQUARES][512];
 
-    inline U64 slidingAttacks(Square s, const U64 occ, const U64 mask)
-    {
-        // hyperbola quintessence algorithm
-        const U64 mask_occ = mask & occ;
-        return ((mask_occ - SQUARE_BB[s] * 2) ^ (reverse(reverse(mask_occ) - reverse(SQUARE_BB[s]) * 2))) & mask;
-    }
-
     inline U64 getRookAttacks(Square s, const U64 occ)
     {
         const U64 max_occ = occ & ROOK_ATTACK_MASKS[s];

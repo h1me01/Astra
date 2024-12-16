@@ -9,7 +9,6 @@ namespace Astra
 {
     struct Param;
     
-    // holds all the tuning parameters for search
     inline std::vector<Param *> params;
 
     struct Param
