@@ -316,10 +316,10 @@ namespace Astra
                 return (eval + beta) / 2;
 
             // razoring
-            if (depth <= 5 && eval + rzr_depth_mult * depth < alpha && alpha < VALUE_TB_WIN_IN_MAX_PLY)
+            if (depth < 5 && eval + rzr_depth_mult * depth < alpha && alpha < VALUE_TB_WIN_IN_MAX_PLY)
             {
                 Score score = qSearch(0, alpha, beta, ss);
-                if (score < alpha && score > -VALUE_TB_WIN_IN_MAX_PLY)
+                if (score <= alpha && score > -VALUE_TB_WIN_IN_MAX_PLY)
                     return score;
             }
 
