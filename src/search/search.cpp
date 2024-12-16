@@ -356,7 +356,7 @@ namespace Astra
                 Move move = NO_MOVE;
                 while ((move = mp.nextMove()) != NO_MOVE)
                 {
-                    if (move == ss->skipped || !board.isLegal(move))
+                    if (!board.isLegal(move))
                         continue;
 
                     nodes++;
