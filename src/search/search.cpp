@@ -312,14 +312,14 @@ namespace Astra
         {
             // reverse futility pruning
             int rfp_margin = std::max(rfp_depth_mult * (depth - (improving && !board.oppHasGoodCaptures())), 20);
-            if (depth <= 8 && eval < VALUE_TB_WIN_IN_MAX_PLY && eval - rfp_margin >= beta)
+            if (depth <= 7 && eval < VALUE_TB_WIN_IN_MAX_PLY && eval - rfp_margin >= beta)
                 return (eval + beta) / 2;
 
             // razoring
-            if (depth <= 5 && eval + rzr_depth_mult * depth < alpha)
+            if (depth <= 5 && eval + rzr_depth_mult * depth < alpha && alpha < VALUE_TB_WIN_IN_MAX_PLY)
             {
                 Score score = qSearch(0, alpha, beta, ss);
-                if (score < alpha)
+                if (score < alpha && score > -VALUE_TB_WIN_IN_MAX_PLY)
                     return score;
             }
 
