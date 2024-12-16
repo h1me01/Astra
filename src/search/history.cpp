@@ -63,22 +63,22 @@ namespace Astra
             }
 
             // credits to ethereal
-            // only update quiet histories if best move wasn't trivial
+            // only update best move history if it wasn't trivial
             if (depth > 3 || qc > 1)
             {
                 updateQH(best, stm, bonus);
                 updateContH(board, best, ss, bonus);
+            }
 
-                // quiet maluses
-                for (int i = 0; i < qc; i++)
-                {
-                    Move quiet = q_moves[i];
-                    if (quiet == best)
-                        continue;
+            // quiet maluses
+            for (int i = 0; i < qc; i++)
+            {
+                Move quiet = q_moves[i];
+                if (quiet == best)
+                    continue;
 
-                    updateQH(quiet, stm, -bonus);
-                    updateContH(board, quiet, ss, -bonus);
-                }
+                updateQH(quiet, stm, -bonus);
+                updateContH(board, quiet, ss, -bonus);
             }
         }
         else
