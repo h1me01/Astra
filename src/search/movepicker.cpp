@@ -65,10 +65,6 @@ namespace Astra
                 Move move = ml_main[idx];
                 idx++;
 
-                // check if it's the last move
-                if (idx == ml_main.size())
-                    stage = st == Q_SEARCH ? board.inCheck() ? GEN_QUIETS : Q_GEN_QUIET_CHECKERS : stage;
-
                 // skip tt move only when in negamax search
                 if (move == tt_move)
                     continue;
