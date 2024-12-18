@@ -324,7 +324,7 @@ namespace Astra
             }
 
             // null move pruning
-            if (depth >= 3 && !ss->skipped && eval >= beta && ss->static_eval + 32 * depth - 164 >= beta
+            if (depth >= 3 && !ss->skipped && eval >= beta && ss->static_eval + 32 * depth - 195 >= beta
                 && board.nonPawnMat(stm) && (ss - 1)->curr_move != NULL_MOVE && std::abs(beta) < VALUE_TB_WIN_IN_MAX_PLY)
             {
                 int R = 4 + depth / nmp_depth_div + std::min(int(nmp_min), (eval - beta) / nmp_div);
@@ -437,7 +437,7 @@ namespace Astra
                 q_moves[q_count++] = move;
 
             // print current move information
-            if (false && id == 0 && root_node && tm.elapsedTime() > 5000 && !threads.isStopped())
+            if (id == 0 && root_node && tm.elapsedTime() > 5000 && !threads.isStopped())
             {
                 std::cout << "info depth " << depth
                           << " currmove " << move
@@ -481,7 +481,7 @@ namespace Astra
             Score score = VALUE_NONE;
 
             // late move reductions
-            if (depth > 2 && made_moves > 1 + 2 * root_node && (!pv_node || !isCap(move)))
+            if (depth > 2 && made_moves > 1 && (!pv_node || !isCap(move)))
             {
                 // increase when tt move is a capture or promotion
                 r += isCap(ent.move) || isProm(ent.move);
