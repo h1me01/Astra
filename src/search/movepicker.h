@@ -29,12 +29,6 @@ namespace Astra
         Q_PLAY_NOISY,
         Q_GEN_QUIET_CHECKERS,
         Q_PLAY_QUIET_CHECKERS,
-
-        Q_IN_CHECK_TT,
-        Q_IN_CHECK_GEN_NOISY,
-        Q_IN_CHECK_PLAY_NOISY,
-        Q_IN_CHECK_GEN_QUIETS,
-        Q_IN_CHECK_PLAY_QUIETS,
     };
 
     class MovePicker

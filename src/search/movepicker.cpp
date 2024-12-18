@@ -22,7 +22,7 @@ namespace Astra
         if (st == PC_SEARCH)
             stage = GEN_NOISY;
         else if (st == Q_SEARCH)
-            stage = board.inCheck() ? Q_IN_CHECK_TT : Q_GEN_NOISY;
+            stage = board.inCheck() ? PLAY_TT_MOVE : Q_GEN_NOISY;
         else
         {
             stage = PLAY_TT_MOVE;
@@ -65,11 +65,16 @@ namespace Astra
                 Move move = ml_main[idx];
                 idx++;
 
+                // check if it's the last move
+                if (idx == ml_main.size())
+                    stage = st == Q_SEARCH ? board.inCheck() ? GEN_QUIETS : Q_GEN_QUIET_CHECKERS : stage;
+
                 // skip tt move only when in negamax search
                 if (move == tt_move)
                     continue;
 
-                if (!board.see(move, st == N_SEARCH ? -move.score / 16 : see_cutoff))
+                // we want to play captures first in evasion qsearch, doesn't matter if its see is fails
+                if (st != Q_SEARCH && !board.see(move, st == N_SEARCH ? -move.score / 16 : see_cutoff))
                 {
                     ml_bad_noisy.add(move); // add to bad noisy
                     continue;
@@ -123,6 +128,9 @@ namespace Astra
                 return move;
             }
 
+            if (st == Q_SEARCH)
+                return NO_MOVE; // end of evasion qsearch
+
             idx = 0;
             stage = PLAY_BAD_NOISY;
 
@@ -171,65 +179,6 @@ namespace Astra
                 partialInsertionSort(ml_main, idx);
                 Move move = ml_main[idx];
                 idx++;
-                return move;
-            }
-
-            return NO_MOVE; // no more moves
-        case Q_IN_CHECK_TT:
-            stage = Q_IN_CHECK_GEN_NOISY;
-            if (board.isPseudoLegal(tt_move))
-                return tt_move;
-            [[fallthrough]];
-        case Q_IN_CHECK_GEN_NOISY:
-            idx = 0;
-            stage = Q_IN_CHECK_PLAY_NOISY;
-
-            ml_main.gen<NOISY>(board);
-            scoreNoisyMoves();
-
-            [[fallthrough]];
-        case Q_IN_CHECK_PLAY_NOISY:
-            while (idx < ml_main.size())
-            {
-                partialInsertionSort(ml_main, idx);
-                Move move = ml_main[idx];
-                idx++;
-
-                // skip tt move
-                if (move == tt_move)
-                    continue;
-
-                return move;
-            }
-
-            if (skip_quiets)
-                return NO_MOVE; // no more moves
-
-            stage = Q_IN_CHECK_GEN_QUIETS;
-
-            [[fallthrough]];
-        case Q_IN_CHECK_GEN_QUIETS:
-            idx = 0;
-            stage = Q_IN_CHECK_PLAY_QUIETS;
-
-            if (!skip_quiets)
-            {
-                ml_main.gen<QUIETS>(board);
-                scoreQuietMoves();
-            }
-
-            [[fallthrough]];
-        case Q_IN_CHECK_PLAY_QUIETS:
-            while (idx < ml_main.size() && !skip_quiets)
-            {
-                partialInsertionSort(ml_main, idx);
-                Move move = ml_main[idx];
-                idx++;
-
-                // skip tt move
-                if (move == tt_move)
-                    continue;
-
                 return move;
             }
 
