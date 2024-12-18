@@ -437,7 +437,7 @@ namespace Astra
                 q_moves[q_count++] = move;
 
             // print current move information
-            if (id == 0 && root_node && tm.elapsedTime() > 5000 && !threads.isStopped())
+            if (false && id == 0 && root_node && tm.elapsedTime() > 5000 && !threads.isStopped())
             {
                 std::cout << "info depth " << depth
                           << " currmove " << move

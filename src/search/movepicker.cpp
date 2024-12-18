@@ -17,30 +17,35 @@ namespace Astra
     // MovePicker class
 
     MovePicker::MovePicker(SearchType st, const Board &board, const History &history, const Stack *ss, Move &tt_move, bool gen_checkers)
-        : st(st), board(board), history(history), ss(ss), tt_move(tt_move), gen_checkers(gen_checkers)
+        : st(st), board(board), history(history), ss(ss), gen_checkers(gen_checkers)
     {
         if (st == PC_SEARCH)
             stage = GEN_NOISY;
         else if (st == Q_SEARCH)
             stage = board.inCheck() ? Q_IN_CHECK_TT : Q_GEN_NOISY;
         else
-            stage = TT;
+        {
+            stage = PLAY_TT_MOVE;
 
-        Move prev_move = (ss - 1)->curr_move;
-        if (prev_move != NO_MOVE)
-            counter = history.getCounterMove(prev_move);
-        else
-            counter = NO_MOVE;
+            Move prev_move = (ss - 1)->curr_move;
+            if (prev_move != NO_MOVE)
+                counter = history.getCounterMove(prev_move);
+            else
+                counter = NO_MOVE;
 
-        killer1 = ss->killer1;
-        killer2 = ss->killer2;
+            killer1 = ss->killer1;
+            killer2 = ss->killer2;
+        }
+
+        if (st != PC_SEARCH)
+            this->tt_move = tt_move;
     }
 
     Move MovePicker::nextMove()
     {
         switch (stage)
         {
-        case TT:
+        case PLAY_TT_MOVE:
             stage = GEN_NOISY;
             if (board.isPseudoLegal(tt_move))
                 return tt_move;
@@ -61,7 +66,7 @@ namespace Astra
                 idx++;
 
                 // skip tt move only when in negamax search
-                if (move == tt_move && st == N_SEARCH)
+                if (move == tt_move)
                     continue;
 
                 if (!board.see(move, st == N_SEARCH ? -move.score / 16 : see_cutoff))

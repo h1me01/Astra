@@ -15,7 +15,7 @@ namespace Astra
 
     enum Stage : int
     {
-        TT,
+        PLAY_TT_MOVE,
         GEN_NOISY,
         PLAY_GOOD_NOISY,
         PLAY_KILLER1,
@@ -55,12 +55,12 @@ namespace Astra
         const Board &board;
         const History &history;
         const Stack *ss;
+        
+        bool gen_checkers;
 
         MoveList ml_main;
         MoveList ml_bad_noisy;
         Move tt_move, killer1, killer2, counter;
-
-        bool gen_checkers;
 
         void scoreQuietMoves();
         void scoreNoisyMoves();
