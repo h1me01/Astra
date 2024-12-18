@@ -52,14 +52,19 @@ namespace Astra
 
         if (!isCap(best))
         {
-            Move prev_move = (ss - 1)->curr_move;
-            if (prev_move != NO_MOVE)
-                counters[prev_move.from()][prev_move.to()] = best;
-
-            if (best != ss->killer1)
+            // don't set the quiet promotion queen as a counter or killer, so we don't
+            // actually return it twice in the movepicker
+            if (best.type() != PQ_QUEEN)
             {
-                ss->killer2 = ss->killer1;
-                ss->killer1 = best;
+                Move prev_move = (ss - 1)->curr_move;
+                if (prev_move != NO_MOVE)
+                    counters[prev_move.from()][prev_move.to()] = best;
+
+                if (best != ss->killer1)
+                {
+                    ss->killer2 = ss->killer1;
+                    ss->killer1 = best;
+                }
             }
 
             // credits to ethereal

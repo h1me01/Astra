@@ -25,9 +25,6 @@ namespace Astra
         PLAY_QUIETS,
         PLAY_BAD_NOISY,
 
-        PC_GEN_NOISY,
-        PC_PLAY_GOOD_NOISY,
-
         Q_GEN_NOISY,
         Q_PLAY_NOISY,
         Q_GEN_QUIET_CHECKERS,
@@ -49,7 +46,7 @@ namespace Astra
         MovePicker(SearchType st, const Board &board, const History &history, const Stack *ss, Move &tt_move, bool gen_checks = false);
 
         Move nextMove();
-        
+
     private:
         int idx;
         Stage stage;

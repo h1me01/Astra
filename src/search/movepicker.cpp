@@ -3,7 +3,7 @@
 
 namespace Astra
 {
-    void partialInsertionSort(MoveList& ml, int idx)
+    void partialInsertionSort(MoveList &ml, int idx)
     {
         int best_idx = idx;
 
@@ -20,10 +20,10 @@ namespace Astra
         : st(st), board(board), history(history), ss(ss), tt_move(tt_move), gen_checkers(gen_checkers)
     {
         if (st == PC_SEARCH)
-            stage = PC_GEN_NOISY;
+            stage = GEN_NOISY;
         else if (st == Q_SEARCH)
             stage = board.inCheck() ? Q_IN_CHECK_TT : Q_GEN_NOISY;
-        else 
+        else
             stage = TT;
 
         Move prev_move = (ss - 1)->curr_move;
@@ -51,7 +51,7 @@ namespace Astra
 
             ml_main.gen<NOISY>(board);
             scoreNoisyMoves();
-            
+
             [[fallthrough]];
         case PLAY_GOOD_NOISY:
             while (idx < ml_main.size())
@@ -60,19 +60,22 @@ namespace Astra
                 Move move = ml_main[idx];
                 idx++;
 
-                // skip tt move 
+                // skip tt move
                 if (move == tt_move)
                     continue;
 
-                if (!board.see(move, -move.score / 16))
+                bool see = st == PC_SEARCH ? board.see(move, see_cutoff) : board.see(move, -move.score / 16);
+                if (!see)
                 {
-                    // add to bad noisy
-                    ml_bad_noisy.add(move);
+                    ml_bad_noisy.add(move); // add move to bad noisy
                     continue;
                 }
 
                 return move;
             }
+
+            if (st == PC_SEARCH)
+                return NO_MOVE; // no more moves for pc-search
 
             stage = PLAY_KILLER1;
             [[fallthrough]];
@@ -108,17 +111,17 @@ namespace Astra
                 partialInsertionSort(ml_main, idx);
                 Move move = ml_main[idx];
                 idx++;
-                
+
                 // skip tt move, killers, and counter
                 if (move == tt_move || move == killer1 || move == killer2 || move == counter)
                     continue;
-                
+
                 return move;
             }
 
             idx = 0;
             stage = PLAY_BAD_NOISY;
-            
+
             [[fallthrough]];
         case PLAY_BAD_NOISY:
             while (idx < ml_bad_noisy.size())
@@ -126,34 +129,6 @@ namespace Astra
                 partialInsertionSort(ml_bad_noisy, idx);
                 Move move = ml_bad_noisy[idx];
                 idx++;
-
-                // skip tt move
-                if (move == tt_move)
-                    continue;
-
-                assert(isCap(move) || move.type() == PQ_QUEEN);
-                return move;
-            }
-
-            return NO_MOVE; // no more moves
-        case PC_GEN_NOISY:
-            idx = 0;
-            stage = PC_PLAY_GOOD_NOISY;
-            
-            ml_main.gen<NOISY>(board);
-            scoreNoisyMoves();
-            
-            [[fallthrough]];
-        case PC_PLAY_GOOD_NOISY:
-            while (idx < ml_main.size())
-            {
-                partialInsertionSort(ml_main, idx);
-                Move move = ml_main[idx];
-                idx++;
-
-                if (!board.see(move, see_cutoff))
-                    continue;
-
                 return move;
             }
 
@@ -161,10 +136,10 @@ namespace Astra
         case Q_GEN_NOISY:
             idx = 0;
             stage = Q_PLAY_NOISY;
-            
+
             ml_main.gen<NOISY>(board);
             scoreNoisyMoves();
-            
+
             [[fallthrough]];
         case Q_PLAY_NOISY:
             while (idx < ml_main.size())
@@ -179,7 +154,7 @@ namespace Astra
                 return NO_MOVE; // no more moves
 
             stage = Q_GEN_QUIET_CHECKERS;
-            
+
             [[fallthrough]];
         case Q_GEN_QUIET_CHECKERS:
             idx = 0;
@@ -204,10 +179,10 @@ namespace Astra
         case Q_IN_CHECK_GEN_NOISY:
             idx = 0;
             stage = Q_IN_CHECK_PLAY_NOISY;
-            
+
             ml_main.gen<NOISY>(board);
             scoreNoisyMoves();
-            
+
             [[fallthrough]];
         case Q_IN_CHECK_PLAY_NOISY:
             while (idx < ml_main.size())
@@ -227,12 +202,12 @@ namespace Astra
                 return NO_MOVE; // no more moves
 
             stage = Q_IN_CHECK_GEN_QUIETS;
-            
+
             [[fallthrough]];
         case Q_IN_CHECK_GEN_QUIETS:
             idx = 0;
             stage = Q_IN_CHECK_PLAY_QUIETS;
-            
+
             if (!skip_quiets)
             {
                 ml_main.gen<QUIETS>(board);
@@ -268,17 +243,17 @@ namespace Astra
         for (int i = 0; i < ml_main.size(); i++)
         {
             assert(!isCap(ml_main[i]));
-           
+
             const Piece pc = board.pieceAt(ml_main[i].from());
             const PieceType pt = typeOf(pc);
             const Square from = ml_main[i].from();
             const Square to = ml_main[i].to();
 
             ml_main[i].score = history.getHistoryHeuristic(board.getTurn(), ml_main[i]);
-            ml_main[i].score += (ss - 1)->cont_history[pc][to];
+            ml_main[i].score += 2 * (ss - 1)->cont_history[pc][to];
             ml_main[i].score += (ss - 2)->cont_history[pc][to];
-            ml_main[i].score += (ss - 4)->cont_history[pc][to] / 2;
-            ml_main[i].score += (ss - 6)->cont_history[pc][to] / 4;
+            ml_main[i].score += (ss - 4)->cont_history[pc][to];
+            ml_main[i].score += (ss - 6)->cont_history[pc][to] / 2;
 
             if (pt != PAWN && pt != KING)
             {
@@ -290,7 +265,7 @@ namespace Astra
                 else
                     danger = board.getThreats(PAWN);
 
-                if (danger & SQUARE_BB[from]) 
+                if (danger & SQUARE_BB[from])
                     ml_main[i].score += 16384 + 16384 * (pt == QUEEN);
                 else if (danger & SQUARE_BB[to])
                     ml_main[i].score -= 16384 + 16384 * (pt == QUEEN);
@@ -303,7 +278,7 @@ namespace Astra
         for (int i = 0; i < ml_main.size(); i++)
         {
             assert(isCap(ml_main[i]) || ml_main[i].type() == PQ_QUEEN);
-            
+
             PieceType captured = ml_main[i].type() == EN_PASSANT ? PAWN : typeOf(board.pieceAt(ml_main[i].to()));
             bool is_cap = captured != NO_PIECE_TYPE; // quiet queen prom is not a capture
 
