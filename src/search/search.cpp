@@ -411,10 +411,10 @@ namespace Astra
                 int lmr_depth = std::max(1, depth - r);
 
                 // late move pruning
-                if (!pv_node && q_count > (3 + depth * depth) / (2 - improving))
+                if (q_count > (3 + depth * depth) / (2 - improving))
                     mp.skip_quiets = true;
 
-                if (!pv_node && !isCap(move) && move.type() != PQ_QUEEN)
+                if (!isCap(move) && move.type() != PQ_QUEEN)
                 {
                     // history pruning
                     if (history_score < -hp_margin * depth && lmr_depth < 5)
