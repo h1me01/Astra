@@ -60,14 +60,13 @@ namespace Astra
                 Move move = ml_main[idx];
                 idx++;
 
-                // skip tt move
-                if (move == tt_move)
+                // skip tt move only when in negamax search
+                if (move == tt_move && st == N_SEARCH)
                     continue;
 
-                bool see = st == PC_SEARCH ? board.see(move, see_cutoff) : board.see(move, -move.score / 16);
-                if (!see)
+                if (!board.see(move, st == N_SEARCH ? -move.score / 16 : see_cutoff))
                 {
-                    ml_bad_noisy.add(move); // add move to bad noisy
+                    ml_bad_noisy.add(move); // add to bad noisy
                     continue;
                 }
 
@@ -75,7 +74,7 @@ namespace Astra
             }
 
             if (st == PC_SEARCH)
-                return NO_MOVE; // no more moves for pc-search
+                return NO_MOVE; // no more moves
 
             stage = PLAY_KILLER1;
             [[fallthrough]];
@@ -249,10 +248,10 @@ namespace Astra
             const Square from = ml_main[i].from();
             const Square to = ml_main[i].to();
 
-            ml_main[i].score = history.getHistoryHeuristic(board.getTurn(), ml_main[i]);
+            ml_main[i].score = 2 * history.getHistoryHeuristic(board.getTurn(), ml_main[i]);
             ml_main[i].score += 2 * (ss - 1)->cont_history[pc][to];
             ml_main[i].score += (ss - 2)->cont_history[pc][to];
-            ml_main[i].score += (ss - 4)->cont_history[pc][to];
+            ml_main[i].score += (ss - 4)->cont_history[pc][to] / 2;
             ml_main[i].score += (ss - 6)->cont_history[pc][to] / 2;
 
             if (pt != PAWN && pt != KING)
