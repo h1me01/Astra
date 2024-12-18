@@ -241,8 +241,6 @@ namespace Astra
     {
         for (int i = 0; i < ml_main.size(); i++)
         {
-            assert(!isCap(ml_main[i]));
-
             const Piece pc = board.pieceAt(ml_main[i].from());
             const PieceType pt = typeOf(pc);
             const Square from = ml_main[i].from();
@@ -251,8 +249,8 @@ namespace Astra
             ml_main[i].score = 2 * history.getHistoryHeuristic(board.getTurn(), ml_main[i]);
             ml_main[i].score += 2 * (ss - 1)->cont_history[pc][to];
             ml_main[i].score += (ss - 2)->cont_history[pc][to];
-            ml_main[i].score += (ss - 4)->cont_history[pc][to] / 2;
-            ml_main[i].score += (ss - 6)->cont_history[pc][to] / 2;
+            ml_main[i].score += (ss - 4)->cont_history[pc][to];
+            ml_main[i].score += (ss - 6)->cont_history[pc][to];
 
             if (pt != PAWN && pt != KING)
             {
@@ -276,12 +274,9 @@ namespace Astra
     {
         for (int i = 0; i < ml_main.size(); i++)
         {
-            assert(isCap(ml_main[i]) || ml_main[i].type() == PQ_QUEEN);
-
             PieceType captured = ml_main[i].type() == EN_PASSANT ? PAWN : typeOf(board.pieceAt(ml_main[i].to()));
             bool is_cap = captured != NO_PIECE_TYPE; // quiet queen prom is not a capture
-
-            ml_main[i].score = 8 * PIECE_VALUES[captured] + isProm(ml_main[i]) * 8192 + (is_cap ? history.getCaptureHistory(board, ml_main[i]) : 0);
+            ml_main[i].score = PIECE_VALUES[captured] + isProm(ml_main[i]) * 8192 + (is_cap ? history.getCaptureHistory(board, ml_main[i]) : 0);
         }
     }
 
