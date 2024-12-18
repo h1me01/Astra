@@ -22,10 +22,19 @@ namespace Astra
         if (st == PC_SEARCH)
             stage = GEN_NOISY;
         else if (st == Q_SEARCH)
-            stage = board.inCheck() ? PLAY_TT_MOVE : Q_GEN_NOISY;
+        {
+            if (board.inCheck())
+            {
+                stage = PLAY_TT_MOVE;
+                this->tt_move = tt_move;
+            }
+            else
+                stage = GEN_NOISY;
+        }
         else
         {
             stage = PLAY_TT_MOVE;
+            this->tt_move = tt_move;
 
             Move prev_move = (ss - 1)->curr_move;
             if (prev_move != NO_MOVE)
@@ -36,9 +45,6 @@ namespace Astra
             killer1 = ss->killer1;
             killer2 = ss->killer2;
         }
-
-        if (st != PC_SEARCH)
-            this->tt_move = tt_move;
     }
 
     Move MovePicker::nextMove()
@@ -81,7 +87,15 @@ namespace Astra
 
             if (st == PC_SEARCH)
                 return NO_MOVE; // no more moves
+            
+            if (st == Q_SEARCH && !board.inCheck())
+            {
+                if (!gen_checkers)
+                    return NO_MOVE; // no more moves
+                goto quiet_checkers;
+            }
 
+            // in evasion qsearch we can falltrough the killers and counter since we did not set them
             stage = PLAY_KILLER1;
             [[fallthrough]];
         case PLAY_KILLER1:
@@ -141,35 +155,13 @@ namespace Astra
             }
 
             return NO_MOVE; // no more moves
-        case Q_GEN_NOISY:
+        case GEN_QUIET_CHECKERS:
+        quiet_checkers:
             idx = 0;
-            stage = Q_PLAY_NOISY;
-
-            ml_main.gen<NOISY>(board);
-            scoreNoisyMoves();
-
-            [[fallthrough]];
-        case Q_PLAY_NOISY:
-            while (idx < ml_main.size())
-            {
-                partialInsertionSort(ml_main, idx);
-                Move move = ml_main[idx];
-                idx++;
-                return move;
-            }
-
-            if (!gen_checkers)
-                return NO_MOVE; // no more moves
-
-            stage = Q_GEN_QUIET_CHECKERS;
-
-            [[fallthrough]];
-        case Q_GEN_QUIET_CHECKERS:
-            idx = 0;
-            stage = Q_PLAY_QUIET_CHECKERS;
+            stage = PLAY_QUIET_CHECKERS;
             ml_main.gen<QUIET_CHECKERS>(board);
             [[fallthrough]];
-        case Q_PLAY_QUIET_CHECKERS:
+        case PLAY_QUIET_CHECKERS:
             while (idx < ml_main.size())
             {
                 partialInsertionSort(ml_main, idx);
