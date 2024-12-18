@@ -324,7 +324,7 @@ namespace Astra
             }
 
             // null move pruning
-            if (depth >= 3 && !ss->skipped && eval >= beta && ss->static_eval + 32 * depth - 195 >= beta
+            if (depth >= 3 && !ss->skipped && eval >= beta && ss->static_eval + 30 * depth - 170 >= beta
                 && board.nonPawnMat(stm) && (ss - 1)->curr_move != NULL_MOVE && std::abs(beta) < VALUE_TB_WIN_IN_MAX_PLY)
             {
                 int R = 4 + depth / nmp_depth_div + std::min(int(nmp_min), (eval - beta) / nmp_div);
