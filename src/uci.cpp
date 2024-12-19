@@ -132,12 +132,12 @@ namespace UCI
 #endif
         options.apply();
 
-        //openLog();
+        // openLog();
     }
 
     Uci::~Uci()
     {
-        //closeLog();
+        // closeLog();
     }
 
     void Uci::loop(int argc, char **argv)
@@ -153,7 +153,7 @@ namespace UCI
 
         while (std::getline(std::cin, line))
         {
-            //writeLog(line);
+            // writeLog(line);
 
             std::istringstream is(line);
             token.clear();

@@ -1,10 +1,11 @@
 #ifndef BENCH_H
 #define BENCH_H
 
-namespace Bench {
+namespace Bench
+{
 
     void bench(int depth);
 
 } // namespace Bench
 
-#endif //BENCH_H
+#endif // BENCH_H

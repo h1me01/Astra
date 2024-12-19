@@ -51,21 +51,21 @@ namespace Bench
     void bench(int depth)
     {
         Astra::threads.stop = false;
-        
+
         U64 nodes = 0;
         Astra::Limits limits;
         limits.depth = depth;
 
         auto start = std::chrono::high_resolution_clock::now();
 
-        for (const auto& fen : bench_positions)
+        for (const auto &fen : bench_positions)
         {
             std::cout << "\nPosition: " << fen << std::endl;
-            
+
             std::unique_ptr<Astra::Search> search(new Astra::Search(fen));
             search->limit = limits;
             search->bestMove();
-            
+
             nodes += search->nodes;
         }
 
@@ -73,7 +73,7 @@ namespace Bench
         auto total_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 
         std::cout << std::endl;
-        std::cout << nodes << " nodes " <<  nodes * 1000 / total_time << " nps" << std::endl;
+        std::cout << nodes << " nodes " << nodes * 1000 / total_time << " nps" << std::endl;
     }
 
 } // namespace Bench
