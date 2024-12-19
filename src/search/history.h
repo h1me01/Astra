@@ -16,7 +16,7 @@ namespace Astra
 
         int getHistoryHeuristic(Color stm, Move move) const;
         int getQuietHistory(const Board& board, const Stack* ss, Move &move) const;
-        int getCaptureHistory(const Board &board, Move &move) const;
+        int getCapHistory(const Board &board, Move &move) const;
 
         Move getCounterMove(Move move) const;
 

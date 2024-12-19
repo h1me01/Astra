@@ -395,7 +395,7 @@ namespace Astra
 
             int history_score;
             if (isCap(move))
-                history_score = history.getCaptureHistory(board, move);
+                history_score = history.getCapHistory(board, move);
             else
                 history_score = history.getQuietHistory(board, ss, move);
 

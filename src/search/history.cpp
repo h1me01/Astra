@@ -33,7 +33,7 @@ namespace Astra
                 (ss - 4)->cont_history[pc][to];
     }
 
-    int History::getCaptureHistory(const Board &board, Move &move) const
+    int History::getCapHistory(const Board &board, Move &move) const
     {
         PieceType captured = move.type() == EN_PASSANT ? PAWN : typeOf(board.pieceAt(move.to()));
         Piece pc = board.pieceAt(move.from());
@@ -104,28 +104,30 @@ namespace Astra
 
     void History::updateCapHistory(const Board &board, Move &move, int bonus)
     {
-        PieceType captured = move.type() == EN_PASSANT ? PAWN : typeOf(board.pieceAt(move.to()));
+        Square to = move.to();
+        PieceType captured = move.type() == EN_PASSANT ? PAWN : typeOf(board.pieceAt(to));
         Piece pc = board.pieceAt(move.from());
 
         assert(captured != NO_PIECE_TYPE);
         assert(pc != NO_PIECE);
 
-        updateHistoryScore(ch[pc][move.to()][captured], bonus);
+        updateHistoryScore(ch[pc][to][captured], bonus);
     }
 
     void History::updateContH(const Board &board, Move &move, Stack *ss, int bonus)
     {
+        Square to = move.to();
         Piece pc = board.pieceAt(move.from());
         // when updating cont history in lmr we have to take the to square 
         // since we have already made the move
         if (pc == NO_PIECE)
-            pc = board.pieceAt(move.to()); 
+            pc = board.pieceAt(to); 
 
         assert(pc != NO_PIECE);
 
         for (int offset : {1, 2, 4, 6})
             if ((ss - offset)->curr_move != NO_MOVE)
-                updateHistoryScore((ss - offset)->cont_history[pc][move.to()], bonus);
+                updateHistoryScore((ss - offset)->cont_history[pc][to], bonus);
     }
 
 } // namespace Astra
