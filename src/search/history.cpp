@@ -61,11 +61,7 @@ namespace Astra
                 if (prev_move != NO_MOVE)
                     counters[prev_move.from()][prev_move.to()] = best;
 
-                if (best != ss->killer1)
-                {
-                    ss->killer2 = ss->killer1;
-                    ss->killer1 = best;
-                }
+                ss->killer = best;
             }
 
             // credits to ethereal

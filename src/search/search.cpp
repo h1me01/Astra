@@ -207,9 +207,8 @@ namespace Astra
             if (ent.bound & (tt_score >= beta ? LOWER_BOUND : UPPER_BOUND))
                 return tt_score;
 
-        // reset killers
-        (ss + 1)->killer1 = NO_MOVE;
-        (ss + 1)->killer2 = NO_MOVE;
+        // reset killer
+        (ss + 1)->killer = NO_MOVE;
 
         // tablebase probing
         if (use_tb && !root_node)

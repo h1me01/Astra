@@ -12,8 +12,7 @@ namespace Astra
         int ply;
         Score eval = VALUE_NONE;
 
-        Move killer1 = NO_MOVE;
-        Move killer2 = NO_MOVE;
+        Move killer = NO_MOVE;
         Move curr_move = NO_MOVE;
 
         int16_t conth[NUM_PIECES + 1][NUM_SQUARES]{};

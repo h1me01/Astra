@@ -18,8 +18,7 @@ namespace Astra
         PLAY_TT_MOVE,
         GEN_NOISY,
         PLAY_NOISY,
-        PLAY_KILLER1,
-        PLAY_KILLER2,
+        PLAY_KILLER,
         PLAY_COUNTER,
         GEN_QUIETS,
         PLAY_QUIETS,
@@ -52,7 +51,7 @@ namespace Astra
 
         MoveList ml_main;
         MoveList ml_bad_noisy;
-        Move tt_move, killer1, killer2, counter;
+        Move tt_move, killer, counter;
 
         void scoreQuietMoves();
         void scoreNoisyMoves();

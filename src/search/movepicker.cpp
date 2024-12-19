@@ -42,8 +42,7 @@ namespace Astra
             else
                 counter = NO_MOVE;
 
-            killer1 = ss->killer1;
-            killer2 = ss->killer2;
+            killer = ss->killer;
         }
     }
 
@@ -96,21 +95,16 @@ namespace Astra
             }
 
             // in evasion qsearch we can falltrough the killers and counter since we did not set them
-            stage = PLAY_KILLER1;
+            stage = PLAY_KILLER;
             [[fallthrough]];
-        case PLAY_KILLER1:
-            stage = PLAY_KILLER2;
-            if (!skip_quiets && killer1 != tt_move && board.isPseudoLegal(killer1))
-                return killer1;
-            [[fallthrough]];
-        case PLAY_KILLER2:
+        case PLAY_KILLER:
             stage = PLAY_COUNTER;
-            if (!skip_quiets && killer2 != tt_move && board.isPseudoLegal(killer2))
-                return killer2;
+            if (!skip_quiets && killer != tt_move && board.isPseudoLegal(killer))
+                return killer;
             [[fallthrough]];
         case PLAY_COUNTER:
             stage = GEN_QUIETS;
-            if (!skip_quiets && counter != tt_move && counter != killer1 && counter != killer2 && board.isPseudoLegal(counter))
+            if (!skip_quiets && counter != tt_move && counter != killer && board.isPseudoLegal(counter))
                 return counter;
             [[fallthrough]];
         case GEN_QUIETS:
@@ -132,7 +126,7 @@ namespace Astra
                 idx++;
 
                 // skip tt move, killers, and counter
-                if (move == tt_move || move == killer1 || move == killer2 || move == counter)
+                if (move == tt_move || move == killer || move == counter)
                     continue;
 
                 return move;
