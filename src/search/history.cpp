@@ -65,7 +65,7 @@ namespace Astra
             }
 
             // credits to ethereal
-            // only update best move history if it was important
+            // only update quiet history if best move was important
             if (depth > 3 || qc > 1)
             {
                 updateHistoryScore(hh[stm][best.from()][best.to()], bonus);
