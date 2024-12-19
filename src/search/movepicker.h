@@ -34,7 +34,7 @@ namespace Astra
         bool skip_quiets = false;
         int see_cutoff = 0;
 
-        MovePicker(SearchType st, const Board &board, const History &history, const Stack *ss, Move &tt_move, bool gen_checks = false);
+        MovePicker(SearchType st, const Board &board, const History &history, const Stack *ss, const Move &tt_move, bool gen_checks = false);
 
         Move nextMove();
 

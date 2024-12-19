@@ -16,7 +16,7 @@ namespace Astra
 
     // MovePicker class
 
-    MovePicker::MovePicker(SearchType st, const Board &board, const History &history, const Stack *ss, Move &tt_move, bool gen_checkers)
+    MovePicker::MovePicker(SearchType st, const Board &board, const History &history, const Stack *ss, const Move &tt_move, bool gen_checkers)
         : st(st), board(board), history(history), ss(ss), gen_checkers(gen_checkers)
     {
         if (st == PC_SEARCH)
