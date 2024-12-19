@@ -465,7 +465,7 @@ namespace Astra
                 // increase when in a cut node
                 r += 2 * cut_node;
                 // decrease when in pv node
-                r -= pv_node;
+                r -= (pv_node + ent.bound == EXACT_BOUND);
                 // decrease when move gives check
                 r -= board.inCheck();
                 // decrease when tt depth is greater or equal to current depth 
