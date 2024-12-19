@@ -6,6 +6,10 @@
 
 namespace Astra
 {
+    void updateHistoryScore(int16_t& score, int bonus)
+    {
+        score += bonus - score * std::abs(bonus) / 16384;
+    }
 
     int historyBonus(int depth)
     {
@@ -45,7 +49,7 @@ namespace Astra
         return counters[prev_move.from()][prev_move.to()];
     }
 
-    void History::update(Board &board, Move &best, Stack *ss, Move *q_moves, int qc, Move *c_moves, int cc, int depth)
+    void History::update(const Board &board, Move &best, Stack *ss, Move *q_moves, int qc, Move *c_moves, int cc, int depth)
     {
         Color stm = board.getTurn();
         int bonus = historyBonus(depth);
@@ -71,7 +75,7 @@ namespace Astra
             // only update best move history if it wasn't trivial
             if (depth > 3 || qc > 1)
             {
-                updateQH(best, stm, bonus);
+                updateHistoryScore(hh[stm][best.from()][best.to()], bonus);
                 updateContH(board, best, ss, bonus);
             }
 
@@ -81,13 +85,12 @@ namespace Astra
                 Move quiet = q_moves[i];
                 if (quiet == best)
                     continue;
-
-                updateQH(quiet, stm, -bonus);
+                updateHistoryScore(hh[stm][quiet.from()][quiet.to()], -bonus);
                 updateContH(board, quiet, ss, -bonus);
             }
         }
         else
-            updateCH(board, best, bonus);
+            updateCapHistory(board, best, bonus);
 
         // capture maluses
         for (int i = 0; i < cc; i++)
@@ -95,17 +98,11 @@ namespace Astra
             Move cap = c_moves[i];
             if (cap == best)
                 continue;
-            updateCH(board, cap, -bonus);
+            updateCapHistory(board, cap, -bonus);
         }
     }
 
-    void History::updateQH(Move &move, Color c, int bonus)
-    {
-        int16_t &score = hh[c][move.from()][move.to()];
-        score += bonus - score * std::abs(bonus) / 16384;
-    }
-
-    void History::updateCH(Board &board, Move &move, int bonus)
+    void History::updateCapHistory(const Board &board, Move &move, int bonus)
     {
         PieceType captured = move.type() == EN_PASSANT ? PAWN : typeOf(board.pieceAt(move.to()));
         Piece pc = board.pieceAt(move.from());
@@ -113,24 +110,22 @@ namespace Astra
         assert(captured != NO_PIECE_TYPE);
         assert(pc != NO_PIECE);
 
-        int16_t &score = ch[pc][move.to()][captured];
-        score += bonus - score * std::abs(bonus) / 16384;
+        updateHistoryScore(ch[pc][move.to()][captured], bonus);
     }
 
-    void History::updateContH(Board &board, Move &move, Stack *ss, int bonus)
+    void History::updateContH(const Board &board, Move &move, Stack *ss, int bonus)
     {
         Piece pc = board.pieceAt(move.from());
+        // when updating cont history in lmr we have to take the to square 
+        // since we have already made the move
         if (pc == NO_PIECE)
-            pc = board.pieceAt(move.to());
+            pc = board.pieceAt(move.to()); 
 
         assert(pc != NO_PIECE);
 
         for (int offset : {1, 2, 4, 6})
             if ((ss - offset)->curr_move != NO_MOVE)
-            {
-                int16_t &score = (ss - offset)->cont_history[pc][move.to()];
-                score += bonus - score * std::abs(bonus) / 16384;
-            }
+                updateHistoryScore((ss - offset)->cont_history[pc][move.to()], bonus);
     }
 
 } // namespace Astra
