@@ -12,7 +12,7 @@ namespace Chess
 
         void init()
         {
-            PRNG rng(1070372); 
+            PRNG rng(1070372);
 
             for (int pc = WHITE_PAWN; pc <= BLACK_KING; pc++)
                 for (int sq = a1; sq <= h8; sq++)
@@ -28,23 +28,23 @@ namespace Chess
             side = rng.rand<U64>();
         }
 
-        U64 getPsq(Piece pc, Square sq) 
-        { 
+        U64 getPsq(Piece pc, Square sq)
+        {
             assert(pc >= WHITE_PAWN && pc <= BLACK_KING);
             assert(sq >= a1 && sq <= h8);
-            return psq[pc][sq]; 
+            return psq[pc][sq];
         }
 
-        U64 getCastle(int idx) 
-        { 
+        U64 getCastle(int idx)
+        {
             assert(idx >= 0 && idx < 16);
-            return castle[idx]; 
+            return castle[idx];
         }
 
-        U64 getEp(Square sq) 
-        { 
+        U64 getEp(Square sq)
+        {
             assert(sq >= a1 && sq <= h8);
-            return ep[fileOf(sq)]; 
+            return ep[fileOf(sq)];
         }
 
     } // namespace Zobrist

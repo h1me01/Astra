@@ -4,7 +4,7 @@
 
 namespace Astra
 {
-    void updateHistoryScore(int16_t& score, int bonus)
+    void updateHistoryScore(int16_t &score, int bonus)
     {
         score += bonus - score * std::abs(bonus) / 16384;
     }
@@ -27,10 +27,10 @@ namespace Astra
 
         assert(pc != NO_PIECE);
 
-        return hh[board.getTurn()][from][to] + 
-                (ss - 1)->conth[pc][to] +
-                (ss - 2)->conth[pc][to] + 
-                (ss - 4)->conth[pc][to];
+        return hh[board.getTurn()][from][to] +
+               (ss - 1)->conth[pc][to] +
+               (ss - 2)->conth[pc][to] +
+               (ss - 4)->conth[pc][to];
     }
 
     int History::getCapHistory(const Board &board, Move &move) const
@@ -56,7 +56,7 @@ namespace Astra
 
         if (!isCap(best))
         {
-            // don't set quiet promotion queen as a count/killer, 
+            // don't set quiet promotion queen as a count/killer,
             // so we don't actually return it twice in the movepicker
             if (best.type() != PQ_QUEEN)
             {
@@ -118,10 +118,10 @@ namespace Astra
     {
         Square to = move.to();
         Piece pc = board.pieceAt(move.from());
-        // when updating cont history in lmr we have to take the to square 
+        // when updating cont history in lmr we have to take the to square
         // since we have already made the move
         if (pc == NO_PIECE)
-            pc = board.pieceAt(to); 
+            pc = board.pieceAt(to);
 
         assert(pc != NO_PIECE);
 

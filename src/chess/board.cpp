@@ -363,8 +363,8 @@ namespace Chess
             // is single push?
             bool singe_push = (Square(from + up) == to) && pieceAt(to) == NO_PIECE;
             // is double push?
-            bool double_push = relativeRank(stm, RANK_2) == rankOf(from) && (Square(from + 2 * up) == to) && 
-                                pieceAt(to) == NO_PIECE && pieceAt(to - up) == NO_PIECE;
+            bool double_push = relativeRank(stm, RANK_2) == rankOf(from) && (Square(from + 2 * up) == to) &&
+                               pieceAt(to) == NO_PIECE && pieceAt(to - up) == NO_PIECE;
 
             // if none of the conditions above are met, then it's not pseudo legal
             if (!capture && !singe_push && !double_push)
@@ -747,7 +747,7 @@ namespace Chess
     {
         Color them = ~stm;
         U64 occ = occupancy() ^ SQUARE_BB[kingSq(stm)]; // king must be excluded so we don't block the slider attacks
-        
+
         U64 danger = 0;
         U64 threat = 0;
 
@@ -761,7 +761,7 @@ namespace Chess
         // knight attacks
         threat = 0;
         U64 knights = getPieceBB(them, KNIGHT);
-        while(knights)
+        while (knights)
             threat |= getAttacks(KNIGHT, popLsb(knights), occ);
         danger |= threat;
 
@@ -770,7 +770,7 @@ namespace Chess
         // bishop attacks
         threat = 0;
         U64 bishops = getPieceBB(them, BISHOP);
-        while(bishops)
+        while (bishops)
             threat |= getAttacks(BISHOP, popLsb(bishops), occ);
         danger |= threat;
 
@@ -779,7 +779,7 @@ namespace Chess
         // rook attacks
         threat = 0;
         U64 rooks = getPieceBB(them, ROOK);
-        while(rooks)
+        while (rooks)
             threat |= getAttacks(ROOK, popLsb(rooks), occ);
         danger |= threat;
 
@@ -788,7 +788,7 @@ namespace Chess
         // queen attacks
         threat = 0;
         U64 queens = getPieceBB(them, QUEEN);
-        while(queens)
+        while (queens)
             threat |= getAttacks(QUEEN, popLsb(queens), occ);
         danger |= threat;
 

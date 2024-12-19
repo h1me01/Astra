@@ -22,7 +22,7 @@ namespace Chess
         return count;
     }
 
-    Square popLsb(U64& b)
+    Square popLsb(U64 &b)
     {
         int n = lsb(b);
         b &= b - 1;
@@ -37,5 +37,5 @@ namespace Chess
         b = ((b & 0x00ff00ff00ff00ff) << 8) | ((b >> 8) & 0x00ff00ff00ff00ff);
         return (b << 48) | ((b & 0xffff0000) << 16) | ((b >> 16) & 0xffff0000) | (b >> 48);
     }
-    
+
 } // namespace Chess

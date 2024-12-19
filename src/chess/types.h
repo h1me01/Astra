@@ -49,7 +49,7 @@ namespace Chess
         NUM_PIECE_TYPES = 6
     };
 
-    constexpr PieceType PIECE_TO_PIECE_TYPE[13] = 
+    constexpr PieceType PIECE_TO_PIECE_TYPE[13] =
     {
         PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING,
         PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING,
@@ -87,7 +87,7 @@ namespace Chess
         NO_SQUARE, NUM_SQUARES = 64
     };
 
-    const std::string SQSTR[65] = 
+    const std::string SQSTR[65] =
     {
         "a1", "b1", "c1", "d1", "e1", "f1", "g1", "h1",
         "a2", "b2", "c2", "d2", "e2", "f2", "g2", "h2",

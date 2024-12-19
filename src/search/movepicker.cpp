@@ -87,7 +87,7 @@ namespace Astra
 
             if (st == PC_SEARCH)
                 return NO_MOVE; // no more moves
-            
+
             if (st == Q_SEARCH && !board.inCheck())
             {
                 if (!gen_checkers)

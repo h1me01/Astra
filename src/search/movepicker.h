@@ -47,7 +47,7 @@ namespace Astra
         const Board &board;
         const History &history;
         const Stack *ss;
-        
+
         bool gen_checkers;
 
         MoveList ml_main;

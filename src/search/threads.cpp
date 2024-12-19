@@ -7,7 +7,7 @@ namespace Astra
         return stop.load(std::memory_order_relaxed);
     }
 
-    void ThreadPool::launchWorkers(const Board &board, const Limits &limit, int worker_count, bool use_tb)
+    void ThreadPool::launchWorkers(const Board &board, Limits limit, int worker_count, bool use_tb)
     {
         stop = false;
 

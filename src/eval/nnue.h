@@ -11,9 +11,9 @@
 using namespace Chess;
 
 #if defined(__AVX512F__)
-    #define ALIGNMENT 64 
+#define ALIGNMENT 64
 #else
-    #define ALIGNMENT 32
+#define ALIGNMENT 32
 #endif
 
 namespace NNUE
@@ -22,8 +22,9 @@ namespace NNUE
     constexpr int HIDDEN_SIZE = 1024;
     constexpr int OUTPUT_SIZE = 1;
 
-    struct Accumulator {
-       alignas(ALIGNMENT) int16_t data[NUM_COLORS][HIDDEN_SIZE]; 
+    struct Accumulator
+    {
+        alignas(ALIGNMENT) int16_t data[NUM_COLORS][HIDDEN_SIZE];
     };
 
     class Accumulators
@@ -48,7 +49,7 @@ namespace NNUE
             index--;
         }
 
-        Accumulator& back() { return accumulators[index]; }
+        Accumulator &back() { return accumulators[index]; }
 
     private:
         int index;
@@ -64,11 +65,11 @@ namespace NNUE
 
         void init();
 
-        int32_t forward(const Accumulator& acc, Color stm) const;
+        int32_t forward(const Accumulator &acc, Color stm) const;
 
-        void putPiece(Accumulator& acc, Piece p, Square s) const;
-        void removePiece(Accumulator& acc, Piece p, Square s) const;
-        void movePiece(Accumulator& acc, Piece p, Square from, Square to) const;
+        void putPiece(Accumulator &acc, Piece p, Square s) const;
+        void removePiece(Accumulator &acc, Piece p, Square s) const;
+        void movePiece(Accumulator &acc, Piece p, Square from, Square to) const;
     };
 
     // global variable
@@ -76,4 +77,4 @@ namespace NNUE
 
 } // namespace NNUE
 
-#endif //NNUE_H
+#endif // NNUE_H

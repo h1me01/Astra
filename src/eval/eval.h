@@ -5,10 +5,11 @@
 
 using namespace Chess;
 
-namespace Eval {
+namespace Eval
+{
 
-   Score evaluate(Board& board);
+   Score evaluate(Board &board);
 
 } // namespace Eval
 
-#endif //EVAL_H
+#endif // EVAL_H

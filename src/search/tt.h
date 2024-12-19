@@ -24,10 +24,9 @@ namespace Astra
         Score score;
         Bound bound;
 
-        TTEntry() : hash(0), depth(0), age(0), move(NO_MOVE), score(VALUE_NONE), bound(NO_BOUND) { }
+        TTEntry() : hash(0), depth(0), age(0), move(NO_MOVE), score(VALUE_NONE), bound(NO_BOUND) {}
 
-        TTEntry(U64 hash, int depth, Move move, Score score, Bound bound) :
-            hash(hash), depth(depth), move(move), score(score), bound(bound) { }
+        TTEntry(U64 hash, int depth, Move move, Score score, Bound bound) : hash(hash), depth(depth), move(move), score(score), bound(bound) {}
     };
 
     class TTable
@@ -39,18 +38,19 @@ namespace Astra
         void init(U64 size_mb);
         void clear() const;
 
-        bool lookup(TTEntry& entry, U64 hash) const;
+        bool lookup(TTEntry &entry, U64 hash) const;
         void store(U64 hash, Move move, Score score, int depth, Bound bound) const;
 
         void incrementAge();
         void prefetch(U64 hash) const;
 
         int hashfull() const;
+
     private:
         uint8_t current_age;
         U64 tt_size{};
         U64 mask{};
-        TTEntry* entries;
+        TTEntry *entries;
     };
 
     Score scoreToTT(Score s, int ply);
@@ -59,4 +59,4 @@ namespace Astra
 
 } // namespace Astra
 
-#endif //TT_H
+#endif // TT_H

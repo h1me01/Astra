@@ -25,7 +25,7 @@ namespace Chess
         return Square(index);
     }
 
-    std::vector<std::string> split(const std::string& str, char del)
+    std::vector<std::string> split(const std::string &str, char del)
     {
         std::vector<std::string> parts;
         std::string current;
@@ -50,11 +50,11 @@ namespace Chess
         return parts;
     }
 
-    std::ostream& operator<<(std::ostream& os, const Move& m)
+    std::ostream &operator<<(std::ostream &os, const Move &m)
     {
         if (!m)
             os << "NO MOVE";
-        else if (m == NULL_MOVE) 
+        else if (m == NULL_MOVE)
             os << "NULL MOVE";
         else
             os << SQSTR[m.from()] << SQSTR[m.to()];

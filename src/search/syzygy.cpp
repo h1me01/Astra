@@ -4,7 +4,8 @@
 
 namespace Astra
 {
-    struct ProbeData {
+    struct ProbeData
+    {
         U64 w_occ;
         U64 b_occ;
         U64 occ;
@@ -21,14 +22,16 @@ namespace Astra
         bool is_allowed = true;
     };
 
-    ProbeData getProbeData(const Board &board) {
+    ProbeData getProbeData(const Board &board)
+    {
         ProbeData d;
 
         d.w_occ = board.occupancy(WHITE);
         d.b_occ = board.occupancy(BLACK);
         d.occ = d.w_occ | d.b_occ;
 
-        if (popCount(d.occ) > signed(TB_LARGEST)) {
+        if (popCount(d.occ) > signed(TB_LARGEST))
+        {
             d.is_allowed = false;
             return d;
         }
@@ -43,16 +46,15 @@ namespace Astra
         int ply = board.getPly();
         d.fmc = board.history[ply].half_move_clock;
         d.any_castling = board.history[ply].castle_rights.any();
-        
+
         Square ep_sq = board.history[ply].ep_sq;
         d.ep_sq = ep_sq != NO_SQUARE ? ep_sq : 0;
-        
+
         d.ep_sq = board.history[ply].ep_sq;
         d.stm = board.getTurn() == WHITE;
 
         return d;
     }
-
 
     Score probeWDL(const Board &board)
     {

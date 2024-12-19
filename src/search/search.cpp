@@ -156,7 +156,8 @@ namespace Astra
         assert(alpha < beta);
         assert(ss->ply >= 0);
 
-        if (isLimitReached(depth)) return 0;
+        if (isLimitReached(depth))
+            return 0;
 
         if (ss->ply >= MAX_PLY - 1)
             return adjustEval(Eval::evaluate(board));
@@ -324,8 +325,7 @@ namespace Astra
             }
 
             // null move pruning
-            if (depth >= 3 && !ss->skipped && eval >= beta && ss->static_eval + 30 * depth - 170 >= beta
-                && board.nonPawnMat(stm) && (ss - 1)->curr_move != NULL_MOVE && std::abs(beta) < VALUE_TB_WIN_IN_MAX_PLY)
+            if (depth >= 3 && !ss->skipped && eval >= beta && ss->static_eval + 30 * depth - 170 >= beta && board.nonPawnMat(stm) && (ss - 1)->curr_move != NULL_MOVE && std::abs(beta) < VALUE_TB_WIN_IN_MAX_PLY)
             {
                 int R = 4 + depth / nmp_depth_div + std::min(int(nmp_min), (eval - beta) / nmp_div);
 
@@ -447,8 +447,7 @@ namespace Astra
             int extension = 0;
 
             // singular extensions
-            if (!root_node && depth >= 6 && ss->ply < 2 * root_depth && !ss->skipped && ent.move == move 
-            && ent.depth >= depth - 3 && (ent.bound & LOWER_BOUND) && std::abs(tt_score) < VALUE_TB_WIN_IN_MAX_PLY)
+            if (!root_node && depth >= 6 && ss->ply < 2 * root_depth && !ss->skipped && ent.move == move && ent.depth >= depth - 3 && (ent.bound & LOWER_BOUND) && std::abs(tt_score) < VALUE_TB_WIN_IN_MAX_PLY)
             {
                 Score sbeta = tt_score - 3 * depth;
                 int sdepth = (depth - 1) / 2;
@@ -506,7 +505,8 @@ namespace Astra
                     if (new_depth > lmr_depth)
                         score = -negamax(new_depth, -alpha - 1, -alpha, ss + 1, !cut_node);
 
-                    int bonus = score <= alpha ? -historyBonus(new_depth) : score >= beta ? historyBonus(new_depth) : 0;
+                    int bonus = score <= alpha ? -historyBonus(new_depth) : score >= beta ? historyBonus(new_depth)
+                                                                                          : 0;
                     history.updateContH(board, move, ss, bonus);
                 }
             }
@@ -551,14 +551,16 @@ namespace Astra
 
         // check for mate and stalemate
         if (made_moves == 0)
-            return ss->skipped != NO_MOVE ? alpha : in_check ? -VALUE_MATE + ss->ply : VALUE_DRAW;
+            return ss->skipped != NO_MOVE ? alpha : in_check ? -VALUE_MATE + ss->ply
+                                                             : VALUE_DRAW;
 
         best_score = std::min(best_score, max_score);
 
         // store in transposition table
         if (!ss->skipped)
         {
-            Bound bound = best_score >= beta ? LOWER_BOUND : best_score <= orig_alpha ? UPPER_BOUND : EXACT_BOUND;
+            Bound bound = best_score >= beta ? LOWER_BOUND : best_score <= orig_alpha ? UPPER_BOUND
+                                                                                      : EXACT_BOUND;
             tt.store(hash, best_move, scoreToTT(best_score, ss->ply), depth, bound);
         }
 
@@ -569,7 +571,8 @@ namespace Astra
     {
         assert(alpha < beta);
 
-        if (isLimitReached(1)) return 0;
+        if (isLimitReached(1))
+            return 0;
 
         const bool pv_node = beta - alpha != 1;
         const bool in_check = board.inCheck();

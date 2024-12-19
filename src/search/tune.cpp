@@ -5,8 +5,8 @@
 
 namespace Astra
 {
-    Param::Param(std::string name, int value, int min, int max, int step) 
-    : name(std::move(name)), value(value), min(min), max(max), step(step)
+    Param::Param(std::string name, int value, int min, int max, int step)
+        : name(std::move(name)), value(value), min(min), max(max), step(step)
     {
         if (value < min || value > max)
         {
@@ -22,18 +22,15 @@ namespace Astra
     void paramsToUCI()
     {
         for (const auto &param : params)
-        {
             std::cout << "option name " << param->name
                       << " type spin default " << param->value
                       << " min " << param->min
                       << " max " << param->max << std::endl;
-        }
     }
 
     void setParam(const std::string &name, int value)
     {
         for (auto *param : params)
-        {
             if (param->name == name)
             {
                 if (value < param->min || value > param->max)
@@ -45,13 +42,11 @@ namespace Astra
                 param->value = value;
                 return;
             }
-        }
     }
 
     void paramsToSpsa()
     {
         for (auto &param : params)
-        {
             std::cout << param->name
                       << ", " << "int"
                       << ", " << param->value
@@ -59,7 +54,6 @@ namespace Astra
                       << ", " << param->max
                       << ", " << std::max(0.5, double(param->max - param->min) / 20.0)
                       << ", " << 0.002 << "\n";
-        }
     }
 
     void paramsToJSON()
@@ -74,10 +68,10 @@ namespace Astra
             ss << "    \"max_value\": " << params[i]->max << ",\n";
             ss << "    \"step\": " << params[i]->step << "\n";
             ss << "  }";
-            
+
             if (i < params.size() - 1)
                 ss << ",";
-            
+
             ss << "\n";
         }
         ss << "}\n";

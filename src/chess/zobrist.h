@@ -38,4 +38,4 @@ namespace Chess
 
 } // namespace Chess
 
-#endif //ZOBRIST_H
+#endif // ZOBRIST_H

@@ -33,7 +33,7 @@ namespace Astra
             entries[i] = TTEntry();
     }
 
-    bool TTable::lookup(TTEntry& entry, U64 hash) const
+    bool TTable::lookup(TTEntry &entry, U64 hash) const
     {
         U64 idx = hash & mask;
         if (entries[idx].hash == hash)
@@ -55,9 +55,9 @@ namespace Astra
         }
         else
         {
-            if ((bound == EXACT_BOUND) || // save if exact bound
-                (entries[idx].hash != hash) || // save if hash is different
-                (entries[idx].age != current_age) || // save if age is different
+            if ((bound == EXACT_BOUND) ||                                   // save if exact bound
+                (entries[idx].hash != hash) ||                              // save if hash is different
+                (entries[idx].age != current_age) ||                        // save if age is different
                 (entries[idx].hash == hash && entries[idx].depth <= depth)) // save if depth is greater or equal
             {
                 entries[idx] = TTEntry(hash, depth, move, score, bound);

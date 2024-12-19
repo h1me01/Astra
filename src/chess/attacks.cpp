@@ -41,8 +41,7 @@ namespace Chess
                 idx = idx >> ROOK_ATTACK_SHIFTS[s];
                 ROOK_ATTACKS[s][idx] = slidingAttacks(s, subset, MASK_FILE[fileOf(s)]) | slidingAttacks(s, subset, MASK_RANK[rankOf(s)]);
                 subset = (subset - ROOK_ATTACK_MASKS[s]) & ROOK_ATTACK_MASKS[s];
-            }
-            while (subset);
+            } while (subset);
         }
     }
 
@@ -63,8 +62,7 @@ namespace Chess
                 idx = idx >> BISHOP_ATTACK_SHIFTS[s];
                 BISHOP_ATTACKS[s][idx] = slidingAttacks(s, subset, MASK_DIAGONAL[diagOf(s)]) | slidingAttacks(s, subset, MASK_ANTI_DIAGONAL[antiDiagOf(s)]);
                 subset = (subset - BISHOP_ATTACK_MASKS[s]) & BISHOP_ATTACK_MASKS[s];
-            }
-            while (subset);
+            } while (subset);
         }
     }
 
@@ -83,7 +81,7 @@ namespace Chess
             PSEUDO_LEGAL_ATTACKS[QUEEN][s] = PSEUDO_LEGAL_ATTACKS[ROOK][s] | PSEUDO_LEGAL_ATTACKS[BISHOP][s];
         }
 
-        // init squares between and line 
+        // init squares between and line
         for (Square s1 = a1; s1 <= h8; ++s1)
         {
             for (Square s2 = a1; s2 <= h8; ++s2)

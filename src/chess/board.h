@@ -43,14 +43,14 @@ namespace Chess
         Square ep_sq;
         CastlingRights castle_rights;
         int half_move_clock;
-        
+
         // enemy pieces that check our king
         U64 checkers = 0;
         // squares of our pinned pieces
         U64 pinned = 0;
         // potential danger squares for our king
         U64 danger = 0;
-        
+
         U64 threats[NUM_PIECE_TYPES];
 
         StateInfo() : hash(0), captured(NO_PIECE), ep_sq(NO_SQUARE), half_move_clock(0) {}
@@ -88,7 +88,7 @@ namespace Chess
     {
     public:
         StateInfo history[1024];
-        
+
         Board(const std::string &fen);
         Board(const Board &other);
 
@@ -129,11 +129,11 @@ namespace Chess
         bool isInsufficientMaterial() const;
         bool isDraw() const;
         bool see(Move &m, int threshold) const;
-        
+
         U64 getThreats(PieceType pt) const;
 
         bool oppHasGoodCaptures() const;
-        
+
     private:
         U64 piece_bb[NUM_PIECES];
         Piece board[NUM_SQUARES];
@@ -147,7 +147,7 @@ namespace Chess
         void movePiece(Square from, Square to, bool update_nnue);
 
         void initThreats();
-        void initCheckersAndPinned();    
+        void initCheckersAndPinned();
     };
 
     inline U64 Board::getPieceBB(Color c, PieceType pt) const
@@ -176,10 +176,10 @@ namespace Chess
 
     inline U64 Board::occupancy() const { return occupancy(WHITE) | occupancy(BLACK); }
 
-    inline U64 Board::getThreats(PieceType pt) const 
-    { 
+    inline U64 Board::getThreats(PieceType pt) const
+    {
         assert(pt != NO_PIECE_TYPE);
-        return history[curr_ply].threats[pt]; 
+        return history[curr_ply].threats[pt];
     }
 
     inline bool Board::inCheck() const
