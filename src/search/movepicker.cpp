@@ -75,7 +75,7 @@ namespace Astra
                 if (move == tt_move)
                     continue;
 
-                // we want to play captures first in evasion qsearch, doesn't matter if its see is fails
+                // we want to play captures first in qsearch, doesn't matter if its see is fails
                 if (st != Q_SEARCH && !board.see(move, st == N_SEARCH ? -move.score / 16 : see_cutoff))
                 {
                     ml_bad_noisy.add(move); // add to bad noisy
