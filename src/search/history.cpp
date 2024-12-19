@@ -27,10 +27,7 @@ namespace Astra
 
         assert(pc != NO_PIECE);
 
-        return hh[board.getTurn()][from][to] +
-               (ss - 1)->conth[pc][to] +
-               (ss - 2)->conth[pc][to] +
-               (ss - 4)->conth[pc][to];
+        return hh[board.getTurn()][from][to] + (ss - 1)->conth[pc][to] + (ss - 2)->conth[pc][to] + (ss - 4)->conth[pc][to];
     }
 
     int History::getCapHistory(const Board &board, Move &move) const
