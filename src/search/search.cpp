@@ -444,7 +444,7 @@ namespace Astra
                 if (score < sbeta)
                 {
                     if (!pv_node && score < sbeta - 14)
-                        extension = 2 + (!isCap(move) && score < sbeta - ext_margin);
+                        extension = 2 + (!isCap(move) && !isProm(move) && score < sbeta - ext_margin);
                     else
                         extension = 1;
                 }
