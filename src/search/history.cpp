@@ -2,8 +2,6 @@
 #include "search.h"
 #include "tune.h"
 
-#include <cstring> // for memset
-
 namespace Astra
 {
     void updateHistoryScore(int16_t& score, int bonus)
@@ -29,8 +27,10 @@ namespace Astra
 
         assert(pc != NO_PIECE);
 
-        return hh[board.getTurn()][from][to] + (ss - 1)->cont_history[pc][to] +
-               (ss - 2)->cont_history[pc][to] + (ss - 4)->cont_history[pc][to];
+        return hh[board.getTurn()][from][to] + 
+                (ss - 1)->cont_history[pc][to] +
+                (ss - 2)->cont_history[pc][to] + 
+                (ss - 4)->cont_history[pc][to];
     }
 
     int History::getCaptureHistory(const Board &board, Move &move) const
@@ -56,8 +56,8 @@ namespace Astra
 
         if (!isCap(best))
         {
-            // don't set the quiet promotion queen as a counter or killer, so we don't
-            // actually return it twice in the movepicker
+            // don't set quiet promotion queen as a count/killer, 
+            // so we don't actually return it twice in the movepicker
             if (best.type() != PQ_QUEEN)
             {
                 Move prev_move = (ss - 1)->curr_move;
@@ -72,7 +72,7 @@ namespace Astra
             }
 
             // credits to ethereal
-            // only update best move history if it wasn't trivial
+            // only update best move history if it was important
             if (depth > 3 || qc > 1)
             {
                 updateHistoryScore(hh[stm][best.from()][best.to()], bonus);
