@@ -268,7 +268,6 @@ namespace Astra
                     eval = Eval::evaluate(board);
 
                 ss->eval = eval;
-
                 eval = adjustEval(eval);
 
                 if (tt_score != VALUE_NONE && (ent.bound & (tt_score > eval ? LOWER_BOUND : UPPER_BOUND)))
@@ -325,7 +324,6 @@ namespace Astra
                     // don't return unproven mate scores
                     if (score >= VALUE_TB_WIN_IN_MAX_PLY)
                         score = beta;
-
                     return score;
                 }
             }
@@ -345,8 +343,8 @@ namespace Astra
 
                     nodes++;
                     ss->curr_move = move;
-                    board.makeMove(move, true);
 
+                    board.makeMove(move, true);
                     Score score = -qSearch(0, -beta_cut, -beta_cut + 1, ss + 1);
 
                     if (score >= beta_cut)
@@ -369,7 +367,7 @@ namespace Astra
 
         Move q_moves[64];
         Move c_moves[32];
-        Move best_move = NO_MOVE, move = NO_MOVE;
+        Move best_move = NO_MOVE, move;
 
         while ((move = mp.nextMove()) != NO_MOVE)
         {
@@ -378,11 +376,7 @@ namespace Astra
 
             made_moves++;
 
-            int history_score;
-            if (isCap(move))
-                history_score = history.getCapHistory(board, move);
-            else
-                history_score = history.getQuietHistory(board, ss, move);
+            int history_score = isCap(move) ? history.getCapHistory(board, move) : history.getQuietHistory(board, ss, move);
 
             // reductions
             int r = REDUCTIONS[depth][made_moves];
@@ -474,19 +468,21 @@ namespace Astra
                 r -= pv_node;
                 // decrease when move gives check
                 r -= board.inCheck();
+                // decrease when tt depth is greater or equal to current depth 
+                r -= (ent.depth >= depth);
 
                 int lmr_depth = std::clamp(new_depth - r, 1, new_depth + 1);
 
                 score = -negamax(lmr_depth, -alpha - 1, -alpha, ss + 1, true);
 
                 // if late move reduction failed high and we actually reduced, do a research
-                if (score > alpha && r > 1)
+                if (score > alpha && lmr_depth < new_depth)
                 {
                     // credits to stockfish
                     new_depth += (score > best_score + zws_margin);
                     new_depth -= (score < best_score + new_depth);
 
-                    if (new_depth > lmr_depth)
+                    if (lmr_depth < new_depth)
                         score = -negamax(new_depth, -alpha - 1, -alpha, ss + 1, !cut_node);
 
                     int bonus = score <= alpha ? -historyBonus(new_depth) : score >= beta ? historyBonus(new_depth) : 0;
@@ -514,7 +510,7 @@ namespace Astra
                     alpha = score;
                     best_move = move;
 
-                    // update best move when in pv node
+                    // update pv node when in pv node
                     if (id == 0 && pv_node)
                     {
                         pv_table[ss->ply][0] = move;
