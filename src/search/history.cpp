@@ -28,9 +28,9 @@ namespace Astra
         assert(pc != NO_PIECE);
 
         return hh[board.getTurn()][from][to] + 
-                (ss - 1)->cont_history[pc][to] +
-                (ss - 2)->cont_history[pc][to] + 
-                (ss - 4)->cont_history[pc][to];
+                (ss - 1)->conth[pc][to] +
+                (ss - 2)->conth[pc][to] + 
+                (ss - 4)->conth[pc][to];
     }
 
     int History::getCapHistory(const Board &board, Move &move) const
@@ -127,7 +127,7 @@ namespace Astra
 
         for (int offset : {1, 2, 4, 6})
             if ((ss - offset)->curr_move != NO_MOVE)
-                updateHistoryScore((ss - offset)->cont_history[pc][to], bonus);
+                updateHistoryScore((ss - offset)->conth[pc][to], bonus);
     }
 
 } // namespace Astra

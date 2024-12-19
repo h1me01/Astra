@@ -17,7 +17,7 @@ namespace Astra
         Move killer2 = NO_MOVE;
         Move curr_move = NO_MOVE;
 
-        int16_t cont_history[NUM_PIECES + 1][NUM_SQUARES]{};
+        int16_t conth[NUM_PIECES + 1][NUM_SQUARES]{};
     };
 
     struct PVLine

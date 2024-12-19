@@ -189,10 +189,10 @@ namespace Astra
             const Square to = ml_main[i].to();
 
             ml_main[i].score = 2 * history.getHistoryHeuristic(board.getTurn(), ml_main[i]);
-            ml_main[i].score += 2 * (ss - 1)->cont_history[pc][to];
-            ml_main[i].score += (ss - 2)->cont_history[pc][to];
-            ml_main[i].score += (ss - 4)->cont_history[pc][to];
-            ml_main[i].score += (ss - 6)->cont_history[pc][to];
+            ml_main[i].score += 2 * (ss - 1)->conth[pc][to];
+            ml_main[i].score += (ss - 2)->conth[pc][to];
+            ml_main[i].score += (ss - 4)->conth[pc][to];
+            ml_main[i].score += (ss - 6)->conth[pc][to];
 
             if (pt != PAWN && pt != KING)
             {
