@@ -9,7 +9,7 @@ namespace Astra
 {
     struct Stack
     {
-        uint16_t ply;
+        int ply;
         Score static_eval = VALUE_NONE;
 
         Move skipped = NO_MOVE;
