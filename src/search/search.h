@@ -38,15 +38,15 @@ namespace Astra
 
         bool use_tb = false;
 
-        Board board;
-        History history;
-
         U64 nodes = 0;
         U64 tb_hits = 0;
 
         int sel_depth = 0;
 
         Limits limit;
+
+        Board board;
+        History history;
 
         Search(const std::string &fen);
 
