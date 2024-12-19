@@ -17,7 +17,7 @@ namespace Astra
     {
         PLAY_TT_MOVE,
         GEN_NOISY,
-        PLAY_GOOD_NOISY,
+        PLAY_NOISY,
         PLAY_KILLER1,
         PLAY_KILLER2,
         PLAY_COUNTER,

@@ -58,13 +58,13 @@ namespace Astra
             [[fallthrough]];
         case GEN_NOISY:
             idx = 0;
-            stage = PLAY_GOOD_NOISY;
+            stage = PLAY_NOISY;
 
             ml_main.gen<NOISY>(board);
             scoreNoisyMoves();
 
             [[fallthrough]];
-        case PLAY_GOOD_NOISY:
+        case PLAY_NOISY:
             while (idx < ml_main.size())
             {
                 partialInsertionSort(ml_main, idx);
