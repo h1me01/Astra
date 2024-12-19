@@ -85,15 +85,12 @@ namespace Astra
                 // increase time if eval is increasing
                 if (result + 30 < avg_eval / depth)
                     limit.time.optimum *= 1.10;
-
                 // increase time if eval is decreasing
                 if (result > -200 && result - previous_result < -20)
                     limit.time.optimum *= 1.10;
-
                 // increase optimum time if best move changes often
                 if (move_changes > 4)
                     limit.time.optimum = limit.time.max * 0.75;
-
                 // stop search if more than 75% of our max time is reached
                 if (tm.elapsedTime() > limit.time.max * 0.75)
                     break;
@@ -151,7 +148,7 @@ namespace Astra
         return result;
     }
 
-    Score Search::negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_node)
+    Score Search::negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_node, const Move skipped)
     {
         assert(alpha < beta);
         assert(ss->ply >= 0);
@@ -170,7 +167,7 @@ namespace Astra
 
         const Color stm = board.getTurn();
         const bool in_check = board.inCheck();
-        const int orig_alpha = alpha;
+        const Score orig_alpha = alpha;
 
         // dive into quiescence search if depth is less than 1
         if (depth <= 0)
@@ -184,28 +181,17 @@ namespace Astra
         if (!root_node)
         {
             // mate distance pruning
-            Score mating_value = VALUE_MATE - ss->ply;
-            if (mating_value < beta)
-            {
-                beta = mating_value;
-                if (alpha >= mating_value)
-                    return mating_value; // beta cut-off
-            }
-
-            mating_value = -VALUE_MATE + ss->ply;
-            if (mating_value > alpha)
-            {
-                alpha = mating_value;
-                if (beta <= mating_value)
-                    return mating_value; // alpha cut-off
-            }
+            alpha = std::max(alpha, Score(ss->ply - VALUE_MATE));
+            beta = std::min(beta, Score(VALUE_MATE - ss->ply - 1));
+            if (alpha >= beta)
+                return alpha;
 
             if (board.isRepetition(pv_node) || board.isDraw())
                 return VALUE_DRAW;
         }
 
         // variables
-        int eval = ss->static_eval;
+        Score eval = ss->eval;
         bool improving = false;
 
         Score max_score = VALUE_MATE;
@@ -215,14 +201,13 @@ namespace Astra
         TTEntry ent;
         U64 hash = board.getHash();
         bool tt_hit = tt.lookup(ent, hash);
-        const Score tt_score = tt_hit ? scoreFromTT(ent.score, ss->ply) : Score(VALUE_NONE);
+        const Score tt_score = tt_hit ? scoreFromTT(ent.score, ss->ply) : VALUE_NONE;
 
-        if (!pv_node && !ss->skipped && tt_hit && ent.depth >= depth && tt_score != VALUE_NONE)
+        if (!pv_node && !skipped && tt_hit && ent.depth >= depth && tt_score != VALUE_NONE)
             if (ent.bound & (tt_score >= beta ? LOWER_BOUND : UPPER_BOUND))
                 return tt_score;
 
-        // reset some variables
-        (ss + 1)->skipped = NO_MOVE;
+        // reset killers
         (ss + 1)->killer1 = NO_MOVE;
         (ss + 1)->killer2 = NO_MOVE;
 
@@ -273,7 +258,7 @@ namespace Astra
 
         // set eval and static eval
         if (in_check)
-            eval = ss->static_eval = VALUE_NONE;
+            eval = ss->eval = VALUE_NONE;
         else
         {
             // use tt score for better evaluation
@@ -283,25 +268,25 @@ namespace Astra
                 if (eval == VALUE_NONE)
                     eval = Eval::evaluate(board);
 
-                ss->static_eval = eval;
+                ss->eval = eval;
 
                 eval = adjustEval(eval);
 
                 if (tt_score != VALUE_NONE && (ent.bound & (tt_score > eval ? LOWER_BOUND : UPPER_BOUND)))
                     eval = tt_score;
             }
-            else if (!ss->skipped)
+            else if (!skipped)
             {
-                eval = ss->static_eval = Eval::evaluate(board);
+                eval = ss->eval = Eval::evaluate(board);
                 eval = adjustEval(eval);
                 tt.store(hash, NO_MOVE, scoreToTT(eval, ss->ply), -1, NO_BOUND);
             }
 
             // check for improvement
-            if ((ss - 2)->static_eval != VALUE_NONE)
-                improving = ss->static_eval > (ss - 2)->static_eval;
-            else if ((ss - 4)->static_eval != VALUE_NONE)
-                improving = ss->static_eval > (ss - 4)->static_eval;
+            if ((ss - 2)->eval != VALUE_NONE)
+                improving = ss->eval > (ss - 2)->eval;
+            else if ((ss - 4)->eval != VALUE_NONE)
+                improving = ss->eval > (ss - 4)->eval;
         }
 
         // internal iterative reduction
@@ -325,7 +310,7 @@ namespace Astra
             }
 
             // null move pruning
-            if (depth >= 3 && !ss->skipped && eval >= beta && ss->static_eval + 30 * depth - 170 >= beta 
+            if (depth >= 3 && !skipped && eval >= beta && ss->eval + 30 * depth - 170 >= beta 
                 && board.nonPawnMat(stm) && (ss - 1)->curr_move != NULL_MOVE && std::abs(beta) < VALUE_TB_WIN_IN_MAX_PLY)
             {
                 int R = 4 + depth / nmp_depth_div + std::min(int(nmp_min), (eval - beta) / nmp_div);
@@ -389,7 +374,7 @@ namespace Astra
 
         while ((move = mp.nextMove()) != NO_MOVE)
         {
-            if (move == ss->skipped || !board.isLegal(move))
+            if (move == skipped || !board.isLegal(move))
                 continue;
 
             made_moves++;
@@ -448,15 +433,13 @@ namespace Astra
             int extension = 0;
 
             // singular extensions
-            if (!root_node && depth >= 6 && ss->ply < 2 * root_depth && !ss->skipped && ent.move == move 
+            if (!root_node && depth >= 6 && ss->ply < 2 * root_depth && !skipped && ent.move == move 
                 && ent.depth >= depth - 3 && (ent.bound & LOWER_BOUND) && std::abs(tt_score) < VALUE_TB_WIN_IN_MAX_PLY)
             {
                 Score sbeta = tt_score - 3 * depth;
                 int sdepth = (depth - 1) / 2;
 
-                ss->skipped = move;
-                Score score = negamax(sdepth, sbeta - 1, sbeta, ss, cut_node);
-                ss->skipped = NO_MOVE;
+                Score score = negamax(sdepth, sbeta - 1, sbeta, ss, cut_node, move);
 
                 if (score < sbeta)
                 {
@@ -552,12 +535,12 @@ namespace Astra
 
         // check for mate and stalemate
         if (made_moves == 0)
-            return ss->skipped != NO_MOVE ? alpha : in_check ? -VALUE_MATE + ss->ply : VALUE_DRAW;
+            return skipped != NO_MOVE ? alpha : in_check ? -VALUE_MATE + ss->ply : VALUE_DRAW;
 
         best_score = std::min(best_score, max_score);
 
         // store in transposition table
-        if (!ss->skipped)
+        if (!skipped)
         {
             Bound bound = best_score >= beta ? LOWER_BOUND : best_score <= orig_alpha ? UPPER_BOUND : EXACT_BOUND;
             tt.store(hash, best_move, scoreToTT(best_score, ss->ply), depth, bound);
@@ -583,21 +566,21 @@ namespace Astra
             return adjustEval(Eval::evaluate(board));
 
         Score best_score = -VALUE_MATE + ss->ply;
-        int eval = ss->static_eval;
-        int futility = -VALUE_MATE;
+        Score eval = ss->eval;
+        Score futility = -VALUE_MATE;
 
         // look up in transposition table
         TTEntry ent;
         U64 hash = board.getHash();
         bool tt_hit = tt.lookup(ent, hash);
-        const Score tt_score = tt_hit ? scoreFromTT(ent.score, ss->ply) : Score(VALUE_NONE);
+        const Score tt_score = tt_hit ? scoreFromTT(ent.score, ss->ply) : VALUE_NONE;
 
         if (!pv_node && tt_hit && tt_score != VALUE_NONE && (ent.bound & (tt_score >= beta ? LOWER_BOUND : UPPER_BOUND)))
             return tt_score;
 
         // set eval and static eval
         if (in_check)
-            eval = ss->static_eval = VALUE_NONE;
+            eval = ss->eval = VALUE_NONE;
         else
         {
             // use tt score for better evaluation
@@ -607,7 +590,7 @@ namespace Astra
                 if (eval == VALUE_NONE)
                     eval = Eval::evaluate(board);
 
-                ss->static_eval = eval;
+                ss->eval = eval;
                 eval = adjustEval(eval);
 
                 if (tt_score != VALUE_NONE && (ent.bound & (tt_score > eval ? LOWER_BOUND : UPPER_BOUND)))
@@ -615,7 +598,7 @@ namespace Astra
             }
             else
             {
-                eval = ss->static_eval = Eval::evaluate(board);
+                eval = ss->eval = Eval::evaluate(board);
                 eval = adjustEval(eval);
                 tt.store(hash, NO_MOVE, scoreToTT(eval, ss->ply), -1, NO_BOUND);
             }
@@ -647,7 +630,7 @@ namespace Astra
             {
                 if (!in_check && futility <= alpha && isCap(move) && !board.see(move, 1))
                 {
-                    best_score = std::max(best_score, Score(futility));
+                    best_score = std::max(best_score, futility);
                     continue;
                 }
 

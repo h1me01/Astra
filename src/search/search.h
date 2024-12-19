@@ -10,9 +10,8 @@ namespace Astra
     struct Stack
     {
         int ply;
-        Score static_eval = VALUE_NONE;
+        Score eval = VALUE_NONE;
 
-        Move skipped = NO_MOVE;
         Move killer1 = NO_MOVE;
         Move killer2 = NO_MOVE;
         Move curr_move = NO_MOVE;
@@ -59,7 +58,7 @@ namespace Astra
         TimeMan tm;
 
         Score aspSearch(int depth, Score prev_eval, Stack *ss);
-        Score negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_node);
+        Score negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_node, const Move skipped = NO_MOVE);
         Score qSearch(int depth, Score alpha, Score beta, Stack *ss);
 
         int adjustEval(Score eval) const;

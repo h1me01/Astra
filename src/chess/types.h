@@ -124,17 +124,12 @@ namespace Chess
         RANK_8
     };
 
-    enum : Score
-    {
-        VALUE_DRAW = 0,
-        VALUE_MATE = 32000,
-
-        VALUE_INFINITE = 32001,
-        VALUE_NONE = 32002,
-
-        VALUE_TB_WIN = VALUE_MATE,
-        VALUE_TB_WIN_IN_MAX_PLY = VALUE_TB_WIN - MAX_PLY,
-    };
+    constexpr Score VALUE_DRAW = 0;
+    constexpr Score VALUE_MATE = 32000;
+    constexpr Score VALUE_INFINITE = 32001;
+    constexpr Score  VALUE_NONE = 32002;
+    constexpr Score  VALUE_TB_WIN = VALUE_MATE;
+    constexpr Score  VALUE_TB_WIN_IN_MAX_PLY = VALUE_TB_WIN - MAX_PLY;
 
     enum MoveType
     {
