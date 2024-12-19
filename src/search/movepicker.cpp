@@ -94,7 +94,7 @@ namespace Astra
                 goto quiet_checkers;
             }
 
-            // in evasion qsearch we can falltrough the killers and counter since we did not set them
+            // in evasion qsearch we can falltrough the killer and counter since we did not set them
             stage = PLAY_KILLER;
             [[fallthrough]];
         case PLAY_KILLER:
@@ -125,7 +125,7 @@ namespace Astra
                 Move move = ml_main[idx];
                 idx++;
 
-                // skip tt move, killers, and counter
+                // skip tt move, killer, and counter
                 if (move == tt_move || move == killer || move == counter)
                     continue;
 
