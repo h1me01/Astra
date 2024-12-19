@@ -70,16 +70,16 @@ namespace Astra
             {
                 updateHistoryScore(hh[stm][best.from()][best.to()], bonus);
                 updateContH(board, best, ss, bonus);
-            }
 
-            // quiet maluses
-            for (int i = 0; i < qc; i++)
-            {
-                Move quiet = q_moves[i];
-                if (quiet == best)
-                    continue;
-                updateHistoryScore(hh[stm][quiet.from()][quiet.to()], -bonus);
-                updateContH(board, quiet, ss, -bonus);
+                // quiet maluses
+                for (int i = 0; i < qc; i++)
+                {
+                    Move quiet = q_moves[i];
+                    if (quiet == best)
+                        continue;
+                    updateHistoryScore(hh[stm][quiet.from()][quiet.to()], -bonus);
+                    updateContH(board, quiet, ss, -bonus);
+                }
             }
         }
         else
