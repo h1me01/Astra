@@ -1,6 +1,5 @@
 #include <cassert>
 #include "board.h"
-#include "../search/search.h"
 
 namespace Chess
 {
@@ -195,16 +194,6 @@ namespace Chess
         }
     }
 
-    U64 Board::diagSliders(Color c) const
-    {
-        return getPieceBB(c, BISHOP) | getPieceBB(c, QUEEN);
-    }
-
-    U64 Board::orthSliders(Color c) const
-    {
-        return getPieceBB(c, ROOK) | getPieceBB(c, QUEEN);
-    }
-
     U64 Board::occupancy(Color c) const
     {
         const int start_idx = (c == WHITE) ? 0 : 6;
@@ -224,6 +213,27 @@ namespace Chess
         attacks |= getAttacks(ROOK, s, occ) & (getPieceBB(c, ROOK) | getPieceBB(c, QUEEN));
         attacks |= getAttacks(KING, s, occ) & getPieceBB(c, KING);
         return attacks;
+    }
+
+    U64 Board::keyAfter(Move m) const 
+    {
+        if (!m)
+            return hash ^ Zobrist::side;    
+
+        Square from = m.from();
+        Square to = m.to();
+
+        Piece pc = pieceAt(from);
+        Piece captured = pieceAt(to);
+
+        U64 new_hash = hash;
+        if (captured != NO_PIECE)
+            new_hash ^= Zobrist::getPsq(captured, to);
+
+        new_hash ^= Zobrist::getPsq(pc, from) ^ Zobrist::getPsq(pc, to);
+        new_hash ^= Zobrist::side;
+
+        return new_hash;
     }
 
     bool Board::nonPawnMat(Color c) const
@@ -505,8 +515,6 @@ namespace Chess
 
         initThreats();
         initCheckersAndPinned();
-
-        Astra::tt.prefetch(hash);
     }
 
     void Board::unmakeMove(const Move &m)
@@ -583,8 +591,6 @@ namespace Chess
 
         initThreats();
         initCheckersAndPinned();
-
-        Astra::tt.prefetch(hash);
     }
 
     void Board::unmakeNullMove()

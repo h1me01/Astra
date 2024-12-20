@@ -104,15 +104,17 @@ namespace Chess
         int getPly() const;
         int halfMoveClock() const;
         U64 getHash() const;
+        U64 getThreats(PieceType pt) const;
         Square kingSq(Color c) const;
         NNUE::Accumulator &getAccumulator();
         void refreshAccumulator();
 
+        U64 diagSliders(Color c) const;
+        U64 orthSliders(Color c) const;
         U64 occupancy() const;
         U64 occupancy(Color c) const;
         U64 attackersTo(Color c, Square s, U64 occ) const;
-        U64 diagSliders(Color c) const;
-        U64 orthSliders(Color c) const;
+        U64 keyAfter(Move m) const;
 
         void makeMove(const Move &m, bool update_nnue = false);
         void unmakeMove(const Move &m);
@@ -129,8 +131,6 @@ namespace Chess
         bool isInsufficientMaterial() const;
         bool isDraw() const;
         bool see(Move &m, int threshold) const;
-
-        U64 getThreats(PieceType pt) const;
 
         bool oppHasGoodCaptures() const;
 
@@ -182,6 +182,16 @@ namespace Chess
         return history[curr_ply].threats[pt];
     }
 
+    inline U64 Board::diagSliders(Color c) const
+    {
+        return getPieceBB(c, BISHOP) | getPieceBB(c, QUEEN);
+    }
+
+    inline U64 Board::orthSliders(Color c) const
+    {
+        return getPieceBB(c, ROOK) | getPieceBB(c, QUEEN);
+    }
+    
     inline bool Board::inCheck() const
     {
         return history[curr_ply].checkers;

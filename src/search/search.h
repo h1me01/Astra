@@ -65,9 +65,6 @@ namespace Astra
         void printUciInfo(Score result, int depth, PVLine &pv_line) const;
     };
 
-    // global variable
-    extern TTable tt;
-
 } // namespace Astra
 
 #endif // SEARCH_H
