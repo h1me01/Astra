@@ -20,6 +20,7 @@ namespace Astra
 
         Move getCounterMove(Move move) const;
 
+        void updateQuietHistory(Color c, Move move, int bonus);
         void updateContH(const Board &board, Move &move, Stack *ss, int bonus);
 
     private:

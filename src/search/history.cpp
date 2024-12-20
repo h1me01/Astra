@@ -95,16 +95,9 @@ namespace Astra
         }
     }
 
-    void History::updateCapHistory(const Board &board, Move &move, int bonus)
+    void History::updateQuietHistory(Color c, Move move, int bonus)
     {
-        Square to = move.to();
-        PieceType captured = move.type() == EN_PASSANT ? PAWN : typeOf(board.pieceAt(to));
-        Piece pc = board.pieceAt(move.from());
-
-        assert(captured != NO_PIECE_TYPE);
-        assert(pc != NO_PIECE);
-
-        updateHistoryScore(ch[pc][to][captured], bonus);
+        hh[c][move.from()][move.to()] += bonus;
     }
 
     void History::updateContH(const Board &board, Move &move, Stack *ss, int bonus)
@@ -121,6 +114,18 @@ namespace Astra
         for (int offset : {1, 2, 4, 6})
             if ((ss - offset)->curr_move != NO_MOVE)
                 updateHistoryScore((ss - offset)->conth[pc][to], bonus);
+    }
+
+    void History::updateCapHistory(const Board &board, Move &move, int bonus)
+    {
+        Square to = move.to();
+        PieceType captured = move.type() == EN_PASSANT ? PAWN : typeOf(board.pieceAt(to));
+        Piece pc = board.pieceAt(move.from());
+
+        assert(captured != NO_PIECE_TYPE);
+        assert(pc != NO_PIECE);
+
+        updateHistoryScore(ch[pc][to][captured], bonus);
     }
 
 } // namespace Astra
