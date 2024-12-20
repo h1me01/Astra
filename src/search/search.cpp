@@ -312,7 +312,7 @@ namespace Astra
 
             // null move pruning
             if (depth >= 3 && !skipped && eval >= beta && ss->eval + 30 * depth - 170 >= beta 
-                && board.nonPawnMat(stm) && (ss - 1)->curr_move != NULL_MOVE && std::abs(beta) < VALUE_TB_WIN_IN_MAX_PLY)
+                && board.nonPawnMat(stm) && (ss - 1)->curr_move != NULL_MOVE && beta > -VALUE_TB_WIN_IN_MAX_PLY)
             {
                 int R = 4 + depth / nmp_depth_div + std::min(int(nmp_min), (eval - beta) / nmp_div);
 
@@ -333,7 +333,8 @@ namespace Astra
 
             // probcut
             int beta_cut = beta + probcut_margin;
-            if (depth > 4 && std::abs(beta) < VALUE_TB_WIN_IN_MAX_PLY && !(ent->depth >= depth - 3 && ent->score != VALUE_NONE && ent->score < beta_cut))
+            if (depth > 4 && std::abs(beta) < VALUE_TB_WIN_IN_MAX_PLY 
+                && !(ent->depth >= depth - 3 && ent->score != VALUE_NONE && ent->score < beta_cut))
             {
                 MovePicker mp(PC_SEARCH, board, history, ss, tt_move);
                 mp.see_cutoff = beta_cut > eval;
