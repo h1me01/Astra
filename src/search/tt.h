@@ -74,21 +74,12 @@ namespace Astra
 
     inline Score scoreToTT(Score s, int ply)
     {
-        if (s >= VALUE_TB_WIN_IN_MAX_PLY)
-            return s + ply;
-        if (s <= -VALUE_TB_WIN_IN_MAX_PLY)
-            return s - ply;
-        return s;
-    }
-
-    inline Score scoreFromTT(Score s, int ply)
-    {
         if (s == VALUE_NONE)
             return VALUE_NONE;
         if (s >= VALUE_TB_WIN_IN_MAX_PLY)
-            return s - ply;
-        if (s <= -VALUE_TB_WIN_IN_MAX_PLY)
             return s + ply;
+        if (s <= -VALUE_TB_WIN_IN_MAX_PLY)
+            return s - ply;
         return s;
     }
 
