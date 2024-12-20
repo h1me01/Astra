@@ -14,12 +14,12 @@ namespace Astra
     void *alignedMalloc(U64 size)
     {
 #if defined(__linux__)
-        constexpr size_t align = 2 * 1024 * 1024;
+        constexpr size_t alignment = 2 * 1024 * 1024;
 #else
-        constexpr size_t align = 4096;
+        constexpr size_t alignment = 4096;
 #endif
-        size = ((size + align - 1) / align) * align;
-        void *result = _mm_malloc(size, align);
+        size = ((size + alignment - 1) / alignment) * alignment;
+        void *result = _mm_malloc(size, alignment);
 #if defined(__linux__)
         madvise(result, size, MADV_HUGEPAGE);
 #endif
@@ -31,20 +31,23 @@ namespace Astra
         _mm_free(ptr);
     }
 
+    // constants
+    constexpr int AGE_STEP = 8;
+    constexpr int AGE_CYCLE = 255 + AGE_STEP; 
+    constexpr int AGE_MASK = (0xFF << entries_per_bucket) & 0xFF;
+
     // TTEntry struct
-    int TTEntry::ageDistance() 
+    int TTEntry::relativeAge() 
     { 
-        return (TT_MAX_AGE + tt.getAge() - getAge()) % TT_MAX_AGE; 
+        return (AGE_CYCLE + tt.getAge() - age_pv_bound) & AGE_MASK; 
     }
 
     void TTEntry::store(U64 hash, Move move, Score score, Score eval, int depth, Bound bound, bool pv)
     {
-        bool matches = isSame(hash);
-
-        if (!matches || move.raw())
+        if (!isSame(hash) || move.raw())
             this->move = move.raw();
 
-        if (bound == EXACT_BOUND || !matches || depth + 4 > this->depth)
+        if (bound == EXACT_BOUND || !isSame(hash) || depth + 4 > this->depth)
         {
             this->hash = uint16_t(hash);
             this->depth = uint8_t(depth);
@@ -100,17 +103,15 @@ namespace Astra
         TTEntry *entries = getBucket(hash)->entries;
 
         for (int i = 0; i < entries_per_bucket; i++)
-        {
             if (entries[i].isSame(hash))
             {
                 ent = &entries[i];
-                return !ent->empty();
+                return bool(ent->depth);
             }
-        }
 
         TTEntry *worst_entry = &entries[0];
         for (int i = 1; i < entries_per_bucket; i++)
-            if ((entries[i].depth - 8 * entries[i].ageDistance()) < (worst_entry->depth - 8 * worst_entry->ageDistance()))
+            if ((entries[i].depth - entries[i].relativeAge() / 2) < (worst_entry->depth - worst_entry->relativeAge() / 2))
                 worst_entry = &entries[i];
 
         ent = worst_entry;
@@ -119,7 +120,7 @@ namespace Astra
 
     void TTable::incrementAge()
     {
-        age = (age + 1) % TT_MAX_AGE;
+        age += AGE_STEP;
     }
 
     void TTable::prefetch(U64 hash) const
@@ -134,7 +135,7 @@ namespace Astra
             for (int j = 0; j < entries_per_bucket; j++)
             {
                 TTEntry *entry = &buckets[i].entries[j];
-                if (entry->getAge() == age && !entry->empty())
+                if (entry->getAge() == age && bool(entry->depth))
                     count++;
             }
 
@@ -143,8 +144,7 @@ namespace Astra
 
     TTBucket *TTable::getBucket(U64 hash) const
     {
-        uint64_t idx = (uint128(hash) * uint128(bucket_size)) >> 64;
-        return &buckets[idx];
+        return &buckets[(uint128(hash) * uint128(bucket_size)) >> 64];
     }
 
 } // namespace Astra

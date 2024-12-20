@@ -7,7 +7,6 @@ using namespace Chess;
 
 namespace Astra
 {
-    constexpr uint8_t TT_MAX_AGE = 1 << 5;
 
     enum Bound
     {
@@ -26,12 +25,13 @@ namespace Astra
         int16_t eval;
         Score score;
 
+        int relativeAge();
         uint8_t getAge() const { return age_pv_bound >> 3; }
-        int ageDistance();
+
         Bound getBound() const { return Bound(age_pv_bound & 0x3); }
         Move getMove() const { return Move(move); }
+        
         bool wasPv() const { return age_pv_bound & 0x4; }
-        bool empty() const { return !score && !age_pv_bound; }
         bool isSame(U64 hash) const { return uint16_t(hash) == this->hash; }
 
         void store(U64 hash, Move move, Score score, Score eval, int depth, Bound bound, bool pv);
