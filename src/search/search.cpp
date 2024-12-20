@@ -299,7 +299,7 @@ namespace Astra
         {
             // reverse futility pruning
             int rfp_margin = std::max(rfp_depth_mult * (depth - (improving && !board.oppHasGoodCaptures())), 20);
-            if (depth <= 7 && eval < VALUE_TB_WIN_IN_MAX_PLY && eval - rfp_margin >= beta)
+            if (depth <= 9 && eval < VALUE_TB_WIN_IN_MAX_PLY && eval - rfp_margin >= beta)
                 return (eval + beta) / 2;
 
             // razoring
