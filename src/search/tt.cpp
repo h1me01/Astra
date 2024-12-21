@@ -58,7 +58,7 @@ namespace Astra
         if (bound == EXACT_BOUND || !isSame(hash) || depth + 4 > this->depth)
         {
             this->hash = uint16_t(hash);
-            this->depth = uint8_t(depth);
+            this->depth = depth;
             this->age_pv_bound = (tt.getAge() << 3) | (pv << 2) | bound;
             this->eval = eval;
             this->score = score;
