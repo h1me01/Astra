@@ -61,8 +61,6 @@ namespace Astra
 
     PARAM(ext_margin, 130, 45, 150, 12);
 
-    PARAM(zws_margin, 78, 60, 90, 6);
-
     PARAM(hp_margin, 4653, 3500, 5000, 400);
     PARAM(hp_div, 8481, 7000, 8500, 400);
     PARAM(hbonus_margin, 80, 65, 80, 5);

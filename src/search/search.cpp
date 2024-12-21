@@ -305,14 +305,14 @@ namespace Astra
         {
             // reverse futility pruning
             int rfp_margin = std::max(rfp_depth_mult * (depth - (improving && !board.oppHasGoodCaptures())), 20);
-            if (depth <= 7 && eval < VALUE_TB_WIN_IN_MAX_PLY && eval - rfp_margin >= beta)
+            if (depth <= 8 && eval < VALUE_TB_WIN_IN_MAX_PLY && eval - rfp_margin >= beta)
                 return (eval + beta) / 2;
 
             // razoring
             if (depth < 5 && eval + rzr_depth_mult * depth < alpha)
             {
                 Score score = qSearch(0, alpha, beta, ss);
-                if (score <= alpha && score > -VALUE_TB_WIN_IN_MAX_PLY)
+                if (score <= alpha)
                     return score;
             }
 
@@ -393,22 +393,15 @@ namespace Astra
 
             int history_score = isCap(move) ? history.getCapHistory(board, move) : history.getQuietHistory(board, ss, move);
 
-            // reductions
-            int r = REDUCTIONS[depth][made_moves];
-            // decrease/increase based on history score
-            r -= history_score / hp_div;
-            // increase when not improving
-            r += !improving;
-
             if (!root_node && best_score > -VALUE_TB_WIN_IN_MAX_PLY)
             {
-                int lmr_depth = std::max(1, depth - r);
+                int lmr_depth = std::max(1, depth - REDUCTIONS[depth][made_moves] - !improving);
 
                 // late move pruning
                 if (!pv_node && q_count > (3 + depth * depth) / (2 - improving))
                     mp.skip_quiets = true;
 
-                if (!pv_node && !isCap(move) && move.type() != PQ_QUEEN)
+                if (!isCap(move) && move.type() != PQ_QUEEN)
                 {
                     // history pruning
                     if (history_score < -hp_margin * depth && lmr_depth < 5)
@@ -471,16 +464,17 @@ namespace Astra
             // late move reductions
             if (depth > 2 && made_moves > 1 && (!pv_node || !isCap(move)))
             {
-                // increase when tt move is a capture or promotion
-                r += isCap(tt_move) || isProm(tt_move);
+                int r = REDUCTIONS[depth][made_moves];
+                // increase when not improving
+                r += !improving;
                 // increase when in a cut node
                 r += 2 * cut_node;
                 // decrease when in pv node
                 r -= pv_node;
                 // decrease when move gives check
                 r -= board.inCheck();
-                // decrease when tt depth is greater or equal to current depth 
-                r -= (tt_depth >= depth);
+                // decrease/increase based on history score
+                r -= history_score / hp_div;
 
                 int lmr_depth = std::clamp(new_depth - r, 1, new_depth + 1);
 
@@ -489,15 +483,13 @@ namespace Astra
                 // if late move reduction failed high and we actually reduced, do a research
                 if (score > alpha && lmr_depth < new_depth)
                 {
-                    // credits to stockfish
-                    new_depth += (score > best_score + zws_margin);
-                    new_depth -= (score < best_score + new_depth);
+                    score = -negamax(new_depth, -alpha - 1, -alpha, ss + 1, !cut_node);
 
-                    if (lmr_depth < new_depth)
-                        score = -negamax(new_depth, -alpha - 1, -alpha, ss + 1, !cut_node);
-
-                    int bonus = score <= alpha ? -historyBonus(new_depth) : score >= beta ? historyBonus(new_depth) : 0;
-                    history.updateContH(board, move, ss, bonus);
+                    if (!isCap(move))
+                    {
+                        int bonus = score <= alpha ? -historyBonus(new_depth) : score >= beta ? historyBonus(new_depth) : 0;
+                        history.updateContH(board, move, ss, bonus);
+                    }
                 }
             }
             else if (!pv_node || made_moves > 1)
@@ -505,7 +497,7 @@ namespace Astra
                 score = -negamax(new_depth, -alpha - 1, -alpha, ss + 1, !cut_node);
 
             // principal variation search
-            if (pv_node && ((score > alpha && (root_node || score < beta)) || made_moves == 1))
+            if (pv_node && ((score > alpha && (score < beta || root_node)) || made_moves == 1))
                 score = -negamax(new_depth, -beta, -alpha, ss + 1, false);
 
             board.unmakeMove(move);
