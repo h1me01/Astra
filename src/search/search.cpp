@@ -290,7 +290,6 @@ namespace Astra
                 improving = ss->eval > (ss - 4)->eval;
         }
 
-        /*
         // update quiet history
         Move prev_move = (ss - 1)->curr_move;
         if (!prev_move && !isCap(prev_move) && (ss - 1)->eval != VALUE_NONE) 
@@ -298,8 +297,7 @@ namespace Astra
             int bonus = std::clamp(-5 * (ss->eval + (ss - 1)->eval), -80, 150);
             history.updateQuietHistory(~stm, prev_move, bonus);
         }
-        */
-
+        
         // internal iterative reduction
         if (!in_check && !tt_hit && depth >= 4 && (pv_node || cut_node))
             depth--;
