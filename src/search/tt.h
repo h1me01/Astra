@@ -35,11 +35,6 @@ namespace Astra
                 return score + ply;
             return score;
         }
-
-        bool wasPV()
-        {
-            return bound == EXACT_BOUND && move != NO_MOVE;
-        }
     };
 
     class TTable
