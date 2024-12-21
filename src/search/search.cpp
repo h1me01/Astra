@@ -56,7 +56,7 @@ namespace Astra
 
         int avg_eval = 0;
         int move_changes = 0;
-        Score previous_result = VALUE_NONE;
+        Score prev_result = VALUE_NONE;
 
         Move best_move = NO_MOVE;
         for (int depth = 1; depth < MAX_PLY; depth++)
@@ -66,24 +66,23 @@ namespace Astra
                 pv_line.length = 0;
 
             root_depth = depth;
-            Score result = aspSearch(depth, previous_result, ss);
-            previous_result = result;
+            Score result = aspSearch(depth, prev_result, ss);
 
             if (isLimitReached(depth))
                 break;
 
             best_move = pv_table[0][0];
 
-            if (id == 0 && depth >= 10 && limit.time.optimum)
+            if (id == 0 && depth >= 5 && limit.time.optimum)
             {
                 avg_eval += result;
                 move_changes += (pv_table[0][0] != best_move);
 
                 // increase time if eval is increasing
-                if (result + 30 < avg_eval / depth)
+                if (result - 30 > avg_eval / depth && result - 50 > prev_result)
                     limit.time.optimum *= 1.10;
                 // increase time if eval is decreasing
-                if (result > -200 && result - previous_result < -20)
+                if (result + 30 < avg_eval / depth && result + 50 < prev_result)
                     limit.time.optimum *= 1.10;
                 // increase optimum time if best move changes often
                 if (move_changes > 4)
@@ -92,6 +91,8 @@ namespace Astra
                 if (tm.elapsedTime() > limit.time.max * 0.75)
                     break;
             }
+
+            prev_result = result;
         }
 
         if (id == 0)
