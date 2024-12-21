@@ -314,12 +314,12 @@ namespace Astra
             if (depth < 5 && eval + rzr_depth_mult * depth < alpha)
             {
                 Score score = qSearch(0, alpha, beta, ss);
-                if (score <= alpha)
+                if (score <= alpha && score > -VALUE_TB_WIN_IN_MAX_PLY)
                     return score;
             }
 
             // null move pruning
-            if (depth >= 3 && !skipped && eval >= beta && ss->eval + 30 * depth - 170 >= beta 
+            if (depth >= 3 && !skipped && eval >= beta && ss->eval + 31 * depth - 200 >= beta
                 && board.nonPawnMat(stm) && (ss - 1)->curr_move != NULL_MOVE && beta > -VALUE_TB_WIN_IN_MAX_PLY)
             {
                 int R = 4 + depth / nmp_depth_div + std::min(int(nmp_min), (eval - beta) / nmp_div);
@@ -407,10 +407,10 @@ namespace Astra
                 int lmr_depth = std::max(1, depth - r);
 
                 // late move pruning
-                if (q_count > (3 + depth * depth) / (2 - improving))
+                if (!pv_node && q_count > (3 + depth * depth) / (2 - improving))
                     mp.skip_quiets = true;
 
-                if (!isCap(move) && move.type() != PQ_QUEEN)
+                if (!pv_node && !isCap(move) && move.type() != PQ_QUEEN)
                 {
                     // history pruning
                     if (history_score < -hp_margin * depth && lmr_depth < 5)
@@ -434,11 +434,7 @@ namespace Astra
 
             // print current move information
             if (id == 0 && root_node && tm.elapsedTime() > 5000 && !threads.isStopped())
-            {
-                std::cout << "info depth " << depth
-                          << " currmove " << move
-                          << " currmovenumber " << made_moves << std::endl;
-            }
+                std::cout << "info depth " << depth << " currmove " << move << " currmovenumber " << made_moves << std::endl;
 
             int extension = 0;
 

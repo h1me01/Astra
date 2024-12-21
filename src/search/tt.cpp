@@ -42,13 +42,12 @@ namespace Astra
             threads.emplace_back([this, i, chunk_size]()
                                  {
                                      for (U64 j = 0; j < chunk_size; ++j)
-                                         entries[i * chunk_size + j] = TTEntry{}; 
-                                 });
+                                         entries[i * chunk_size + j] = TTEntry{}; });
 
         const U64 cleared = chunk_size * num_workers;
         if (cleared < tt_size)
             for (U64 i = cleared; i < tt_size; ++i)
-                entries[i] = TTEntry{}; 
+                entries[i] = TTEntry{};
 
         for (auto &t : threads)
             t.join();
@@ -79,11 +78,10 @@ namespace Astra
                 score = -ply;
         }
 
-        if (entries[idx].hash == 0 ||                                   // save if no entry is present
-            bound == EXACT_BOUND ||                                     // save if exact bound
-            entries[idx].hash != hash ||                                // save if hash is different
-            entries[idx].age != age ||                                  // save if age is different
-            (entries[idx].hash == hash && entries[idx].depth <= depth)) // save if depth is greater or equal
+        if (bound == EXACT_BOUND ||           // save if exact bound
+            entries[idx].hash != hash ||      // save if hash is different
+            entries[idx].age != age ||        // save if age is different
+            (depth + 4 > entries[idx].depth)) // save if depth is greater or equal
         {
             entries[idx].hash = hash;
             entries[idx].depth = depth;
