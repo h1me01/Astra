@@ -297,7 +297,8 @@ namespace Astra
         {
             int bonus = std::clamp(-5 * (ss->eval + (ss - 1)->eval), -80, 150);
             history.updateQuietHistory(~stm, prev_move, bonus);
-        }*/
+        }
+        */
 
         // internal iterative reduction
         if (!in_check && !tt_hit && depth >= 4 && (pv_node || cut_node))
@@ -306,10 +307,8 @@ namespace Astra
         // only use pruning when not in check and pv node
         if (!in_check && !pv_node)
         {
-            bool opponent_has_good_captures = board.oppHasGoodCaptures();
-
             // reverse futility pruning
-            int rfp_margin = std::max(rfp_depth_mult * (depth - (improving && !opponent_has_good_captures)), 20);
+            int rfp_margin = std::max(rfp_depth_mult * (depth - (improving && !board.oppHasGoodCaptures())), 20);
             if (depth <= 7 && eval < VALUE_TB_WIN_IN_MAX_PLY && eval - rfp_margin >= beta)
                 return (eval + beta) / 2;
 
@@ -322,8 +321,8 @@ namespace Astra
             }
 
             // null move pruning
-            if (depth >= 3 && !skipped && eval >= beta && ss->eval + 30 * depth - 170 >= beta && board.nonPawnMat(stm)
-                && !opponent_has_good_captures && (ss - 1)->curr_move != NULL_MOVE && beta > -VALUE_TB_WIN_IN_MAX_PLY)
+            if (depth >= 3 && !skipped && eval >= beta && ss->eval + 30 * depth - 170 >= beta 
+                && board.nonPawnMat(stm) && (ss - 1)->curr_move != NULL_MOVE && beta > -VALUE_TB_WIN_IN_MAX_PLY)
             {
                 int R = 4 + depth / nmp_depth_div + std::min(int(nmp_min), (eval - beta) / nmp_div);
 
@@ -344,7 +343,7 @@ namespace Astra
 
             // probcut
             int beta_cut = beta + probcut_margin;
-            if (depth > 4 && std::abs(beta) < VALUE_TB_WIN_IN_MAX_PLY && !(tt_depth >= depth - 3 && tt_hit && tt_score < beta_cut))
+            if (depth > 4 && std::abs(beta) < VALUE_TB_WIN_IN_MAX_PLY && !(tt_depth >= depth - 3 && tt_score != VALUE_NONE && tt_score < beta_cut))
             {
                 MovePicker mp(PC_SEARCH, board, history, ss, tt_move);
                 mp.see_cutoff = beta_cut > eval;
