@@ -164,15 +164,15 @@ namespace Astra
         // variables
         const bool root_node = ss->ply == 0;
         const bool pv_node = beta - alpha != 1;
-
-        const Color stm = board.getTurn();
         const bool in_check = board.inCheck();
-        const Score orig_alpha = alpha;
-        const U64 hash = board.getHash();
-
-        Score eval = ss->eval;
         bool improving = false;
 
+        const U64 hash = board.getHash();
+
+        const Color stm = board.getTurn();
+
+        const Score orig_alpha = alpha;
+        Score eval = ss->eval;
         Score max_score = VALUE_MATE;
         Score best_score = -VALUE_MATE;
 
@@ -570,21 +570,23 @@ namespace Astra
         if (isLimitReached(1))
             return 0;
 
+        // variables
         const bool pv_node = beta - alpha != 1;
         const bool in_check = board.inCheck();
+        
+        const U64 hash = board.getHash();
+        
+        Score best_score = -VALUE_MATE + ss->ply;
+        Score eval = ss->eval;
+        Score futility = -VALUE_MATE;
+        
+        Move best_move = NO_MOVE;
 
         if (board.isRepetition(pv_node) || board.isDraw())
             return VALUE_DRAW;
 
         if (ss->ply >= MAX_PLY - 1)
             return adjustEval(Eval::evaluate(board));
-
-        // variables
-        const U64 hash = board.getHash();
-        Score best_score = -VALUE_MATE + ss->ply;
-        Score eval = ss->eval;
-        Score futility = -VALUE_MATE;
-        Move best_move = NO_MOVE;
 
         // look up in transposition table
         bool tt_hit = false;
