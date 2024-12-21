@@ -16,25 +16,45 @@ namespace Astra
         EXACT_BOUND = 3
     };
 
-    struct TTEntry
+    class TTEntry
     {
+    public:
+        int relativeAge();
+        
+        Score getScore(int ply) const
+        {
+            if (score == VALUE_NONE)
+                return VALUE_NONE;
+            if (score >= VALUE_TB_WIN_IN_MAX_PLY)
+                return score - ply;
+            if (score <= -VALUE_TB_WIN_IN_MAX_PLY)
+                return score + ply;
+            return score;
+        }
+
+        int getDepth() const { return depth; }
+
+        uint8_t getAge() const { return age_pv_bound >> 3; }
+
+        Bound getBound() const { return Bound(age_pv_bound & EXACT_BOUND); }
+
+        Move getMove() const { return Move(move); }
+
+        Score getEval() const { return eval; }
+
+        bool wasPv() const { return age_pv_bound & 0x4; }
+
+        bool isSame(U64 hash) const { return uint16_t(hash) == this->hash; }
+
+        void store(U64 hash, Move move, Score score, Score eval, Bound bound, int depth, int ply, bool pv);
+
+    private:
         uint16_t hash;
         uint8_t depth;
-        uint16_t move;
+        int16_t move;
         uint8_t age_pv_bound;
         int16_t eval;
         Score score;
-
-        int relativeAge();
-        uint8_t getAge() const { return age_pv_bound >> 3; }
-
-        Bound getBound() const { return Bound(age_pv_bound & 0x3); }
-        Move getMove() const { return Move(move); }
-        
-        bool wasPv() const { return age_pv_bound & 0x4; }
-        bool isSame(U64 hash) const { return uint16_t(hash) == this->hash; }
-
-        void store(U64 hash, Move move, Score score, Score eval, int depth, Bound bound, bool pv);
     };
 
     constexpr int entries_per_bucket = 3;
@@ -69,19 +89,8 @@ namespace Astra
         U64 bucket_size{};
         TTBucket *buckets;
 
-        TTBucket* getBucket(U64 hash) const;
+        TTBucket *getBucket(U64 hash) const;
     };
-
-    inline Score scoreToTT(Score s, int ply)
-    {
-        if (s == VALUE_NONE)
-            return VALUE_NONE;
-        if (s >= VALUE_TB_WIN_IN_MAX_PLY)
-            return s + ply;
-        if (s <= -VALUE_TB_WIN_IN_MAX_PLY)
-            return s - ply;
-        return s;
-    }
 
     extern TTable tt;
 

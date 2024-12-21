@@ -33,19 +33,27 @@ namespace Astra
 
     // constants
     constexpr int AGE_STEP = 8;
-    constexpr int AGE_CYCLE = 255 + AGE_STEP; 
+    constexpr int AGE_CYCLE = 255 + AGE_STEP;
     constexpr int AGE_MASK = (0xFF << entries_per_bucket) & 0xFF;
 
     // TTEntry struct
-    int TTEntry::relativeAge() 
-    { 
-        return (AGE_CYCLE + tt.getAge() - age_pv_bound) & AGE_MASK; 
+    int TTEntry::relativeAge()
+    {
+        return (AGE_CYCLE + tt.getAge() - age_pv_bound) & AGE_MASK;
     }
 
-    void TTEntry::store(U64 hash, Move move, Score score, Score eval, int depth, Bound bound, bool pv)
+    void TTEntry::store(U64 hash, Move move, Score score, Score eval, Bound bound, int depth, int ply, bool pv)
     {
         if (!isSame(hash) || move.raw())
             this->move = move.raw();
+
+        if (score != VALUE_NONE)
+        {
+            if (score >= VALUE_TB_WIN_IN_MAX_PLY)
+                score += ply;
+            if (score <= -VALUE_TB_WIN_IN_MAX_PLY)
+                score -= ply;
+        }
 
         if (bound == EXACT_BOUND || !isSame(hash) || depth + 4 > this->depth)
         {
@@ -106,12 +114,12 @@ namespace Astra
             if (entries[i].isSame(hash))
             {
                 ent = &entries[i];
-                return bool(ent->depth);
+                return bool(ent->getDepth());
             }
 
         TTEntry *worst_entry = &entries[0];
         for (int i = 1; i < entries_per_bucket; i++)
-            if ((entries[i].depth - entries[i].relativeAge() / 2) < (worst_entry->depth - worst_entry->relativeAge() / 2))
+            if ((entries[i].getDepth() - entries[i].relativeAge() / 2) < (worst_entry->getDepth() - worst_entry->relativeAge() / 2))
                 worst_entry = &entries[i];
 
         ent = worst_entry;
@@ -135,7 +143,7 @@ namespace Astra
             for (int j = 0; j < entries_per_bucket; j++)
             {
                 TTEntry *entry = &buckets[i].entries[j];
-                if (entry->getAge() == age && bool(entry->depth))
+                if (entry->getAge() == age && bool(entry->getDepth()))
                     count++;
             }
 
