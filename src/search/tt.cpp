@@ -40,11 +40,15 @@ namespace Astra
 
         for (int i = 0; i < num_workers; i++)
             threads.emplace_back([this, i, chunk_size]()
-                                 { memset(&entries[i * chunk_size], 0, chunk_size * sizeof(TTEntry)); });
+                                 {
+                                     for (U64 j = 0; j < chunk_size; ++j)
+                                         entries[i * chunk_size + j] = TTEntry{}; 
+                                 });
 
         const U64 cleared = chunk_size * num_workers;
         if (cleared < tt_size)
-            memset(&entries[cleared], 0, (tt_size - cleared) * sizeof(TTEntry));
+            for (U64 i = cleared; i < tt_size; ++i)
+                entries[i] = TTEntry{}; 
 
         for (auto &t : threads)
             t.join();
