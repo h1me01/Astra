@@ -6,7 +6,7 @@
 
 namespace Astra
 {
-    TTable::TTable(U64 size_mb) : age(0), entries(nullptr)
+    TTable::TTable(U64 size_mb) : entries(nullptr)
     {
         init(size_mb);
     }
@@ -31,8 +31,6 @@ namespace Astra
 
     void TTable::clear()
     {
-        age = 0;
-
         const U64 chunk_size = tt_size / num_workers;
 
         std::vector<std::thread> threads;
@@ -78,7 +76,7 @@ namespace Astra
                 score = -ply;
         }
 
-        if (bound == EXACT_BOUND || entries[idx].hash != hash || depth + 4 > entries[idx].depth) 
+        if (bound == EXACT_BOUND || entries[idx].hash != hash || depth >= entries[idx].depth) 
         {
             entries[idx].hash = hash;
             entries[idx].depth = depth;
@@ -86,15 +84,7 @@ namespace Astra
             entries[idx].score = score;
             entries[idx].eval = eval;
             entries[idx].bound = bound;
-            entries[idx].age = age;
         }
-    }
-
-    void TTable::incrementAge()
-    {
-        age++;
-        if (age == 255)
-            age = 0;
     }
 
     void TTable::prefetch(U64 hash) const

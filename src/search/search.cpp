@@ -48,9 +48,6 @@ namespace Astra
             }
         }
 
-        if (id == 0)
-            tt.incrementAge();
-
         Stack stack[MAX_PLY + 6]; // +6 for history
         Stack *ss = stack + 6;
 
