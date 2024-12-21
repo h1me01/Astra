@@ -6,80 +6,26 @@
 
 namespace Astra
 {
-    TTable tt(16);
-
-    // helper
-    void *alignedMalloc(U64 size)
-    {
-#if defined(__linux__)
-        constexpr size_t alignment = 2 * 1024 * 1024;
-#else
-        constexpr size_t alignment = 4096;
-#endif
-        size = ((size + alignment - 1) / alignment) * alignment;
-        void *result = _mm_malloc(size, alignment);
-#if defined(__linux__)
-        madvise(result, size, MADV_HUGEPAGE);
-#endif
-        return result;
-    }
-
-    void alignedFree(void *ptr)
-    {
-        _mm_free(ptr);
-    }
-
-    // constants
-    constexpr int AGE_STEP = 0x8;
-    constexpr int AGE_CYCLE = 255 + AGE_STEP;
-    constexpr int AGE_MASK = 0xF8;
-
-    // TTEntry struct
-    int TTEntry::relativeAge()
-    {
-        return (AGE_CYCLE + tt.getAge() - age_pv_bound) & AGE_MASK;
-    }
-
-    void TTEntry::store(U64 hash, Move move, Score score, Score eval, Bound bound, int depth, int ply, bool pv)
-    {
-        if (!isSame(hash) || move != NO_MOVE)
-            this->move = move.raw();
-
-        if (score != VALUE_NONE)
-        {
-            if (score >= VALUE_TB_WIN_IN_MAX_PLY)
-                score += ply;
-            if (score <= -VALUE_TB_WIN_IN_MAX_PLY)
-                score -= ply;
-        }
-
-        if (bound == EXACT_BOUND || !isSame(hash) || depth + 4 > getDepth())
-        {
-            this->hash = uint16_t(hash);
-            this->depth = depth - 2;
-            this->age_pv_bound = (tt.getAge() << 3) | (pv << 2) | bound;
-            this->eval = eval;
-            this->score = score;
-        }
-    }
-
-    // TTable class
-    TTable::TTable(U64 size_mb) : buckets(nullptr)
+    TTable::TTable(U64 size_mb) : age(0), entries(nullptr)
     {
         init(size_mb);
     }
 
-    TTable::~TTable() { alignedFree(buckets); }
+    TTable::~TTable() { delete[] entries; }
 
     void TTable::init(U64 size_mb)
     {
-        if (buckets)
-            alignedFree(buckets);
+        if (entries != nullptr)
+            delete[] entries;
 
         U64 size_bytes = size_mb * 1024 * 1024;
-        bucket_size = size_bytes / sizeof(TTBucket);
+        U64 max_entries = size_bytes / sizeof(TTEntry);
 
-        buckets = (TTBucket *)alignedMalloc(size_bytes);
+        // find the next power of 2
+        tt_size = 1ULL << (63 - __builtin_clzll(max_entries));
+        mask = tt_size - 1;
+
+        entries = new TTEntry[tt_size];
         clear();
     }
 
@@ -87,70 +33,86 @@ namespace Astra
     {
         age = 0;
 
-        const U64 chunk_size = bucket_size / num_workers;
+        const U64 chunk_size = tt_size / num_workers;
 
         std::vector<std::thread> threads;
         threads.reserve(num_workers);
 
         for (int i = 0; i < num_workers; i++)
             threads.emplace_back([this, i, chunk_size]()
-                                 { memset(&buckets[i * chunk_size], 0, chunk_size * sizeof(TTBucket)); });
+                                 { memset(&entries[i * chunk_size], 0, chunk_size * sizeof(TTEntry)); });
 
         const U64 cleared = chunk_size * num_workers;
-        if (cleared < bucket_size)
-            memset(&buckets[cleared], 0, (bucket_size - cleared) * sizeof(TTBucket));
+        if (cleared < tt_size)
+            memset(&entries[cleared], 0, (tt_size - cleared) * sizeof(TTEntry));
 
         for (auto &t : threads)
             t.join();
     }
 
-    bool TTable::lookup(TTEntry *&ent, U64 hash)
+    TTEntry *TTable::lookup(U64 hash, bool &hit) const
     {
-        TTEntry *bucket = getBucket(hash)->entries;
+        U64 idx = hash & mask;
+        if (entries[idx].hash == hash)
+        {
+            hit = true;
+            return &entries[idx];
+        }
 
-        for (int i = 0; i < BUCKET_SIZE; i++)
-            if (bucket[i].isSame(hash))
-            {
-                ent = &bucket[i];
-                return bool(ent->getDepth());
-            }
+        hit = false;
+        return &entries[idx];
+    }
 
-        TTEntry *worst_entry = &bucket[0];
-        for (int i = 1; i < BUCKET_SIZE; i++)
-            if ((bucket[i].getDepth() - bucket[i].relativeAge() / 2) < (worst_entry->getDepth() - worst_entry->relativeAge() / 2))
-                worst_entry = &bucket[i];
+    void TTable::store(U64 hash, Move move, Score score, Score eval, Bound bound, int depth, int ply)
+    {
+        U64 idx = hash & mask;
 
-        ent = worst_entry;
-        return false;
+        if (score != VALUE_NONE)
+        {
+            if (score >= VALUE_TB_WIN_IN_MAX_PLY)
+                score += ply;
+            if (score <= -VALUE_TB_WIN_IN_MAX_PLY)
+                score = -ply;
+        }
+
+        if (entries[idx].hash == 0 ||                                   // save if no entry is present
+            bound == EXACT_BOUND ||                                     // save if exact bound
+            entries[idx].hash != hash ||                                // save if hash is different
+            entries[idx].age != age ||                                  // save if age is different
+            (entries[idx].hash == hash && entries[idx].depth <= depth)) // save if depth is greater or equal
+        {
+            entries[idx].hash = hash;
+            entries[idx].depth = depth;
+            entries[idx].move = move;
+            entries[idx].score = score;
+            entries[idx].eval = eval;
+            entries[idx].bound = bound;
+            entries[idx].age = age;
+        }
     }
 
     void TTable::incrementAge()
     {
-        age += AGE_STEP;
+        age++;
+        if (age == 255)
+            age = 0;
     }
 
     void TTable::prefetch(U64 hash) const
     {
-        __builtin_prefetch(getBucket(hash));
+        __builtin_prefetch(&entries[hash & mask]);
     }
 
     int TTable::hashfull() const
     {
-        int count = 0;
-        for (int i = 0; i < 1000; i++)
-            for (int j = 0; j < BUCKET_SIZE; j++)
-            {
-                TTEntry *entry = &buckets[i].entries[j];
-                if (entry->getAge() == age && bool(entry->getDepth()))
-                    count++;
-            }
+        int used = 0;
+        for (U64 i = 0; i < 1000; i++)
+            if (entries[i].hash)
+                used++;
 
-        return count / BUCKET_SIZE;
+        return used;
     }
 
-    TTBucket *TTable::getBucket(U64 hash) const
-    {
-        return &buckets[((unsigned __int128)hash * (unsigned __int128)bucket_size) >> 64];
-    }
+    TTable tt(16);
 
 } // namespace Astra
