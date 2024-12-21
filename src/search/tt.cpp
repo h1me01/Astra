@@ -78,10 +78,7 @@ namespace Astra
                 score = -ply;
         }
 
-        if (bound == EXACT_BOUND ||           // save if exact bound
-            entries[idx].hash != hash ||      // save if hash is different
-            entries[idx].age != age ||        // save if age is different
-            (depth + 4 > entries[idx].depth)) // save if depth is greater or equal
+        if (bound == EXACT_BOUND || entries[idx].hash != hash || depth + 4 > entries[idx].depth) 
         {
             entries[idx].hash = hash;
             entries[idx].depth = depth;
