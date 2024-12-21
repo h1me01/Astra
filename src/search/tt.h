@@ -57,11 +57,11 @@ namespace Astra
         Score score;
     };
 
-    constexpr int entries_per_bucket = 3;
+    constexpr int BUCKET_SIZE = 3;
 
     struct TTBucket
     {
-        TTEntry entries[entries_per_bucket];
+        TTEntry entries[BUCKET_SIZE];
         int16_t padding;
     };
 

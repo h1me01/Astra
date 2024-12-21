@@ -9,8 +9,6 @@ namespace Astra
     TTable tt(16);
 
     // helper
-    using uint128 = unsigned __int128;
-
     void *alignedMalloc(U64 size)
     {
 #if defined(__linux__)
@@ -32,9 +30,9 @@ namespace Astra
     }
 
     // constants
-    constexpr int AGE_STEP = 8;
+    constexpr int AGE_STEP = 0x8;
     constexpr int AGE_CYCLE = 255 + AGE_STEP;
-    constexpr int AGE_MASK = (0xFF << entries_per_bucket) & 0xFF;
+    constexpr int AGE_MASK = 0xF8;
 
     // TTEntry struct
     int TTEntry::relativeAge()
@@ -44,7 +42,7 @@ namespace Astra
 
     void TTEntry::store(U64 hash, Move move, Score score, Score eval, Bound bound, int depth, int ply, bool pv)
     {
-        if (!isSame(hash) || move.raw())
+        if (!isSame(hash) || move != NO_MOVE)
             this->move = move.raw();
 
         if (score != VALUE_NONE)
@@ -55,10 +53,10 @@ namespace Astra
                 score -= ply;
         }
 
-        if (bound == EXACT_BOUND || !isSame(hash) || depth + 4 > this->depth)
+        if (bound == EXACT_BOUND || !isSame(hash) || depth + 4 > getDepth())
         {
             this->hash = uint16_t(hash);
-            this->depth = depth;
+            this->depth = depth - 2;
             this->age_pv_bound = (tt.getAge() << 3) | (pv << 2) | bound;
             this->eval = eval;
             this->score = score;
@@ -108,19 +106,19 @@ namespace Astra
 
     bool TTable::lookup(TTEntry *&ent, U64 hash)
     {
-        TTEntry *entries = getBucket(hash)->entries;
+        TTEntry *bucket = getBucket(hash)->entries;
 
-        for (int i = 0; i < entries_per_bucket; i++)
-            if (entries[i].isSame(hash))
+        for (int i = 0; i < BUCKET_SIZE; i++)
+            if (bucket[i].isSame(hash))
             {
-                ent = &entries[i];
+                ent = &bucket[i];
                 return bool(ent->getDepth());
             }
 
-        TTEntry *worst_entry = &entries[0];
-        for (int i = 1; i < entries_per_bucket; i++)
-            if ((entries[i].getDepth() - entries[i].relativeAge() / 2) < (worst_entry->getDepth() - worst_entry->relativeAge() / 2))
-                worst_entry = &entries[i];
+        TTEntry *worst_entry = &bucket[0];
+        for (int i = 1; i < BUCKET_SIZE; i++)
+            if ((bucket[i].getDepth() - bucket[i].relativeAge() / 2) < (worst_entry->getDepth() - worst_entry->relativeAge() / 2))
+                worst_entry = &bucket[i];
 
         ent = worst_entry;
         return false;
@@ -140,19 +138,19 @@ namespace Astra
     {
         int count = 0;
         for (int i = 0; i < 1000; i++)
-            for (int j = 0; j < entries_per_bucket; j++)
+            for (int j = 0; j < BUCKET_SIZE; j++)
             {
                 TTEntry *entry = &buckets[i].entries[j];
                 if (entry->getAge() == age && bool(entry->getDepth()))
                     count++;
             }
 
-        return count / entries_per_bucket;
+        return count / BUCKET_SIZE;
     }
 
     TTBucket *TTable::getBucket(U64 hash) const
     {
-        return &buckets[(uint128(hash) * uint128(bucket_size)) >> 64];
+        return &buckets[((unsigned __int128)hash * (unsigned __int128)bucket_size) >> 64];
     }
 
 } // namespace Astra
