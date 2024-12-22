@@ -2,6 +2,8 @@
 #include "search.h"
 #include "tune.h"
 
+#include <algorithm>
+
 namespace Astra
 {
     void updateHistoryScore(int16_t &score, int bonus)
@@ -12,38 +14,6 @@ namespace Astra
     int historyBonus(int depth)
     {
         return std::min(int(max_history_bonus), history_mult * depth - history_minus);
-    }
-
-    int History::getHistoryHeuristic(Color stm, Move move) const
-    {
-        return hh[stm][move.from()][move.to()];
-    }
-
-    int History::getQuietHistory(const Board &board, const Stack *ss, Move &move) const
-    {
-        Square from = move.from();
-        Square to = move.to();
-        Piece pc = board.pieceAt(from);
-
-        assert(pc != NO_PIECE);
-
-        return hh[board.getTurn()][from][to] + (ss - 1)->conth[pc][to] + (ss - 2)->conth[pc][to] + (ss - 4)->conth[pc][to];
-    }
-
-    int History::getCapHistory(const Board &board, Move &move) const
-    {
-        PieceType captured = move.type() == EN_PASSANT ? PAWN : typeOf(board.pieceAt(move.to()));
-        Piece pc = board.pieceAt(move.from());
-
-        assert(pc != NO_PIECE);
-        assert(captured != NO_PIECE_TYPE);
-
-        return ch[pc][move.to()][captured];
-    }
-
-    Move History::getCounterMove(Move prev_move) const
-    {
-        return counters[prev_move.from()][prev_move.to()];
     }
 
     void History::update(const Board &board, Move &best, Stack *ss, Move *q_moves, int qc, Move *c_moves, int cc, int depth)
@@ -69,7 +39,7 @@ namespace Astra
             if (depth > 3 || qc > 1)
             {
                 updateHistoryScore(hh[stm][best.from()][best.to()], bonus);
-                updateContH(board, best, ss, bonus);
+                updateContH(best, ss, bonus);
 
                 // quiet maluses
                 for (int i = 0; i < qc; i++)
@@ -78,7 +48,7 @@ namespace Astra
                     if (quiet == best)
                         continue;
                     updateHistoryScore(hh[stm][quiet.from()][quiet.to()], -bonus);
-                    updateContH(board, quiet, ss, -bonus);
+                    updateContH(quiet, ss, -bonus);
                 }
             }
         }
@@ -100,20 +70,34 @@ namespace Astra
         hh[c][move.from()][move.to()] += bonus;
     }
 
-    void History::updateContH(const Board &board, Move &move, Stack *ss, int bonus)
-    {
-        Square to = move.to();
-        Piece pc = board.pieceAt(move.from());
-        // when updating cont history in lmr we have to take the to square
-        // since we have already made the move
-        if (pc == NO_PIECE)
-            pc = board.pieceAt(to);
-
-        assert(pc != NO_PIECE);
-
+    void History::updateContH(Move &move, Stack *ss, int bonus)
+    { 
         for (int offset : {1, 2, 4, 6})
-            if ((ss - offset)->curr_move != NO_MOVE)
-                updateHistoryScore((ss - offset)->conth[pc][to], bonus);
+            if ((ss - offset)->curr_move != NO_MOVE && (ss - offset)->curr_move != NULL_MOVE)
+                updateHistoryScore((*(ss - offset)->conth)[(ss - offset)->moved_piece][move.to()], bonus);
+    }
+
+    void History::updatePawnHistory(Score raw_eval, Score real_score, int depth, const Board& board)
+    {
+        const int16_t corr = std::clamp((real_score - raw_eval) * depth / 8, -256, 256);
+        int16_t& value = pawn_corr[board.getTurn()][board.getPawnHash() % 32768];
+        value += corr - int(value) * abs(corr) / 1024;
+    }
+
+    void History::updateContCorr(Score raw_eval, Score real_score, int depth, const Stack* ss)
+    {
+        const Move prev_move = (ss - 1)->curr_move;
+        const Move pprev_move = (ss - 2)->curr_move;
+
+        Piece prev_pc = (ss - 1)->moved_piece;
+        Piece pprev_pc = (ss - 2)->moved_piece;
+
+        if (!prev_move || !pprev_move)
+            return;
+
+        const int16_t corr = std::clamp((real_score - raw_eval) * depth / 8, -256, 256);
+        int16_t& value = cont_corr[prev_pc][prev_move.to()][pprev_pc][pprev_move.to()];
+        value += corr - int(value) * abs(corr) / 1024;
     }
 
     void History::updateCapHistory(const Board &board, Move &move, int bonus)

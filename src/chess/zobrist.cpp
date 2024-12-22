@@ -47,6 +47,23 @@ namespace Chess
             return ep[fileOf(sq)];
         }
 
+        U64 getPawnZobrist(const Board &board)
+        {
+            U64 hash = 0;
+
+            for (Color c : {WHITE, BLACK})
+            {
+                U64 pawns = board.getPieceBB(c, PAWN);
+                while (pawns)
+                    hash ^= getPsq(makePiece(c, PAWN), popLsb(pawns));
+            }
+
+            if (board.getTurn() == BLACK)
+                hash ^= side;
+
+            return hash;
+        }
+
     } // namespace Zobrist
 
 } // namespace Chess

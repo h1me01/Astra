@@ -2,9 +2,12 @@
 #define ZOBRIST_H
 
 #include "types.h"
+#include "board.h"
 
 namespace Chess
 {
+    class Board;
+    
     // psuedorandom number generator from stockfish
     class PRNG
     {
@@ -33,6 +36,8 @@ namespace Chess
         U64 getPsq(Piece pc, Square sq);
         U64 getCastle(int idx);
         U64 getEp(Square sq);
+
+        U64 getPawnZobrist(const Board& board);
 
     } // namespace Zobrist
 

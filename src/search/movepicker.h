@@ -2,6 +2,7 @@
 #define MOVEPICKER_H
 
 #include "search.h"
+#include "stack.h"
 #include "../chess/movegen.h"
 
 namespace Astra

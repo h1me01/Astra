@@ -82,6 +82,8 @@ namespace Chess
         hash ^= Zobrist::side;
         history[curr_ply].hash = hash;
 
+        pawn_hash = Zobrist::getPawnZobrist(*this);
+
         refreshAccumulator();
     }
 
@@ -419,7 +421,8 @@ namespace Chess
             history[curr_ply].half_move_clock = 0;
 
         hash ^= Zobrist::side;
-
+        pawn_hash ^= Zobrist::side;
+  
         if (update_nnue)
             accumulators.push();
 
@@ -457,6 +460,10 @@ namespace Chess
             hash ^= Zobrist::getPsq(captured, cap_sq);
             // remove captured piece from board
             removePiece(cap_sq, update_nnue);
+
+            // update pawn hash if captured piece is a pawn
+            if (typeOf(captured) == PAWN)
+                pawn_hash ^= Zobrist::getPsq(captured, cap_sq);
         }
 
         // update hash of moving piece
@@ -482,6 +489,9 @@ namespace Chess
 
         if (pt == PAWN)
         {
+            // update pawn hash
+            pawn_hash ^= Zobrist::getPsq(pc, from) ^ Zobrist::getPsq(pc, to);
+
             // set ep square if double push can be captured by enemy pawn
             auto ep_sq = Square(to ^ 8);
             if ((from ^ to) == 16 && (getPawnAttacks(stm, ep_sq) & getPieceBB(~stm, PAWN)))
@@ -503,6 +513,9 @@ namespace Chess
                 // add promoted piece and remove pawn
                 removePiece(to, update_nnue);
                 putPiece(prom_pc, to, update_nnue);
+
+                // update pawn hash
+                pawn_hash ^= Zobrist::getPsq(pc, to);
             }
         }
 
@@ -583,6 +596,7 @@ namespace Chess
         }
 
         hash ^= Zobrist::side;
+        pawn_hash ^= Zobrist::side;
 
         history[curr_ply].half_move_clock++;
         history[curr_ply].hash = hash;

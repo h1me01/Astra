@@ -51,8 +51,10 @@ namespace Astra
         Stack stack[MAX_PLY + 6]; // +6 for history
         Stack *ss = stack + 6;
 
-        for (int i = 0; i < MAX_PLY; ++i)
+        for (int i = 0; i < MAX_PLY; i++)
             (ss + i)->ply = i;
+        for (int i = 1; i <= 6; i++)
+            (ss - i)->conth = &history.conth[0][WHITE_PAWN][a1];
 
         int avg_eval = 0;
         int move_changes = 0;
@@ -155,7 +157,7 @@ namespace Astra
             return 0;
 
         if (ss->ply >= MAX_PLY - 1)
-            return adjustEval(Eval::evaluate(board));
+            return adjustEval(board, ss, Eval::evaluate(board));
 
         pv_table[ss->ply].length = 0;
 
@@ -171,6 +173,7 @@ namespace Astra
 
         const Score orig_alpha = alpha;
         Score eval = ss->eval;
+        Score raw_eval = eval;
         Score max_score = VALUE_MATE;
         Score best_score = -VALUE_MATE;
 
@@ -258,27 +261,26 @@ namespace Astra
 
         // set eval and static eval
         if (in_check)
-            eval = ss->eval = VALUE_NONE;
+            eval = raw_eval = ss->eval = VALUE_NONE;
         else
         {
             // use tt score for better evaluation
             if (tt_hit)
             {
-                eval = tt_eval;
-                if (eval == VALUE_NONE)
-                    eval = Eval::evaluate(board);
+                raw_eval = tt_eval;
+                if (raw_eval == VALUE_NONE)
+                    raw_eval = Eval::evaluate(board);
 
-                ss->eval = eval;
-                eval = adjustEval(eval);
+                eval = ss->eval = adjustEval(board, ss, raw_eval);
 
                 if (tt_score != VALUE_NONE && (tt_bound & (tt_score > eval ? LOWER_BOUND : UPPER_BOUND)))
                     eval = tt_score;
             }
             else if (!skipped)
             {
-                eval = ss->eval = Eval::evaluate(board);
-                eval = adjustEval(eval);
-                tt.store(hash, NO_MOVE, VALUE_NONE, ss->eval, NO_BOUND, -1, ss->ply);
+                raw_eval = Eval::evaluate(board);
+                eval = ss->eval = adjustEval(board, ss, raw_eval);
+                tt.store(hash, NO_MOVE, VALUE_NONE, raw_eval, NO_BOUND, -1, ss->ply);
             }
 
             // check for improvement
@@ -323,6 +325,8 @@ namespace Astra
                 int R = 4 + depth / nmp_depth_div + std::min(int(nmp_min), (eval - beta) / nmp_div);
 
                 ss->curr_move = NULL_MOVE;
+                ss->moved_piece = NO_PIECE;
+                ss->conth = &history.conth[0][WHITE_PAWN][a1]; // put null move to quiet moves
 
                 board.makeNullMove();
                 Score score = -negamax(depth - R, -beta, -beta + 1, ss + 1, !cut_node);
@@ -355,6 +359,8 @@ namespace Astra
 
                     nodes++;
                     ss->curr_move = move;
+                    ss->moved_piece = board.pieceAt(move.from());
+                    ss->conth = &history.conth[isCap(move)][ss->moved_piece][move.to()];
 
                     board.makeMove(move, true);
                     Score score = -qSearch(0, -beta_cut, -beta_cut + 1, ss + 1);
@@ -456,7 +462,11 @@ namespace Astra
             int new_depth = depth - 1 + extension;
 
             nodes++;
+            
             ss->curr_move = move;
+            ss->moved_piece = board.pieceAt(move.from());
+            ss->conth = &history.conth[isCap(move)][ss->moved_piece][move.to()];
+
             board.makeMove(move, true);
 
             Score score = VALUE_NONE;
@@ -488,7 +498,7 @@ namespace Astra
                     if (!isCap(move))
                     {
                         int bonus = score <= alpha ? -historyBonus(new_depth) : score >= beta ? historyBonus(new_depth) : 0;
-                        history.updateContH(board, move, ss, bonus);
+                        history.updateContH(move, ss, bonus);
                     }
                 }
             }
@@ -562,6 +572,7 @@ namespace Astra
         
         Score best_score = -VALUE_MATE + ss->ply;
         Score eval = ss->eval;
+        Score raw_eval = eval;
         Score futility = -VALUE_MATE;
         
         Move best_move = NO_MOVE;
@@ -570,7 +581,7 @@ namespace Astra
             return VALUE_DRAW;
 
         if (ss->ply >= MAX_PLY - 1)
-            return adjustEval(Eval::evaluate(board));
+            return adjustEval(board, ss, Eval::evaluate(board));
 
         // look up in transposition table
         bool tt_hit = false;
@@ -591,21 +602,20 @@ namespace Astra
             // use tt score for better evaluation
             if (tt_hit)
             {
-                eval = tt_eval;
-                if (eval == VALUE_NONE)
-                    eval = Eval::evaluate(board);
+                raw_eval = tt_eval;
+                if (raw_eval == VALUE_NONE)
+                    raw_eval = Eval::evaluate(board);
 
-                ss->eval = eval;
-                eval = adjustEval(eval);
+                eval = ss->eval = adjustEval(board, ss, raw_eval);
 
                 if (tt_score != VALUE_NONE && (tt_bound & (tt_score > eval ? LOWER_BOUND : UPPER_BOUND)))
                     eval = tt_score;
             }
             else
             {
-                eval = ss->eval = Eval::evaluate(board);
-                eval = adjustEval(eval);
-                tt.store(hash, NO_MOVE, VALUE_NONE, ss->eval, NO_BOUND, -1, ss->ply);
+                raw_eval = Eval::evaluate(board);
+                eval = ss->eval = adjustEval(board, ss, raw_eval);
+                tt.store(hash, NO_MOVE, VALUE_NONE, raw_eval, NO_BOUND, -1, ss->ply);
             }
 
             best_score = eval;
@@ -648,6 +658,10 @@ namespace Astra
 
             nodes++;
 
+            ss->curr_move = move;
+            ss->moved_piece = board.pieceAt(move.from());
+            ss->conth = &history.conth[isCap(move)][ss->moved_piece][move.to()];
+
             board.makeMove(move, true);
             Score score = -qSearch(depth - 1, -beta, -alpha, ss + 1);
             board.unmakeMove(move);
@@ -686,9 +700,14 @@ namespace Astra
         return best_score;
     }
 
-    int Search::adjustEval(Score eval) const
+    int Search::adjustEval(const Board& board, const Stack* ss, Score eval) const
     {
-        return (200 - board.halfMoveClock()) * eval / 200;
+        eval = (200 - board.halfMoveClock()) * eval / 200;
+
+        // pawn and cont correction
+        eval += history.getPawnCorr(board) + history.getContCorr(ss);
+
+        return std::clamp(eval, Score(-VALUE_TB_WIN_IN_MAX_PLY + 1), Score(VALUE_TB_WIN_IN_MAX_PLY - 1));
     }
 
     bool Search::isLimitReached(const int depth) const

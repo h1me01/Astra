@@ -104,6 +104,7 @@ namespace Chess
         int getPly() const;
         int halfMoveClock() const;
         U64 getHash() const;
+        U64 getPawnHash() const;
         U64 getThreats(PieceType pt) const;
         Square kingSq(Color c) const;
         NNUE::Accumulator &getAccumulator();
@@ -139,6 +140,7 @@ namespace Chess
         Piece board[NUM_SQUARES];
         Color stm;
         U64 hash;
+        U64 pawn_hash;
         int curr_ply;
         NNUE::Accumulators accumulators;
 
@@ -169,6 +171,8 @@ namespace Chess
     inline int Board::halfMoveClock() const { return history[curr_ply].half_move_clock; }
 
     inline U64 Board::getHash() const { return hash; }
+    
+    inline U64 Board::getPawnHash() const { return pawn_hash; }
 
     inline Square Board::kingSq(Color c) const { return lsb(getPieceBB(c, KING)); }
 
