@@ -68,7 +68,7 @@ namespace Chess
         initCheckersAndPinned();
 
         // initialize hash
-        hash = 0ULL;
+        U64 hash = 0ULL;
         for (int p = WHITE_PAWN; p <= BLACK_KING; p++)
         {
             U64 b = piece_bb[p];
@@ -82,7 +82,7 @@ namespace Chess
         hash ^= Zobrist::side;
         history[curr_ply].hash = hash;
 
-        pawn_hash = Zobrist::getPawnZobrist(*this);
+        history[curr_ply].pawn_hash = Zobrist::getPawnZobrist(*this);
 
         refreshAccumulator();
     }
@@ -93,7 +93,6 @@ namespace Chess
         {
             curr_ply = other.curr_ply;
             stm = other.stm;
-            hash = other.hash;
 
             std::copy(std::begin(other.piece_bb), std::end(other.piece_bb), std::begin(piece_bb));
             std::copy(std::begin(other.board), std::end(other.board), std::begin(board));
@@ -108,7 +107,6 @@ namespace Chess
     {
         curr_ply = other.curr_ply;
         stm = other.stm;
-        hash = other.hash;
 
         std::copy(std::begin(other.piece_bb), std::end(other.piece_bb), std::begin(piece_bb));
         std::copy(std::begin(other.board), std::end(other.board), std::begin(board));
@@ -136,7 +134,7 @@ namespace Chess
 
         std::cout << "   a   b   c   d   e   f   g   h\n";
         std::cout << "\nFen: " << getFen() << std::endl;
-        std::cout << "Hash key: " << std::hex << hash << std::dec << "\n\n";
+        std::cout << "Hash key: " << std::hex << history[curr_ply].hash << std::dec << "\n\n";
     }
 
     std::string Board::getFen() const
@@ -219,8 +217,10 @@ namespace Chess
 
     U64 Board::keyAfter(Move m) const 
     {
+        U64 new_hash = history[curr_ply].hash;
+
         if (!m)
-            return hash ^ Zobrist::side;    
+            return new_hash ^ Zobrist::side;    
 
         Square from = m.from();
         Square to = m.to();
@@ -228,7 +228,6 @@ namespace Chess
         Piece pc = pieceAt(from);
         Piece captured = pieceAt(to);
 
-        U64 new_hash = hash;
         if (captured != NO_PIECE)
             new_hash ^= Zobrist::getPsq(captured, to);
 
@@ -420,8 +419,8 @@ namespace Chess
         if (pt == PAWN || captured != NO_PIECE)
             history[curr_ply].half_move_clock = 0;
 
-        hash ^= Zobrist::side;
-        pawn_hash ^= Zobrist::side;
+        history[curr_ply].hash ^= Zobrist::side;
+        history[curr_ply].pawn_hash ^= Zobrist::side;
   
         if (update_nnue)
             accumulators.push();
@@ -448,7 +447,7 @@ namespace Chess
             assert(rook == makePiece(stm, ROOK));
 
             // update hash of rook
-            hash ^= Zobrist::getPsq(rook, rook_from) ^ Zobrist::getPsq(rook, rook_to);
+            history[curr_ply].hash ^= Zobrist::getPsq(rook, rook_from) ^ Zobrist::getPsq(rook, rook_to);
             // move rook
             movePiece(rook_from, rook_to, update_nnue);
         }
@@ -457,31 +456,31 @@ namespace Chess
         {
             Square cap_sq = mt == EN_PASSANT ? Square(to ^ 8) : to;
             // remove captured piece from hash
-            hash ^= Zobrist::getPsq(captured, cap_sq);
+            history[curr_ply].hash ^= Zobrist::getPsq(captured, cap_sq);
             // remove captured piece from board
             removePiece(cap_sq, update_nnue);
 
             // update pawn hash if captured piece is a pawn
             if (typeOf(captured) == PAWN)
-                pawn_hash ^= Zobrist::getPsq(captured, cap_sq);
+                history[curr_ply].pawn_hash ^= Zobrist::getPsq(captured, cap_sq);
         }
 
         // update hash of moving piece
-        hash ^= Zobrist::getPsq(pc, from) ^ Zobrist::getPsq(pc, to);
+        history[curr_ply].hash ^= Zobrist::getPsq(pc, from) ^ Zobrist::getPsq(pc, to);
 
         // reset ep square if exists
         if (history[curr_ply].ep_sq != NO_SQUARE)
         {
-            hash ^= Zobrist::getEp(history[curr_ply].ep_sq);
+            history[curr_ply].hash ^= Zobrist::getEp(history[curr_ply].ep_sq);
             history[curr_ply].ep_sq = NO_SQUARE;
         }
 
         // update castling rights if king/rook moves or if one of the rooks get captured
         if (history[curr_ply].castle_rights.onCastleSquare(from) || history[curr_ply].castle_rights.onCastleSquare(to))
         {
-            hash ^= Zobrist::getCastle(history[curr_ply].castle_rights.getHashIndex());
+            history[curr_ply].hash ^= Zobrist::getCastle(history[curr_ply].castle_rights.getHashIndex());
             history[curr_ply].castle_rights.mask &= ~(SQUARE_BB[from] | SQUARE_BB[to]);
-            hash ^= Zobrist::getCastle(history[curr_ply].castle_rights.getHashIndex());
+            history[curr_ply].hash ^= Zobrist::getCastle(history[curr_ply].castle_rights.getHashIndex());
         }
 
         // move piece
@@ -490,14 +489,14 @@ namespace Chess
         if (pt == PAWN)
         {
             // update pawn hash
-            pawn_hash ^= Zobrist::getPsq(pc, from) ^ Zobrist::getPsq(pc, to);
+            history[curr_ply].pawn_hash ^= Zobrist::getPsq(pc, from) ^ Zobrist::getPsq(pc, to);
 
             // set ep square if double push can be captured by enemy pawn
             auto ep_sq = Square(to ^ 8);
             if ((from ^ to) == 16 && (getPawnAttacks(stm, ep_sq) & getPieceBB(~stm, PAWN)))
             {
                 history[curr_ply].ep_sq = ep_sq;
-                hash ^= Zobrist::getEp(ep_sq);
+                history[curr_ply].hash ^= Zobrist::getEp(ep_sq);
             }
             else if (isProm(m))
             {
@@ -508,14 +507,14 @@ namespace Chess
                 assert(prom_pc != NO_PIECE);
 
                 // update hash
-                hash ^= Zobrist::getPsq(pc, to) ^ Zobrist::getPsq(prom_pc, to);
+                history[curr_ply].hash ^= Zobrist::getPsq(pc, to) ^ Zobrist::getPsq(prom_pc, to);
 
                 // add promoted piece and remove pawn
                 removePiece(to, update_nnue);
                 putPiece(prom_pc, to, update_nnue);
 
                 // update pawn hash
-                pawn_hash ^= Zobrist::getPsq(pc, to);
+                history[curr_ply].pawn_hash ^= Zobrist::getPsq(pc, to);
             }
         }
 
@@ -523,8 +522,6 @@ namespace Chess
 
         // set captured piece
         history[curr_ply].captured = captured;
-        // set hash
-        history[curr_ply].hash = hash;
 
         initThreats();
         initCheckersAndPinned();
@@ -581,7 +578,6 @@ namespace Chess
         }
 
         curr_ply--;
-        hash = history[curr_ply].hash;
     }
 
     void Board::makeNullMove()
@@ -591,15 +587,14 @@ namespace Chess
 
         if (history[curr_ply].ep_sq != NO_SQUARE)
         {
-            hash ^= Zobrist::getEp(history[curr_ply].ep_sq);
+            history[curr_ply].hash ^= Zobrist::getEp(history[curr_ply].ep_sq);
             history[curr_ply].ep_sq = NO_SQUARE;
         }
 
-        hash ^= Zobrist::side;
-        pawn_hash ^= Zobrist::side;
+        history[curr_ply].hash ^= Zobrist::side;
+        history[curr_ply].pawn_hash ^= Zobrist::side;
 
         history[curr_ply].half_move_clock++;
-        history[curr_ply].hash = hash;
 
         stm = ~stm;
 
@@ -610,7 +605,6 @@ namespace Chess
     void Board::unmakeNullMove()
     {
         curr_ply--;
-        hash = history[curr_ply].hash;
         stm = ~stm;
     }
 
@@ -620,7 +614,7 @@ namespace Chess
         int limit = curr_ply - history[curr_ply].half_move_clock - 1;
 
         for (int i = curr_ply - 2; i >= 0 && i >= limit; i -= 2)
-            if (history[i].hash == hash)
+            if (history[i].hash == history[curr_ply].hash)
                 if (++count == 1 + is_pv)
                     return true;
 
