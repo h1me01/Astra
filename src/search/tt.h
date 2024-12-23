@@ -18,6 +18,7 @@ namespace Astra
     struct TTEntry
     {
         U64 hash;
+        uint8_t age;
         uint8_t depth;
         Move move;
         Score score;
@@ -50,11 +51,13 @@ namespace Astra
         TTEntry *lookup(U64 hash, bool &hit) const;
         void store(U64 hash, Move move, Score score, Score eval, Bound bound, int depth, int ply);
 
+        void incrementAge();
         void prefetch(U64 hash) const;
 
         int hashfull() const;
 
     private:
+        uint8_t age;
         U64 tt_size{};
         U64 mask{};
         TTEntry *entries;
