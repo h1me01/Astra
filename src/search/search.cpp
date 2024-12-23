@@ -272,6 +272,7 @@ namespace Astra
                     raw_eval = Eval::evaluate(board);
 
                 eval = ss->eval = adjustEval(board, ss, raw_eval);
+                eval = (200 - board.halfMoveClock()) * eval / 200; // adjust eval based on fmr
 
                 if (tt_score != VALUE_NONE && (tt_bound & (tt_score > eval ? LOWER_BOUND : UPPER_BOUND)))
                     eval = tt_score;
@@ -280,6 +281,7 @@ namespace Astra
             {
                 raw_eval = Eval::evaluate(board);
                 eval = ss->eval = adjustEval(board, ss, raw_eval);
+                eval = (200 - board.halfMoveClock()) * eval / 200; // adjust eval based on fmr
                 tt.store(hash, NO_MOVE, VALUE_NONE, raw_eval, NO_BOUND, -1, ss->ply);
             }
 
@@ -607,6 +609,7 @@ namespace Astra
                     raw_eval = Eval::evaluate(board);
 
                 eval = ss->eval = adjustEval(board, ss, raw_eval);
+                eval = (200 - board.halfMoveClock()) * eval / 200; // adjust eval based on fmr
 
                 if (tt_score != VALUE_NONE && (tt_bound & (tt_score > eval ? LOWER_BOUND : UPPER_BOUND)))
                     eval = tt_score;
@@ -615,6 +618,7 @@ namespace Astra
             {
                 raw_eval = Eval::evaluate(board);
                 eval = ss->eval = adjustEval(board, ss, raw_eval);
+                eval = (200 - board.halfMoveClock()) * eval / 200; // adjust eval based on fmr
                 tt.store(hash, NO_MOVE, VALUE_NONE, raw_eval, NO_BOUND, -1, ss->ply);
             }
 
@@ -697,16 +701,24 @@ namespace Astra
         Bound bound = best_score >= beta ? LOWER_BOUND : UPPER_BOUND; // no exact bound in qsearch
         tt.store(hash, best_move, best_score, ss->eval, bound, 0, ss->ply);
 
+        // update correction histories
+        if (!in_check && !isCap(best_move) && (bound & (best_score >= raw_eval ? LOWER_BOUND : UPPER_BOUND)))
+        {
+            history.updatePawnHistory(board, raw_eval, best_score, depth);
+            history.updateWNonPawnHistory(board, raw_eval, best_score, depth);
+            history.updateBNonPawnHistory(board, raw_eval, best_score, depth);
+            history.updateContCorr(raw_eval, best_score, depth, ss);
+        }
+
         return best_score;
     }
 
     int Search::adjustEval(const Board& board, const Stack* ss, Score eval) const
     {
-        eval = (200 - board.halfMoveClock()) * eval / 200;
-
-        // pawn and cont correction
-        eval += history.getPawnCorr(board) + history.getContCorr(ss);
-
+        eval += history.getPawnCorr(board);
+        eval += history.getWNonPawnCorr(board);
+        eval += history.getBNonPawnCorr(board);
+        eval += history.getContCorr(ss);
         return std::clamp(eval, Score(-VALUE_TB_WIN_IN_MAX_PLY + 1), Score(VALUE_TB_WIN_IN_MAX_PLY - 1));
     }
 

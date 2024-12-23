@@ -16,19 +16,22 @@ namespace Astra
 
         void update(const Board &board, Move &move, Stack *ss, Move *q_moves, int qc, Move *c_moves, int cc, int depth);
 
-        int getHistoryHeuristic(Color stm, Move move) const;
-        int getQuietHistory(const Board &board, const Stack *ss, Move &move) const;
-        int getCapHistory(const Board &board, Move &move) const;
-
-        Move getCounterMove(Move move) const;
-
         void updateQuietHistory(Color c, Move move, int bonus);
         void updateContH(Move &move, Stack *ss, int bonus);
 
-        void updatePawnHistory(Score raw_eval, Score real_score, int depth, const Board &board);
+        void updatePawnHistory(const Board &board, Score raw_eval, Score real_score, int depth);
+        void updateWNonPawnHistory(const Board &board, Score raw_eval, Score real_score, int depth);
+        void updateBNonPawnHistory(const Board &board, Score raw_eval, Score real_score, int depth);
         void updateContCorr(Score raw_eval, Score real_score, int depth, const Stack *ss);
 
+        Move getCounterMove(Move move) const;
+
+        int getHistoryHeuristic(Color stm, Move move) const;
+        int getQuietHistory(const Board &board, const Stack *ss, Move &move) const;
+        int getCapHistory(const Board &board, Move &move) const;
         int getPawnCorr(const Board &board) const;
+        int getWNonPawnCorr(const Board &board) const;
+        int getBNonPawnCorr(const Board &board) const;
         int getContCorr(const Stack *ss) const;
 
     private:
@@ -38,7 +41,9 @@ namespace Astra
         int16_t ch[NUM_PIECES][NUM_SQUARES][NUM_PIECE_TYPES]{};
 
         int16_t cont_corr[NUM_PIECES][NUM_SQUARES][NUM_PIECES][NUM_SQUARES]{};
-        int16_t pawn_corr[NUM_COLORS][32768]{};
+        int16_t pawn_corr[NUM_COLORS][16384]{};
+        int16_t w_non_pawn_corr[NUM_COLORS][16384]{};
+        int16_t b_non_pawn_corr[NUM_COLORS][16384]{};
 
         void updateCapHistory(const Board &board, Move &move, int bonus);
     };
@@ -80,7 +85,17 @@ namespace Astra
 
     inline int History::getPawnCorr(const Board &board) const
     {
-        return pawn_corr[board.getTurn()][board.getPawnHash() % 32768] / 512;
+        return pawn_corr[board.getTurn()][board.getPawnHash() % 16384] / 512;
+    }
+
+    inline int History::getWNonPawnCorr(const Board &board) const
+    {
+        return w_non_pawn_corr[board.getTurn()][board.getNonPawnHash(WHITE) % 16384] / 512;
+    }
+
+    inline int History::getBNonPawnCorr(const Board &board) const
+    {
+        return b_non_pawn_corr[board.getTurn()][board.getNonPawnHash(BLACK) % 16384] / 512;
     }
 
     inline int History::getContCorr(const Stack *ss) const

@@ -6,9 +6,10 @@
 
 namespace Astra
 {
-    void updateHistoryScore(int16_t &score, int bonus)
+
+    int getFormula(int value, int bonus)
     {
-        score += bonus - score * std::abs(bonus) / 16384;
+        return bonus - value * std::abs(bonus) / 16384;
     }
 
     int historyBonus(int depth)
@@ -38,7 +39,7 @@ namespace Astra
             // only update quiet history if best move was important
             if (depth > 3 || qc > 1)
             {
-                updateHistoryScore(hh[stm][best.from()][best.to()], bonus);
+                updateQuietHistory(stm, best, bonus);
                 updateContH(best, ss, bonus);
 
                 // quiet maluses
@@ -47,7 +48,7 @@ namespace Astra
                     Move quiet = q_moves[i];
                     if (quiet == best)
                         continue;
-                    updateHistoryScore(hh[stm][quiet.from()][quiet.to()], -bonus);
+                    updateQuietHistory(stm, quiet, -bonus);
                     updateContH(quiet, ss, -bonus);
                 }
             }
@@ -67,24 +68,45 @@ namespace Astra
 
     void History::updateQuietHistory(Color c, Move move, int bonus)
     {
-        hh[c][move.from()][move.to()] += bonus;
+        int16_t &value = hh[c][move.from()][move.to()];
+        value += getFormula(value, bonus);
     }
 
     void History::updateContH(Move &move, Stack *ss, int bonus)
-    { 
+    {
         for (int offset : {1, 2, 4, 6})
             if ((ss - offset)->curr_move != NO_MOVE && (ss - offset)->curr_move != NULL_MOVE)
-                updateHistoryScore((*(ss - offset)->conth)[(ss - offset)->moved_piece][move.to()], bonus);
+            {
+                int16_t &value = (*(ss - offset)->conth)[(ss - offset)->moved_piece][move.to()];
+                value += getFormula(value, bonus);
+            }
     }
 
-    void History::updatePawnHistory(Score raw_eval, Score real_score, int depth, const Board& board)
+    int getCorrection(const int diff, int depth, int value)
     {
-        const int16_t corr = std::clamp((real_score - raw_eval) * depth / 8, -256, 256);
-        int16_t& value = pawn_corr[board.getTurn()][board.getPawnHash() % 32768];
-        value += corr - int(value) * abs(corr) / 1024;
+        const int bonus = std::clamp(diff * depth / 8, -256, 256);
+        return bonus - int(value) * std::abs(bonus) / 1024;
     }
 
-    void History::updateContCorr(Score raw_eval, Score real_score, int depth, const Stack* ss)
+    void History::updatePawnHistory(const Board &board, Score raw_eval, Score real_score, int depth)
+    {
+        int16_t &value = pawn_corr[board.getTurn()][board.getPawnHash() % 16384];
+        value = getCorrection(real_score - raw_eval, depth, value);
+    }
+
+    void History::updateWNonPawnHistory(const Board &board, Score raw_eval, Score real_score, int depth)
+    {
+        int16_t &value = w_non_pawn_corr[board.getTurn()][board.getNonPawnHash(WHITE) % 16384];
+        value = getCorrection(real_score - raw_eval, depth, value);
+    }
+
+    void History::updateBNonPawnHistory(const Board &board, Score raw_eval, Score real_score, int depth)
+    {
+        int16_t &value = b_non_pawn_corr[board.getTurn()][board.getNonPawnHash(BLACK) % 16384];
+        value = getCorrection(real_score - raw_eval, depth, value);
+    }
+
+    void History::updateContCorr(Score raw_eval, Score real_score, int depth, const Stack *ss)
     {
         const Move prev_move = (ss - 1)->curr_move;
         const Move pprev_move = (ss - 2)->curr_move;
@@ -95,9 +117,8 @@ namespace Astra
         if (!prev_move || !pprev_move)
             return;
 
-        const int16_t corr = std::clamp((real_score - raw_eval) * depth / 8, -256, 256);
-        int16_t& value = cont_corr[prev_pc][prev_move.to()][pprev_pc][pprev_move.to()];
-        value += corr - int(value) * abs(corr) / 1024;
+        int16_t &value = cont_corr[prev_pc][prev_move.to()][pprev_pc][pprev_move.to()];
+        value += getCorrection((real_score - raw_eval) * 256, depth, value);
     }
 
     void History::updateCapHistory(const Board &board, Move &move, int bonus)
@@ -109,7 +130,8 @@ namespace Astra
         assert(captured != NO_PIECE_TYPE);
         assert(pc != NO_PIECE);
 
-        updateHistoryScore(ch[pc][to][captured], bonus);
+        int16_t &value = ch[pc][to][captured];
+        value += getFormula(value, bonus);
     }
 
 } // namespace Astra

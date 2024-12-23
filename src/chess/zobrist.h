@@ -38,6 +38,7 @@ namespace Chess
         U64 getEp(Square sq);
 
         U64 getPawnZobrist(const Board& board);
+        U64 getNonPawnZobrist(const Board& board, Color c);
 
     } // namespace Zobrist
 

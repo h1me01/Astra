@@ -18,6 +18,7 @@ namespace Chess
         for (auto &i : board)
             i = NO_PIECE;
         history[0] = StateInfo();
+        StateInfo &info = history[0];
 
         std::vector<std::string> fen_parts = split(fen, ' ');
         if (fen_parts.size() != 6)
@@ -33,24 +34,24 @@ namespace Chess
             switch (c)
             {
             case 'K':
-                history[curr_ply].castle_rights.mask |= WHITE_OO_MASK;
+                info.castle_rights.mask |= WHITE_OO_MASK;
                 break;
             case 'Q':
-                history[curr_ply].castle_rights.mask |= WHITE_OOO_MASK;
+                info.castle_rights.mask |= WHITE_OOO_MASK;
                 break;
             case 'k':
-                history[curr_ply].castle_rights.mask |= BLACK_OO_MASK;
+                info.castle_rights.mask |= BLACK_OO_MASK;
                 break;
             case 'q':
-                history[curr_ply].castle_rights.mask |= BLACK_OOO_MASK;
+                info.castle_rights.mask |= BLACK_OOO_MASK;
                 break;
             default:
                 break;
             }
         }
 
-        history[curr_ply].ep_sq = fen_parts[3] == "-" ? NO_SQUARE : squareFromString(fen_parts[3]);
-        history[curr_ply].half_move_clock = std::stoi(fen_parts[4]);
+        info.ep_sq = fen_parts[3] == "-" ? NO_SQUARE : squareFromString(fen_parts[3]);
+        info.half_move_clock = std::stoi(fen_parts[4]);
 
         // place pieces to board
         int sqr = a8;
@@ -76,13 +77,15 @@ namespace Chess
                 hash ^= Zobrist::getPsq(Piece(p), popLsb(b));
         }
 
-        if (history[curr_ply].ep_sq != NO_SQUARE)
-            hash ^= Zobrist::getEp(history[curr_ply].ep_sq);
-        hash ^= Zobrist::getCastle(history[curr_ply].castle_rights.getHashIndex());
+        if (info.ep_sq != NO_SQUARE)
+            hash ^= Zobrist::getEp(info.ep_sq);
+        hash ^= Zobrist::getCastle(info.castle_rights.getHashIndex());
         hash ^= Zobrist::side;
-        history[curr_ply].hash = hash;
+        info.hash = hash;
 
-        history[curr_ply].pawn_hash = Zobrist::getPawnZobrist(*this);
+        info.pawn_hash = Zobrist::getPawnZobrist(*this);
+        info.non_pawn_hash[WHITE] = Zobrist::getNonPawnZobrist(*this, WHITE);
+        info.non_pawn_hash[BLACK] = Zobrist::getNonPawnZobrist(*this, BLACK);
 
         refreshAccumulator();
     }
@@ -139,6 +142,7 @@ namespace Chess
 
     std::string Board::getFen() const
     {
+        const StateInfo &info = history[curr_ply];
         std::ostringstream fen;
 
         for (int i = 56; i >= 0; i -= 8)
@@ -164,14 +168,14 @@ namespace Chess
         }
 
         fen << (stm == WHITE ? " w " : " b ")
-            << (history[curr_ply].castle_rights.kingSide(WHITE) ? "K" : "")
-            << (history[curr_ply].castle_rights.queenSide(WHITE) ? "Q" : "")
-            << (history[curr_ply].castle_rights.kingSide(BLACK) ? "k" : "")
-            << (history[curr_ply].castle_rights.queenSide(BLACK) ? "q" : "")
+            << (info.castle_rights.kingSide(WHITE) ? "K" : "")
+            << (info.castle_rights.queenSide(WHITE) ? "Q" : "")
+            << (info.castle_rights.kingSide(BLACK) ? "k" : "")
+            << (info.castle_rights.queenSide(BLACK) ? "q" : "")
             << (castleNotationHelper(fen) ? " " : "- ")
-            << (history[curr_ply].ep_sq == NO_SQUARE ? "-" : SQSTR[history[curr_ply].ep_sq]);
+            << (info.ep_sq == NO_SQUARE ? "-" : SQSTR[info.ep_sq]);
 
-        fen << " " << history[curr_ply].half_move_clock << " " << (curr_ply == 0 ? 1 : (curr_ply + 1) / 2);
+        fen << " " << info.half_move_clock << " " << (curr_ply == 0 ? 1 : (curr_ply + 1) / 2);
         return fen.str();
     }
 
@@ -272,6 +276,8 @@ namespace Chess
 
     bool Board::isPseudoLegal(const Move &m) const
     {
+        const StateInfo &info = history[curr_ply];
+
         const Square from = m.from();
         const Square to = m.to();
         const Square ksq = kingSq(stm);
@@ -285,16 +291,13 @@ namespace Chess
         const U64 them_bb = occupancy(~stm);
         const U64 occ = us_bb | them_bb;
 
-        const U64 checkers = history[curr_ply].checkers;
-        const U64 danger = history[curr_ply].danger;
-
         const Direction up = stm == WHITE ? NORTH : SOUTH;
 
         // move must exist, piece must exist, piece must match the current stm
         if (!m || pc == NO_PIECE || colorOf(pc) != stm)
             return false;
         // if double check then only king can move
-        if (sparsePopCount(checkers) > 1 && pt != KING)
+        if (sparsePopCount(info.checkers) > 1 && pt != KING)
             return false;
         // if capture move, then target square must be occupied by enemy piece
         if (mt != EN_PASSANT && isCap(m) && pieceAt(to) == NO_PIECE)
@@ -306,7 +309,7 @@ namespace Chess
         if (SQUARE_BB[to] & us_bb)
             return false;
         // king can't move to danger squares
-        if (pt == KING && (SQUARE_BB[to] & danger))
+        if (pt == KING && (SQUARE_BB[to] & info.danger))
             return false;
 
         if (mt == CASTLING)
@@ -316,17 +319,17 @@ namespace Chess
                 return false;
 
             // can't castle when in check or when no castling rights are present
-            if (checkers || !history[curr_ply].castle_rights.any(stm))
+            if (info.checkers || !info.castle_rights.any(stm))
                 return false;
 
             // short castling
-            U64 not_free = (occ | danger) & ooBlockersMask(stm);
-            if (!not_free && history[curr_ply].castle_rights.kingSide(stm) && to == relativeSquare(stm, g1))
+            U64 not_free = (occ | info.danger) & ooBlockersMask(stm);
+            if (!not_free && info.castle_rights.kingSide(stm) && to == relativeSquare(stm, g1))
                 return true;
 
             // long castling
-            not_free = (occ | (danger & ~SQUARE_BB[relativeSquare(stm, b1)])) & oooBlockersMask(stm);
-            if (!not_free && history[curr_ply].castle_rights.queenSide(stm) && to == relativeSquare(stm, c1))
+            not_free = (occ | (info.danger & ~SQUARE_BB[relativeSquare(stm, b1)])) & oooBlockersMask(stm);
+            if (!not_free && info.castle_rights.queenSide(stm) && to == relativeSquare(stm, c1))
                 return true;
 
             return false;
@@ -334,8 +337,6 @@ namespace Chess
 
         if (mt == EN_PASSANT)
         {
-            Square ep_sq = history[curr_ply].ep_sq;
-
             // make sure we move a pawn
             if (pt != PAWN)
                 return false;
@@ -343,10 +344,10 @@ namespace Chess
             if (pieceAt(to) != NO_PIECE)
                 return false;
             // ep square must be the same
-            if (ep_sq != to)
+            if (info.ep_sq != to)
                 return false;
             // pawn on ep square must be a enemy pawn
-            if (pieceAt(ep_sq) != makePiece(~stm, PAWN))
+            if (pieceAt(info.ep_sq) != makePiece(~stm, PAWN))
                 return false;
         }
 
@@ -356,7 +357,7 @@ namespace Chess
             if (pt != PAWN)
                 return false;
 
-            U64 targets = checkers ? SQUARES_BETWEEN[ksq][lsb(checkers)] | checkers : -1ULL;
+            U64 targets = info.checkers ? SQUARES_BETWEEN[ksq][lsb(info.checkers)] | info.checkers : -1ULL;
             U64 rank = MASK_RANK[relativeRank(stm, RANK_8)];
             U64 attacks = (shift(up, SQUARE_BB[from]) & ~occ) | (getPawnAttacks(stm, from) & them_bb);
             // only pseudo legal, if target range is reachable
@@ -386,9 +387,9 @@ namespace Chess
             return false;
 
         // check for blockers/captures of the checker
-        if (checkers && pt != KING)
+        if (info.checkers && pt != KING)
         {
-            U64 target = SQUARES_BETWEEN[ksq][lsb(checkers)] | checkers;
+            U64 target = SQUARES_BETWEEN[ksq][lsb(info.checkers)] | info.checkers;
             Square cap_sq = mt == EN_PASSANT ? Square(to ^ 8) : to;
 
             // if move can't capture/block the checker, then it's not pseudo legal
@@ -413,14 +414,15 @@ namespace Chess
 
         curr_ply++;
         history[curr_ply] = StateInfo(history[curr_ply - 1]);
-        history[curr_ply].half_move_clock++;
+        StateInfo &info = history[curr_ply];
+
+        info.half_move_clock++;
 
         // reset half move clock if pawn move or capture
         if (pt == PAWN || captured != NO_PIECE)
-            history[curr_ply].half_move_clock = 0;
+            info.half_move_clock = 0;
 
-        history[curr_ply].hash ^= Zobrist::side;
-        history[curr_ply].pawn_hash ^= Zobrist::side;
+        info.hash ^= Zobrist::side;
   
         if (update_nnue)
             accumulators.push();
@@ -447,7 +449,9 @@ namespace Chess
             assert(rook == makePiece(stm, ROOK));
 
             // update hash of rook
-            history[curr_ply].hash ^= Zobrist::getPsq(rook, rook_from) ^ Zobrist::getPsq(rook, rook_to);
+            info.hash ^= Zobrist::getPsq(rook, rook_from) ^ Zobrist::getPsq(rook, rook_to);
+            info.non_pawn_hash[stm] ^= Zobrist::getPsq(rook, rook_from) ^ Zobrist::getPsq(rook, rook_to);
+
             // move rook
             movePiece(rook_from, rook_to, update_nnue);
         }
@@ -456,31 +460,37 @@ namespace Chess
         {
             Square cap_sq = mt == EN_PASSANT ? Square(to ^ 8) : to;
             // remove captured piece from hash
-            history[curr_ply].hash ^= Zobrist::getPsq(captured, cap_sq);
+            info.hash ^= Zobrist::getPsq(captured, cap_sq);
             // remove captured piece from board
             removePiece(cap_sq, update_nnue);
 
             // update pawn hash if captured piece is a pawn
             if (typeOf(captured) == PAWN)
-                history[curr_ply].pawn_hash ^= Zobrist::getPsq(captured, cap_sq);
+                info.pawn_hash ^= Zobrist::getPsq(captured, cap_sq);
+            else
+                info.non_pawn_hash[~stm] ^= Zobrist::getPsq(captured, cap_sq);
         }
 
-        // update hash of moving piece
-        history[curr_ply].hash ^= Zobrist::getPsq(pc, from) ^ Zobrist::getPsq(pc, to);
+        // update hash
+        info.hash ^= Zobrist::getPsq(pc, from) ^ Zobrist::getPsq(pc, to);
+        if (pt == PAWN)
+            info.pawn_hash ^= Zobrist::getPsq(pc, from) ^ Zobrist::getPsq(pc, to);
+        else
+            info.non_pawn_hash[stm] ^= Zobrist::getPsq(pc, from) ^ Zobrist::getPsq(pc, to);
 
         // reset ep square if exists
-        if (history[curr_ply].ep_sq != NO_SQUARE)
+        if (info.ep_sq != NO_SQUARE)
         {
-            history[curr_ply].hash ^= Zobrist::getEp(history[curr_ply].ep_sq);
-            history[curr_ply].ep_sq = NO_SQUARE;
+            info.hash ^= Zobrist::getEp(info.ep_sq);
+            info.ep_sq = NO_SQUARE;
         }
 
         // update castling rights if king/rook moves or if one of the rooks get captured
-        if (history[curr_ply].castle_rights.onCastleSquare(from) || history[curr_ply].castle_rights.onCastleSquare(to))
+        if (info.castle_rights.onCastleSquare(from) || info.castle_rights.onCastleSquare(to))
         {
-            history[curr_ply].hash ^= Zobrist::getCastle(history[curr_ply].castle_rights.getHashIndex());
-            history[curr_ply].castle_rights.mask &= ~(SQUARE_BB[from] | SQUARE_BB[to]);
-            history[curr_ply].hash ^= Zobrist::getCastle(history[curr_ply].castle_rights.getHashIndex());
+            info.hash ^= Zobrist::getCastle(info.castle_rights.getHashIndex());
+            info.castle_rights.mask &= ~(SQUARE_BB[from] | SQUARE_BB[to]);
+            info.hash ^= Zobrist::getCastle(info.castle_rights.getHashIndex());
         }
 
         // move piece
@@ -488,15 +498,12 @@ namespace Chess
 
         if (pt == PAWN)
         {
-            // update pawn hash
-            history[curr_ply].pawn_hash ^= Zobrist::getPsq(pc, from) ^ Zobrist::getPsq(pc, to);
-
             // set ep square if double push can be captured by enemy pawn
             auto ep_sq = Square(to ^ 8);
             if ((from ^ to) == 16 && (getPawnAttacks(stm, ep_sq) & getPieceBB(~stm, PAWN)))
             {
-                history[curr_ply].ep_sq = ep_sq;
-                history[curr_ply].hash ^= Zobrist::getEp(ep_sq);
+                info.ep_sq = ep_sq;
+                info.hash ^= Zobrist::getEp(ep_sq);
             }
             else if (isProm(m))
             {
@@ -507,21 +514,21 @@ namespace Chess
                 assert(prom_pc != NO_PIECE);
 
                 // update hash
-                history[curr_ply].hash ^= Zobrist::getPsq(pc, to) ^ Zobrist::getPsq(prom_pc, to);
+                info.hash ^= Zobrist::getPsq(pc, to) ^ Zobrist::getPsq(prom_pc, to);
 
                 // add promoted piece and remove pawn
                 removePiece(to, update_nnue);
                 putPiece(prom_pc, to, update_nnue);
 
                 // update pawn hash
-                history[curr_ply].pawn_hash ^= Zobrist::getPsq(pc, to);
+                info.pawn_hash ^= Zobrist::getPsq(pc, to);
             }
         }
 
         stm = ~stm;
 
         // set captured piece
-        history[curr_ply].captured = captured;
+        info.captured = captured;
 
         initThreats();
         initCheckersAndPinned();
@@ -584,17 +591,16 @@ namespace Chess
     {
         curr_ply++;
         history[curr_ply] = StateInfo(history[curr_ply - 1]);
+        StateInfo &info = history[curr_ply];
 
-        if (history[curr_ply].ep_sq != NO_SQUARE)
+        if (info.ep_sq != NO_SQUARE)
         {
-            history[curr_ply].hash ^= Zobrist::getEp(history[curr_ply].ep_sq);
-            history[curr_ply].ep_sq = NO_SQUARE;
+            info.hash ^= Zobrist::getEp(info.ep_sq);
+            info.ep_sq = NO_SQUARE;
         }
 
-        history[curr_ply].hash ^= Zobrist::side;
-        history[curr_ply].pawn_hash ^= Zobrist::side;
-
-        history[curr_ply].half_move_clock++;
+        info.hash ^= Zobrist::side;
+        info.half_move_clock++;
 
         stm = ~stm;
 
@@ -759,6 +765,7 @@ namespace Chess
 
     void Board::initThreats()
     {
+        StateInfo &info = history[curr_ply];
         Color them = ~stm;
         U64 occ = occupancy() ^ SQUARE_BB[kingSq(stm)]; // king must be excluded so we don't block the slider attacks
 
@@ -770,7 +777,7 @@ namespace Chess
         threat = them == WHITE ? shift(NORTH_WEST, pawns) | shift(NORTH_EAST, pawns) : shift(SOUTH_WEST, pawns) | shift(SOUTH_EAST, pawns);
         danger = threat;
 
-        history[curr_ply].threats[PAWN] = threat;
+        info.threats[PAWN] = threat;
 
         // knight attacks
         threat = 0;
@@ -779,7 +786,7 @@ namespace Chess
             threat |= getAttacks(KNIGHT, popLsb(knights), occ);
         danger |= threat;
 
-        history[curr_ply].threats[KNIGHT] = threat;
+        info.threats[KNIGHT] = threat;
 
         // bishop attacks
         threat = 0;
@@ -788,7 +795,7 @@ namespace Chess
             threat |= getAttacks(BISHOP, popLsb(bishops), occ);
         danger |= threat;
 
-        history[curr_ply].threats[BISHOP] = threat;
+        info.threats[BISHOP] = threat;
 
         // rook attacks
         threat = 0;
@@ -797,7 +804,7 @@ namespace Chess
             threat |= getAttacks(ROOK, popLsb(rooks), occ);
         danger |= threat;
 
-        history[curr_ply].threats[ROOK] = threat;
+        info.threats[ROOK] = threat;
 
         // queen attacks
         threat = 0;
@@ -806,42 +813,44 @@ namespace Chess
             threat |= getAttacks(QUEEN, popLsb(queens), occ);
         danger |= threat;
 
-        history[curr_ply].threats[QUEEN] = threat;
+        info.threats[QUEEN] = threat;
 
         // king attacks
         threat = getAttacks(KING, kingSq(them), occ);
         danger |= threat;
 
-        history[curr_ply].threats[KING] = threat;
-        history[curr_ply].danger = danger;
+        info.threats[KING] = threat;
+        info.danger = danger;
     }
 
     void Board::initCheckersAndPinned()
     {
+        StateInfo &info = history[curr_ply];
+
         const Square ksq = kingSq(stm);
         const Color them = ~stm;
         const U64 their_occ = occupancy(them);
         const U64 our_occ = occupancy(stm);
 
         // enemy pawns attacks at our king
-        history[curr_ply].checkers = getPawnAttacks(stm, ksq) & getPieceBB(them, PAWN);
+        info.checkers = getPawnAttacks(stm, ksq) & getPieceBB(them, PAWN);
         // enemy knights attacks at our king
-        history[curr_ply].checkers |= getAttacks(KNIGHT, ksq, our_occ | their_occ) & getPieceBB(them, KNIGHT);
+        info.checkers |= getAttacks(KNIGHT, ksq, our_occ | their_occ) & getPieceBB(them, KNIGHT);
 
         // potential enemy bishop, rook and queen attacks at our king
         U64 candidates = (getAttacks(ROOK, ksq, their_occ) & orthSliders(them)) | (getAttacks(BISHOP, ksq, their_occ) & diagSliders(them));
 
-        history[curr_ply].pinned = 0;
+        info.pinned = 0;
         while (candidates)
         {
             Square s = popLsb(candidates);
             U64 blockers = SQUARES_BETWEEN[ksq][s] & our_occ;
             if (!blockers)
                 // if no of out pieces is between the enemy slider, then add that piece as checker
-                history[curr_ply].checkers ^= SQUARE_BB[s];
+                info.checkers ^= SQUARE_BB[s];
             else if (sparsePopCount(blockers) == 1)
                 // if we have only one blocker, add that piece as pinned
-                history[curr_ply].pinned ^= blockers;
+                info.pinned ^= blockers;
         }
     }
 

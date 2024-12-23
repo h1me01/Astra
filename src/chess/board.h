@@ -40,6 +40,7 @@ namespace Chess
     {
         U64 hash;
         U64 pawn_hash;
+        U64 non_pawn_hash[NUM_COLORS];
         Piece captured;
         Square ep_sq;
         CastlingRights castle_rights;
@@ -54,12 +55,14 @@ namespace Chess
 
         U64 threats[NUM_PIECE_TYPES];
 
-        StateInfo() : hash(0), captured(NO_PIECE), ep_sq(NO_SQUARE), half_move_clock(0) {}
+        StateInfo() : hash(0), pawn_hash(0), non_pawn_hash{}, captured(NO_PIECE), ep_sq(NO_SQUARE), half_move_clock(0) {}
 
         StateInfo(const StateInfo &prev)
         {
             hash = prev.hash;
             pawn_hash = prev.pawn_hash;
+            non_pawn_hash[WHITE] = prev.non_pawn_hash[WHITE];
+            non_pawn_hash[BLACK] = prev.non_pawn_hash[BLACK];
             captured = prev.captured;
             ep_sq = prev.ep_sq;
             half_move_clock = prev.half_move_clock;
@@ -75,6 +78,8 @@ namespace Chess
             {
                 hash = other.hash;
                 pawn_hash = other.pawn_hash;
+                non_pawn_hash[WHITE] = other.non_pawn_hash[WHITE];
+                non_pawn_hash[BLACK] = other.non_pawn_hash[BLACK];
                 captured = other.captured;
                 ep_sq = other.ep_sq;
                 half_move_clock = other.half_move_clock;
@@ -108,6 +113,7 @@ namespace Chess
         int halfMoveClock() const;
         U64 getHash() const;
         U64 getPawnHash() const;
+        U64 getNonPawnHash(Color c) const;
         U64 getThreats(PieceType pt) const;
         Square kingSq(Color c) const;
         NNUE::Accumulator &getAccumulator();
@@ -174,6 +180,8 @@ namespace Chess
     inline U64 Board::getHash() const { return history[curr_ply].hash; }
     
     inline U64 Board::getPawnHash() const { return history[curr_ply].pawn_hash; }
+
+    inline U64 Board::getNonPawnHash(Color c) const { return history[curr_ply].non_pawn_hash[c]; }
 
     inline Square Board::kingSq(Color c) const { return lsb(getPieceBB(c, KING)); }
 

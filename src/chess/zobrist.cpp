@@ -58,8 +58,19 @@ namespace Chess
                     hash ^= getPsq(makePiece(c, PAWN), popLsb(pawns));
             }
 
-            if (board.getTurn() == BLACK)
-                hash ^= side;
+            return hash;
+        }
+
+        U64 getNonPawnZobrist(const Board &board, Color c)
+        {
+            U64 hash = 0;
+
+            for (PieceType pt : {KNIGHT, BISHOP, ROOK, QUEEN, KING})
+            {
+                U64 pieces = board.getPieceBB(c, pt);
+                while (pieces)
+                    hash ^= getPsq(makePiece(c, pt), popLsb(pieces));
+            }
 
             return hash;
         }
