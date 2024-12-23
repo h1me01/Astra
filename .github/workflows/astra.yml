@@ -27,7 +27,7 @@ jobs:
         if: github.event_name == 'push'
         run: |
           cd src
-          valgrind --error-exitcode=1 ./astra bench
+          valgrind --track-origins=yes --error-exitcode=1 ./astra bench
 
   Windows:
     runs-on: windows-2022
