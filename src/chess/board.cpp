@@ -3,12 +3,32 @@
 
 namespace Chess
 {
+    // helper
+
     // represent castle rights correctly in fen notation
     bool castleNotationHelper(const std::ostringstream &fen_stream)
     {
         const std::string fen = fen_stream.str();
         const std::string rights = fen.substr(fen.find(' ') + 1);
         return rights.find_first_of("kqKQ") != std::string::npos;
+    }
+
+    std::pair<Square, Square> getCastleRookSquares(Color stm, Square to)
+    {
+        Square rook_from, rook_to;
+
+        if (to == relativeSquare(stm, g1)) // kingside
+        {
+            rook_from = relativeSquare(stm, h1);
+            rook_to = relativeSquare(stm, f1);
+        }
+        else // queenside
+        {
+            rook_from = relativeSquare(stm, a1);
+            rook_to = relativeSquare(stm, d1);
+        }
+
+        return {rook_from, rook_to};
     }
 
     // board class
@@ -219,12 +239,12 @@ namespace Chess
         return attacks;
     }
 
-    U64 Board::keyAfter(Move m) const 
+    U64 Board::keyAfter(Move m) const
     {
         U64 new_hash = history[curr_ply].hash;
 
         if (!m)
-            return new_hash ^ Zobrist::side;    
+            return new_hash ^ Zobrist::side;
 
         Square from = m.from();
         Square to = m.to();
@@ -423,27 +443,15 @@ namespace Chess
             info.half_move_clock = 0;
 
         info.hash ^= Zobrist::side;
-  
+
         if (update_nnue)
             accumulators.push();
 
         if (mt == CASTLING)
         {
             assert(pt == KING);
-            Square rook_from, rook_to;
 
-            if (to == relativeSquare(stm, g1)) // kingside
-            {
-                rook_from = relativeSquare(stm, h1);
-                rook_to = relativeSquare(stm, f1);
-            }
-            else // queenside
-            {
-                rook_from = relativeSquare(stm, a1);
-                rook_to = relativeSquare(stm, d1);
-            }
-
-            // update hash of rook
+            auto [rook_from, rook_to] = getCastleRookSquares(stm, to);
             Piece rook = pieceAt(rook_from);
 
             assert(rook == makePiece(stm, ROOK));
@@ -557,19 +565,8 @@ namespace Chess
 
         if (mt == CASTLING)
         {
-            Square rook_from, rook_to;
-
-            if (to == relativeSquare(stm, g1)) // kingside
-            {
-                rook_from = relativeSquare(stm, f1);
-                rook_to = relativeSquare(stm, h1);
-            }
-            else // queenside
-            {
-                rook_from = relativeSquare(stm, d1);
-                rook_to = relativeSquare(stm, a1);
-            }
-
+            auto [rook_to, rook_from] = getCastleRookSquares(stm, to);
+           
             movePiece(to, from, false); // move king
             movePiece(rook_from, rook_to, false);
         }
