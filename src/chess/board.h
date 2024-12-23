@@ -45,6 +45,7 @@ namespace Chess
         Square ep_sq;
         CastlingRights castle_rights;
         int half_move_clock;
+        int plies_from_null;
 
         // enemy pieces that check our king
         U64 checkers = 0;
@@ -137,9 +138,8 @@ namespace Chess
         bool isLegal(const Move &m) const;
         bool isPseudoLegal(const Move &m) const;
 
-        bool isRepetition(bool is_pv) const;
-        bool isInsufficientMaterial() const;
-        bool isDraw() const;
+        bool isRepetition(int ply) const;
+        bool isDraw(int ply) const;
         bool see(Move &m, int threshold) const;
 
         bool oppHasGoodCaptures() const;

@@ -437,11 +437,13 @@ namespace Chess
         StateInfo &info = history[curr_ply];
 
         info.half_move_clock++;
+        info.plies_from_null++;
 
         // reset half move clock if pawn move or capture
         if (pt == PAWN || captured != NO_PIECE)
             info.half_move_clock = 0;
 
+        // update hash
         info.hash ^= Zobrist::side;
 
         if (update_nnue)
@@ -472,7 +474,7 @@ namespace Chess
             // remove captured piece from board
             removePiece(cap_sq, update_nnue);
 
-            // update pawn hash if captured piece is a pawn
+            // update hash
             if (typeOf(captured) == PAWN)
                 info.pawn_hash ^= Zobrist::getPsq(captured, cap_sq);
             else
@@ -486,7 +488,7 @@ namespace Chess
         else
             info.non_pawn_hash[stm] ^= Zobrist::getPsq(pc, from) ^ Zobrist::getPsq(pc, to);
 
-        // reset ep square if exists
+        // reset ep square if it exists
         if (info.ep_sq != NO_SQUARE)
         {
             info.hash ^= Zobrist::getEp(info.ep_sq);
@@ -523,13 +525,11 @@ namespace Chess
 
                 // update hash
                 info.hash ^= Zobrist::getPsq(pc, to) ^ Zobrist::getPsq(prom_pc, to);
+                info.pawn_hash ^= Zobrist::getPsq(pc, to);
 
                 // add promoted piece and remove pawn
                 removePiece(to, update_nnue);
                 putPiece(prom_pc, to, update_nnue);
-
-                // update pawn hash
-                info.pawn_hash ^= Zobrist::getPsq(pc, to);
             }
         }
 
@@ -566,7 +566,7 @@ namespace Chess
         if (mt == CASTLING)
         {
             auto [rook_to, rook_from] = getCastleRookSquares(stm, to);
-           
+
             movePiece(to, from, false); // move king
             movePiece(rook_from, rook_to, false);
         }
@@ -590,6 +590,9 @@ namespace Chess
         history[curr_ply] = StateInfo(history[curr_ply - 1]);
         StateInfo &info = history[curr_ply];
 
+        info.half_move_clock++;
+        info.plies_from_null = 0;
+
         if (info.ep_sq != NO_SQUARE)
         {
             info.hash ^= Zobrist::getEp(info.ep_sq);
@@ -597,7 +600,6 @@ namespace Chess
         }
 
         info.hash ^= Zobrist::side;
-        info.half_move_clock++;
 
         stm = ~stm;
 
@@ -611,68 +613,31 @@ namespace Chess
         stm = ~stm;
     }
 
-    bool Board::isRepetition(bool is_pv) const
+    bool Board::isRepetition(int ply) const
     {
-        int count = 0;
-        int limit = curr_ply - history[curr_ply].half_move_clock - 1;
+        const StateInfo &info = history[curr_ply];
+        int rep = 0;
+        int distance = std::min(info.plies_from_null, info.half_move_clock);
 
-        for (int i = curr_ply - 2; i >= 0 && i >= limit; i -= 2)
-            if (history[i].hash == history[curr_ply].hash)
-                if (++count == 1 + is_pv)
+        for (int i = curr_ply - 4; i >= 0 && i >= curr_ply - distance; i -= 2)
+        {
+            if (history[i].hash == info.hash)
+            {
+                if (i > curr_ply - ply) 
                     return true;
-
-        return false;
-    }
-
-    bool Board::isInsufficientMaterial() const
-    {
-        U64 pawns = piece_bb[WHITE_PAWN] | piece_bb[BLACK_PAWN];
-        U64 queens = piece_bb[WHITE_QUEEN] | piece_bb[BLACK_QUEEN];
-        U64 rooks = piece_bb[WHITE_ROOK] | piece_bb[BLACK_ROOK];
-
-        if (pawns || queens || rooks)
-            return false;
-
-        int nw_knights = popCount(piece_bb[WHITE_KNIGHT]);
-        int nb_knights = popCount(piece_bb[BLACK_KNIGHT]);
-        int nw_bishops = popCount(piece_bb[WHITE_BISHOP]);
-        int nb_bishops = popCount(piece_bb[BLACK_BISHOP]);
-
-        // Kvk
-        if (!nw_knights && !nw_bishops && !nb_knights && !nb_bishops)
-            return true;
-        // KNvk and KNNvk
-        if (!nb_knights && !nb_bishops && !nw_bishops && nw_knights <= 2)
-            return true;
-        // Kvkn and Kvknn
-        if (!nw_knights && !nw_bishops && !nb_bishops && nb_knights <= 2)
-            return true;
-        // KNvkn
-        if (!nw_bishops && !nb_bishops && nw_knights == 1 && nb_knights == 1)
-            return true;
-        // KBvk
-        if (!nw_knights && !nb_knights && !nb_bishops && nw_bishops == 1)
-            return true;
-        // Kvkb
-        if (!nw_knights && !nb_knights && !nw_bishops && nb_bishops == 1)
-            return true;
-        // KBvkn
-        if (!nw_knights && !nb_bishops && nw_bishops == 1 && nb_knights == 1)
-            return true;
-        // KNvkb
-        if (!nw_bishops && !nb_knights && nw_knights == 1 && nb_bishops == 1)
-            return true;
-        // KBvkb
-        if (!nw_knights && !nb_knights && nw_bishops == 1 && nb_bishops == 1)
-            return true;
+                rep++;
+                if (rep == 2) 
+                    return true;
+            }
+        }
 
         return false;
     }
 
     // doesn't include stalemate or threefold
-    bool Board::isDraw() const
+    bool Board::isDraw(int ply) const
     {
-        return history[curr_ply].half_move_clock > 99 || isInsufficientMaterial();
+        return history[curr_ply].half_move_clock > 99 || isRepetition(ply);
     }
 
     bool Board::see(Move &move, int threshold) const

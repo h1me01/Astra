@@ -194,7 +194,7 @@ namespace Astra
             if (alpha >= beta)
                 return alpha;
 
-            if (board.isRepetition(pv_node) || board.isDraw())
+            if (board.isDraw(ss->ply))
                 return VALUE_DRAW;
         }
 
@@ -579,7 +579,7 @@ namespace Astra
         
         Move best_move = NO_MOVE;
 
-        if (board.isRepetition(pv_node) || board.isDraw())
+        if (board.isDraw(ss->ply))
             return VALUE_DRAW;
 
         if (ss->ply >= MAX_PLY - 1)
