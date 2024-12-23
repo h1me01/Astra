@@ -56,7 +56,7 @@ namespace Chess
 
         U64 threats[NUM_PIECE_TYPES];
 
-        StateInfo() : hash(0), pawn_hash(0), non_pawn_hash{}, captured(NO_PIECE), ep_sq(NO_SQUARE), half_move_clock(0) {}
+        StateInfo() : hash(0), pawn_hash(0), non_pawn_hash{}, captured(NO_PIECE), ep_sq(NO_SQUARE), half_move_clock(0), plies_from_null(0) {}
 
         StateInfo(const StateInfo &prev)
         {
@@ -67,6 +67,7 @@ namespace Chess
             captured = prev.captured;
             ep_sq = prev.ep_sq;
             half_move_clock = prev.half_move_clock;
+            plies_from_null = prev.plies_from_null;
             castle_rights = prev.castle_rights;
             checkers = prev.checkers;
             pinned = prev.pinned;
@@ -84,6 +85,7 @@ namespace Chess
                 captured = other.captured;
                 ep_sq = other.ep_sq;
                 half_move_clock = other.half_move_clock;
+                plies_from_null = other.plies_from_null;
                 castle_rights = other.castle_rights;
                 checkers = other.checkers;
                 pinned = other.pinned;
