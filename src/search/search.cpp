@@ -210,7 +210,7 @@ namespace Astra
         const Score tt_eval = ent->eval;
         const int tt_depth = ent->depth;
 
-        if (!pv_node && !skipped && tt_depth >= depth && tt_score != VALUE_NONE)
+        if (!pv_node && !skipped && tt_hit && tt_depth >= depth && tt_score != VALUE_NONE && (ss - 1)->curr_move != NULL_MOVE)
             if (tt_bound & (tt_score >= beta ? LOWER_BOUND : UPPER_BOUND))
                 return tt_score;
 
@@ -553,10 +553,17 @@ namespace Astra
         best_score = std::min(best_score, max_score);
 
         // store in transposition table
+        Bound bound = best_score >= beta ? LOWER_BOUND : best_score <= orig_alpha ? UPPER_BOUND : EXACT_BOUND;
         if (!skipped)
-        {
-            Bound bound = best_score >= beta ? LOWER_BOUND : best_score <= orig_alpha ? UPPER_BOUND : EXACT_BOUND;
             tt.store(hash, best_move, best_score, ss->eval, bound, depth, ss->ply);
+
+        // update correction histories
+        if (!in_check && !isCap(best_move) && (bound & (best_score >= raw_eval ? LOWER_BOUND : UPPER_BOUND)))
+        {
+            history.updatePawnHistory(board, raw_eval, best_score, depth);
+            history.updateWNonPawnHistory(board, raw_eval, best_score, depth);
+            history.updateBNonPawnHistory(board, raw_eval, best_score, depth);
+            history.updateContCorr(raw_eval, best_score, depth, ss);
         }
 
         return best_score;
@@ -596,8 +603,9 @@ namespace Astra
         const Score tt_score = ent->getScore(ss->ply);
         const Score tt_eval = ent->eval;
 
-        if (!pv_node && tt_score != VALUE_NONE && (tt_bound & (tt_score >= beta ? LOWER_BOUND : UPPER_BOUND)))
-            return tt_score;
+        if (!pv_node && tt_hit && tt_score != VALUE_NONE)
+            if (tt_bound & (tt_score >= beta ? LOWER_BOUND : UPPER_BOUND))
+                return tt_score;
 
         // set eval and static eval
         if (in_check)
@@ -703,15 +711,6 @@ namespace Astra
         // store in transposition table
         Bound bound = best_score >= beta ? LOWER_BOUND : UPPER_BOUND; // no exact bound in qsearch
         tt.store(hash, best_move, best_score, ss->eval, bound, 0, ss->ply);
-
-        // update correction histories
-        if (!in_check && !isCap(best_move) && (bound & (best_score >= raw_eval ? LOWER_BOUND : UPPER_BOUND)))
-        {
-            history.updatePawnHistory(board, raw_eval, best_score, depth);
-            history.updateWNonPawnHistory(board, raw_eval, best_score, depth);
-            history.updateBNonPawnHistory(board, raw_eval, best_score, depth);
-            history.updateContCorr(raw_eval, best_score, depth, ss);
-        }
 
         return best_score;
     }
