@@ -12,6 +12,8 @@ namespace Astra
     class History
     {
     public:
+        History();
+        
         int16_t conth[2][NUM_PIECES][NUM_SQUARES][NUM_PIECES][NUM_SQUARES]{};
 
         void update(const Board &board, Move &move, Stack *ss, Move *q_moves, int qc, Move *c_moves, int cc, int depth);

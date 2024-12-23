@@ -3,19 +3,16 @@ EvalFile = $(ROOT)/nn-768-2x1024-1.nnue
 
 # Compiler and flags
 CXX := g++
-CXXFLAGS := -s \
+CXXFLAGS := -g \
             -std=c++17 \
             -Wall \
             -Wextra \
             -Wcast-qual \
-            -O3 \
-            -DNDEBUG \
-            -funroll-loops \
+            -Og \
             -pthread \
-            -fno-exceptions \
-            -flto \
             -march=native \
-            -DNNUE_PATH=\"$(EvalFile)\" # nnue path
+            -DNNUE_PATH=\"$(EvalFile)\"
+
 
 LDFLAGS := -lstdc++
 

@@ -3,6 +3,7 @@
 #include "tune.h"
 
 #include <algorithm>
+#include <cstring>
 
 namespace Astra
 {
@@ -15,6 +16,21 @@ namespace Astra
     int historyBonus(int depth)
     {
         return std::min(int(max_history_bonus), history_mult * depth - history_minus);
+    }
+
+    History::History()
+    {
+        for (int i = 0; i < NUM_SQUARES; i++)
+            for (int j = 0; j < NUM_SQUARES; j++)
+                counters[i][j] = NO_MOVE;
+
+        memset(conth, 0, sizeof(conth));
+        memset(hh, 0, sizeof(hh));
+        memset(ch, 0, sizeof(ch));
+        memset(cont_corr, 0, sizeof(cont_corr));
+        memset(pawn_corr, 0, sizeof(pawn_corr));
+        memset(w_non_pawn_corr, 0, sizeof(w_non_pawn_corr));
+        memset(b_non_pawn_corr, 0, sizeof(b_non_pawn_corr));
     }
 
     void History::update(const Board &board, Move &best, Stack *ss, Move *q_moves, int qc, Move *c_moves, int cc, int depth)
