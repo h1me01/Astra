@@ -43,12 +43,12 @@ namespace Astra
     // TTEntry struct
     int TTEntry::relativeAge()
     {
-        return (AGE_CYCLE + tt.getAge() - age_pv_bound) & AGE_MASK;
+        return ((AGE_CYCLE + tt.getAge() - age_pv_bound) & AGE_MASK) / 2;
     }
 
     void TTEntry::store(U64 hash, Move move, Score score, Score eval, Bound bound, int depth, int ply, bool pv)
     {
-        if (!isSame(hash) || move.raw())
+        if (!isSame(hash) || (move != NO_MOVE && move != NULL_MOVE))
             this->move = move.raw();
 
         if (score != VALUE_NONE)
@@ -115,9 +115,8 @@ namespace Astra
         TTEntry *bucket = getBucket(hash)->entries;
 
         for (int i = 0; i < BUCKET_SIZE; i++)
-            if (bucket[i].isSame(hash) || !bucket[i].getDepth())
+            if (bucket[i].isSame(hash))
             {
-            //    bucket[i].age_pv_bound = (uint8_t)(tt.getAge() | (bucket[i].age_pv_bound & (PV_MASK | BOUND_MASK)));
                 hit = !bucket[i].isEmpty();
                 return &bucket[i];
             }
@@ -125,7 +124,7 @@ namespace Astra
         // get worst entry for replacement
         TTEntry *worst_entry = &bucket[0];
         for (int i = 1; i < BUCKET_SIZE; i++)
-            if ((bucket[i].getDepth() - bucket[i].relativeAge() * 8) < (worst_entry->getDepth() - worst_entry->relativeAge() * 8))
+            if ((bucket[i].getDepth() - bucket[i].relativeAge()) < (worst_entry->getDepth() - worst_entry->relativeAge()))
                 worst_entry = &bucket[i];
 
         hit = false;
@@ -149,7 +148,7 @@ namespace Astra
             for (int j = 0; j < BUCKET_SIZE; j++)
             {
                 TTEntry *entry = &buckets[i].entries[j];
-                if (entry->getAge() == age && bool(entry->getDepth()))
+                if (entry->getAge() == age && !entry->isEmpty())
                     count++;
             }
 

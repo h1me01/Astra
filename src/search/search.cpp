@@ -483,7 +483,7 @@ namespace Astra
                 int r = REDUCTIONS[depth][made_moves];
                 // increase when not improving
                 r += !improving;
-                // increase when in a cut node
+                // increase when expected to fail high
                 r += 2 * cut_node;
                 // decrease when in pv node
                 r -= (pv_node + tt_was_pv);
@@ -491,6 +491,8 @@ namespace Astra
                 r -= board.inCheck();
                 // decrease/increase based on history score
                 r -= history_score / hp_div;
+                // decrease when tt depth is at least current depth
+                r -= (tt_depth >= depth);
 
                 int lmr_depth = std::clamp(new_depth - r, 1, new_depth + 1);
 
