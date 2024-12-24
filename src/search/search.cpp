@@ -205,10 +205,10 @@ namespace Astra
         bool tt_hit = false;
         TTEntry* ent = tt.lookup(hash, tt_hit);
         const Bound tt_bound = ent->getBound();
-        const Move tt_move = ent->getMove();
+        const Move tt_move = ent->move;
         const Score tt_score = ent->getScore(ss->ply);
-        const Score tt_eval = ent->getEval();
-        const int tt_depth = ent->getDepth();
+        const Score tt_eval = ent->eval;
+        const int tt_depth = ent->depth;
         const bool tt_was_pv = ent->wasPv();
 
         if (!pv_node && !skipped && tt_depth >= depth && tt_score != VALUE_NONE && (ss - 1)->curr_move != NULL_MOVE)
@@ -601,10 +601,10 @@ namespace Astra
         // look up in transposition table
         bool tt_hit = false;
         TTEntry* ent = tt.lookup(hash, tt_hit);
-        const Move tt_move = ent->getMove();
+        const Move tt_move = ent->move;
         const Bound tt_bound = ent->getBound();
         const Score tt_score = ent->getScore(ss->ply);
-        const Score tt_eval = ent->getEval();
+        const Score tt_eval = ent->eval;
         const bool tt_was_pv = ent->wasPv();
 
         if (!pv_node && tt_score != VALUE_NONE)

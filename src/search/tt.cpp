@@ -3,7 +3,7 @@
 #include <thread>
 #include <vector>
 #include <cstring>
-#include <emmintrin.h> 
+#include <emmintrin.h>
 
 #if defined(__linux__)
 #include <sys/mman.h>
@@ -34,22 +34,11 @@ namespace Astra
         _mm_free(ptr);
     }
 
-    // constants
-    constexpr int BOUND_MASK = 0x3;
-    constexpr int AGE_STEP = 0x8;
-    constexpr int AGE_CYCLE = 255 + AGE_STEP;
-    constexpr int AGE_MASK = 0xF8;
-
     // TTEntry struct
-    int TTEntry::relativeAge()
-    {
-        return ((AGE_CYCLE + tt.getAge() - age_pv_bound) & AGE_MASK) / 2;
-    }
-
     void TTEntry::store(U64 hash, Move move, Score score, Score eval, Bound bound, int depth, int ply, bool pv)
     {
         if (!isSame(hash) || (move != NO_MOVE && move != NULL_MOVE))
-            this->move = move.raw();
+            this->move = move;
 
         if (score != VALUE_NONE)
         {
@@ -59,7 +48,7 @@ namespace Astra
                 score -= ply;
         }
 
-        if (bound == EXACT_BOUND || !isSame(hash) || depth + 4 + 2 * pv > getDepth())
+        if (bound == EXACT_BOUND || !isSame(hash) || depth == NO_DEPTH || depth + 4 + 2 * pv > this->depth)
         {
             this->hash = uint16_t(hash);
             this->depth = uint8_t(depth);
@@ -70,10 +59,7 @@ namespace Astra
     }
 
     // TTable class
-    TTable::TTable(U64 size_mb) : buckets(nullptr)
-    {
-        init(size_mb);
-    }
+    TTable::TTable(U64 size_mb) : buckets(nullptr) { init(size_mb); }
 
     TTable::~TTable() { alignedFree(buckets); }
 
@@ -100,64 +86,47 @@ namespace Astra
 
         for (int i = 0; i < num_workers; i++)
             threads.emplace_back([this, i, chunk_size]()
-                                 { memset(&buckets[i * chunk_size], 0, chunk_size * sizeof(TTBucket)); });
+                                 {
+                                     for (U64 j = i * chunk_size; j < (i + 1) * chunk_size; ++j)
+                                         buckets[j] = TTBucket(); 
+                                 });
 
         const U64 cleared = chunk_size * num_workers;
         if (cleared < bucket_size)
-            memset(&buckets[cleared], 0, (bucket_size - cleared) * sizeof(TTBucket));
+        {
+            for (U64 i = cleared; i < bucket_size; ++i)
+                buckets[i] = TTBucket();
+        }
 
         for (auto &t : threads)
             t.join();
     }
 
-    TTEntry* TTable::lookup(U64 hash, bool& hit)
+    TTEntry *TTable::lookup(U64 hash, bool &hit)
     {
         TTEntry *bucket = getBucket(hash)->entries;
 
         for (int i = 0; i < BUCKET_SIZE; i++)
-            if (bucket[i].isSame(hash))
+            if (bucket[i].isSame(hash) || bucket[i].depth == NO_DEPTH)
             {
-                hit = !bucket[i].isEmpty();
+                bucket[i].age_pv_bound = (uint8_t)(tt.getAge() | (bucket[i].age_pv_bound & (PV_MASK | BOUND_MASK)));
+                hit = bucket[i].isSame(hash);
                 return &bucket[i];
             }
 
         // get worst entry for replacement
         TTEntry *worst_entry = &bucket[0];
         for (int i = 1; i < BUCKET_SIZE; i++)
-            if ((bucket[i].getDepth() - bucket[i].relativeAge()) < (worst_entry->getDepth() - worst_entry->relativeAge()))
+        {
+            int worst_age = (AGE_CYCLE + tt.getAge() - worst_entry->getBound()) & AGE_MASK;
+            int current_age = (AGE_CYCLE + tt.getAge() - bucket[i].getBound()) & AGE_MASK;
+
+            if ((bucket[i].depth - current_age) < (worst_entry->depth - worst_age))
                 worst_entry = &bucket[i];
+        }
 
         hit = false;
         return worst_entry;
-    }
-
-    void TTable::incrementAge()
-    {
-        age += AGE_STEP;
-    }
-
-    void TTable::prefetch(U64 hash) const
-    {
-        __builtin_prefetch(getBucket(hash));
-    }
-
-    int TTable::hashfull() const
-    {
-        int count = 0;
-        for (int i = 0; i < 1000; i++)
-            for (int j = 0; j < BUCKET_SIZE; j++)
-            {
-                TTEntry *entry = &buckets[i].entries[j];
-                if (entry->getAge() == age && !entry->isEmpty())
-                    count++;
-            }
-
-        return count / BUCKET_SIZE;
-    }
-
-    TTBucket *TTable::getBucket(U64 hash) const
-    {
-        return &buckets[((unsigned __int128)hash * (unsigned __int128)bucket_size) >> 64];
     }
 
 } // namespace Astra
