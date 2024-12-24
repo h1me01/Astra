@@ -204,13 +204,14 @@ namespace Astra
         // look up in transposition table
         bool tt_hit = false;
         TTEntry* ent = tt.lookup(hash, tt_hit);
-        const Bound tt_bound = ent->bound;
-        const Move tt_move = ent->move;
+        const Bound tt_bound = ent->getBound();
+        const Move tt_move = ent->getMove();
         const Score tt_score = ent->getScore(ss->ply);
-        const Score tt_eval = ent->eval;
-        const int tt_depth = ent->depth;
+        const Score tt_eval = ent->getEval();
+        const int tt_depth = ent->getDepth();
+        const bool tt_was_pv = ent->wasPv();
 
-        if (!pv_node && !skipped && tt_hit && tt_depth >= depth && tt_score != VALUE_NONE && (ss - 1)->curr_move != NULL_MOVE)
+        if (!pv_node && !skipped && tt_depth >= depth && tt_score != VALUE_NONE && (ss - 1)->curr_move != NULL_MOVE)
             if (tt_bound & (tt_score >= beta ? LOWER_BOUND : UPPER_BOUND))
                 return tt_score;
 
@@ -245,7 +246,7 @@ namespace Astra
 
                 if (bound == EXACT_BOUND || (bound == LOWER_BOUND && tb_score >= beta) || (bound == UPPER_BOUND && tb_score <= alpha))
                 {
-                    tt.store(hash, NO_MOVE, tb_score, tt_eval, bound, depth, ss->ply);
+                    ent->store(hash, NO_MOVE, tb_score, tt_eval, bound, depth, ss->ply, tt_was_pv);
                     return tb_score;
                 }
 
@@ -285,7 +286,7 @@ namespace Astra
                 raw_eval = Eval::evaluate(board);
                 eval = ss->eval = adjustEval(board, ss, raw_eval);
                 eval = (200 - board.halfMoveClock()) * eval / 200; // adjust eval based on fmr
-                tt.store(hash, NO_MOVE, VALUE_NONE, raw_eval, NO_BOUND, -1, ss->ply);
+                ent->store(hash, NO_MOVE, VALUE_NONE, raw_eval, NO_BOUND, -1, ss->ply, tt_was_pv);
             }
 
             // check for improvement
@@ -304,7 +305,7 @@ namespace Astra
         }
         
         // internal iterative reduction
-        if (!in_check && !tt_hit && depth >= 4 && (pv_node || cut_node))
+        if (!in_check && !tt_move && depth >= 4 && (pv_node || cut_node))
             depth--;
 
         // only use pruning when not in check and pv node
@@ -377,7 +378,7 @@ namespace Astra
 
                     if (score >= beta_cut)
                     {
-                        tt.store(hash, move, score, ss->eval, LOWER_BOUND, depth - 3, ss->ply);
+                        ent->store(hash, move, score, ss->eval, LOWER_BOUND, depth - 3, ss->ply, tt_was_pv);
                         return score;
                     }
                 }
@@ -485,7 +486,7 @@ namespace Astra
                 // increase when in a cut node
                 r += 2 * cut_node;
                 // decrease when in pv node
-                r -= pv_node;
+                r -= (pv_node + tt_was_pv);
                 // decrease when move gives check
                 r -= board.inCheck();
                 // decrease/increase based on history score
@@ -555,7 +556,7 @@ namespace Astra
         // store in transposition table
         Bound bound = best_score >= beta ? LOWER_BOUND : best_score <= orig_alpha ? UPPER_BOUND : EXACT_BOUND;
         if (!skipped)
-            tt.store(hash, best_move, best_score, ss->eval, bound, depth, ss->ply);
+            ent->store(hash, best_move, best_score, ss->eval, bound, depth, ss->ply, tt_was_pv);
 
         // update correction histories
         if (!in_check && !isCap(best_move) && (bound & (best_score >= raw_eval ? LOWER_BOUND : UPPER_BOUND)))
@@ -598,12 +599,13 @@ namespace Astra
         // look up in transposition table
         bool tt_hit = false;
         TTEntry* ent = tt.lookup(hash, tt_hit);
-        const Move tt_move = ent->move;
-        const Bound tt_bound = ent->bound;
+        const Move tt_move = ent->getMove();
+        const Bound tt_bound = ent->getBound();
         const Score tt_score = ent->getScore(ss->ply);
-        const Score tt_eval = ent->eval;
+        const Score tt_eval = ent->getEval();
+        const bool tt_was_pv = ent->wasPv();
 
-        if (!pv_node && tt_hit && tt_score != VALUE_NONE)
+        if (!pv_node && tt_score != VALUE_NONE)
             if (tt_bound & (tt_score >= beta ? LOWER_BOUND : UPPER_BOUND))
                 return tt_score;
 
@@ -630,7 +632,7 @@ namespace Astra
                 raw_eval = Eval::evaluate(board);
                 eval = ss->eval = adjustEval(board, ss, raw_eval);
                 eval = (200 - board.halfMoveClock()) * eval / 200; // adjust eval based on fmr
-                tt.store(hash, NO_MOVE, VALUE_NONE, raw_eval, NO_BOUND, -1, ss->ply);
+                ent->store(hash, NO_MOVE, VALUE_NONE, raw_eval, NO_BOUND, -1, ss->ply, tt_was_pv);
             }
 
             best_score = eval;
@@ -710,7 +712,7 @@ namespace Astra
 
         // store in transposition table
         Bound bound = best_score >= beta ? LOWER_BOUND : UPPER_BOUND; // no exact bound in qsearch
-        tt.store(hash, best_move, best_score, ss->eval, bound, 0, ss->ply);
+        ent->store(hash, best_move, best_score, ss->eval, bound, 0, ss->ply, tt_was_pv);
 
         return best_score;
     }
