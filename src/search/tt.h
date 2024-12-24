@@ -49,7 +49,7 @@ namespace Astra
 
         bool isSame(U64 hash) const { return uint16_t(hash) == this->hash; }
 
-        bool isEmpty() const { return age_pv_bound == 0 && score == 0; }
+        bool isEmpty() const { return !age_pv_bound; }
 
         void store(U64 hash, Move move, Score score, Score eval, Bound bound, int depth, int ply, bool pv);
 
