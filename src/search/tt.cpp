@@ -48,11 +48,11 @@ namespace Astra
                 score -= ply;
         }
 
-        if (bound == EXACT_BOUND || !isSame(hash) || depth == NO_DEPTH || depth + 4 + 2 * pv > this->depth)
+        if (bound == EXACT_BOUND || !isSame(hash) || this->depth == NO_DEPTH || depth + 4 + 2 * pv > this->depth)
         {
             this->hash = uint16_t(hash);
             this->depth = uint8_t(depth);
-            this->age_pv_bound = (tt.getAge() << 3) | (pv << 2) | bound;
+            this->age_pv_bound = (uint8_t)(bound + (pv << 2)) | tt.getAge();
             this->eval = eval;
             this->score = score;
         }
@@ -69,7 +69,7 @@ namespace Astra
             alignedFree(buckets);
 
         U64 size_bytes = size_mb * 1024 * 1024;
-        bucket_size = size_bytes / sizeof(TTBucket);
+        num_buckets = size_bytes / sizeof(TTBucket);
 
         buckets = (TTBucket *)alignedMalloc(size_bytes);
         clear();
@@ -79,7 +79,7 @@ namespace Astra
     {
         age = 0;
 
-        const U64 chunk_size = bucket_size / num_workers;
+        const U64 chunk_size = num_buckets / num_workers;
 
         std::vector<std::thread> threads;
         threads.reserve(num_workers);
@@ -88,13 +88,12 @@ namespace Astra
             threads.emplace_back([this, i, chunk_size]()
                                  {
                                      for (U64 j = i * chunk_size; j < (i + 1) * chunk_size; ++j)
-                                         buckets[j] = TTBucket(); 
-                                 });
+                                         buckets[j] = TTBucket(); });
 
         const U64 cleared = chunk_size * num_workers;
-        if (cleared < bucket_size)
+        if (cleared < num_buckets)
         {
-            for (U64 i = cleared; i < bucket_size; ++i)
+            for (U64 i = cleared; i < num_buckets; ++i)
                 buckets[i] = TTBucket();
         }
 
@@ -102,15 +101,15 @@ namespace Astra
             t.join();
     }
 
-    TTEntry *TTable::lookup(U64 hash, bool &hit)
+    TTEntry *TTable::lookup(U64 hash, bool *hit)
     {
         TTEntry *bucket = getBucket(hash)->entries;
 
         for (int i = 0; i < BUCKET_SIZE; i++)
             if (bucket[i].isSame(hash) || bucket[i].depth == NO_DEPTH)
             {
-                bucket[i].age_pv_bound = (uint8_t)(tt.getAge() | (bucket[i].age_pv_bound & (PV_MASK | BOUND_MASK)));
-                hit = bucket[i].isSame(hash);
+                bucket[i].age_pv_bound = (uint8_t)(tt.getAge() | (bucket[i].age_pv_bound & (AGE_STEP - 1)));
+                *hit = bucket[i].isSame(hash);
                 return &bucket[i];
             }
 
@@ -118,14 +117,17 @@ namespace Astra
         TTEntry *worst_entry = &bucket[0];
         for (int i = 1; i < BUCKET_SIZE; i++)
         {
-            int worst_age = (AGE_CYCLE + tt.getAge() - worst_entry->getBound()) & AGE_MASK;
-            int current_age = (AGE_CYCLE + tt.getAge() - bucket[i].getBound()) & AGE_MASK;
+            int worst_age = worst_entry->depth;
+            worst_age -= (AGE_CYCLE + tt.getAge() - worst_entry->age_pv_bound) & AGE_MASK;
 
-            if ((bucket[i].depth - current_age) < (worst_entry->depth - worst_age))
+            int current_age = bucket[i].depth;
+            current_age -= (AGE_CYCLE + tt.getAge() - bucket[i].age_pv_bound) & AGE_MASK;
+
+            if (current_age < worst_age || (current_age == NO_DEPTH && worst_age != NO_DEPTH))
                 worst_entry = &bucket[i];
         }
 
-        hit = false;
+        *hit = false;
         return worst_entry;
     }
 
