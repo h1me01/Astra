@@ -119,7 +119,7 @@ namespace Astra
             return;
 
         int16_t &value = cont_corr[prev_pc][prev_move.to()][pprev_pc][pprev_move.to()];
-        value += getCorrection((real_score - raw_eval) * 256, depth, value);
+        value += getCorrection(real_score - raw_eval, depth, value);
     }
 
     void History::updateCapHistory(const Board &board, Move &move, int bonus)
