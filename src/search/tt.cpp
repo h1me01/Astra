@@ -4,6 +4,10 @@
 #include <vector>
 #include <cstring>
 
+#if defined(__linux__)
+#include <sys/mman.h>
+#endif
+
 namespace Astra
 {
     TTable tt(16);
