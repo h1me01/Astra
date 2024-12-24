@@ -3,6 +3,7 @@
 #include <thread>
 #include <vector>
 #include <cstring>
+#include <emmintrin.h> 
 
 #if defined(__linux__)
 #include <sys/mman.h>
