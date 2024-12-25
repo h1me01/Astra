@@ -98,7 +98,7 @@ namespace Chess
     class Board
     {
     public:
-        StateInfo history[1024];
+        StateInfo history[512];
 
         Board(const std::string &fen);
         Board(const Board &other);
@@ -121,6 +121,7 @@ namespace Chess
         Square kingSq(Color c) const;
         NNUE::Accumulator &getAccumulator();
         void refreshAccumulator();
+        void resetPly();
 
         U64 diagSliders(Color c) const;
         U64 orthSliders(Color c) const;
@@ -188,6 +189,8 @@ namespace Chess
     inline Square Board::kingSq(Color c) const { return lsb(getPieceBB(c, KING)); }
 
     inline NNUE::Accumulator &Board::getAccumulator() { return accumulators.back(); }
+
+    inline void Board::resetPly() { curr_ply = 0; }
 
     inline U64 Board::occupancy() const { return occupancy(WHITE) | occupancy(BLACK); }
 

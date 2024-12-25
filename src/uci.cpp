@@ -224,7 +224,17 @@ namespace UCI
         board = Board(fen);
         while (is >> token)
             if (token != "moves")
+            {
                 board.makeMove(getMove(token));
+
+                // if half move clock got reseted, then we can reset the history
+                // since the last positions should not be considered in the repetition
+                if (board.halfMoveClock() == 0)
+                {
+                    board.history[0] = board.history[board.getPly()];
+                    board.resetPly();
+                }
+            }
 
         board.refreshAccumulator();
     }
