@@ -22,12 +22,6 @@ namespace Chess
         {"r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10", { 46, 2079, 89890, 3894594, 164075551, 6923051137, 287188994746, 11923589843526 }}
     };
 
-    int num_ep_moves = 0;
-    int num_pr_moves = 0;
-    int num_q_moves = 0;
-    int num_c_moves = 0;
-    int num_cs_moves = 0;
-
     U64 perft(Board &board, int depth)
     {
         U64 nodes = 0;
@@ -35,24 +29,7 @@ namespace Chess
         moves.gen<LEGALS>(board);
 
         if (depth == 1)
-        {
-            /*
-            for (auto &m : moves)
-            {
-                if (m.type() == EN_PASSANT)
-                    num_ep_moves++;
-                else if (m.type() == CASTLING)
-                    num_cs_moves++;
-                else if (isProm(m))
-                    num_pr_moves++;
-                else if (isCap(m))
-                    num_c_moves++;
-                else
-                    num_q_moves++;
-            }
-            */
             return moves.size();
-        }
 
         for (const Move &move : moves)
         {
@@ -87,17 +64,7 @@ namespace Chess
                 total_time += diff.count();
 
                 if (nodes == testCase.nodes[i])
-                {
                     std::cout << "Test passed" << std::endl;
-                    /*
-                    std::cout << "Number of en passant moves: " << num_ep_moves << std::endl;
-                    std::cout << "Number of promotion moves: " << num_pr_moves << std::endl;
-                    std::cout << "Number of castling moves: " << num_cs_moves << std::endl;
-                    std::cout << "Number of capture moves: " << num_c_moves << std::endl;
-                    std::cout << "Number of quiet moves: " << num_q_moves << std::endl;
-                    num_ep_moves = num_pr_moves = num_cs_moves = num_c_moves = num_q_moves = 0;
-                    */
-                }
                 else
                     std::cerr << "\033[31mTest failed\033[0m\n Expected nodes: " << testCase.nodes[i] << std::endl;
 
