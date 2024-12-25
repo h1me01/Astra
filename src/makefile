@@ -21,7 +21,6 @@ LDFLAGS := -lstdc++
 
 # Source files
 CHESS_SRC := chess/attacks.cpp \
-             chess/bitboard.cpp \
              chess/board.cpp \
              chess/misc.cpp \
              chess/perft.cpp \

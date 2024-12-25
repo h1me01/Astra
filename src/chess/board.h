@@ -168,11 +168,7 @@ namespace Chess
         return piece_bb[makePiece(c, pt)];
     }
 
-    inline Piece Board::pieceAt(Square s) const
-    {
-        assert(s >= a1 && s <= h8);
-        return board[s];
-    }
+    inline Piece Board::pieceAt(Square s) const { return board[s]; }
 
     inline Color Board::getTurn() const { return stm; }
 

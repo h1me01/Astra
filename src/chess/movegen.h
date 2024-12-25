@@ -158,17 +158,18 @@ namespace Chess
     Move *genAll(const Board &board, Move *ml)
     {
         const int ply = board.getPly();
+        const StateInfo &info = board.history[ply];
         const Square ksq = board.kingSq(us);
 
         U64 us_bb = board.occupancy(us);
         U64 them_bb = board.occupancy(~us);
         U64 occ = us_bb | them_bb;
 
-        U64 checkers = board.history[ply].checkers;
-        U64 danger = board.history[ply].danger;
+        U64 checkers = info.checkers;
+        U64 danger = info.danger;
 
         // if double check, then only king moves are legal
-        if (sparsePopCount(checkers) > 1)
+        if (popCount(checkers) > 1)
             return genPieceMoves<us, KING, gt>(board, ml, ~danger);
 
         U64 targets = checkers ? SQUARES_BETWEEN[ksq][lsb(checkers)] | checkers : -1ULL;
@@ -184,12 +185,12 @@ namespace Chess
         if (gt != NOISY && !checkers)
         {
             U64 not_free = (occ | danger) & ooBlockersMask(us);
-            if (!not_free && board.history[ply].castle_rights.kingSide(us))
+            if (!not_free && info.castle_rights.kingSide(us))
                 *ml++ = us == WHITE ? Move(e1, g1, CASTLING) : Move(e8, g8, CASTLING);
 
             // ignore the square b1/b8 since the king does move there
             not_free = (occ | (danger & ~SQUARE_BB[relativeSquare(us, b1)])) & oooBlockersMask(us);
-            if (!not_free && board.history[ply].castle_rights.queenSide(us))
+            if (!not_free && info.castle_rights.queenSide(us))
                 *ml++ = us == WHITE ? Move(e1, c1, CASTLING) : Move(e8, c8, CASTLING);
         }
 
@@ -223,12 +224,10 @@ namespace Chess
 
         ml = us == WHITE ? genAll<WHITE, LEGALS>(board, ml) : genAll<BLACK, LEGALS>(board, ml);
         while (curr != ml)
-        {
             if (((pinned & SQUARE_BB[curr->from()]) || curr->type() == EN_PASSANT) && !board.isLegal(*curr))
                 *curr = *(--ml);
             else
                 ++curr;
-        }
 
         return ml;
     }

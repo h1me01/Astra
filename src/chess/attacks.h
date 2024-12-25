@@ -2,6 +2,7 @@
 #define ATTACKS_H
 
 #include "bitboard.h"
+#include "types.h"
 
 namespace Chess
 {
@@ -113,7 +114,7 @@ namespace Chess
 
     void initLookUpTables();
 
-    constexpr U64 getAttacks(PieceType pt, Square s, const U64 occ)
+    inline U64 getAttacks(PieceType pt, Square s, const U64 occ)
     {
         switch (pt)
         {

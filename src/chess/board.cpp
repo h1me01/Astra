@@ -317,7 +317,7 @@ namespace Chess
         if (!m || pc == NO_PIECE || colorOf(pc) != stm)
             return false;
         // if double check then only king can move
-        if (sparsePopCount(info.checkers) > 1 && pt != KING)
+        if (popCount(info.checkers) > 1 && pt != KING)
             return false;
         // if capture move, then target square must be occupied by enemy piece
         if (mt != EN_PASSANT && isCap(m) && pieceAt(to) == NO_PIECE)
@@ -813,7 +813,7 @@ namespace Chess
             if (!blockers)
                 // if no of out pieces is between the enemy slider, then add that piece as checker
                 info.checkers ^= SQUARE_BB[s];
-            else if (sparsePopCount(blockers) == 1)
+            else if (popCount(blockers) == 1)
                 // if we have only one blocker, add that piece as pinned
                 info.pinned ^= blockers;
         }
