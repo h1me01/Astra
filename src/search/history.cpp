@@ -7,10 +7,17 @@
 
 namespace Astra
 {
+    // helper
 
     int getFormula(int value, int bonus)
     {
         return bonus - value * std::abs(bonus) / 16384;
+    }
+
+    int getCorrection(const int diff, int depth, int value)
+    {
+        const int bonus = std::clamp(diff * depth / 8, -256, 256);
+        return bonus - int(value) * std::abs(bonus) / 1024;
     }
 
     int historyBonus(int depth)
@@ -18,6 +25,7 @@ namespace Astra
         return std::min(int(max_history_bonus), history_mult * depth - history_minus);
     }
 
+    // history
     void History::update(const Board &board, Move &best, Stack *ss, Move *q_moves, int qc, Move *c_moves, int cc, int depth)
     {
         Color stm = board.getTurn();
@@ -83,12 +91,6 @@ namespace Astra
             }
     }
 
-    int getCorrection(const int diff, int depth, int value)
-    {
-        const int bonus = std::clamp(diff * depth / 8, -256, 256);
-        return bonus - int(value) * std::abs(bonus) / 1024;
-    }
-
     void History::updatePawnHistory(const Board &board, Score raw_eval, Score real_score, int depth)
     {
         int16_t &value = pawn_corr[board.getTurn()][board.getPawnHash() % 16384];
@@ -119,7 +121,7 @@ namespace Astra
             return;
 
         int16_t &value = cont_corr[prev_pc][prev_move.to()][pprev_pc][pprev_move.to()];
-        value += getCorrection(real_score - raw_eval, depth, value);
+        value = getCorrection(real_score - raw_eval, depth, value);
     }
 
     void History::updateCapHistory(const Board &board, Move &move, int bonus)
