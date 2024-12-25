@@ -18,7 +18,7 @@ namespace Astra
                 score = -ply;
         }
 
-        if (bound == EXACT_BOUND || this->hash != hash || this->age != tt.getAge() || depth + 4 > this->depth)
+        if (bound == EXACT_BOUND || this->hash != hash || this->age != tt.getAge() || depth >= this->depth)
         {
             this->hash = hash;
             this->age = tt.getAge();
