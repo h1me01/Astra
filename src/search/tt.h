@@ -17,7 +17,7 @@ namespace Astra
 
     struct TTEntry
     {
-        U64 hash;
+        uint32_t hash;
         uint8_t age;
         uint8_t depth;
         Move move;
@@ -61,7 +61,7 @@ namespace Astra
 
         void prefetch(U64 hash) const
         {
-            __builtin_prefetch(&entries[hash & mask]);
+            __builtin_prefetch(&entries[uint32_t(hash >> 32) & mask]);
         }
 
         int hashfull() const

@@ -10,6 +10,8 @@ namespace Astra
 
     void TTEntry::store(U64 hash, Move move, Score score, Score eval, Bound bound, int depth, int ply)
     {
+        uint32_t hash32 = uint32_t(hash >> 32);
+
         if (score != VALUE_NONE)
         {
             if (score >= VALUE_TB_WIN_IN_MAX_PLY)
@@ -18,9 +20,9 @@ namespace Astra
                 score = -ply;
         }
 
-        if (bound == EXACT_BOUND || this->hash != hash || this->age != tt.getAge() || depth >= this->depth)
+        if (bound == EXACT_BOUND || this->hash != hash32 || this->age != tt.getAge() || depth >= this->depth)
         {
-            this->hash = hash;
+            this->hash = hash32;
             this->age = tt.getAge();
             this->depth = depth;
             this->move = move;
@@ -80,8 +82,10 @@ namespace Astra
 
     TTEntry *TTable::lookup(U64 hash, bool *hit) const
     {
-        U64 idx = hash & mask;
-        if (entries[idx].hash == hash)
+        uint32_t hash32 = uint32_t(hash >> 32);
+
+        U64 idx = hash32 & mask;
+        if (entries[idx].hash == hash32)
         {
             *hit = true;
             return &entries[idx];
