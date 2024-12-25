@@ -17,13 +17,13 @@ namespace Astra
 
     struct TTEntry
     {
-        U64 hash;
-        uint8_t age;
-        uint8_t depth;
-        Move move;
-        Score score;
-        Score eval;
-        Bound bound;
+        U64 hash = 0;
+        uint8_t age = 0;
+        uint8_t depth = 0;
+        Move move = NO_MOVE;
+        Score score = VALUE_NONE;
+        Score eval = VALUE_NONE;
+        Bound bound = NO_BOUND;
 
         Score getScore(int ply) const
         {

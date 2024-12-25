@@ -367,7 +367,7 @@ namespace Chess
             if (info.ep_sq != to)
                 return false;
             // pawn on ep square must be a enemy pawn
-            if (pieceAt(info.ep_sq) != makePiece(~stm, PAWN))
+            if (pieceAt(Square(info.ep_sq ^ 8)) != makePiece(~stm, PAWN))
                 return false;
         }
 
@@ -384,23 +384,26 @@ namespace Chess
             return (rank & attacks & targets) & SQUARE_BB[to];
         }
 
-        if (pt == PAWN && mt != EN_PASSANT)
+        if (pt == PAWN)
         {
             // no promotion moves allowed here since we already handled them
             if (SQUARE_BB[to] & (MASK_RANK[RANK_1] | MASK_RANK[RANK_8]))
                 return false;
 
-            // is capture?
-            bool capture = getPawnAttacks(stm, from) & them_bb & SQUARE_BB[to];
-            // is single push?
-            bool singe_push = (Square(from + up) == to) && pieceAt(to) == NO_PIECE;
-            // is double push?
-            bool double_push = relativeRank(stm, RANK_2) == rankOf(from) && (Square(from + 2 * up) == to) &&
-                               pieceAt(to) == NO_PIECE && pieceAt(to - up) == NO_PIECE;
+            if (mt != EN_PASSANT)
+            {
+                // is capture?
+                bool capture = getPawnAttacks(stm, from) & them_bb & SQUARE_BB[to];
+                // is single push?
+                bool singe_push = (Square(from + up) == to) && pieceAt(to) == NO_PIECE;
+                // is double push?
+                bool double_push = relativeRank(stm, RANK_2) == rankOf(from) && (Square(from + 2 * up) == to) &&
+                                pieceAt(to) == NO_PIECE && pieceAt(to - up) == NO_PIECE;
 
-            // if none of the conditions above are met, then it's not pseudo legal
-            if (!capture && !singe_push && !double_push)
-                return false;
+                // if none of the conditions above are met, then it's not pseudo legal
+                if (!capture && !singe_push && !double_push)
+                    return false;
+            }
         }
         // if a non pawn piece's target range isn't reachable, then it's not pseudo legal
         else if (!(getAttacks(pt, from, occ) & SQUARE_BB[to]))

@@ -241,21 +241,8 @@ namespace Astra
                 Bound bound = NO_BOUND;
                 tb_hits++;
 
-                if (tb_score == VALUE_TB_WIN)
-                {
-                    tb_score = VALUE_TB_WIN - ss->ply - 1;
-                    bound = LOWER_BOUND;
-                }
-                else if (tb_score == -VALUE_TB_WIN)
-                {
-                    tb_score = -VALUE_TB_WIN + ss->ply + 1;
-                    bound = UPPER_BOUND;
-                }
-                else
-                {
-                    tb_score = 0;
-                    bound = EXACT_BOUND;
-                }
+                tb_score = tb_score == VALUE_TB_WIN ? VALUE_MATE - ss->ply : tb_score == -VALUE_TB_WIN ? -VALUE_MATE + ss->ply + 1 : 0;
+                bound = tb_score == VALUE_TB_WIN ? LOWER_BOUND : tb_score == -VALUE_TB_WIN ? UPPER_BOUND : EXACT_BOUND;
 
                 if (bound == EXACT_BOUND || (bound == LOWER_BOUND && tb_score >= beta) || (bound == UPPER_BOUND && tb_score <= alpha))
                 {
@@ -568,7 +555,7 @@ namespace Astra
         // store in transposition table
         Bound bound = best_score >= beta ? LOWER_BOUND : best_score <= old_alpha ? UPPER_BOUND : EXACT_BOUND;
         if (!skipped)
-            ent->store(hash, best_move, best_score, ss->eval, bound, depth, ss->ply);
+            ent->store(hash, best_move, best_score, raw_eval, bound, depth, ss->ply);
 
         // update correction histories
         if (!in_check && !isCap(best_move) && (bound & (best_score >= raw_eval ? LOWER_BOUND : UPPER_BOUND)))
@@ -722,7 +709,7 @@ namespace Astra
 
         // store in transposition table
         Bound bound = best_score >= beta ? LOWER_BOUND : UPPER_BOUND; // no exact bound in qsearch
-        ent->store(hash, best_move, best_score, ss->eval, bound, 0, ss->ply);
+        ent->store(hash, best_move, best_score, raw_eval, bound, 0, ss->ply);
 
         return best_score;
     }
