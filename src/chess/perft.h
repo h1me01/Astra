@@ -1,10 +1,12 @@
 #ifndef PERFT_H
 #define PERFT_H
 
+#include "board.h"
+
 namespace Chess
 {
 
-    void testPerft(int max_depth = 9);
+    void testPerft(const Board& board, int depth);
 
 } // namespace Chess
 

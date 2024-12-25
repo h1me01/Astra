@@ -255,11 +255,11 @@ namespace UCI
                 if (!(is >> depth))
                     std::cout << "No depth value provided.\n";
                 else
-                    testPerft(depth);
+                    testPerft(board, depth);
+                
                 return;
             }
-
-            if (token == "wtime")
+            else if (token == "wtime")
                 is >> w_time;
             else if (token == "btime")
                 is >> b_time;
