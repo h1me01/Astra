@@ -175,8 +175,7 @@ namespace Astra
         Score max_score = VALUE_MATE;
         Score best_score = -VALUE_MATE;
 
-        if(pv_node)
-            pv_table[ss->ply].length = 0;
+        pv_table[ss->ply].length = 0;
 
         // dive into quiescence search if depth is less than 1
         if (depth <= 0)
