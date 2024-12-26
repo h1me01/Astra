@@ -90,29 +90,31 @@ namespace Chess
 
     extern U64 PSEUDO_LEGAL_ATTACKS[NUM_PIECE_TYPES][NUM_SQUARES];
 
-    extern U64 ROOK_ATTACK_MASKS[NUM_SQUARES];
+    extern U64 ROOK_MASK[NUM_SQUARES];
     extern int ROOK_ATTACK_SHIFTS[NUM_SQUARES];
     extern U64 ROOK_ATTACKS[NUM_SQUARES][4096];
 
-    extern U64 BISHOP_ATTACK_MASKS[NUM_SQUARES];
+    extern U64 BISHOP_MASK[NUM_SQUARES];
     extern int BISHOP_ATTACK_SHIFTS[NUM_SQUARES];
     extern U64 BISHOP_ATTACKS[NUM_SQUARES][512];
 
+    void initLookUpTables();
+
+    constexpr U64 getPawnAttacks(Color c, Square s) { return PAWN_ATTACKS[c][s]; }
+
     inline U64 getRookAttacks(Square s, const U64 occ)
     {
-        const U64 max_occ = occ & ROOK_ATTACK_MASKS[s];
+        const U64 max_occ = occ & ROOK_MASK[s];
         const U64 idx = max_occ * ROOK_MAGICS[s] >> ROOK_ATTACK_SHIFTS[s];
         return ROOK_ATTACKS[s][idx];
     }
 
     inline U64 getBishopAttacks(Square s, const U64 occ)
     {
-        const U64 mask_occ = occ & BISHOP_ATTACK_MASKS[s];
+        const U64 mask_occ = occ & BISHOP_MASK[s];
         const U64 idx = mask_occ * BISHOP_MAGICS[s] >> BISHOP_ATTACK_SHIFTS[s];
         return BISHOP_ATTACKS[s][idx];
     }
-
-    void initLookUpTables();
 
     inline U64 getAttacks(PieceType pt, Square s, const U64 occ)
     {
@@ -131,8 +133,6 @@ namespace Chess
             return 0;
         }
     }
-
-    constexpr U64 getPawnAttacks(Color c, Square s) { return PAWN_ATTACKS[c][s]; }
 
 } // namespace Chess
 

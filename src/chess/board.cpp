@@ -811,7 +811,7 @@ namespace Chess
             Square s = popLsb(candidates);
             U64 blockers = SQUARES_BETWEEN[ksq][s] & our_occ;
             if (!blockers)
-                // if no of out pieces is between the enemy slider, then add that piece as checker
+                // if no piece is between the enemy slider, then add that piece as checker
                 info.checkers ^= SQUARE_BB[s];
             else if (popCount(blockers) == 1)
                 // if we have only one blocker, add that piece as pinned

@@ -30,7 +30,7 @@ namespace Chess
     }
 
     template <Color us, GenType gt>
-    Move *genPawnMoves(const Board &board, Move *ml, U64 targets)
+    Move *genPawnMoves(const Board &board, Move *ml, const U64 targets)
     {
         constexpr Color them = ~us;
         constexpr U64 rank7_bb = MASK_RANK[relativeRank(us, RANK_7)];
@@ -42,8 +42,8 @@ namespace Chess
         const U64 occ = board.occupancy(us) | them_bb;
         const U64 empty_sqs = ~occ;
 
-        U64 pawns = board.getPieceBB(us, PAWN);
-        U64 pawns_non7 = pawns & ~rank7_bb;
+        const U64 pawns = board.getPieceBB(us, PAWN);
+        const U64 pawns_non7 = pawns & ~rank7_bb;
 
         // single and double pawn pushes, no promotions
         if constexpr (gt != NOISY)
@@ -90,12 +90,6 @@ namespace Chess
 
             if (ep_sq != NO_SQUARE)
             {
-                if (rankOf(ep_sq) != relativeRank(us, RANK_6))
-                {
-                    std::cout << us << std::endl;
-                    std::cout << SQSTR[ep_sq] << std::endl;
-                    exit(0);
-                }
                 assert(rankOf(ep_sq) == relativeRank(us, RANK_6));
 
                 b1 = pawns_non7 & getPawnAttacks(them, ep_sq);
@@ -105,7 +99,7 @@ namespace Chess
         }
 
         // promotions, both capture and non-capture
-        U64 pawns_on7 = pawns & rank7_bb;
+        const U64 pawns_on7 = pawns & rank7_bb;
         U64 b1 = shift(up_right, pawns_on7) & them_bb & targets;
         U64 b2 = shift(up_left, pawns_on7) & them_bb & targets;
         U64 b3 = shift(up, pawns_on7) & empty_sqs & targets;
@@ -125,10 +119,10 @@ namespace Chess
     }
 
     template <Color us, PieceType pt, GenType gt>
-    Move *genPieceMoves(const Board &board, Move *ml, U64 targets)
+    Move *genPieceMoves(const Board &board, Move *ml, const U64 targets)
     {
-        U64 them_bb = board.occupancy(~us);
-        U64 occ = board.occupancy(us) | them_bb;
+        const U64 them_bb = board.occupancy(~us);
+        const U64 occ = board.occupancy(us) | them_bb;
 
         U64 piece = board.getPieceBB(us, pt);
         while (piece)
@@ -161,18 +155,18 @@ namespace Chess
         const StateInfo &info = board.history[ply];
         const Square ksq = board.kingSq(us);
 
-        U64 us_bb = board.occupancy(us);
-        U64 them_bb = board.occupancy(~us);
-        U64 occ = us_bb | them_bb;
+        const U64 us_bb = board.occupancy(us);
+        const U64 them_bb = board.occupancy(~us);
+        const U64 occ = us_bb | them_bb;
 
-        U64 checkers = info.checkers;
-        U64 danger = info.danger;
+        const U64 checkers = info.checkers;
+        const U64 danger = info.danger;
 
         // if double check, then only king moves are legal
         if (popCount(checkers) > 1)
             return genPieceMoves<us, KING, gt>(board, ml, ~danger);
 
-        U64 targets = checkers ? SQUARES_BETWEEN[ksq][lsb(checkers)] | checkers : -1ULL;
+        const U64 targets = checkers ? SQUARES_BETWEEN[ksq][lsb(checkers)] | checkers : -1ULL;
 
         ml = genPawnMoves<us, gt>(board, ml, targets);
         ml = genPieceMoves<us, KNIGHT, gt>(board, ml, targets);
@@ -200,7 +194,7 @@ namespace Chess
     template <Color us>
     Move *genQuietCheckers(const Board &board, Move *ml)
     {
-        Color them = ~us;
+        constexpr Color them = ~us;
         const Square opp_ksq = board.kingSq(them);
         const U64 occ = board.occupancy();
         const U64 bishop_attacks = getAttacks(BISHOP, opp_ksq, occ);
@@ -217,10 +211,10 @@ namespace Chess
 
     inline Move *genLegals(const Board &board, Move *ml)
     {
-        Color us = board.getTurn();
-        Move *curr = ml;
+        const Color us = board.getTurn();
+        const U64 pinned = board.history[board.getPly()].pinned;
 
-        U64 pinned = board.history[board.getPly()].pinned;
+        Move *curr = ml;
 
         ml = us == WHITE ? genAll<WHITE, LEGALS>(board, ml) : genAll<BLACK, LEGALS>(board, ml);
         while (curr != ml)

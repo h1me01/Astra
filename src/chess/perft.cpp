@@ -61,7 +61,6 @@ namespace Chess
 
         std::cout << "\nTotal nodes: " << total_nodes << std::endl;
         std::cout << "Total time: " << time_ms << "ms" << std::endl;
-        std::cout << "Nodes per second: " << total_nodes * 1000.0 / std::max(1.0, time_ms) << "\n\n";
     }
 
 } // namespace Chess
