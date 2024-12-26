@@ -6,7 +6,7 @@
 namespace Chess
 {
 
-    void testPerft(const Board& board, int depth);
+    void testPerft(Board& board, int depth);
 
 } // namespace Chess
 

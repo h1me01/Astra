@@ -28,7 +28,7 @@ namespace Chess
         return nodes;
     }
 
-    void testPerft(const Board &board, int depth)
+    void testPerft(Board &board, int depth)
     {
         if (depth < 1)
         {
@@ -47,11 +47,11 @@ namespace Chess
 
         for (const Move &move : ml)
         {
-            Board b = board;
-            b.makeMove(move);
-            U64 nodes = perft(b, depth - 1);
-            total_nodes += nodes;
+            board.makeMove(move);
+            U64 nodes = perft(board, depth - 1);
+            board.unmakeMove(move);
 
+            total_nodes += nodes;
             std::cout << move << ": " << nodes << std::endl;
         }
 
