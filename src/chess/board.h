@@ -44,18 +44,17 @@ namespace Chess
         Piece captured;
         Square ep_sq;
         CastlingRights castle_rights;
+        U64 occ[NUM_COLORS] = {};
+        U64 threats[NUM_PIECE_TYPES] = {};
         int half_move_clock;
         int plies_from_null;
-
+        
         // enemy pieces that check our king
         U64 checkers = 0;
         // squares of our pinned pieces
         U64 pinned = 0;
         // potential danger squares for our king
         U64 danger = 0;
-
-        U64 occ[NUM_COLORS] = {};
-        U64 threats[NUM_PIECE_TYPES] = {};
 
         StateInfo() = default;
         StateInfo(const StateInfo& other) = default;
@@ -157,7 +156,10 @@ namespace Chess
 
     inline U64 Board::occupancy(Color c) const { return history[curr_ply].occ[c]; }
 
-    inline U64 Board::occupancy() const { return occupancy(WHITE) | occupancy(BLACK); }
+    inline U64 Board::occupancy() const 
+    { 
+        return occupancy(WHITE) | occupancy(BLACK); 
+    }
 
     inline U64 Board::getThreats(PieceType pt) const
     {
