@@ -40,7 +40,10 @@ namespace Chess
 
     inline bool isProm(const Move &m) { return m.type() >= PQ_KNIGHT; }
 
-    inline bool isCap(const Move &m) { return m.type() == CAPTURE || m.type() == EN_PASSANT || m.type() >= PC_KNIGHT; }
+    inline bool isCap(const Move &m) 
+    { 
+        return m.type() == CAPTURE || m.type() == EN_PASSANT || m.type() >= PC_KNIGHT; 
+    }
 
     // prints the move
     std::ostream &operator<<(std::ostream &os, const Move &m);
@@ -72,10 +75,7 @@ namespace Chess
 
     constexpr Square relativeSquare(Color c, Square s) { return Square(s ^ (c * 56)); }
 
-    constexpr Rank relativeRank(Color c, Rank r)
-    {
-        return c == WHITE ? r : Rank(RANK_8 - r);
-    }
+    constexpr Rank relativeRank(Color c, Rank r) { return c == WHITE ? r : Rank(RANK_8 - r); }
 
     constexpr U64 ooBlockersMask(Color c) { return c == WHITE ? 0x60 : 0x6000000000000000; }
     constexpr U64 oooBlockersMask(Color c) { return c == WHITE ? 0xe : 0xE00000000000000; }
