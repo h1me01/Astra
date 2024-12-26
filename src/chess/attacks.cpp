@@ -8,11 +8,7 @@ namespace Chess
     U64 LINE[NUM_SQUARES][NUM_SQUARES];
 
     U64 PSEUDO_LEGAL_ATTACKS[NUM_PIECE_TYPES][NUM_SQUARES];
-
-    U64 ROOK_MASK[NUM_SQUARES];
     U64 ROOK_ATTACKS[NUM_SQUARES][4096];
-
-    U64 BISHOP_MASK[NUM_SQUARES];
     U64 BISHOP_ATTACKS[NUM_SQUARES][512];
 
     U64 slidingAttacks(Square s, const U64 occ, const U64 mask)
@@ -26,20 +22,16 @@ namespace Chess
     {
         for (Square s = a1; s <= h8; ++s)
         {
-            const U64 edges = ((MASK_RANK[FILE_A] | MASK_RANK[FILE_H]) & ~MASK_RANK[rankOf(s)]) |
-                              ((MASK_FILE[FILE_A] | MASK_FILE[FILE_H]) & ~MASK_FILE[fileOf(s)]);
-            ROOK_MASK[s] = (MASK_RANK[rankOf(s)] ^ MASK_FILE[fileOf(s)]) & ~edges;
-
             U64 blockers = 0;
             do
             {
 #ifdef __BMI2__
-                const int idx = _pext_u64(blockers, ROOK_MASK[s]);
+                const int idx = _pext_u64(blockers, ROOK_MASKS[s]);
 #else
-                const U64 idx = (blockers * ROOK_MAGICS[s]) >> ROOK_ATTACK_SHIFTS[s];
+                const U64 idx = (blockers * ROOK_MAGICS[s]) >> ROOK_SHIFTS[s];
 #endif
                 ROOK_ATTACKS[s][idx] = slidingAttacks(s, blockers, MASK_FILE[fileOf(s)]) | slidingAttacks(s, blockers, MASK_RANK[rankOf(s)]);
-                blockers = (blockers - ROOK_MASK[s]) & ROOK_MASK[s];
+                blockers = (blockers - ROOK_MASKS[s]) & ROOK_MASKS[s];
             } while (blockers);
         }
     }
@@ -48,20 +40,16 @@ namespace Chess
     {
         for (Square s = a1; s <= h8; ++s)
         {
-            const U64 edges = ((MASK_RANK[FILE_A] | MASK_RANK[FILE_H]) & ~MASK_RANK[rankOf(s)]) |
-                              ((MASK_FILE[FILE_A] | MASK_FILE[FILE_H]) & ~MASK_FILE[fileOf(s)]);
-            BISHOP_MASK[s] = (MASK_DIAGONAL[diagOf(s)] ^ MASK_ANTI_DIAGONAL[antiDiagOf(s)]) & ~edges;
-
             U64 blockers = 0;
             do
             {
 #ifdef __BMI2__
-                const int idx = _pext_u64(blockers, BISHOP_MASK[s]);
+                const int idx = _pext_u64(blockers, BISHOP_MASKS[s]);
 #else
-                const U64 idx = (blockers * BISHOP_MAGICS[s]) >> BISHOP_ATTACK_SHIFTS[s];
+                const U64 idx = (blockers * BISHOP_MAGICS[s]) >> BISHOP_SHIFTS[s];
 #endif
                 BISHOP_ATTACKS[s][idx] = slidingAttacks(s, blockers, MASK_DIAGONAL[diagOf(s)]) | slidingAttacks(s, blockers, MASK_ANTI_DIAGONAL[antiDiagOf(s)]);
-                blockers = (blockers - BISHOP_MASK[s]) & BISHOP_MASK[s];
+                blockers = (blockers - BISHOP_MASKS[s]) & BISHOP_MASKS[s];
             } while (blockers);
         }
     }

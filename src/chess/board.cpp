@@ -232,10 +232,10 @@ namespace Chess
     U64 Board::attackersTo(Color c, Square s, const U64 occ) const
     {
         U64 attacks = getPawnAttacks(~c, s) & getPieceBB(c, PAWN);
-        attacks |= getAttacks(KNIGHT, s, occ) & getPieceBB(c, KNIGHT);
-        attacks |= getAttacks(BISHOP, s, occ) & (getPieceBB(c, BISHOP) | getPieceBB(c, QUEEN));
-        attacks |= getAttacks(ROOK, s, occ) & (getPieceBB(c, ROOK) | getPieceBB(c, QUEEN));
-        attacks |= getAttacks(KING, s, occ) & getPieceBB(c, KING);
+        attacks |= getKnightAttacks(s) & getPieceBB(c, KNIGHT);
+        attacks |= getBishopAttacks(s, occ) & diagSliders(c);
+        attacks |= getRookAttacks(s, occ) & orthSliders(c);
+        attacks |= getKingAttacks(s) & getPieceBB(c, KING);
         return attacks;
     }
 
@@ -284,8 +284,8 @@ namespace Chess
             assert(board[cap_sq] == makePiece(~stm, PAWN));
             assert(pieceAt(to) == NO_PIECE);
 
-            U64 attackers = getAttacks(BISHOP, ksq, occ) & (getPieceBB(~stm, BISHOP) | getPieceBB(~stm, QUEEN));
-            attackers |= getAttacks(ROOK, ksq, occ) & (getPieceBB(~stm, ROOK) | getPieceBB(~stm, QUEEN));
+            U64 attackers = getBishopAttacks(ksq, occ) & (getPieceBB(~stm, BISHOP) | getPieceBB(~stm, QUEEN));
+            attackers |= getRookAttacks(ksq, occ) & (getPieceBB(~stm, ROOK) | getPieceBB(~stm, QUEEN));
             // only legal if no discovered check occurs after ep capture
             return !attackers;
         }
@@ -748,7 +748,7 @@ namespace Chess
         threat = 0;
         U64 knights = getPieceBB(them, KNIGHT);
         while (knights)
-            threat |= getAttacks(KNIGHT, popLsb(knights), occ);
+            threat |= getKnightAttacks(popLsb(knights));
         danger |= threat;
 
         info.threats[KNIGHT] = threat;
@@ -757,7 +757,7 @@ namespace Chess
         threat = 0;
         U64 bishops = getPieceBB(them, BISHOP);
         while (bishops)
-            threat |= getAttacks(BISHOP, popLsb(bishops), occ);
+            threat |= getBishopAttacks(popLsb(bishops), occ);
         danger |= threat;
 
         info.threats[BISHOP] = threat;
@@ -766,7 +766,7 @@ namespace Chess
         threat = 0;
         U64 rooks = getPieceBB(them, ROOK);
         while (rooks)
-            threat |= getAttacks(ROOK, popLsb(rooks), occ);
+            threat |= getRookAttacks(popLsb(rooks), occ);
         danger |= threat;
 
         info.threats[ROOK] = threat;
@@ -781,7 +781,7 @@ namespace Chess
         info.threats[QUEEN] = threat;
 
         // king attacks
-        threat = getAttacks(KING, kingSq(them), occ);
+        threat = getKingAttacks(kingSq(them));
         danger |= threat;
 
         info.threats[KING] = threat;
@@ -800,10 +800,10 @@ namespace Chess
         // enemy pawns attacks at our king
         info.checkers = getPawnAttacks(stm, ksq) & getPieceBB(them, PAWN);
         // enemy knights attacks at our king
-        info.checkers |= getAttacks(KNIGHT, ksq, our_occ | their_occ) & getPieceBB(them, KNIGHT);
+        info.checkers |= getKnightAttacks(ksq) & getPieceBB(them, KNIGHT);
 
         // potential enemy bishop, rook and queen attacks at our king
-        U64 candidates = (getAttacks(ROOK, ksq, their_occ) & orthSliders(them)) | (getAttacks(BISHOP, ksq, their_occ) & diagSliders(them));
+        U64 candidates = (getRookAttacks(ksq, their_occ) & orthSliders(them)) | (getBishopAttacks(ksq, their_occ) & diagSliders(them));
 
         info.pinned = 0;
         while (candidates)

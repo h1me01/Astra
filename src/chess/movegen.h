@@ -197,11 +197,11 @@ namespace Chess
         constexpr Color them = ~us;
         const Square opp_ksq = board.kingSq(them);
         const U64 occ = board.occupancy();
-        const U64 bishop_attacks = getAttacks(BISHOP, opp_ksq, occ);
-        const U64 rook_attacks = getAttacks(ROOK, opp_ksq, occ);
+        const U64 bishop_attacks = getBishopAttacks(opp_ksq, occ);
+        const U64 rook_attacks = getRookAttacks(opp_ksq, occ);
 
         ml = genPawnMoves<us, QUIETS>(board, ml, getPawnAttacks(them, opp_ksq));
-        ml = genPieceMoves<us, KNIGHT, QUIETS>(board, ml, getAttacks(KNIGHT, opp_ksq, 0));
+        ml = genPieceMoves<us, KNIGHT, QUIETS>(board, ml, getKnightAttacks(opp_ksq));
         ml = genPieceMoves<us, BISHOP, QUIETS>(board, ml, bishop_attacks);
         ml = genPieceMoves<us, ROOK, QUIETS>(board, ml, rook_attacks);
         ml = genPieceMoves<us, QUEEN, QUIETS>(board, ml, bishop_attacks | rook_attacks);
