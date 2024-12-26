@@ -127,7 +127,7 @@ namespace UCI
     {
         options.add("Hash", Option("spin", "16", "16", 1, 8192));
         options.add("Threads", Option("spin", "1", "1", 1, 128));
-        options.add("MoveOverhead", Option("spin", "50", "50", 1, 1000));
+        options.add("MoveOverhead", Option("spin", "20", "50", 1, 1000));
 #ifndef TUNE
         options.add("SyzygyPath", Option("string", "", "", 0, 0));
 #endif
