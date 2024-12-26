@@ -218,17 +218,6 @@ namespace Chess
         }
     }
 
-    U64 Board::occupancy(Color c) const
-    {
-        const int start_idx = (c == WHITE) ? 0 : 6;
-
-        U64 occ = 0;
-        for (int i = start_idx; i < start_idx + NUM_PIECE_TYPES; i++)
-            occ |= piece_bb[i];
-
-        return occ;
-    }
-
     U64 Board::attackersTo(Color c, Square s, const U64 occ) const
     {
         U64 attacks = getPawnAttacks(~c, s) & getPieceBB(c, PAWN);

@@ -54,45 +54,12 @@ namespace Chess
         // potential danger squares for our king
         U64 danger = 0;
 
-        U64 threats[NUM_PIECE_TYPES];
+        U64 occ[NUM_COLORS] = {};
+        U64 threats[NUM_PIECE_TYPES] = {};
 
-        StateInfo() : hash(0), pawn_hash(0), non_pawn_hash{}, captured(NO_PIECE), ep_sq(NO_SQUARE), half_move_clock(0), plies_from_null(0) {}
-
-        StateInfo(const StateInfo &prev)
-        {
-            hash = prev.hash;
-            pawn_hash = prev.pawn_hash;
-            non_pawn_hash[WHITE] = prev.non_pawn_hash[WHITE];
-            non_pawn_hash[BLACK] = prev.non_pawn_hash[BLACK];
-            captured = prev.captured;
-            ep_sq = prev.ep_sq;
-            half_move_clock = prev.half_move_clock;
-            plies_from_null = prev.plies_from_null;
-            castle_rights = prev.castle_rights;
-            checkers = prev.checkers;
-            pinned = prev.pinned;
-            danger = prev.danger;
-        }
-
-        StateInfo &operator=(const StateInfo &other)
-        {
-            if (this != &other)
-            {
-                hash = other.hash;
-                pawn_hash = other.pawn_hash;
-                non_pawn_hash[WHITE] = other.non_pawn_hash[WHITE];
-                non_pawn_hash[BLACK] = other.non_pawn_hash[BLACK];
-                captured = other.captured;
-                ep_sq = other.ep_sq;
-                half_move_clock = other.half_move_clock;
-                plies_from_null = other.plies_from_null;
-                castle_rights = other.castle_rights;
-                checkers = other.checkers;
-                pinned = other.pinned;
-                danger = other.danger;
-            }
-            return *this;
-        }
+        StateInfo() = default;
+        StateInfo(const StateInfo& other) = default;
+        StateInfo& operator=(const StateInfo& other) = default;
     };
 
     class Board
@@ -188,6 +155,8 @@ namespace Chess
 
     inline void Board::resetPly() { curr_ply = 0; }
 
+    inline U64 Board::occupancy(Color c) const { return history[curr_ply].occ[c]; }
+
     inline U64 Board::occupancy() const { return occupancy(WHITE) | occupancy(BLACK); }
 
     inline U64 Board::getThreats(PieceType pt) const
@@ -231,6 +200,8 @@ namespace Chess
         board[s] = p;
         piece_bb[p] |= SQUARE_BB[s];
 
+        history[curr_ply].occ[colorOf(p)] ^= SQUARE_BB[s];
+
         if (update_nnue)
             NNUE::nnue.putPiece(getAccumulator(), p, s);
     }
@@ -242,6 +213,8 @@ namespace Chess
 
         piece_bb[p] ^= SQUARE_BB[s];
         board[s] = NO_PIECE;
+
+        history[curr_ply].occ[colorOf(p)] ^= SQUARE_BB[s];
 
         if (update_nnue)
             NNUE::nnue.removePiece(getAccumulator(), p, s);
@@ -255,6 +228,8 @@ namespace Chess
         piece_bb[p] ^= SQUARE_BB[from] | SQUARE_BB[to];
         board[to] = p;
         board[from] = NO_PIECE;
+
+        history[curr_ply].occ[colorOf(p)] ^= SQUARE_BB[from] | SQUARE_BB[to];
 
         if (update_nnue)
             NNUE::nnue.movePiece(getAccumulator(), p, from, to);
