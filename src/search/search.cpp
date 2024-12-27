@@ -474,7 +474,7 @@ namespace Astra
             Score score = VALUE_NONE;
 
             // late move reductions
-            if (depth > 2 && made_moves > 1 + 2 * root_node  && (!pv_node || !isCap(move)))
+            if (depth > 2 && made_moves > 1 && (!pv_node || !isCap(move)))
             {
                 int r = REDUCTIONS[depth][made_moves];
                 // increase when not improving
