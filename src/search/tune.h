@@ -8,7 +8,7 @@
 namespace Astra
 {
     struct Param;
-    
+
     inline std::vector<Param *> params;
 
     struct Param
@@ -37,7 +37,7 @@ namespace Astra
 #define PARAM(name, value, min, max, step) constexpr int name = value
 #endif
 
- // search parameters
+    // search parameters
     PARAM(lmr_base, 91, 80, 120, 8);
     PARAM(lmr_div, 178, 150, 200, 8);
 
@@ -66,7 +66,7 @@ namespace Astra
     PARAM(hbonus_margin, 79, 65, 80, 5);
 
     PARAM(qfp_margin, 78, 60, 150, 15);
-    
+
     // history parameters
     PARAM(history_mult, 150, 130, 180, 8);
     PARAM(history_minus, 37, 10, 50, 10);
