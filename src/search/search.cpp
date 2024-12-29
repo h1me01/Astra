@@ -615,7 +615,7 @@ namespace Astra
 
         // set eval and static eval
         if (in_check)
-            eval = ss->eval = VALUE_NONE;
+            raw_eval = eval = ss->eval = VALUE_NONE;
         else
         {
             // use tt score for better evaluation
