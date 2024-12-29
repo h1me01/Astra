@@ -39,14 +39,8 @@ namespace Chess
 
     enum PieceType
     {
-        PAWN,
-        KNIGHT,
-        BISHOP,
-        ROOK,
-        QUEEN,
-        KING,
-        NO_PIECE_TYPE,
-        NUM_PIECE_TYPES = 6
+        PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING,
+        NO_PIECE_TYPE, NUM_PIECE_TYPES = 6
     };
 
     constexpr PieceType PIECE_TO_PIECE_TYPE[13] =
@@ -58,20 +52,9 @@ namespace Chess
 
     enum Piece
     {
-        WHITE_PAWN,
-        WHITE_KNIGHT,
-        WHITE_BISHOP,
-        WHITE_ROOK,
-        WHITE_QUEEN,
-        WHITE_KING,
-        BLACK_PAWN,
-        BLACK_KNIGHT,
-        BLACK_BISHOP,
-        BLACK_ROOK,
-        BLACK_QUEEN,
-        BLACK_KING,
-        NO_PIECE,
-        NUM_PIECES = 12
+        WHITE_PAWN, WHITE_KNIGHT, WHITE_BISHOP, WHITE_ROOK, WHITE_QUEEN, WHITE_KING,
+        BLACK_PAWN, BLACK_KNIGHT, BLACK_BISHOP, BLACK_ROOK, BLACK_QUEEN, BLACK_KING,
+        NO_PIECE, NUM_PIECES = 12
     };
 
     enum Square
@@ -127,9 +110,9 @@ namespace Chess
     constexpr Score VALUE_DRAW = 0;
     constexpr Score VALUE_MATE = 32000;
     constexpr Score VALUE_INFINITE = 32001;
-    constexpr Score  VALUE_NONE = 32002;
-    constexpr Score  VALUE_TB_WIN = VALUE_MATE;
-    constexpr Score  VALUE_TB_WIN_IN_MAX_PLY = VALUE_TB_WIN - MAX_PLY;
+    constexpr Score VALUE_NONE = 32002;
+    constexpr Score VALUE_TB_WIN = VALUE_MATE;
+    constexpr Score VALUE_TB_WIN_IN_MAX_PLY = VALUE_TB_WIN - MAX_PLY;
 
     enum MoveType
     {
@@ -137,14 +120,8 @@ namespace Chess
         CAPTURE,
         CASTLING,
         EN_PASSANT,
-        PQ_KNIGHT,
-        PQ_BISHOP,
-        PQ_ROOK,
-        PQ_QUEEN,
-        PC_KNIGHT,
-        PC_BISHOP,
-        PC_ROOK,
-        PC_QUEEN
+        PQ_KNIGHT, PQ_BISHOP, PQ_ROOK, PQ_QUEEN,
+        PC_KNIGHT, PC_BISHOP, PC_ROOK, PC_QUEEN
     };
 
     // max number of possible legal moves in chess are 218

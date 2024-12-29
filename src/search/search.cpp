@@ -17,12 +17,12 @@ namespace Astra
     {
         REDUCTIONS[0][0] = 0;
 
-        double base = lmr_base / 100.0;
-        double div = lmr_div / 100.0;
+        const double base = double(lmr_base) / 100.0;
+        const double div_factor = double(lmr_div) / 100.0;
 
         for (int depth = 1; depth < MAX_PLY; depth++)
             for (int moves = 1; moves < MAX_MOVES; moves++)
-                REDUCTIONS[depth][moves] = base + log(depth) * log(moves) / div;
+                REDUCTIONS[depth][moves] = base + log(depth) * log(moves) / div_factor;
     }
 
     // search class
