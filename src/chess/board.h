@@ -48,7 +48,7 @@ namespace Chess
         U64 threats[NUM_PIECE_TYPES] = {};
         int half_move_clock;
         int plies_from_null;
-        
+
         // enemy pieces that check our king
         U64 checkers = 0;
         // squares of our pinned pieces
@@ -57,8 +57,8 @@ namespace Chess
         U64 danger = 0;
 
         StateInfo() = default;
-        StateInfo(const StateInfo& other) = default;
-        StateInfo& operator=(const StateInfo& other) = default;
+        StateInfo(const StateInfo &other) = default;
+        StateInfo &operator=(const StateInfo &other) = default;
     };
 
     class Board
@@ -87,6 +87,7 @@ namespace Chess
         Square kingSq(Color c) const;
         NNUE::Accumulator &getAccumulator();
         void refreshAccumulator();
+        void resetAccumulator();
         void resetPly();
 
         U64 diagSliders(Color c) const;
@@ -135,31 +136,24 @@ namespace Chess
     }
 
     inline Piece Board::pieceAt(Square s) const { return board[s]; }
-
     inline Color Board::getTurn() const { return stm; }
-
     inline int Board::getPly() const { return curr_ply; }
 
     inline int Board::halfMoveClock() const { return history[curr_ply].half_move_clock; }
 
     inline U64 Board::getHash() const { return history[curr_ply].hash; }
-    
     inline U64 Board::getPawnHash() const { return history[curr_ply].pawn_hash; }
-
     inline U64 Board::getNonPawnHash(Color c) const { return history[curr_ply].non_pawn_hash[c]; }
 
     inline Square Board::kingSq(Color c) const { return lsb(getPieceBB(c, KING)); }
 
     inline NNUE::Accumulator &Board::getAccumulator() { return accumulators.back(); }
+    inline void Board::resetAccumulator() { accumulators.clear(); }
 
     inline void Board::resetPly() { curr_ply = 0; }
 
     inline U64 Board::occupancy(Color c) const { return history[curr_ply].occ[c]; }
-
-    inline U64 Board::occupancy() const 
-    { 
-        return occupancy(WHITE) | occupancy(BLACK); 
-    }
+    inline U64 Board::occupancy() const { return occupancy(WHITE) | occupancy(BLACK); }
 
     inline U64 Board::getThreats(PieceType pt) const
     {
@@ -167,20 +161,10 @@ namespace Chess
         return history[curr_ply].threats[pt];
     }
 
-    inline U64 Board::diagSliders(Color c) const
-    {
-        return getPieceBB(c, BISHOP) | getPieceBB(c, QUEEN);
-    }
+    inline U64 Board::diagSliders(Color c) const { return getPieceBB(c, BISHOP) | getPieceBB(c, QUEEN); }
+    inline U64 Board::orthSliders(Color c) const { return getPieceBB(c, ROOK) | getPieceBB(c, QUEEN); }
 
-    inline U64 Board::orthSliders(Color c) const
-    {
-        return getPieceBB(c, ROOK) | getPieceBB(c, QUEEN);
-    }
-    
-    inline bool Board::inCheck() const
-    {
-        return history[curr_ply].checkers;
-    }
+    inline bool Board::inCheck() const { return history[curr_ply].checkers; }
 
     inline bool Board::oppHasGoodCaptures() const
     {
@@ -195,17 +179,16 @@ namespace Chess
         return (queens & rook_threats) | (rooks & minor_threats) | (minors & pawn_threats);
     }
 
-    inline void Board::putPiece(Piece p, Square s, bool update_nnue)
+    inline void Board::putPiece(Piece pc, Square psq, bool update_nnue)
     {
-        assert(p != NO_PIECE);
+        assert(pc != NO_PIECE);
 
-        board[s] = p;
-        piece_bb[p] |= SQUARE_BB[s];
-
-        history[curr_ply].occ[colorOf(p)] ^= SQUARE_BB[s];
+        board[psq] = pc;
+        piece_bb[pc] |= SQUARE_BB[psq];
+        history[curr_ply].occ[colorOf(pc)] ^= SQUARE_BB[psq];
 
         if (update_nnue)
-            NNUE::nnue.putPiece(getAccumulator(), p, s);
+            NNUE::nnue.putPiece(getAccumulator(), pc, psq, kingSq(WHITE), kingSq(BLACK));
     }
 
     inline void Board::removePiece(Square s, bool update_nnue)
@@ -215,26 +198,42 @@ namespace Chess
 
         piece_bb[p] ^= SQUARE_BB[s];
         board[s] = NO_PIECE;
-
         history[curr_ply].occ[colorOf(p)] ^= SQUARE_BB[s];
 
         if (update_nnue)
-            NNUE::nnue.removePiece(getAccumulator(), p, s);
+            NNUE::nnue.removePiece(getAccumulator(), p, s, kingSq(WHITE), kingSq(BLACK));
     }
+
+    inline int count = 0;
 
     inline void Board::movePiece(Square from, Square to, bool update_nnue)
     {
-        Piece p = board[from];
-        assert(p != NO_PIECE);
+        Piece pc = board[from];
+        assert(pc != NO_PIECE);
 
-        piece_bb[p] ^= SQUARE_BB[from] | SQUARE_BB[to];
-        board[to] = p;
+        piece_bb[pc] ^= SQUARE_BB[from] | SQUARE_BB[to];
+        board[to] = pc;
         board[from] = NO_PIECE;
-
-        history[curr_ply].occ[colorOf(p)] ^= SQUARE_BB[from] | SQUARE_BB[to];
+        history[curr_ply].occ[colorOf(pc)] ^= SQUARE_BB[from] | SQUARE_BB[to];
 
         if (update_nnue)
-            NNUE::nnue.movePiece(getAccumulator(), p, from, to);
+        {
+            if (typeOf(pc) == KING)
+            {
+                Square rel_from = relativeSquare(stm, from);
+                Square rel_to = relativeSquare(stm, to);
+
+                // refresh if different bucket index or king crossing the other half
+                if (NNUE::KING_BUCKET[rel_from] != NNUE::KING_BUCKET[rel_to] || fileOf(from) + fileOf(to) == 7) 
+                {
+                    refreshAccumulator();
+                    count++;
+                    return;
+                }
+            }
+            
+            NNUE::nnue.movePiece(getAccumulator(), pc, from, to, kingSq(WHITE),  kingSq(BLACK));
+        }
     }
 
 } // namespace Chess

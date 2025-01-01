@@ -16,6 +16,7 @@ namespace Chess
 
     const int PIECE_VALUES[] = {100, 325, 325, 500, 1000, 30000, 0};
 
+    // clang-format off
     enum Color
     {
         WHITE,
@@ -106,6 +107,7 @@ namespace Chess
         RANK_7,
         RANK_8
     };
+    // clang-format on
 
     constexpr Score VALUE_DRAW = 0;
     constexpr Score VALUE_MATE = 32000;

@@ -73,7 +73,7 @@ namespace Chess
     inline Square &operator+=(Square &s, Direction d) { return s = s + d; }
     inline Square &operator-=(Square &s, Direction d) { return s = s - d; }
 
-    constexpr Square relativeSquare(Color c, Square s) { return Square(s ^ (c * 56)); }
+    constexpr Square relativeSquare(Color c, Square s) { return c == WHITE ? s : Square(s ^ 56); }
 
     constexpr Rank relativeRank(Color c, Rank r) { return c == WHITE ? r : Rank(RANK_8 - r); }
 

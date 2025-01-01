@@ -7,5 +7,3 @@ python/
 src/astra.exe
 
 CMakeLists.txt
-
-weights/

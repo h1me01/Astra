@@ -16,11 +16,29 @@ using namespace Chess;
 #define ALIGNMENT 32
 #endif
 
+#include <cstring>
+
 namespace NNUE
 {
-    constexpr int INPUT_SIZE = 768;
+    constexpr int BUCKET_SIZE = 10;
+    constexpr int FEATURE_SIZE = 768;
+
+    constexpr int INPUT_SIZE = BUCKET_SIZE * FEATURE_SIZE;
     constexpr int HIDDEN_SIZE = 1024;
     constexpr int OUTPUT_SIZE = 1;
+
+    // clang-format off
+    constexpr int KING_BUCKET[NUM_SQUARES] {
+        0, 1, 2, 3, 3, 2, 1, 0,
+        4, 4, 5, 5, 5, 5, 4, 4,
+        6, 6, 6, 6, 6, 6, 6, 6,
+        7, 7, 7, 7, 7, 7, 7, 7,
+        8, 8, 8, 8, 8, 8, 8, 8,
+        8, 8, 8, 8, 8, 8, 8, 8,
+        9, 9, 9, 9, 9, 9, 9, 9,
+        9, 9, 9, 9, 9, 9, 9, 9,
+    };
+    // clang-format on
 
     struct Accumulator
     {
@@ -64,12 +82,11 @@ namespace NNUE
         alignas(ALIGNMENT) int32_t fc2_biases[OUTPUT_SIZE];
 
         void init();
-
+        
         int32_t forward(const Accumulator &acc, Color stm) const;
-
-        void putPiece(Accumulator &acc, Piece p, Square s) const;
-        void removePiece(Accumulator &acc, Piece p, Square s) const;
-        void movePiece(Accumulator &acc, Piece p, Square from, Square to) const;
+        void putPiece(Accumulator &acc, Piece pc, Square psq, Square wksq, Square bksq) const;
+        void removePiece(Accumulator &acc, Piece pc, Square psq, Square wksq, Square bksq) const;
+        void movePiece(Accumulator &acc, Piece pc, Square from, Square to, Square wksq, Square bksq) const;
     };
 
     // global variable

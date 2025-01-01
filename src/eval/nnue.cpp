@@ -16,6 +16,7 @@ using avx_type = __m512i;
 #define avx_add_epi16 _mm512_add_epi16
 #define avx_sub_epi16 _mm512_sub_epi16
 #define avx_max_epi16 _mm512_max_epi16
+#define avx_set1_epi16 _mm512_set1_epi16
 #elif defined(__AVX2__) || defined(__AVX__)
 using avx_type = __m256i;
 #define div (16)
@@ -24,6 +25,7 @@ using avx_type = __m256i;
 #define avx_add_epi16 _mm256_add_epi16
 #define avx_sub_epi16 _mm256_sub_epi16
 #define avx_max_epi16 _mm256_max_epi16
+#define avx_set1_epi16 _mm256_set1_epi16
 #endif
 
 namespace NNUE
@@ -47,15 +49,19 @@ namespace NNUE
 #endif
 
     // helper
-    int index(Square s, Piece p, Color view)
+    int index(Square psq, Square ksq, Piece pc, Color view)
     {
-        assert(p != NO_PIECE);
-        assert(s != NO_SQUARE);
+        assert(pc != NO_PIECE);
+        assert(psq != NO_SQUARE);
 
-        if (view == BLACK)
-            s = Square(s ^ 56);
+        // mirror psq horizontally if king is on other half
+        if (fileOf(ksq) > 3)
+            psq = Square(psq ^ 7);
 
-        return s + typeOf(p) * 64 + (colorOf(p) != view) * 64 * 6;
+        psq = relativeSquare(view, psq);
+        ksq = relativeSquare(view, ksq);
+
+        return psq + typeOf(pc) * 64 + (colorOf(pc) != view) * 64 * 6 + KING_BUCKET[ksq] * FEATURE_SIZE;
     }
 
     // nnue
@@ -92,7 +98,7 @@ namespace NNUE
             res = avx_add_epi32(res, avx_madd_epi16(avx_max_epi16(acc_opp[i], zero), weights[i + HIDDEN_SIZE / div]));
 
         const auto output = sumRegisterEpi32(res) + fc2_biases[0];
-        return output / 512 / 16;
+        return output / 128 / 32;
 #else
         int32_t output = fc2_biases[0];
 
@@ -105,14 +111,14 @@ namespace NNUE
                 output += fc2_weights[HIDDEN_SIZE + j] * acc.data[~stm][j];
         }
 
-        return output / 512 / 16;
+        return output / 128 / 32;
 #endif
     }
 
-    void NNUE::putPiece(Accumulator &acc, Piece p, Square s) const
+    void NNUE::putPiece(Accumulator &acc, Piece pc, Square psq, Square wksq, Square bksq) const
     {
-        const int w_idx = index(s, p, WHITE);
-        const int b_idx = index(s, p, BLACK);
+        const int w_idx = index(psq, wksq, pc, WHITE);
+        const int b_idx = index(psq, bksq, pc, BLACK);
 
 #if defined(__AVX512F__) || defined(__AVX2__) || defined(__AVX__)
         avx_type *acc_white = (avx_type *)acc.data[WHITE];
@@ -134,10 +140,10 @@ namespace NNUE
 #endif
     }
 
-    void NNUE::removePiece(Accumulator &acc, Piece p, Square s) const
+    void NNUE::removePiece(Accumulator &acc, Piece pc, Square psq, Square wksq, Square bksq) const
     {
-        const int w_idx = index(s, p, WHITE);
-        const int b_idx = index(s, p, BLACK);
+        const int w_idx = index(psq, wksq, pc, WHITE);
+        const int b_idx = index(psq, bksq, pc, BLACK);
 
 #if defined(__AVX512F__) || defined(__AVX2__) || defined(__AVX__)
         avx_type *acc_white = (avx_type *)acc.data[WHITE];
@@ -159,12 +165,12 @@ namespace NNUE
 #endif
     }
 
-    void NNUE::movePiece(Accumulator &acc, Piece p, Square from, Square to) const
+    void NNUE::movePiece(Accumulator &acc, Piece pc, Square from, Square to, Square wksq, Square bksq) const
     {
-        const int w_from_idx = index(from, p, WHITE);
-        const int w_to_idx = index(to, p, WHITE);
-        const int b_from_idx = index(from, p, BLACK);
-        const int b_to_idx = index(to, p, BLACK);
+        const int w_from_idx = index(from, wksq, pc, WHITE);
+        const int w_to_idx = index(to, wksq, pc, WHITE);
+        const int b_from_idx = index(from, bksq, pc, BLACK);
+        const int b_to_idx = index(to, bksq, pc, BLACK);
 
 #if defined(__AVX512F__) || defined(__AVX2__) || defined(__AVX__)
         avx_type *acc_white = (avx_type *)acc.data[WHITE];
@@ -175,7 +181,7 @@ namespace NNUE
         const auto wgt_black_from = (const avx_type *)(fc1_weights + b_from_idx * HIDDEN_SIZE);
         const auto wgt_black_to = (const avx_type *)(fc1_weights + b_to_idx * HIDDEN_SIZE);
 
-        for (int i = 0; i < HIDDEN_SIZE / div; i++)
+        for (int i = 0; i < HIDDEN_SIZE / div; i++) 
             acc_white[i] = avx_add_epi16(acc_white[i], avx_sub_epi16(wgt_white_to[i], wgt_white_from[i]));
         for (int i = 0; i < HIDDEN_SIZE / div; i++)
             acc_black[i] = avx_add_epi16(acc_black[i], avx_sub_epi16(wgt_black_to[i], wgt_black_from[i]));

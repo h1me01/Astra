@@ -236,6 +236,7 @@ namespace UCI
                 }
             }
 
+        board.resetAccumulator();
         board.refreshAccumulator();
     }
 

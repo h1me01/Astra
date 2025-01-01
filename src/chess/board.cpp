@@ -82,7 +82,7 @@ namespace Chess
             else if (c == '/')
                 sqr -= 16;
             else
-                putPiece(Piece(PIECE_STR.find(c)), Square(sqr++), true);
+                putPiece(Piece(PIECE_STR.find(c)), Square(sqr++), false);
         }
 
         initThreats();
@@ -107,6 +107,7 @@ namespace Chess
         info.non_pawn_hash[WHITE] = Zobrist::getNonPawnZobrist(*this, WHITE);
         info.non_pawn_hash[BLACK] = Zobrist::getNonPawnZobrist(*this, BLACK);
 
+        resetAccumulator();
         refreshAccumulator();
     }
 
@@ -201,7 +202,6 @@ namespace Chess
 
     void Board::refreshAccumulator()
     {
-        accumulators.clear();
         NNUE::Accumulator &acc = accumulators.back();
 
         for (int j = 0; j < NNUE::HIDDEN_SIZE; j++)
@@ -214,7 +214,7 @@ namespace Chess
         {
             U64 b = piece_bb[i];
             while (b)
-                NNUE::nnue.putPiece(acc, Piece(i), popLsb(b));
+                NNUE::nnue.putPiece(acc, Piece(i), popLsb(b), kingSq(WHITE), kingSq(BLACK));
         }
     }
 
