@@ -128,9 +128,10 @@ namespace NNUE
         const auto wgt_black = (const avx_type *)(fc1_weights + b_idx * HIDDEN_SIZE);
 
         for (int i = 0; i < HIDDEN_SIZE / div; i++)
+        {
             acc_white[i] = avx_add_epi16(acc_white[i], wgt_white[i]);
-        for (int i = 0; i < HIDDEN_SIZE / div; i++)
             acc_black[i] = avx_add_epi16(acc_black[i], wgt_black[i]);
+        }
 #else
         for (int i = 0; i < HIDDEN_SIZE; i++)
         {
@@ -153,9 +154,10 @@ namespace NNUE
         const auto wgt_black = (const avx_type *)(fc1_weights + b_idx * HIDDEN_SIZE);
 
         for (int i = 0; i < HIDDEN_SIZE / div; i++)
+        {
             acc_white[i] = avx_sub_epi16(acc_white[i], wgt_white[i]);
-        for (int i = 0; i < HIDDEN_SIZE / div; i++)
             acc_black[i] = avx_sub_epi16(acc_black[i], wgt_black[i]);
+        }
 #else
         for (int i = 0; i < HIDDEN_SIZE; i++)
         {
@@ -182,9 +184,10 @@ namespace NNUE
         const auto wgt_black_to = (const avx_type *)(fc1_weights + b_to_idx * HIDDEN_SIZE);
 
         for (int i = 0; i < HIDDEN_SIZE / div; i++) 
+        {
             acc_white[i] = avx_add_epi16(acc_white[i], avx_sub_epi16(wgt_white_to[i], wgt_white_from[i]));
-        for (int i = 0; i < HIDDEN_SIZE / div; i++)
             acc_black[i] = avx_add_epi16(acc_black[i], avx_sub_epi16(wgt_black_to[i], wgt_black_from[i]));
+        }
 #else
         for (int i = 0; i < HIDDEN_SIZE; i++)
         {
