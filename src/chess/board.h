@@ -5,7 +5,7 @@
 #include "misc.h"
 #include "zobrist.h"
 #include "attacks.h"
-#include "../eval/nnue.h"
+#include "../eval/accumulator.h"
 
 namespace Chess
 {
@@ -86,13 +86,12 @@ namespace Chess
         U64 getThreats(PieceType pt) const;
         Square kingSq(Color c) const;
         NNUE::Accumulator &getAccumulator();
-        void refreshAccumulator();
+        void refreshAccumulator(Color c = BOTH_COLORS);
         void resetAccumulator();
         void resetPly();
 
         U64 diagSliders(Color c) const;
         U64 orthSliders(Color c) const;
-        U64 occupancy() const;
         U64 occupancy(Color c) const;
         U64 attackersTo(Color c, Square s, U64 occ) const;
         U64 keyAfter(Move m) const;
@@ -152,8 +151,16 @@ namespace Chess
 
     inline void Board::resetPly() { curr_ply = 0; }
 
-    inline U64 Board::occupancy(Color c) const { return history[curr_ply].occ[c]; }
-    inline U64 Board::occupancy() const { return occupancy(WHITE) | occupancy(BLACK); }
+    inline U64 Board::occupancy(Color c = BOTH_COLORS) const
+    {
+        U64 occ = 0;
+        if (c != BLACK)
+            occ |= history[curr_ply].occ[WHITE];
+        if (c != WHITE)
+            occ |= history[curr_ply].occ[BLACK];
+
+        return occ;
+    }
 
     inline U64 Board::getThreats(PieceType pt) const
     {
@@ -204,8 +211,6 @@ namespace Chess
             NNUE::nnue.removePiece(getAccumulator(), p, s, kingSq(WHITE), kingSq(BLACK));
     }
 
-    inline int count = 0;
-
     inline void Board::movePiece(Square from, Square to, bool update_nnue)
     {
         Piece pc = board[from];
@@ -218,21 +223,24 @@ namespace Chess
 
         if (update_nnue)
         {
+            const Square wksq = kingSq(WHITE);
+            const Square bksq = kingSq(BLACK);
+
             if (typeOf(pc) == KING)
             {
                 Square rel_from = relativeSquare(stm, from);
                 Square rel_to = relativeSquare(stm, to);
 
                 // refresh if different bucket index or king crossing the other half
-                if (NNUE::KING_BUCKET[rel_from] != NNUE::KING_BUCKET[rel_to] || fileOf(from) + fileOf(to) == 7) 
+                if (NNUE::KING_BUCKET[rel_from] != NNUE::KING_BUCKET[rel_to] || fileOf(from) + fileOf(to) == 7)
                 {
-                    refreshAccumulator();
-                    count++;
+                    refreshAccumulator(stm);
+                    NNUE::nnue.movePiece(getAccumulator(), pc, from, to, wksq, bksq, ~stm);
                     return;
                 }
             }
-            
-            NNUE::nnue.movePiece(getAccumulator(), pc, from, to, kingSq(WHITE),  kingSq(BLACK));
+
+            NNUE::nnue.movePiece(getAccumulator(), pc, from, to, wksq, bksq);
         }
     }
 

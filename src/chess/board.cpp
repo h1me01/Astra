@@ -200,21 +200,23 @@ namespace Chess
         return fen.str();
     }
 
-    void Board::refreshAccumulator()
+    void Board::refreshAccumulator(Color c)
     {
         NNUE::Accumulator &acc = accumulators.back();
 
         for (int j = 0; j < NNUE::HIDDEN_SIZE; j++)
         {
-            acc.data[WHITE][j] = NNUE::nnue.fc1_biases[j];
-            acc.data[BLACK][j] = NNUE::nnue.fc1_biases[j];
+            if (c != BLACK)
+                acc.data[WHITE][j] = NNUE::nnue.fc1_biases[j];
+            if (c != WHITE)
+                acc.data[BLACK][j] = NNUE::nnue.fc1_biases[j];
         }
 
         for (int i = WHITE_PAWN; i <= BLACK_KING; i++)
         {
             U64 b = piece_bb[i];
             while (b)
-                NNUE::nnue.putPiece(acc, Piece(i), popLsb(b), kingSq(WHITE), kingSq(BLACK));
+                NNUE::nnue.putPiece(acc, Piece(i), popLsb(b), kingSq(WHITE), kingSq(BLACK), c);
         }
     }
 

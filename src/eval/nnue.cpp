@@ -1,5 +1,6 @@
 #include <cstring> // std::memcpy
 #include "nnue.h"
+#include "accumulator.h"
 #include "../chess/misc.h"
 
 #include "incbin.h"
@@ -106,7 +107,6 @@ namespace NNUE
         {
             if (acc.data[stm][j] > 0)
                 output += fc2_weights[j] * acc.data[stm][j];
-
             if (acc.data[~stm][j] > 0)
                 output += fc2_weights[HIDDEN_SIZE + j] * acc.data[~stm][j];
         }
@@ -115,7 +115,7 @@ namespace NNUE
 #endif
     }
 
-    void NNUE::putPiece(Accumulator &acc, Piece pc, Square psq, Square wksq, Square bksq) const
+    void NNUE::putPiece(Accumulator &acc, Piece pc, Square psq, Square wksq, Square bksq, Color which) const
     {
         const int w_idx = index(psq, wksq, pc, WHITE);
         const int b_idx = index(psq, bksq, pc, BLACK);
@@ -129,14 +129,18 @@ namespace NNUE
 
         for (int i = 0; i < HIDDEN_SIZE / div; i++)
         {
-            acc_white[i] = avx_add_epi16(acc_white[i], wgt_white[i]);
-            acc_black[i] = avx_add_epi16(acc_black[i], wgt_black[i]);
+            if (which != BLACK)
+                acc_white[i] = avx_add_epi16(acc_white[i], wgt_white[i]);
+            if (which != WHITE)
+                acc_black[i] = avx_add_epi16(acc_black[i], wgt_black[i]);
         }
 #else
         for (int i = 0; i < HIDDEN_SIZE; i++)
         {
-            acc.data[WHITE][i] += fc1_weights[w_idx * HIDDEN_SIZE + i];
-            acc.data[BLACK][i] += fc1_weights[b_idx * HIDDEN_SIZE + i];
+            if (which != BLACK)
+                acc.data[WHITE][i] += fc1_weights[w_idx * HIDDEN_SIZE + i];
+            if (which != WHITE)
+                acc.data[BLACK][i] += fc1_weights[b_idx * HIDDEN_SIZE + i];
         }
 #endif
     }
@@ -167,7 +171,7 @@ namespace NNUE
 #endif
     }
 
-    void NNUE::movePiece(Accumulator &acc, Piece pc, Square from, Square to, Square wksq, Square bksq) const
+    void NNUE::movePiece(Accumulator &acc, Piece pc, Square from, Square to, Square wksq, Square bksq, Color which) const
     {
         const int w_from_idx = index(from, wksq, pc, WHITE);
         const int w_to_idx = index(to, wksq, pc, WHITE);
@@ -183,16 +187,20 @@ namespace NNUE
         const auto wgt_black_from = (const avx_type *)(fc1_weights + b_from_idx * HIDDEN_SIZE);
         const auto wgt_black_to = (const avx_type *)(fc1_weights + b_to_idx * HIDDEN_SIZE);
 
-        for (int i = 0; i < HIDDEN_SIZE / div; i++) 
+        for (int i = 0; i < HIDDEN_SIZE / div; i++)
         {
-            acc_white[i] = avx_add_epi16(acc_white[i], avx_sub_epi16(wgt_white_to[i], wgt_white_from[i]));
-            acc_black[i] = avx_add_epi16(acc_black[i], avx_sub_epi16(wgt_black_to[i], wgt_black_from[i]));
+            if (which != BLACK)
+                acc_white[i] = avx_add_epi16(acc_white[i], avx_sub_epi16(wgt_white_to[i], wgt_white_from[i]));
+            if (which != WHITE)
+                acc_black[i] = avx_add_epi16(acc_black[i], avx_sub_epi16(wgt_black_to[i], wgt_black_from[i]));
         }
 #else
         for (int i = 0; i < HIDDEN_SIZE; i++)
         {
-            acc.data[WHITE][i] += fc1_weights[w_to_idx * HIDDEN_SIZE + i] - fc1_weights[w_from_idx * HIDDEN_SIZE + i];
-            acc.data[BLACK][i] += fc1_weights[b_to_idx * HIDDEN_SIZE + i] - fc1_weights[b_from_idx * HIDDEN_SIZE + i];
+            if (which != BLACK)
+                acc.data[WHITE][i] += fc1_weights[w_to_idx * HIDDEN_SIZE + i] - fc1_weights[w_from_idx * HIDDEN_SIZE + i];
+            if (which != WHITE)
+                acc.data[BLACK][i] += fc1_weights[b_to_idx * HIDDEN_SIZE + i] - fc1_weights[b_from_idx * HIDDEN_SIZE + i];
         }
 #endif
     }

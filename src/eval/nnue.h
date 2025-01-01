@@ -4,11 +4,8 @@
 #include <array>
 #include <cassert>
 #include <immintrin.h>
+#include <cstring>
 #include "../chess/types.h"
-
-#include <iostream>
-
-using namespace Chess;
 
 #if defined(__AVX512F__)
 #define ALIGNMENT 64
@@ -16,10 +13,12 @@ using namespace Chess;
 #define ALIGNMENT 32
 #endif
 
-#include <cstring>
+using namespace Chess;
 
 namespace NNUE
 {
+    class Accumulator;
+
     constexpr int BUCKET_SIZE = 10;
     constexpr int FEATURE_SIZE = 768;
 
@@ -40,40 +39,6 @@ namespace NNUE
     };
     // clang-format on
 
-    struct Accumulator
-    {
-        alignas(ALIGNMENT) int16_t data[NUM_COLORS][HIDDEN_SIZE];
-    };
-
-    class Accumulators
-    {
-    public:
-        Accumulators() : index(0) {}
-
-        int size() const { return index; }
-
-        void clear() { index = 0; }
-
-        void push()
-        {
-            index++;
-            assert(index < MAX_PLY + 1);
-            accumulators[index] = accumulators[index - 1];
-        }
-
-        void pop()
-        {
-            assert(index > 0);
-            index--;
-        }
-
-        Accumulator &back() { return accumulators[index]; }
-
-    private:
-        int index;
-        std::array<Accumulator, MAX_PLY + 1> accumulators{};
-    };
-
     struct NNUE
     {
         alignas(ALIGNMENT) int16_t fc1_weights[INPUT_SIZE * HIDDEN_SIZE];
@@ -84,9 +49,9 @@ namespace NNUE
         void init();
         
         int32_t forward(const Accumulator &acc, Color stm) const;
-        void putPiece(Accumulator &acc, Piece pc, Square psq, Square wksq, Square bksq) const;
+        void putPiece(Accumulator &acc, Piece pc, Square psq, Square wksq, Square bksq, Color c = BOTH_COLORS) const;
         void removePiece(Accumulator &acc, Piece pc, Square psq, Square wksq, Square bksq) const;
-        void movePiece(Accumulator &acc, Piece pc, Square from, Square to, Square wksq, Square bksq) const;
+        void movePiece(Accumulator &acc, Piece pc, Square from, Square to, Square wksq, Square bksq, Color c = BOTH_COLORS) const;
     };
 
     // global variable

@@ -21,6 +21,7 @@ namespace Chess
     {
         WHITE,
         BLACK,
+        BOTH_COLORS = 2,
         NUM_COLORS = 2
     };
 
