@@ -1,5 +1,5 @@
 ROOT := $(realpath $(dir $(abspath $(lastword $(MAKEFILE_LIST)))))
-EvalFile = $(ROOT)/nn-2x(8x768-1024)-1.net
+EvalFile = $(ROOT)/nn-8x768-1024-1.net
 
 # Compiler and flags
 CXX := g++
