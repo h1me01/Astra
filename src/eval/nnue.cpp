@@ -127,7 +127,7 @@ namespace NNUE
             acc_view[i] = avx_add_epi16(acc_view[i], weights[i]);
 #else
         for (int i = 0; i < HIDDEN_SIZE; i++)
-            acc.data[WHITE][i] += fc1_weights[idx * HIDDEN_SIZE + i];
+            acc.data[view][i] += fc1_weights[idx * HIDDEN_SIZE + i];
 #endif
     }
 
@@ -149,7 +149,7 @@ namespace NNUE
             acc_view[i] = avx_sub_epi16(acc_view[i], weights[i]);
 #else
         for (int i = 0; i < HIDDEN_SIZE; i++)
-            acc.data[WHITE][i] -= fc1_weights[w_idx * HIDDEN_SIZE + i];
+            acc.data[view][i] -= fc1_weights[idx * HIDDEN_SIZE + i];
 #endif
     }
 
@@ -174,7 +174,7 @@ namespace NNUE
             acc_view[i] = avx_add_epi16(acc_view[i], avx_sub_epi16(weights_to[i], weights_from[i]));
 #else
         for (int i = 0; i < HIDDEN_SIZE; i++)
-            acc.data[WHITE][i] += fc1_weights[w_to_idx * HIDDEN_SIZE + i] - fc1_weights[w_from_idx * HIDDEN_SIZE + i];
+            acc.data[view][i] += fc1_weights[to_idx * HIDDEN_SIZE + i] - fc1_weights[from_idx * HIDDEN_SIZE + i];
 #endif
     }
 
