@@ -7,7 +7,7 @@
 namespace Chess
 {
     class Board;
-    
+
     // psuedorandom number generator from stockfish
     class PRNG
     {
@@ -37,8 +37,8 @@ namespace Chess
         U64 getCastle(int idx);
         U64 getEp(Square sq);
 
-        U64 getPawnZobrist(const Board& board);
-        U64 getNonPawnZobrist(const Board& board, Color c);
+        U64 getPawnZobrist(const Board &board);
+        U64 getNonPawnZobrist(const Board &board, Color c);
 
     } // namespace Zobrist
 

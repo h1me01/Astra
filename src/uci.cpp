@@ -211,7 +211,6 @@ namespace UCI
     {
         std::string token, fen;
 
-
         is >> token;
         if (token == "startpos")
             fen = STARTING_FEN;
@@ -259,7 +258,7 @@ namespace UCI
                     std::cout << "No depth value provided.\n";
                 else
                     testPerft(board, depth);
-                
+
                 return;
             }
             else if (token == "wtime")

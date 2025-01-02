@@ -47,7 +47,7 @@ namespace NNUE
         alignas(ALIGNMENT) int32_t fc2_biases[OUTPUT_SIZE];
 
         void init();
-        
+
         int32_t forward(const Accumulator &acc, Color stm) const;
 
         void putPiece(Accumulator &acc, Piece pc, Square psq, Square ksq, Color view) const;

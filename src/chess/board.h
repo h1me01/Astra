@@ -72,7 +72,7 @@ namespace Chess
         Board &operator=(const Board &other);
 
         void print() const;
-        
+
         std::string getFen() const;
 
         U64 getPieceBB(Color c, PieceType pt) const;
@@ -233,7 +233,7 @@ namespace Chess
                 {
                     // other side doesn't need a refresh
                     NNUE::nnue.movePiece(getAccumulator(~stm), pc, from, to, kingSq(~stm), ~stm);
-                    
+
                     accumulator_table->refresh(stm, *this);
                     accumulators.acc_initialized[stm] = true;
                     return;

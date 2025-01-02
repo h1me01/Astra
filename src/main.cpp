@@ -3,6 +3,8 @@
 
 int main(int argc, char **argv)
 {
+    std::cout << "Astra chess engine written by Semih Özalp" << std::endl;
+
     initLookUpTables();
     Zobrist::init();
     Astra::initReductions();

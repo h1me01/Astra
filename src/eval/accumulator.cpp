@@ -10,7 +10,7 @@ namespace NNUE
         const bool king_side = fileOf(ksq) > 3;
 
         AccumulatorEntry &entry = entries[view][king_side * 10 + KING_BUCKET[relativeSquare(view, ksq)]];
-    
+
         for (Color c : {WHITE, BLACK})
             for (int i = PAWN; i <= KING; i++)
             {

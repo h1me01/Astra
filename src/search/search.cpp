@@ -207,14 +207,14 @@ namespace Astra
 
         // look up in transposition table
         bool tt_hit = false;
-        TTEntry* ent = nullptr;
+        TTEntry *ent = nullptr;
         Move tt_move = NO_MOVE;
         Bound tt_bound = NO_BOUND;
         Score tt_score = VALUE_NONE;
         Score tt_eval = VALUE_NONE;
         int tt_depth = 0;
 
-        if (!skipped) 
+        if (!skipped)
         {
             ent = tt.lookup(hash, &tt_hit);
 
@@ -241,8 +241,10 @@ namespace Astra
                 Bound bound = NO_BOUND;
                 tb_hits++;
 
+                // clang-format off
                 tb_score = tb_score == VALUE_TB_WIN ? VALUE_MATE - ss->ply : tb_score == -VALUE_TB_WIN ? -VALUE_MATE + ss->ply + 1 : 0;
                 bound = tb_score == VALUE_TB_WIN ? LOWER_BOUND : tb_score == -VALUE_TB_WIN ? UPPER_BOUND : EXACT_BOUND;
+                // clang-format on
 
                 if (bound == EXACT_BOUND || (bound == LOWER_BOUND && tb_score >= beta) || (bound == UPPER_BOUND && tb_score <= alpha))
                 {
@@ -293,12 +295,12 @@ namespace Astra
 
         // update quiet history
         Move prev_move = (ss - 1)->curr_move;
-        if (!prev_move && !isCap(prev_move) && (ss - 1)->eval != VALUE_NONE) 
+        if (!prev_move && !isCap(prev_move) && (ss - 1)->eval != VALUE_NONE)
         {
             int bonus = std::clamp(-5 * (ss->eval + (ss - 1)->eval), -80, 150);
             history.updateQuietHistory(~stm, prev_move, bonus);
         }
-        
+
         // internal iterative reduction
         if (!in_check && !tt_hit && depth >= 4 && (pv_node || cut_node))
             depth--;
@@ -320,9 +322,11 @@ namespace Astra
             }
 
             // null move pruning
+            // clang-format off
             if (depth >= 3 && !skipped && eval >= beta && ss->eval + 30 * depth - 200 >= beta
                 && board.nonPawnMat(stm) && (ss - 1)->curr_move != NULL_MOVE && beta > -VALUE_TB_WIN_IN_MAX_PLY)
             {
+                // clang-format on
                 int R = 4 + depth / nmp_depth_div + std::min(int(nmp_min), (eval - beta) / nmp_div);
 
                 ss->curr_move = NULL_MOVE;
@@ -343,10 +347,12 @@ namespace Astra
             }
 
             // probcut
+            // clang-format off
             int beta_cut = beta + probcut_margin;
             if (!skipped && depth > 4 && std::abs(beta) < VALUE_TB_WIN_IN_MAX_PLY 
                 && !(tt_depth >= depth - 3 && tt_score != VALUE_NONE && tt_score < beta_cut))
             {
+                // clang-format on
                 MovePicker mp(PC_SEARCH, board, history, ss, tt_move);
                 mp.see_cutoff = beta_cut > eval;
 
@@ -439,9 +445,11 @@ namespace Astra
             int extension = 0;
 
             // singular extensions
+            // clang-format off
             if (!root_node && depth >= 6 && ss->ply < 2 * root_depth && !skipped && tt_move == move 
                 && tt_depth >= depth - 3 && (tt_bound & LOWER_BOUND) && std::abs(tt_score) < VALUE_TB_WIN_IN_MAX_PLY)
             {
+                // clang-format on
                 Score sbeta = tt_score - 3 * depth;
                 int sdepth = (depth - 1) / 2;
 
@@ -465,7 +473,7 @@ namespace Astra
             int new_depth = depth - 1 + extension;
 
             nodes++;
-            
+
             ss->curr_move = move;
             ss->moved_piece = board.pieceAt(move.from());
             ss->conth = &history.conth[isCap(move)][ss->moved_piece][move.to()];
@@ -502,7 +510,9 @@ namespace Astra
 
                     if (!isCap(move))
                     {
+                        // clang-format off
                         int bonus = score <= alpha ? -historyBonus(new_depth) : score >= beta ? historyBonus(new_depth) : 0;
+                        // clang-format on
                         history.updateContH(move, ss, bonus);
                     }
                 }
@@ -548,12 +558,16 @@ namespace Astra
 
         // check for mate and stalemate
         if (made_moves == 0)
+            // clang-format off
             return skipped != NO_MOVE ? alpha : in_check ? -VALUE_MATE + ss->ply : VALUE_DRAW;
+        // clang-format on
 
         best_score = std::min(best_score, max_score);
 
         // store in transposition table
+        // clang-format off
         Bound bound = best_score >= beta ? LOWER_BOUND : best_score <= old_alpha ? UPPER_BOUND : EXACT_BOUND;
+        // clang-format on
         if (!skipped)
             ent->store(hash, best_move, best_score, raw_eval, bound, depth, ss->ply);
 
@@ -585,19 +599,19 @@ namespace Astra
         // variables
         const bool pv_node = beta - alpha != 1;
         const bool in_check = board.inCheck();
-        
+
         const U64 hash = board.getHash();
-        
+
         Score best_score = -VALUE_MATE + ss->ply;
         Score eval = ss->eval;
         Score raw_eval = eval;
         Score futility = -VALUE_MATE;
-        
+
         Move best_move = NO_MOVE;
 
         // look up in transposition table
         bool tt_hit = false;
-        TTEntry* ent = tt.lookup(hash, &tt_hit);
+        TTEntry *ent = tt.lookup(hash, &tt_hit);
         Move tt_move = NO_MOVE;
         Bound tt_bound = NO_BOUND;
         Score tt_score = VALUE_NONE;
@@ -714,7 +728,7 @@ namespace Astra
         return best_score;
     }
 
-    int Search::adjustEval(const Board& board, const Stack* ss, Score eval) const
+    int Search::adjustEval(const Board &board, const Stack *ss, Score eval) const
     {
         eval += history.getPawnCorr(board);
         eval += history.getWNonPawnCorr(board);

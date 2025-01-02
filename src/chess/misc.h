@@ -40,9 +40,9 @@ namespace Chess
 
     inline bool isProm(const Move &m) { return m.type() >= PQ_KNIGHT; }
 
-    inline bool isCap(const Move &m) 
-    { 
-        return m.type() == CAPTURE || m.type() == EN_PASSANT || m.type() >= PC_KNIGHT; 
+    inline bool isCap(const Move &m)
+    {
+        return m.type() == CAPTURE || m.type() == EN_PASSANT || m.type() >= PC_KNIGHT;
     }
 
     // prints the move

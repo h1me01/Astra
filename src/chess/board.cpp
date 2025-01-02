@@ -32,7 +32,7 @@ namespace Chess
         return {rook_from, rook_to};
     }
 
-    // board class
+    // board
 
     Board::Board(const std::string &fen, bool update_nnue) : piece_bb{}, board{}, stm(WHITE), curr_ply(0)
     {
@@ -370,7 +370,7 @@ namespace Chess
                 bool singe_push = (Square(from + up) == to) && pieceAt(to) == NO_PIECE;
                 // is double push?
                 bool double_push = relativeRank(stm, RANK_2) == rankOf(from) && (Square(from + 2 * up) == to) &&
-                                pieceAt(to) == NO_PIECE && pieceAt(to - up) == NO_PIECE;
+                                   pieceAt(to) == NO_PIECE && pieceAt(to - up) == NO_PIECE;
 
                 // if none of the conditions above are met, then it's not pseudo legal
                 if (!capture && !singe_push && !double_push)
@@ -598,10 +598,10 @@ namespace Chess
         {
             if (history[i].hash == info.hash)
             {
-                if (i > curr_ply - ply) 
+                if (i > curr_ply - ply)
                     return true;
                 rep++;
-                if (rep == 2) 
+                if (rep == 2)
                     return true;
             }
         }

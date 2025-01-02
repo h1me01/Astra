@@ -5,7 +5,7 @@
 
 using namespace Chess;
 
-namespace Astra 
+namespace Astra
 {
     using ContH = int16_t[NUM_PIECES][NUM_SQUARES];
 
@@ -19,7 +19,7 @@ namespace Astra
         Move killer = NO_MOVE;
         Move curr_move = NO_MOVE;
 
-        ContH* conth;
+        ContH *conth;
     };
 }
 

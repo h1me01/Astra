@@ -5,7 +5,7 @@
 
 namespace Astra
 {
-    
+
     Score probeWDL(const Board &board);
 
     std::pair<Score, Move> probeDTZ(const Board &board);

@@ -24,7 +24,7 @@ namespace NNUE
     class Accumulators
     {
     public:
-        bool acc_initialized[NUM_COLORS] {false, false};
+        bool acc_initialized[NUM_COLORS]{false, false};
 
         Accumulators() : index(0) {}
 
@@ -46,14 +46,14 @@ namespace NNUE
             acc_initialized[WHITE] = acc_initialized[BLACK] = true;
         }
 
-        Accumulator &back(Color c) 
+        Accumulator &back(Color c)
         {
             if (c != BLACK && !acc_initialized[WHITE])
                 copyAcc(WHITE);
             if (c != WHITE && !acc_initialized[BLACK])
                 copyAcc(BLACK);
 
-            return accumulators[index]; 
+            return accumulators[index];
         }
 
     private:

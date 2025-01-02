@@ -11,7 +11,7 @@ namespace Astra
 
     class History
     {
-    public:        
+    public:
         int16_t conth[2][NUM_PIECES][NUM_SQUARES][NUM_PIECES][NUM_SQUARES]{};
 
         void update(const Board &board, Move &move, Stack *ss, Move *q_moves, int qc, Move *c_moves, int cc, int depth);
@@ -61,10 +61,10 @@ namespace Astra
 
         assert(pc != NO_PIECE);
 
-        return hh[board.getTurn()][from][to] + 
-            (int)(*(ss - 1)->conth)[pc][to] + 
-            (int)(*(ss - 2)->conth)[pc][to] + 
-            (int)(*(ss - 4)->conth)[pc][to];
+        return hh[board.getTurn()][from][to] +
+               (int)(*(ss - 1)->conth)[pc][to] +
+               (int)(*(ss - 2)->conth)[pc][to] +
+               (int)(*(ss - 4)->conth)[pc][to];
     }
 
     inline int History::getCapHistory(const Board &board, Move &move) const
