@@ -1,3 +1,4 @@
+#include <iostream>
 #include "uci.h"
 
 int main(int argc, char **argv)
@@ -7,7 +8,7 @@ int main(int argc, char **argv)
     Astra::initReductions();
 
     NNUE::nnue.init();
-    
+
     UCI::Uci uci;
     uci.loop(argc, argv);
 

@@ -24,6 +24,8 @@ namespace NNUE
     class Accumulators
     {
     public:
+        bool acc_initialized[NUM_COLORS] {false, false};
+
         Accumulators() : index(0) {}
 
         int size() const { return index; }

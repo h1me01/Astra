@@ -66,13 +66,13 @@ namespace Chess
     public:
         StateInfo history[512];
 
-        Board(const std::string &fen);
+        Board(const std::string &fen, bool update_nnue = true);
         Board(const Board &other);
 
         Board &operator=(const Board &other);
 
         void print() const;
-
+        
         std::string getFen() const;
 
         U64 getPieceBB(Color c, PieceType pt) const;
@@ -86,7 +86,7 @@ namespace Chess
         U64 getThreats(PieceType pt) const;
         Square kingSq(Color c) const;
         NNUE::Accumulator &getAccumulator();
-        
+
         void refreshAccumulator(Color c = BOTH_COLORS);
         void resetAccumulator();
         void resetPly();
@@ -239,8 +239,8 @@ namespace Chess
                     // other side doesn't need a refresh
                     NNUE::nnue.movePiece(getAccumulator(), pc, from, to, wksq, bksq, ~stm);
 
-                    refreshAccumulator(stm);
-                    //accumulator_table->refresh(stm, *this);
+                    //refreshAccumulator(stm);
+                    accumulator_table->refresh(stm, *this);
                     return;
                 }
             }

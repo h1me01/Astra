@@ -34,7 +34,7 @@ namespace Chess
 
     // board class
 
-    Board::Board(const std::string &fen) : piece_bb{}, board{}, stm(WHITE), curr_ply(0)
+    Board::Board(const std::string &fen, bool update_nnue) : piece_bb{}, board{}, stm(WHITE), curr_ply(0)
     {
         for (auto &i : board)
             i = NO_PIECE;
@@ -90,26 +90,19 @@ namespace Chess
         initCheckersAndPinned();
 
         // initialize hash
-        U64 hash = 0ULL;
-        for (int p = WHITE_PAWN; p <= BLACK_KING; p++)
-        {
-            U64 b = piece_bb[p];
-            while (b)
-                hash ^= Zobrist::getPsq(Piece(p), popLsb(b));
-        }
-
-        if (info.ep_sq != NO_SQUARE)
-            hash ^= Zobrist::getEp(info.ep_sq);
-        hash ^= Zobrist::getCastle(info.castle_rights.getHashIndex());
-        hash ^= Zobrist::side;
-        info.hash = hash;
-
         info.pawn_hash = Zobrist::getPawnZobrist(*this);
         info.non_pawn_hash[WHITE] = Zobrist::getNonPawnZobrist(*this, WHITE);
         info.non_pawn_hash[BLACK] = Zobrist::getNonPawnZobrist(*this, BLACK);
 
+        info.hash = info.pawn_hash ^ info.non_pawn_hash[WHITE] ^ info.non_pawn_hash[BLACK];
+        if (info.ep_sq != NO_SQUARE)
+            info.hash ^= Zobrist::getEp(info.ep_sq);
+        info.hash ^= Zobrist::getCastle(info.castle_rights.getHashIndex());
+        info.hash ^= Zobrist::side;
+
         resetAccumulator();
-        refreshAccumulator();
+        if (update_nnue)
+            refreshAccumulator();
     }
 
     Board &Board::operator=(const Board &other)
@@ -203,11 +196,11 @@ namespace Chess
 
     void Board::refreshAccumulator(Color c)
     {
-        /*
         accumulator_table->reset();
         accumulator_table->refresh(WHITE, *this);
         accumulator_table->refresh(BLACK, *this);
-        */
+        return;
+        
         NNUE::Accumulator &acc = accumulators.back();
 
         for (int j = 0; j < NNUE::HIDDEN_SIZE; j++)

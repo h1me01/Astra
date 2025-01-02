@@ -5,6 +5,7 @@
 #include "chess/perft.h"
 #include "search/tune.h"
 #include "fathom/tbprobe.h"
+#include "eval/eval.h"
 
 #include <cstring> // strncmp
 
@@ -210,6 +211,7 @@ namespace UCI
     {
         std::string token, fen;
 
+
         is >> token;
         if (token == "startpos")
             fen = STARTING_FEN;
@@ -222,7 +224,7 @@ namespace UCI
             return;
         }
 
-        board = Board(fen);
+        board = Board(fen, false);
         while (is >> token)
             if (token != "moves")
             {
@@ -237,7 +239,6 @@ namespace UCI
                 }
             }
 
-        board.resetAccumulator();
         board.refreshAccumulator();
     }
 

@@ -40,7 +40,10 @@ namespace NNUE
     {
         for (Color c : {WHITE, BLACK})
             for (int i = 0; i < 2 * BUCKET_SIZE; i++)
+            {
                 std::memcpy(entries[c][i].acc.data[c], nnue.fc1_biases, sizeof(int16_t) * HIDDEN_SIZE);
+                std::memset(entries[c][i].piece_bb, 0, sizeof(entries[c][i].piece_bb));
+            }
     }
 
 } // namespace NNUE
