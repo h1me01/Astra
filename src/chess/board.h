@@ -239,7 +239,8 @@ namespace Chess
                     // other side doesn't need a refresh
                     NNUE::nnue.movePiece(getAccumulator(), pc, from, to, wksq, bksq, ~stm);
 
-                    accumulator_table->refresh(stm, *this);
+                    refreshAccumulator(stm);
+                    //accumulator_table->refresh(stm, *this);
                     return;
                 }
             }

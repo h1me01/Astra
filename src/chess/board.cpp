@@ -109,9 +109,7 @@ namespace Chess
         info.non_pawn_hash[BLACK] = Zobrist::getNonPawnZobrist(*this, BLACK);
 
         resetAccumulator();
-        accumulator_table->reset();
-        accumulator_table->refresh(WHITE, *this);
-        accumulator_table->refresh(BLACK, *this);
+        refreshAccumulator();
     }
 
     Board &Board::operator=(const Board &other)
@@ -205,6 +203,11 @@ namespace Chess
 
     void Board::refreshAccumulator(Color c)
     {
+        /*
+        accumulator_table->reset();
+        accumulator_table->refresh(WHITE, *this);
+        accumulator_table->refresh(BLACK, *this);
+        */
         NNUE::Accumulator &acc = accumulators.back();
 
         for (int j = 0; j < NNUE::HIDDEN_SIZE; j++)
