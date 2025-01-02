@@ -24,10 +24,10 @@ namespace NNUE
                 U64 to_clear = entry_bb & ~pc_bb;
 
                 while (to_set)
-                    nnue.putPiece(entry.acc, pc, popLsb(to_set), ksq, ksq, view);
+                    nnue.putPiece(entry.acc, pc, popLsb(to_set), ksq, view);
 
                 while (to_clear)
-                    nnue.removePiece(entry.acc, pc, popLsb(to_clear), ksq, ksq, view);
+                    nnue.removePiece(entry.acc, pc, popLsb(to_clear), ksq, view);
 
                 entry.piece_bb[c][pt] = pc_bb;
             }

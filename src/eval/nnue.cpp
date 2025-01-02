@@ -115,98 +115,73 @@ namespace NNUE
 #endif
     }
 
-    void NNUE::putPiece(Accumulator &acc, Piece pc, Square psq, Square wksq, Square bksq, Color c) const
+    void NNUE::putPiece(Accumulator &acc, Piece pc, Square psq, Square ksq, Color view) const
     {
-        const int w_idx = index(psq, wksq, pc, WHITE);
-        const int b_idx = index(psq, bksq, pc, BLACK);
+        const int idx = index(psq, ksq, pc, view);
 
 #if defined(__AVX512F__) || defined(__AVX2__) || defined(__AVX__)
-        avx_type *acc_white = (avx_type *)acc.data[WHITE];
-        avx_type *acc_black = (avx_type *)acc.data[BLACK];
-
-        const auto wgt_white = (const avx_type *)(fc1_weights + w_idx * HIDDEN_SIZE);
-        const auto wgt_black = (const avx_type *)(fc1_weights + b_idx * HIDDEN_SIZE);
+        avx_type *acc_view = (avx_type *)acc.data[view];
+        const auto weights = (const avx_type *)(fc1_weights + idx * HIDDEN_SIZE);
 
         for (int i = 0; i < HIDDEN_SIZE / div; i++)
-        {
-            if (c != BLACK)
-                acc_white[i] = avx_add_epi16(acc_white[i], wgt_white[i]);
-            if (c != WHITE)
-                acc_black[i] = avx_add_epi16(acc_black[i], wgt_black[i]);
-        }
+            acc_view[i] = avx_add_epi16(acc_view[i], weights[i]);
 #else
         for (int i = 0; i < HIDDEN_SIZE; i++)
-        {
-            if (which != BLACK)
-                acc.data[WHITE][i] += fc1_weights[w_idx * HIDDEN_SIZE + i];
-            if (which != WHITE)
-                acc.data[BLACK][i] += fc1_weights[b_idx * HIDDEN_SIZE + i];
-        }
+            acc.data[WHITE][i] += fc1_weights[idx * HIDDEN_SIZE + i];
 #endif
     }
 
-    void NNUE::removePiece(Accumulator &acc, Piece pc, Square psq, Square wksq, Square bksq, Color c) const
+    void NNUE::putPiece(Accumulator &acc, Piece pc, Square psq, Square wksq, Square bksq) const
     {
-        const int w_idx = index(psq, wksq, pc, WHITE);
-        const int b_idx = index(psq, bksq, pc, BLACK);
+        putPiece(acc, pc, psq, wksq, WHITE);
+        putPiece(acc, pc, psq, bksq, BLACK);
+    }
+
+    void NNUE::removePiece(Accumulator &acc, Piece pc, Square psq, Square ksq, Color view) const
+    {
+        const int idx = index(psq, ksq, pc, view);
 
 #if defined(__AVX512F__) || defined(__AVX2__) || defined(__AVX__)
-        avx_type *acc_white = (avx_type *)acc.data[WHITE];
-        avx_type *acc_black = (avx_type *)acc.data[BLACK];
-
-        const auto wgt_white = (const avx_type *)(fc1_weights + w_idx * HIDDEN_SIZE);
-        const auto wgt_black = (const avx_type *)(fc1_weights + b_idx * HIDDEN_SIZE);
+        avx_type *acc_view = (avx_type *)acc.data[view];
+        const auto weights = (const avx_type *)(fc1_weights + idx * HIDDEN_SIZE);
 
         for (int i = 0; i < HIDDEN_SIZE / div; i++)
-        {
-            if (c != BLACK)
-                acc_white[i] = avx_sub_epi16(acc_white[i], wgt_white[i]);
-            if (c != WHITE)
-                acc_black[i] = avx_sub_epi16(acc_black[i], wgt_black[i]);
-        }
+            acc_view[i] = avx_sub_epi16(acc_view[i], weights[i]);
 #else
         for (int i = 0; i < HIDDEN_SIZE; i++)
-        {
-            if (c != BLACK)
-                acc.data[WHITE][i] -= fc1_weights[w_idx * HIDDEN_SIZE + i];
-            if (c != WHITE)
-                acc.data[BLACK][i] -= fc1_weights[b_idx * HIDDEN_SIZE + i];
-        }
+            acc.data[WHITE][i] -= fc1_weights[w_idx * HIDDEN_SIZE + i];
 #endif
     }
 
-    void NNUE::movePiece(Accumulator &acc, Piece pc, Square from, Square to, Square wksq, Square bksq, Color c) const
+    void NNUE::removePiece(Accumulator &acc, Piece pc, Square psq, Square wksq, Square bksq) const
     {
-        const int w_from_idx = index(from, wksq, pc, WHITE);
-        const int w_to_idx = index(to, wksq, pc, WHITE);
-        const int b_from_idx = index(from, bksq, pc, BLACK);
-        const int b_to_idx = index(to, bksq, pc, BLACK);
+        removePiece(acc, pc, psq, wksq, WHITE);
+        removePiece(acc, pc, psq, bksq, BLACK);
+    }
+
+    void NNUE::movePiece(Accumulator &acc, Piece pc, Square from, Square to, Square ksq, Color view) const
+    {
+        const int from_idx = index(from, ksq, pc, view);
+        const int to_idx = index(to, ksq, pc, view);
 
 #if defined(__AVX512F__) || defined(__AVX2__) || defined(__AVX__)
-        avx_type *acc_white = (avx_type *)acc.data[WHITE];
-        avx_type *acc_black = (avx_type *)acc.data[BLACK];
+        avx_type *acc_view = (avx_type *)acc.data[view];
 
-        const auto wgt_white_from = (const avx_type *)(fc1_weights + w_from_idx * HIDDEN_SIZE);
-        const auto wgt_white_to = (const avx_type *)(fc1_weights + w_to_idx * HIDDEN_SIZE);
-        const auto wgt_black_from = (const avx_type *)(fc1_weights + b_from_idx * HIDDEN_SIZE);
-        const auto wgt_black_to = (const avx_type *)(fc1_weights + b_to_idx * HIDDEN_SIZE);
+        const auto weights_from = (const avx_type *)(fc1_weights + from_idx * HIDDEN_SIZE);
+        const auto weights_to = (const avx_type *)(fc1_weights + to_idx * HIDDEN_SIZE);
 
         for (int i = 0; i < HIDDEN_SIZE / div; i++)
-        {
-            if (c != BLACK)
-                acc_white[i] = avx_add_epi16(acc_white[i], avx_sub_epi16(wgt_white_to[i], wgt_white_from[i]));
-            if (c != WHITE)
-                acc_black[i] = avx_add_epi16(acc_black[i], avx_sub_epi16(wgt_black_to[i], wgt_black_from[i]));
-        }
+            acc_view[i] = avx_add_epi16(acc_view[i], avx_sub_epi16(weights_to[i], weights_from[i]));
 #else
         for (int i = 0; i < HIDDEN_SIZE; i++)
-        {
-            if (which != BLACK)
-                acc.data[WHITE][i] += fc1_weights[w_to_idx * HIDDEN_SIZE + i] - fc1_weights[w_from_idx * HIDDEN_SIZE + i];
-            if (which != WHITE)
-                acc.data[BLACK][i] += fc1_weights[b_to_idx * HIDDEN_SIZE + i] - fc1_weights[b_from_idx * HIDDEN_SIZE + i];
-        }
+            acc.data[WHITE][i] += fc1_weights[w_to_idx * HIDDEN_SIZE + i] - fc1_weights[w_from_idx * HIDDEN_SIZE + i];
 #endif
+    }
+
+    void NNUE::movePiece(Accumulator &acc, Piece pc, Square from, Square to, Square wksq, Square bksq) const
+    {
+        movePiece(acc, pc, from, to, wksq, WHITE);
+        movePiece(acc, pc, from, to, bksq, BLACK);
     }
 
     // global variable

@@ -223,9 +223,6 @@ namespace Chess
 
         if (update_nnue)
         {
-            const Square wksq = kingSq(WHITE);
-            const Square bksq = kingSq(BLACK);
-
             if (typeOf(pc) == KING)
             {
                 Square rel_from = relativeSquare(stm, from);
@@ -235,7 +232,7 @@ namespace Chess
                 if (NNUE::KING_BUCKET[rel_from] != NNUE::KING_BUCKET[rel_to] || fileOf(from) + fileOf(to) == 7)
                 {
                     // other side doesn't need a refresh
-                    NNUE::nnue.movePiece(getAccumulator(~stm), pc, from, to, wksq, bksq, ~stm);
+                    NNUE::nnue.movePiece(getAccumulator(~stm), pc, from, to, kingSq(~stm), ~stm);
                     
                     accumulator_table->refresh(stm, *this);
                     accumulators.acc_initialized[stm] = true;
@@ -243,7 +240,7 @@ namespace Chess
                 }
             }
 
-            NNUE::nnue.movePiece(getAccumulator(), pc, from, to, wksq, bksq);
+            NNUE::nnue.movePiece(getAccumulator(), pc, from, to, kingSq(WHITE), kingSq(BLACK));
         }
     }
 
