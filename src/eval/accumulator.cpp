@@ -4,47 +4,43 @@
 namespace NNUE
 {
 
-    void AccumulatorTable::use(Color view, Board &board)
+    void AccumulatorTable::refresh(Color view, Board &board)
     {
-        const Square ksq = board.kingSq(view);
+        Square ksq = board.kingSq(view);
         const bool king_side = fileOf(ksq) > 3;
-        const int king_idx = KING_BUCKET[ksq];
 
-        const int entry_idx = king_side * 10 + king_idx;
-
-        AccumulatorEntry &entry = entries[view][entry_idx];
-        Accumulator &acc = board.getAccumulator();
-
+        AccumulatorEntry &entry = entries[view][king_side * 10 + KING_BUCKET[relativeSquare(view, ksq)]];
+    
         for (Color c : {WHITE, BLACK})
-            for (int pt = PAWN; pt <= KING; pt++)
+            for (int i = PAWN; i <= KING; i++)
             {
-                U64 pc_bb = board.getPieceBB(c, PieceType(pt));
-                U64 entry_bb = entry.piece_bb[c][PieceType(pt)];
+                PieceType pt = PieceType(i);
+                Piece pc = makePiece(c, pt);
+
+                U64 pc_bb = board.getPieceBB(c, pt);
+                U64 entry_bb = entry.piece_bb[c][pt];
 
                 U64 to_set = pc_bb & ~entry_bb;
                 U64 to_clear = entry_bb & ~pc_bb;
 
                 while (to_set)
-                {
-                    Square sq = popLsb(to_set);
-                    nnue.putPiece(acc, makePiece(c, PieceType(pt)), sq, ksq, ksq);
-                }
+                    nnue.putPiece(entry.acc, pc, popLsb(to_set), ksq, ksq, view);
 
                 while (to_clear)
-                {
-                    Square sq = popLsb(to_clear);
-                    nnue.removePiece(acc, makePiece(c, PieceType(pt)), sq, ksq, ksq);
-                }
+                    nnue.removePiece(entry.acc, pc, popLsb(to_clear), ksq, ksq, view);
 
-                entry.piece_bb[c][PieceType(pt)] = pc_bb;
+                entry.piece_bb[c][pt] = pc_bb;
             }
+
+        Accumulator &acc = board.getAccumulator();
+        std::memcpy(acc.data[view], entry.acc.data[view], sizeof(int16_t) * HIDDEN_SIZE);
     }
 
     void AccumulatorTable::reset()
     {
         for (Color c : {WHITE, BLACK})
-            for (int s = 0; s < 2 * BUCKET_SIZE; s++)
-                std::memcpy(entries[c][s].acc.data[c], nnue.fc1_biases, sizeof(int16_t) * HIDDEN_SIZE);
+            for (int i = 0; i < 2 * BUCKET_SIZE; i++)
+                std::memcpy(entries[c][i].acc.data[c], nnue.fc1_biases, sizeof(int16_t) * HIDDEN_SIZE);
     }
 
 } // namespace NNUE

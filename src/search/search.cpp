@@ -1,3 +1,4 @@
+#include <iostream>
 #include <cmath>
 #include <algorithm>
 #include "search.h"

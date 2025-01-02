@@ -50,7 +50,7 @@ namespace NNUE
         
         int32_t forward(const Accumulator &acc, Color stm) const;
         void putPiece(Accumulator &acc, Piece pc, Square psq, Square wksq, Square bksq, Color c = BOTH_COLORS) const;
-        void removePiece(Accumulator &acc, Piece pc, Square psq, Square wksq, Square bksq) const;
+        void removePiece(Accumulator &acc, Piece pc, Square psq, Square wksq, Square bksq, Color c = BOTH_COLORS) const;
         void movePiece(Accumulator &acc, Piece pc, Square from, Square to, Square wksq, Square bksq, Color c = BOTH_COLORS) const;
     };
 

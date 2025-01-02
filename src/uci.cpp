@@ -1,3 +1,4 @@
+#include <iostream>
 #include "uci.h"
 #include "bench.h"
 #include "search/threads.h"

@@ -15,7 +15,7 @@ using namespace Chess;
 
 namespace NNUE
 {
-    
+
     struct Accumulator
     {
         alignas(ALIGNMENT) int16_t data[NUM_COLORS][HIDDEN_SIZE];
@@ -53,15 +53,15 @@ namespace NNUE
     // idea from koivisto
     struct AccumulatorEntry
     {
-        U64 piece_bb[NUM_COLORS][NUM_PIECE_TYPES] {};
+        U64 piece_bb[NUM_COLORS][NUM_PIECE_TYPES]{};
         Accumulator acc{};
     };
 
     struct AccumulatorTable
     {
-        AccumulatorEntry entries[NUM_COLORS][2 * BUCKET_SIZE] {};
-        
-        void use(Color view, Board& board);
+        AccumulatorEntry entries[NUM_COLORS][2 * BUCKET_SIZE]{};
+
+        void refresh(Color view, Board &board);
         void reset();
     };
 

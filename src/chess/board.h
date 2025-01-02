@@ -1,7 +1,7 @@
 #ifndef BOARD_H
 #define BOARD_H
 
-#include <iostream>
+#include <memory>
 #include "misc.h"
 #include "zobrist.h"
 #include "attacks.h"
@@ -86,6 +86,7 @@ namespace Chess
         U64 getThreats(PieceType pt) const;
         Square kingSq(Color c) const;
         NNUE::Accumulator &getAccumulator();
+        
         void refreshAccumulator(Color c = BOTH_COLORS);
         void resetAccumulator();
         void resetPly();
@@ -119,6 +120,7 @@ namespace Chess
         Color stm;
         int curr_ply;
         NNUE::Accumulators accumulators;
+        std::unique_ptr<NNUE::AccumulatorTable> accumulator_table = std::make_unique<NNUE::AccumulatorTable>(NNUE::AccumulatorTable());
 
         void putPiece(Piece p, Square s, bool update_nnue);
         void removePiece(Square s, bool update_nnue);
@@ -234,8 +236,10 @@ namespace Chess
                 // refresh if different bucket index or king crossing the other half
                 if (NNUE::KING_BUCKET[rel_from] != NNUE::KING_BUCKET[rel_to] || fileOf(from) + fileOf(to) == 7)
                 {
-                    refreshAccumulator(stm);
+                    // other side doesn't need a refresh
                     NNUE::nnue.movePiece(getAccumulator(), pc, from, to, wksq, bksq, ~stm);
+
+                    accumulator_table->refresh(stm, *this);
                     return;
                 }
             }
