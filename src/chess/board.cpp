@@ -100,7 +100,6 @@ namespace Chess
         info.hash ^= Zobrist::getCastle(info.castle_rights.getHashIndex());
         info.hash ^= Zobrist::side;
 
-        resetAccumulator();
         if (update_nnue)
             refreshAccumulator();
     }
@@ -194,29 +193,12 @@ namespace Chess
         return fen.str();
     }
 
-    void Board::refreshAccumulator(Color c)
+    void Board::refreshAccumulator()
     {
+        accumulators.clear();
         accumulator_table->reset();
         accumulator_table->refresh(WHITE, *this);
         accumulator_table->refresh(BLACK, *this);
-        return;
-        
-        NNUE::Accumulator &acc = accumulators.back();
-
-        for (int j = 0; j < NNUE::HIDDEN_SIZE; j++)
-        {
-            if (c != BLACK)
-                acc.data[WHITE][j] = NNUE::nnue.fc1_biases[j];
-            if (c != WHITE)
-                acc.data[BLACK][j] = NNUE::nnue.fc1_biases[j];
-        }
-
-        for (int i = WHITE_PAWN; i <= BLACK_KING; i++)
-        {
-            U64 b = piece_bb[i];
-            while (b)
-                NNUE::nnue.putPiece(acc, Piece(i), popLsb(b), kingSq(WHITE), kingSq(BLACK), c);
-        }
     }
 
     U64 Board::attackersTo(Color c, Square s, const U64 occ) const

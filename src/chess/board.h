@@ -87,8 +87,7 @@ namespace Chess
         Square kingSq(Color c) const;
         NNUE::Accumulator &getAccumulator();
 
-        void refreshAccumulator(Color c = BOTH_COLORS);
-        void resetAccumulator();
+        void refreshAccumulator();
         void resetPly();
 
         U64 diagSliders(Color c) const;
@@ -149,7 +148,6 @@ namespace Chess
     inline Square Board::kingSq(Color c) const { return lsb(getPieceBB(c, KING)); }
 
     inline NNUE::Accumulator &Board::getAccumulator() { return accumulators.back(); }
-    inline void Board::resetAccumulator() { accumulators.clear(); }
 
     inline void Board::resetPly() { curr_ply = 0; }
 
