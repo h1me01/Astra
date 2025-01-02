@@ -85,7 +85,7 @@ namespace Chess
         U64 getNonPawnHash(Color c) const;
         U64 getThreats(PieceType pt) const;
         Square kingSq(Color c) const;
-        NNUE::Accumulator &getAccumulator();
+        NNUE::Accumulator &getAccumulator(Color c = BOTH_COLORS);
 
         void refreshAccumulator();
         void resetPly();
@@ -147,7 +147,7 @@ namespace Chess
 
     inline Square Board::kingSq(Color c) const { return lsb(getPieceBB(c, KING)); }
 
-    inline NNUE::Accumulator &Board::getAccumulator() { return accumulators.back(); }
+    inline NNUE::Accumulator &Board::getAccumulator(Color c) { return accumulators.back(c); }
 
     inline void Board::resetPly() { curr_ply = 0; }
 
@@ -235,10 +235,10 @@ namespace Chess
                 if (NNUE::KING_BUCKET[rel_from] != NNUE::KING_BUCKET[rel_to] || fileOf(from) + fileOf(to) == 7)
                 {
                     // other side doesn't need a refresh
-                    NNUE::nnue.movePiece(getAccumulator(), pc, from, to, wksq, bksq, ~stm);
-
-                    //refreshAccumulator(stm);
+                    NNUE::nnue.movePiece(getAccumulator(~stm), pc, from, to, wksq, bksq, ~stm);
+                    
                     accumulator_table->refresh(stm, *this);
+                    accumulators.acc_initialized[stm] = true;
                     return;
                 }
             }

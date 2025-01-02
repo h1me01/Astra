@@ -36,18 +36,36 @@ namespace NNUE
         {
             index++;
             assert(index < MAX_PLY + 1);
-            accumulators[index] = accumulators[index - 1];
+            acc_initialized[WHITE] = acc_initialized[BLACK] = false;
         }
 
         void pop()
         {
             assert(index > 0);
             index--;
+            acc_initialized[WHITE] = acc_initialized[BLACK] = true;
         }
 
-        Accumulator &back() { return accumulators[index]; }
+        Accumulator &back(Color c) 
+        {
+            if (c != BLACK && !acc_initialized[WHITE])
+                copyAcc(WHITE);
+            if (c != WHITE && !acc_initialized[BLACK])
+                copyAcc(BLACK);
+
+            return accumulators[index]; 
+        }
 
     private:
+        void copyAcc(Color c)
+        {
+            if (!acc_initialized[c])
+            {
+                std::memcpy(accumulators[index].data[c], accumulators[index - 1].data[c], sizeof(int16_t) * HIDDEN_SIZE);
+                acc_initialized[c] = true;
+            }
+        }
+
         int index;
         std::array<Accumulator, MAX_PLY + 1> accumulators{};
     };
