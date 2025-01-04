@@ -99,7 +99,7 @@ namespace NNUE
             res = avx_add_epi32(res, avx_madd_epi16(avx_max_epi16(acc_opp[i], zero), weights[i + HIDDEN_SIZE / div]));
 
         const auto output = sumRegisterEpi32(res) + fc2_biases[0];
-        return output / 128 / 32;
+        return output / 128 / 18;
 #else
         int32_t output = fc2_biases[0];
 
@@ -111,7 +111,7 @@ namespace NNUE
                 output += fc2_weights[HIDDEN_SIZE + j] * acc.data[~stm][j];
         }
 
-        return output / 128 / 32;
+        return output / 128 / 18;
 #endif
     }
 

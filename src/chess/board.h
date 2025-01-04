@@ -113,6 +113,8 @@ namespace Chess
 
         bool oppHasGoodCaptures() const;
 
+        int getPhase() const;
+
     private:
         U64 piece_bb[NUM_PIECES];
         Piece board[NUM_SQUARES];
@@ -184,6 +186,15 @@ namespace Chess
         const U64 rook_threats = minor_threats | getThreats(ROOK);
 
         return (queens & rook_threats) | (rooks & minor_threats) | (minors & pawn_threats);
+    }
+
+    inline int Board::getPhase() const
+    {
+        int phase = 3 * popCount(piece_bb[WHITE_KNIGHT] | piece_bb[BLACK_KNIGHT]);
+        phase += 3 * popCount(piece_bb[WHITE_BISHOP] | piece_bb[BLACK_BISHOP]);
+        phase += 5 * popCount(piece_bb[WHITE_ROOK] | piece_bb[BLACK_ROOK]);
+        phase += 10 * popCount(piece_bb[WHITE_QUEEN] | piece_bb[BLACK_QUEEN]);
+        return phase;
     }
 
     inline void Board::putPiece(Piece pc, Square psq, bool update_nnue)

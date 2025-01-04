@@ -766,7 +766,7 @@ namespace Astra
         if (abs(result) >= VALUE_MATE - MAX_PLY)
             std::cout << "mate " << (VALUE_MATE - abs(result) + 1) / 2 * (result > 0 ? 1 : -1);
         else
-            std::cout << "cp " << result;
+            std::cout << "cp " << Score(result / 1.8); // normalize
 
         U64 elapsed_time = tm.elapsedTime();
         U64 total_nodes = threads.getTotalNodes();

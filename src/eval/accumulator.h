@@ -85,6 +85,6 @@ namespace NNUE
         void reset();
     };
 
-}
+} // namespace NNUE
 
 #endif // NNUE_H
