@@ -14,10 +14,10 @@ namespace Astra
         return bonus - value * std::abs(bonus) / 16384;
     }
 
-    int getCorrection(const int diff, int depth, int value)
+    void updateCorrection(int16_t &value, int diff, int depth)
     {
         const int bonus = std::clamp(diff * depth / 8, -256, 256);
-        return bonus - int(value) * std::abs(bonus) / 1024;
+        value = bonus - int(value) * std::abs(bonus) / 1024;
     }
 
     int historyBonus(int depth)
@@ -91,22 +91,26 @@ namespace Astra
             }
     }
 
-    void History::updatePawnHistory(const Board &board, Score raw_eval, Score real_score, int depth)
+    void History::updateCapHistory(const Board &board, Move &move, int bonus)
     {
-        int16_t &value = pawn_corr[board.getTurn()][board.getPawnHash() % 16384];
-        value = getCorrection(real_score - raw_eval, depth, value);
+        Square to = move.to();
+        PieceType captured = move.type() == EN_PASSANT ? PAWN : typeOf(board.pieceAt(to));
+        Piece pc = board.pieceAt(move.from());
+
+        assert(captured != NO_PIECE_TYPE);
+        assert(pc != NO_PIECE);
+
+        int16_t &value = ch[pc][to][captured];
+        value += getFormula(value, bonus);
     }
 
-    void History::updateWNonPawnHistory(const Board &board, Score raw_eval, Score real_score, int depth)
+    void History::updateMaterialCorr(const Board &board, Score raw_eval, Score real_score, int depth)
     {
-        int16_t &value = w_non_pawn_corr[board.getTurn()][board.getNonPawnHash(WHITE) % 16384];
-        value = getCorrection(real_score - raw_eval, depth, value);
-    }
+        int diff = real_score - raw_eval;
 
-    void History::updateBNonPawnHistory(const Board &board, Score raw_eval, Score real_score, int depth)
-    {
-        int16_t &value = b_non_pawn_corr[board.getTurn()][board.getNonPawnHash(BLACK) % 16384];
-        value = getCorrection(real_score - raw_eval, depth, value);
+        updateCorrection(pawn_corr[board.getTurn()][CORR_IDX(board.getPawnHash())], diff, depth);
+        updateCorrection(w_non_pawn_corr[board.getTurn()][CORR_IDX(board.getNonPawnHash(WHITE))], diff, depth);
+        updateCorrection(b_non_pawn_corr[board.getTurn()][CORR_IDX(board.getNonPawnHash(BLACK))], diff, depth);
     }
 
     void History::updateContCorr(Score raw_eval, Score real_score, int depth, const Stack *ss)
@@ -120,21 +124,7 @@ namespace Astra
         if (!prev_move || !pprev_move)
             return;
 
-        int16_t &value = cont_corr[prev_pc][prev_move.to()][pprev_pc][pprev_move.to()];
-        value = getCorrection(real_score - raw_eval, depth, value);
-    }
-
-    void History::updateCapHistory(const Board &board, Move &move, int bonus)
-    {
-        Square to = move.to();
-        PieceType captured = move.type() == EN_PASSANT ? PAWN : typeOf(board.pieceAt(to));
-        Piece pc = board.pieceAt(move.from());
-
-        assert(captured != NO_PIECE_TYPE);
-        assert(pc != NO_PIECE);
-
-        int16_t &value = ch[pc][to][captured];
-        value += getFormula(value, bonus);
+        updateCorrection(cont_corr[prev_pc][prev_move.to()][pprev_pc][pprev_move.to()], real_score - raw_eval, depth);
     }
 
 } // namespace Astra

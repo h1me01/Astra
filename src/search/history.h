@@ -4,8 +4,11 @@
 #include "stack.h"
 #include "../chess/board.h"
 
+#define CORR_IDX(hash) ((hash) % 16384)
+
 namespace Astra
 {
+    static constexpr size_t CORR_SIZE = 16384;
 
     int historyBonus(int depth);
 
@@ -18,10 +21,7 @@ namespace Astra
 
         void updateQuietHistory(Color c, Move move, int bonus);
         void updateContH(Move &move, Stack *ss, int bonus);
-
-        void updatePawnHistory(const Board &board, Score raw_eval, Score real_score, int depth);
-        void updateWNonPawnHistory(const Board &board, Score raw_eval, Score real_score, int depth);
-        void updateBNonPawnHistory(const Board &board, Score raw_eval, Score real_score, int depth);
+        void updateMaterialCorr(const Board &board, Score raw_eval, Score real_score, int depth);
         void updateContCorr(Score raw_eval, Score real_score, int depth, const Stack *ss);
 
         Move getCounterMove(Move move) const;
@@ -29,9 +29,7 @@ namespace Astra
         int getHistoryHeuristic(Color stm, Move move) const;
         int getQuietHistory(const Board &board, const Stack *ss, Move &move) const;
         int getCapHistory(const Board &board, Move &move) const;
-        int getPawnCorr(const Board &board) const;
-        int getWNonPawnCorr(const Board &board) const;
-        int getBNonPawnCorr(const Board &board) const;
+        int getMaterialCorr(const Board &board) const;
         int getContCorr(const Stack *ss) const;
 
     private:
@@ -41,9 +39,9 @@ namespace Astra
         int16_t ch[NUM_PIECES][NUM_SQUARES][NUM_PIECE_TYPES]{};
 
         int16_t cont_corr[NUM_PIECES][NUM_SQUARES][NUM_PIECES][NUM_SQUARES]{};
-        int16_t pawn_corr[NUM_COLORS][16384]{};
-        int16_t w_non_pawn_corr[NUM_COLORS][16384]{};
-        int16_t b_non_pawn_corr[NUM_COLORS][16384]{};
+        int16_t pawn_corr[NUM_COLORS][CORR_SIZE]{};
+        int16_t w_non_pawn_corr[NUM_COLORS][CORR_SIZE]{};
+        int16_t b_non_pawn_corr[NUM_COLORS][CORR_SIZE]{};
 
         void updateCapHistory(const Board &board, Move &move, int bonus);
     };
@@ -83,19 +81,13 @@ namespace Astra
         return counters[prev_move.from()][prev_move.to()];
     }
 
-    inline int History::getPawnCorr(const Board &board) const
+    inline int History::getMaterialCorr(const Board &board) const
     {
-        return pawn_corr[board.getTurn()][board.getPawnHash() % 16384] / 512;
-    }
-
-    inline int History::getWNonPawnCorr(const Board &board) const
-    {
-        return w_non_pawn_corr[board.getTurn()][board.getNonPawnHash(WHITE) % 16384] / 512;
-    }
-
-    inline int History::getBNonPawnCorr(const Board &board) const
-    {
-        return b_non_pawn_corr[board.getTurn()][board.getNonPawnHash(BLACK) % 16384] / 512;
+        // can't combine their division because they are type 
+        // int16_t and that would cause an potential overflow
+        return pawn_corr[board.getTurn()][CORR_IDX(board.getPawnHash())] / 512 +
+               w_non_pawn_corr[board.getTurn()][CORR_IDX(board.getNonPawnHash(WHITE))] / 512 +
+               b_non_pawn_corr[board.getTurn()][CORR_IDX(board.getNonPawnHash(BLACK))] / 512;
     }
 
     inline int History::getContCorr(const Stack *ss) const

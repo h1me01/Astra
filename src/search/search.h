@@ -28,13 +28,10 @@ namespace Astra
 
         U64 nodes = 0;
         U64 tb_hits = 0;
-
         int sel_depth = 0;
 
         Limits limit;
-
         Board board;
-        History history;
 
         Search(const std::string &fen);
 
@@ -42,8 +39,9 @@ namespace Astra
 
     private:
         int root_depth = 0;
+        
         PVLine pv_table[MAX_PLY + 1];
-
+        History history;
         TimeMan tm;
 
         Score aspSearch(int depth, Score prev_eval, Stack *ss);
@@ -52,6 +50,7 @@ namespace Astra
 
         int adjustEval(const Board &board, const Stack *ss, Score eval) const;
         bool isLimitReached(int depth) const;
+        void updatePv(Move move, int ply);
         void printUciInfo(Score result, int depth, PVLine &pv_line) const;
     };
 

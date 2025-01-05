@@ -52,6 +52,7 @@ namespace Astra
         if (id == 0)
             tt.incrementAge();
 
+        // init stack
         Stack stack[MAX_PLY + 6]; // +6 for history
         Stack *ss = stack + 6;
 
@@ -65,29 +66,26 @@ namespace Astra
         Score prev_result = VALUE_NONE;
 
         Move best_move = NO_MOVE;
-        for (int depth = 1; depth < MAX_PLY; depth++)
+        for (root_depth = 1; root_depth < MAX_PLY; root_depth++)
         {
             // reset selective depth
             sel_depth = 0;
 
-            root_depth = depth;
-            Score result = aspSearch(depth, prev_result, ss);
+            Score result = aspSearch(root_depth, prev_result, ss);
 
-            if (isLimitReached(depth))
+            if (isLimitReached(root_depth))
                 break;
 
-            best_move = pv_table[0][0];
-
-            if (id == 0 && depth >= 5 && limit.time.optimum)
+            if (id == 0 && root_depth >= 5 && limit.time.optimum)
             {
                 avg_eval += result;
                 move_changes += (pv_table[0][0] != best_move);
 
                 // increase time if eval is increasing
-                if (result - 30 > avg_eval / depth && result - 50 > prev_result)
+                if (result - 30 > avg_eval / root_depth && result - 50 > prev_result)
                     limit.time.optimum *= 1.10;
                 // increase time if eval is decreasing
-                if (result + 30 < avg_eval / depth && result + 50 < prev_result)
+                if (result + 30 < avg_eval / root_depth && result + 50 < prev_result)
                     limit.time.optimum *= 1.10;
                 // increase optimum time if best move changes often
                 if (move_changes > 4)
@@ -97,6 +95,7 @@ namespace Astra
                     break;
             }
 
+            best_move = pv_table[0][0];
             prev_result = result;
         }
 
@@ -150,7 +149,7 @@ namespace Astra
             else
                 break;
 
-            window += window / 3;
+            window += window / 3.75;
         }
 
         if (id == 0)
@@ -185,7 +184,7 @@ namespace Astra
 
         pv_table[ss->ply].length = 0;
 
-        // dive into quiescence search if depth is less than 1
+        // do quiescence search if depth is less than 1
         if (depth <= 0)
             return qSearch(0, alpha, beta, ss);
 
@@ -193,7 +192,7 @@ namespace Astra
         if (pv_node && ss->ply > sel_depth)
             sel_depth = ss->ply; // heighest depth a pv node has reached
 
-        // check for terminal states
+        // check for terminal state
         if (!root_node)
         {
             if (ss->ply >= MAX_PLY - 1)
@@ -274,7 +273,7 @@ namespace Astra
 
         // set eval and static eval
         if (in_check)
-            eval = raw_eval = ss->eval = VALUE_NONE;
+            raw_eval = eval = ss->eval = VALUE_NONE;
         else
         {
             // use tt score for better evaluation
@@ -399,8 +398,7 @@ namespace Astra
 
         int made_moves = 0, q_count = 0, c_count = 0;
 
-        Move q_moves[64];
-        Move c_moves[32];
+        Move q_moves[64], c_moves[32];
         Move best_move = NO_MOVE, move;
 
         while ((move = mp.nextMove()) != NO_MOVE)
@@ -548,12 +546,7 @@ namespace Astra
 
                     // update pv node when in pv node
                     if (id == 0 && pv_node)
-                    {
-                        pv_table[ss->ply][0] = move;
-                        for (int i = 0; i < pv_table[ss->ply + 1].length; i++)
-                            pv_table[ss->ply][i + 1] = pv_table[ss->ply + 1][i];
-                        pv_table[ss->ply].length = pv_table[ss->ply + 1].length + 1;
-                    }
+                        updatePv(move, ss->ply);
                 }
 
                 if (alpha >= beta)
@@ -582,9 +575,7 @@ namespace Astra
         // update correction histories
         if (!in_check && !isCap(best_move) && (bound & (best_score >= raw_eval ? LOWER_BOUND : UPPER_BOUND)))
         {
-            history.updatePawnHistory(board, raw_eval, best_score, depth);
-            history.updateWNonPawnHistory(board, raw_eval, best_score, depth);
-            history.updateBNonPawnHistory(board, raw_eval, best_score, depth);
+            history.updateMaterialCorr(board, raw_eval, best_score, depth);
             history.updateContCorr(raw_eval, best_score, depth, ss);
         }
 
@@ -738,10 +729,7 @@ namespace Astra
 
     int Search::adjustEval(const Board &board, const Stack *ss, Score eval) const
     {
-        eval += history.getPawnCorr(board);
-        eval += history.getWNonPawnCorr(board);
-        eval += history.getBNonPawnCorr(board);
-        eval += history.getContCorr(ss);
+        eval += history.getMaterialCorr(board) + history.getContCorr(ss);
         return std::clamp(eval, Score(-VALUE_TB_WIN_IN_MAX_PLY + 1), Score(VALUE_TB_WIN_IN_MAX_PLY - 1));
     }
 
@@ -763,6 +751,14 @@ namespace Astra
             return true;
 
         return false;
+    }
+
+    void Search::updatePv(Move move, int ply)
+    {
+        pv_table[ply][0] = move;
+        for (int i = 0; i < pv_table[ply + 1].length; i++)
+            pv_table[ply][i + 1] = pv_table[ply + 1][i];
+        pv_table[ply].length = pv_table[ply + 1].length + 1;
     }
 
     void Search::printUciInfo(Score result, int depth, PVLine &pv_line) const
