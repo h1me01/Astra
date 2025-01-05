@@ -67,9 +67,8 @@ namespace Astra
         Move best_move = NO_MOVE;
         for (int depth = 1; depth < MAX_PLY; depth++)
         {
-            // reset pv
-            for (auto &pv_line : pv_table)
-                pv_line.length = 0;
+            // reset selective depth
+            sel_depth = 0;
 
             root_depth = depth;
             Score result = aspSearch(depth, prev_result, ss);
@@ -111,39 +110,47 @@ namespace Astra
     {
         Score alpha = -VALUE_MATE;
         Score beta = VALUE_MATE;
+        Score result = VALUE_NONE;
 
-        int window = asp_window;
+        int window = VALUE_MATE;
         if (depth >= asp_depth)
         {
+            window = asp_window;
             alpha = std::max(prev_eval - window, -int(VALUE_MATE));
             beta = std::min(prev_eval + window, int(VALUE_MATE));
         }
 
-        Score result = VALUE_NONE;
+        int search_depth = depth;
         while (true)
         {
             if (alpha < -2000)
                 alpha = -VALUE_MATE;
-
             if (beta > 2000)
                 beta = VALUE_MATE;
 
-            result = negamax(depth, alpha, beta, ss, false);
+            result = negamax(std::max(1, search_depth), alpha, beta, ss, false);
 
             if (isLimitReached(depth))
                 return result;
+            else if (id == 0 && (result <= alpha || result >= beta) && tm.elapsedTime() > 5000)
+                printUciInfo(result, depth, pv_table[0]);
 
             if (result <= alpha)
             {
                 beta = (alpha + beta) / 2;
                 alpha = std::max(alpha - window, -int(VALUE_MATE));
+                search_depth = depth;
             }
             else if (result >= beta)
+            {
                 beta = std::min(beta + window, int(VALUE_MATE));
+                if (std::abs(result) < VALUE_TB_WIN_IN_MAX_PLY)
+                    search_depth--;
+            }
             else
                 break;
 
-            window += window / 3.75;
+            window += window / 3;
         }
 
         if (id == 0)
@@ -457,6 +464,7 @@ namespace Astra
 
                 if (score < sbeta)
                 {
+                    // if we didn't find a better move, then extend
                     if (!pv_node && score < sbeta - 14)
                         extension = 2 + (!isCap(move) && !isProm(move) && score < sbeta - ext_margin);
                     else
@@ -779,8 +787,11 @@ namespace Astra
                   << " pv";
 
         // print the pv
-        for (int i = 0; i < pv_line.length; i++)
-            std::cout << " " << pv_line[i];
+        if (pv_line.length == 0)
+            std::cout << " " << pv_line[0];
+        else
+            for (int i = 0; i < pv_line.length; i++)
+                std::cout << " " << pv_line[i];
 
         std::cout << std::endl;
     }

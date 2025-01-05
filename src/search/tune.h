@@ -42,7 +42,7 @@ namespace Astra
     PARAM(lmr_div, 178, 150, 200, 8);
 
     PARAM(asp_depth, 6, 5, 9, 1);
-    PARAM(asp_window, 5, 5, 30, 5);
+    PARAM(asp_window, 9, 5, 30, 5);
 
     PARAM(rzr_depth_mult, 187, 150, 250, 15);
     PARAM(rfp_depth_mult, 79, 70, 110, 6);
