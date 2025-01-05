@@ -52,29 +52,22 @@ namespace Chess
 
         for (const char c : fen_parts[2])
         {
+            // clang-format off
             switch (c)
             {
-            case 'K':
-                info.castle_rights.mask |= WHITE_OO_MASK;
-                break;
-            case 'Q':
-                info.castle_rights.mask |= WHITE_OOO_MASK;
-                break;
-            case 'k':
-                info.castle_rights.mask |= BLACK_OO_MASK;
-                break;
-            case 'q':
-                info.castle_rights.mask |= BLACK_OOO_MASK;
-                break;
-            default:
-                break;
+            case 'K': info.castle_rights.mask |= WHITE_OO_MASK; break;
+            case 'Q': info.castle_rights.mask |= WHITE_OOO_MASK; break;
+            case 'k': info.castle_rights.mask |= BLACK_OO_MASK; break;
+            case 'q': info.castle_rights.mask |= BLACK_OOO_MASK; break;
+            default: break;
             }
+            // clang-format on
         }
 
         info.ep_sq = fen_parts[3] == "-" ? NO_SQUARE : squareFromString(fen_parts[3]);
         info.half_move_clock = std::stoi(fen_parts[4]);
 
-        // place pieces to board
+        // place pieces on the board
         int sqr = a8;
         for (const char c : fen_parts[0])
         {
@@ -288,7 +281,7 @@ namespace Chess
         // move must exist, piece must exist, piece must match the current stm
         if (!m || pc == NO_PIECE || colorOf(pc) != stm)
             return false;
-        // if double check then only king can move
+        // if double check, then only king can move
         if (popCount(info.checkers) > 1 && pt != KING)
             return false;
         // if capture move, then target square must be occupied by enemy piece
@@ -309,21 +302,18 @@ namespace Chess
             // make sure we move a king
             if (pt != KING)
                 return false;
-
             // can't castle when in check or when no castling rights are present
             if (info.checkers || !info.castle_rights.any(stm))
                 return false;
-
             // short castling
             U64 not_free = (occ | info.danger) & ooBlockersMask(stm);
             if (!not_free && info.castle_rights.kingSide(stm) && to == relativeSquare(stm, g1))
                 return true;
-
             // long castling
             not_free = (occ | (info.danger & ~SQUARE_BB[relativeSquare(stm, b1)])) & oooBlockersMask(stm);
             if (!not_free && info.castle_rights.queenSide(stm) && to == relativeSquare(stm, c1))
                 return true;
-
+            // if short/long castling condition is not met, then it's not pseudo legal
             return false;
         }
 
@@ -332,10 +322,10 @@ namespace Chess
             // make sure we move a pawn
             if (pt != PAWN)
                 return false;
-            // to square must not be occupied
+            // to-square must not be occupied
             if (pieceAt(to) != NO_PIECE)
                 return false;
-            // ep square must be the same
+            // ep square must be same
             if (info.ep_sq != to)
                 return false;
             // pawn on ep square must be a enemy pawn
@@ -433,7 +423,7 @@ namespace Chess
 
             assert(rook == makePiece(stm, ROOK));
 
-            // update hash of rook
+            // update hash of moving rook
             info.hash ^= Zobrist::getPsq(rook, rook_from) ^ Zobrist::getPsq(rook, rook_to);
             info.non_pawn_hash[stm] ^= Zobrist::getPsq(rook, rook_from) ^ Zobrist::getPsq(rook, rook_to);
 
@@ -456,7 +446,7 @@ namespace Chess
                 info.non_pawn_hash[~stm] ^= Zobrist::getPsq(captured, cap_sq);
         }
 
-        // update hash
+        // update hash of moving piece
         info.hash ^= Zobrist::getPsq(pc, from) ^ Zobrist::getPsq(pc, to);
         if (pt == PAWN)
             info.pawn_hash ^= Zobrist::getPsq(pc, from) ^ Zobrist::getPsq(pc, to);
@@ -466,6 +456,7 @@ namespace Chess
         // reset ep square if it exists
         if (info.ep_sq != NO_SQUARE)
         {
+            // remove ep square from hash
             info.hash ^= Zobrist::getEp(info.ep_sq);
             info.ep_sq = NO_SQUARE;
         }
@@ -473,8 +464,10 @@ namespace Chess
         // update castling rights if king/rook moves or if one of the rooks get captured
         if (info.castle_rights.onCastleSquare(from) || info.castle_rights.onCastleSquare(to))
         {
+            // remove old castling rights from hash
             info.hash ^= Zobrist::getCastle(info.castle_rights.getHashIndex());
             info.castle_rights.mask &= ~(SQUARE_BB[from] | SQUARE_BB[to]);
+            // add new castling rights to hash
             info.hash ^= Zobrist::getCastle(info.castle_rights.getHashIndex());
         }
 
@@ -488,6 +481,7 @@ namespace Chess
             if ((from ^ to) == 16 && (getPawnAttacks(stm, ep_sq) & getPieceBB(~stm, PAWN)))
             {
                 info.ep_sq = ep_sq;
+                // add ep square to hash
                 info.hash ^= Zobrist::getEp(ep_sq);
             }
             else if (isProm(m))
@@ -498,7 +492,7 @@ namespace Chess
                 assert(prom_type != PAWN);
                 assert(prom_pc != NO_PIECE);
 
-                // update hash
+                // update hash of promoting piece
                 info.hash ^= Zobrist::getPsq(pc, to) ^ Zobrist::getPsq(prom_pc, to);
                 info.pawn_hash ^= Zobrist::getPsq(pc, to);
 
@@ -509,8 +503,6 @@ namespace Chess
         }
 
         stm = ~stm;
-
-        // set captured piece
         info.captured = captured;
 
         initThreats();
@@ -570,10 +562,12 @@ namespace Chess
 
         if (info.ep_sq != NO_SQUARE)
         {
+            // remove ep square from hash
             info.hash ^= Zobrist::getEp(info.ep_sq);
             info.ep_sq = NO_SQUARE;
         }
 
+        // update hash
         info.hash ^= Zobrist::side;
 
         stm = ~stm;
@@ -609,19 +603,19 @@ namespace Chess
         return false;
     }
 
-    // doesn't include stalemate or threefold
+    // doesn't include stalemate, threefold and Insufficient material
     bool Board::isDraw(int ply) const
     {
         return history[curr_ply].half_move_clock > 99 || isRepetition(ply);
     }
 
-    bool Board::see(Move &move, int threshold) const
+    bool Board::see(Move &m, int threshold) const
     {
-        if (isProm(move) || move.type() == EN_PASSANT || move.type() == CASTLING)
+        if (isProm(m) || m.type() == EN_PASSANT || m.type() == CASTLING)
             return true;
 
-        const Square from = move.from();
-        const Square to = move.to();
+        const Square from = m.from();
+        const Square to = m.to();
         const PieceType attacker = typeOf(pieceAt(from));
         const PieceType victim = typeOf(pieceAt(to));
 
@@ -713,7 +707,6 @@ namespace Chess
         U64 pawns = getPieceBB(them, PAWN);
         threat = them == WHITE ? shift(NORTH_WEST, pawns) | shift(NORTH_EAST, pawns) : shift(SOUTH_WEST, pawns) | shift(SOUTH_EAST, pawns);
         danger = threat;
-
         info.threats[PAWN] = threat;
 
         // knight attacks
@@ -722,7 +715,6 @@ namespace Chess
         while (knights)
             threat |= getKnightAttacks(popLsb(knights));
         danger |= threat;
-
         info.threats[KNIGHT] = threat;
 
         // bishop attacks
@@ -731,7 +723,6 @@ namespace Chess
         while (bishops)
             threat |= getBishopAttacks(popLsb(bishops), occ);
         danger |= threat;
-
         info.threats[BISHOP] = threat;
 
         // rook attacks
@@ -740,7 +731,6 @@ namespace Chess
         while (rooks)
             threat |= getRookAttacks(popLsb(rooks), occ);
         danger |= threat;
-
         info.threats[ROOK] = threat;
 
         // queen attacks
@@ -749,14 +739,13 @@ namespace Chess
         while (queens)
             threat |= getAttacks(QUEEN, popLsb(queens), occ);
         danger |= threat;
-
         info.threats[QUEEN] = threat;
 
         // king attacks
         threat = getKingAttacks(kingSq(them));
         danger |= threat;
-
         info.threats[KING] = threat;
+        
         info.danger = danger;
     }
 

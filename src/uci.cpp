@@ -11,7 +11,7 @@
 
 namespace UCI
 {
-    const std::string version = "4.1";
+    const std::string version = "5.0";
 
     // options class
     void Options::add(std::string name, const Option &option)
@@ -64,7 +64,7 @@ namespace UCI
             return;
         }
 
-        if (value == "<empty>")
+        if (value == "<empty>" || value.empty())
             return;
 
 #ifdef TUNE

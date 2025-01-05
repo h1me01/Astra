@@ -11,8 +11,6 @@ namespace Chess
     class Board;
 }
 
-using namespace Chess;
-
 namespace NNUE
 {
 
