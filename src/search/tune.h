@@ -54,12 +54,12 @@ namespace Astra
     PARAM(probcut_margin, 168, 130, 180, 15);
 
     PARAM(see_cap_margin, 91, 80, 110, 6);
-    PARAM(see_quiet_margin, 53, 30, 60, 6);
+    PARAM(see_quiet_margin, 45, 30, 60, 6);
 
     PARAM(fp_base, 163, 120, 180, 8);
     PARAM(fp_mult, 93, 80, 150, 8);
 
-    PARAM(ext_margin, 115, 45, 150, 12);
+    PARAM(ext_margin, 115, 65, 150, 12);
 
     PARAM(hp_margin, 4770, 3500, 5000, 400);
     PARAM(hp_div, 8439, 7000, 8500, 400);

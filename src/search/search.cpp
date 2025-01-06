@@ -167,9 +167,6 @@ namespace Astra
         assert(alpha < beta);
         assert(ss->ply >= 0);
 
-        if (isLimitReached(depth))
-            return 0;
-
         // variables
         const bool root_node = ss->ply == 0;
         const bool pv_node = beta - alpha != 1;
@@ -201,6 +198,9 @@ namespace Astra
         {
             if (ss->ply >= MAX_PLY - 1)
                 return Eval::evaluate(board);
+
+            if (isLimitReached(depth))
+                return 0;
 
             // mate distance pruning
             alpha = std::max(alpha, Score(ss->ply - VALUE_MATE));
@@ -495,7 +495,7 @@ namespace Astra
             Score score = VALUE_NONE;
 
             // late move reductions
-            if (depth >= 3 && made_moves > 2 && (!pv_node || !isCap(move)))
+            if (depth >= 3 && made_moves > 2 + 2 * root_node && (!pv_node || !isCap(move)))
             {
                 int r = REDUCTIONS[depth][made_moves];
                 // increase when not improving
