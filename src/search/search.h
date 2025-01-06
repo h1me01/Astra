@@ -44,6 +44,8 @@ namespace Astra
         History history;
         TimeMan tm;
 
+        U64 move_nodes[NUM_SQUARES][NUM_SQUARES] {};
+
         Score aspSearch(int depth, Score prev_eval, Stack *ss);
         Score negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_node, const Move skipped = NO_MOVE);
         Score qSearch(int depth, Score alpha, Score beta, Stack *ss);

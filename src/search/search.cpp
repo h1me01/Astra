@@ -61,11 +61,10 @@ namespace Astra
         for (int i = 1; i <= 6; i++)
             (ss - i)->conth = &history.conth[0][WHITE_PAWN][a1];
 
-        int avg_eval = 0;
-        int move_changes = 0;
-        Score prev_result = VALUE_NONE;
+        int stability = 0;
+        Score prev_result = VALUE_NONE; 
 
-        Move best_move = NO_MOVE;
+        Move bestmove = NO_MOVE;
         for (root_depth = 1; root_depth < MAX_PLY; root_depth++)
         {
             // reset selective depth
@@ -78,31 +77,32 @@ namespace Astra
 
             if (id == 0 && root_depth >= 5 && limit.time.optimum)
             {
-                avg_eval += result;
-                move_changes += (pv_table[0][0] != best_move);
+                int64_t elapsed = tm.elapsedTime();
+                Move move = pv_table[0][0];
 
-                // increase time if eval is increasing
-                if (result - 30 > avg_eval / root_depth && result - 50 > prev_result)
-                    limit.time.optimum *= 1.10;
-                // increase time if eval is decreasing
-                if (result + 30 < avg_eval / root_depth && result + 50 < prev_result)
-                    limit.time.optimum *= 1.10;
-                // increase optimum time if best move changes often
-                if (move_changes > 4)
-                    limit.time.optimum = limit.time.max * 0.75;
-                // stop search if more than 75% of our max time is reached
-                if (tm.elapsedTime() > limit.time.max * 0.75)
+                // change time optimum based on stability
+                stability = bestmove == move ? std::min(12, stability + 1) : 0;
+                double stability_factor = 1.4115 - stability * 0.05193;
+
+                // change time optimum based on last score
+                double result_change_factor = 0.9560 + std::clamp(prev_result - result, -8, 62) * 0.003901;
+                
+                // change time optimum based on move nodes
+                double node_count_factor = 1.6799 + 0.9209 * (double(move_nodes[move.from()][move.to()]) / double(nodes));
+                
+                // check if we should stop
+                if (elapsed > limit.time.optimum * stability_factor * result_change_factor * node_count_factor)
                     break;
             }
 
-            best_move = pv_table[0][0];
+            bestmove = pv_table[0][0];
             prev_result = result;
         }
 
         if (id == 0)
-            std::cout << "bestmove " << best_move << std::endl;
+            std::cout << "bestmove " << bestmove << std::endl;
 
-        return best_move;
+        return bestmove;
     }
 
     Score Search::aspSearch(int depth, Score prev_eval, Stack *ss)
@@ -406,6 +406,8 @@ namespace Astra
             if (move == skipped || !board.isLegal(move))
                 continue;
 
+            U64 start_nodes = nodes;
+
             // prefetch tt entry
             tt.prefetch(board.keyAfter(move));
 
@@ -534,6 +536,9 @@ namespace Astra
             board.unmakeMove(move);
 
             assert(score > -VALUE_INFINITE && score < VALUE_INFINITE);
+
+            if (root_node)
+                move_nodes[move.from()][move.to()] = nodes - start_nodes;
 
             if (score > best_score)
             {
@@ -745,8 +750,6 @@ namespace Astra
             return true;
 
         int elapsed_time = tm.elapsedTime();
-        if (limit.time.optimum != 0 && elapsed_time >= limit.time.optimum)
-            return true;
         if (limit.time.max != 0 && elapsed_time >= limit.time.max)
             return true;
 
