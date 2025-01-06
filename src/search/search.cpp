@@ -99,6 +99,10 @@ namespace Astra
             prev_result = result;
         }
 
+        // make sure to atleast have a best move
+        if (bestmove == NO_MOVE)
+            bestmove = pv_table[0][0];
+
         if (id == 0)
             std::cout << "bestmove " << bestmove << std::endl;
 
@@ -748,9 +752,7 @@ namespace Astra
             return true;
         if (depth > limit.depth)
             return true;
-
-        int elapsed_time = tm.elapsedTime();
-        if (limit.time.max != 0 && elapsed_time >= limit.time.max)
+        if (limit.time.max != 0 && tm.elapsedTime() >= limit.time.max)
             return true;
 
         return false;
