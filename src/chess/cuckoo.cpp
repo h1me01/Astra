@@ -18,12 +18,12 @@ namespace Chess
         }
 
         for (Color c : {WHITE, BLACK})
-            for (PieceType pt : {PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING})
+            for (PieceType pt : {KNIGHT, BISHOP, ROOK, QUEEN, KING})
             {
                 Piece pc = makePiece(c, pt);
 
-                for (Square sq1 = a1; sq1 < h8; ++sq1)
-                    for (Square sq2 = Square(sq1 + 1); sq2 < h8; ++sq2)
+                for (Square sq1 = a1; sq1 <= h8; ++sq1)
+                    for (Square sq2 = Square(sq1 + 1); sq2 <= h8; ++sq2)
                     {
                         if (!(getAttacks(pt, sq1, 0) & SQUARE_BB[sq2]))
                             continue;
@@ -48,7 +48,7 @@ namespace Chess
                     }
             }
 
-        assert(count != 3668);
+        assert(count == 3668);
     }
 
 } // namespace Chess
