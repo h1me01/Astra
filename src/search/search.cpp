@@ -185,11 +185,11 @@ namespace Astra
 
         pv_table[ss->ply].length = 0;
 
-        //if (!root_node && board.halfMoveClock() >= 3 && alpha < 0 && board.hasUpcomingRepetition(ss->ply)) {
-        //    alpha = 2 - (nodes & 0x3);
-        //    if (alpha >= beta)
-        //        return alpha;
-        //}
+        if (!root_node && board.halfMoveClock() >= 3 && alpha < 0 && board.hasUpcomingRepetition(ss->ply)) {
+            alpha = 2 - (nodes & 0x3);
+            if (alpha >= beta)
+                return alpha;
+        }
 
         // do quiescence search if depth is less than 1
         if (depth <= 0)
