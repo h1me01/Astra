@@ -699,40 +699,43 @@ namespace Chess
 
         int distance = std::min(info.half_move_clock, info.plies_from_null);
         if (distance < 3)
-            return 0;
+            return false;
 
-        uint64_t original = info.hash;
+        U64 original = info.hash;
 
         for (int i = 3; i <= distance; i += 2)
         {
             prev -= 2;
+            U64 move_key = original ^ prev->hash;
 
-            uint32_t h;
-            uint64_t moveKey = original ^ prev->hash;
-            if ((h = cuckooH1(moveKey), cuckoo[h] == moveKey) || (h = cuckooH2(moveKey), cuckoo[h] == moveKey))
+            int hash = cuckooH1(move_key);
+            if (cuckoo[hash] != move_key)
+                hash = cuckooH2(move_key);
+
+            if (cuckoo[hash] != move_key)
+                continue;
+
+            Move move = cuckoo_moves[hash];
+            Square from = move.from();
+            Square to = move.to();
+
+            U64 between = SQUARES_BETWEEN[from][to] ^ SQUARE_BB[to];
+            if (between & occupancy())
+                continue;
+
+            if (ply > i)
+                return true;
+
+            Piece pc = pieceAt(from) != NO_PIECE ? pieceAt(from) : pieceAt(to);
+            if (colorOf(pc) != stm)
+                continue;
+
+            StateInfo *prev2 = prev - 2;
+            for (int j = i + 4; j <= distance; j += 2)
             {
-                Move move = cuckoo_moves[h];
-                Square from = move.from();
-                Square to = move.to();
-
-                U64 between = SQUARES_BETWEEN[from][to];
-                if (between & occupancy())
-                    continue;
-
-                if (ply > i)
+                prev2 -= 2;
+                if (prev2->hash == prev->hash)
                     return true;
-
-                Piece pc = pieceAt(from) != NO_PIECE ? pieceAt(from) : pieceAt(to);
-                if (colorOf(pc) != stm)
-                    continue;
-
-                StateInfo *prev2 = prev - 2;
-                for (int j = i + 4; j <= distance; j += 2)
-                {
-                    prev2 -= 2;
-                    if (prev2->hash == prev->hash)
-                        return true;
-                }
             }
         }
 
