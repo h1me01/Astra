@@ -692,21 +692,18 @@ namespace Chess
         return result;
     }
 
-    bool Board::hasUpcomingRepetition(int ply)
+  bool Board::hasUpcomingRepetition(int ply)
     {
+        const U64 occ = occupancy();
+        
         const StateInfo &info = history[curr_ply];
         StateInfo *prev = &history[curr_ply - 1];
 
         int distance = std::min(info.half_move_clock, info.plies_from_null);
-        if (distance < 3)
-            return false;
-
-        U64 original = info.hash;
-
         for (int i = 3; i <= distance; i += 2)
         {
             prev -= 2;
-            U64 move_key = original ^ prev->hash;
+            U64 move_key = info.hash ^ prev->hash;
 
             int hash = cuckooH1(move_key);
             if (cuckoo[hash] != move_key)
@@ -720,7 +717,7 @@ namespace Chess
             Square to = move.to();
 
             U64 between = SQUARES_BETWEEN[from][to] ^ SQUARE_BB[to];
-            if (between & occupancy())
+            if (between & occ)
                 continue;
 
             if (ply > i)

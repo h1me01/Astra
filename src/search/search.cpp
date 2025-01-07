@@ -185,8 +185,9 @@ namespace Astra
 
         pv_table[ss->ply].length = 0;
 
-        if (!root_node && board.halfMoveClock() >= 3 && alpha < 0 && board.hasUpcomingRepetition(ss->ply)) {
-            alpha = 2 - (nodes & 0x3);
+        if (!root_node && alpha < 0 && board.hasUpcomingRepetition(ss->ply)) 
+        {
+            alpha = VALUE_DRAW;
             if (alpha >= beta)
                 return alpha;
         }
@@ -600,6 +601,13 @@ namespace Astra
     Score Search::qSearch(int depth, Score alpha, Score beta, Stack *ss)
     {
         assert(alpha < beta);
+
+        if (alpha < VALUE_DRAW && board.hasUpcomingRepetition(ss->ply)) 
+        {
+            alpha = VALUE_DRAW;
+            if (alpha >= beta)
+                return alpha;
+        }
 
         if (isLimitReached(1))
             return 0;
