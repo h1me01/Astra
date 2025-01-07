@@ -185,7 +185,7 @@ namespace Astra
 
         pv_table[ss->ply].length = 0;
 
-        if (!root_node && alpha < 0 && board.hasUpcomingRepetition(ss->ply)) 
+        if (!root_node && alpha < VALUE_DRAW && board.hasUpcomingRepetition(ss->ply)) 
         {
             alpha = VALUE_DRAW;
             if (alpha >= beta)
