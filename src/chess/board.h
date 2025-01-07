@@ -5,6 +5,7 @@
 #include "misc.h"
 #include "zobrist.h"
 #include "attacks.h"
+#include "cuckoo.h"
 #include "../eval/accumulator.h"
 
 namespace Chess
@@ -110,6 +111,7 @@ namespace Chess
         bool isRepetition(int ply) const;
         bool isDraw(int ply) const;
         bool see(Move &m, int threshold) const;
+        bool hasUpcomingRepetition(int ply);
 
         bool oppHasGoodCaptures() const;
 

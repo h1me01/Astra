@@ -24,7 +24,8 @@ CHESS_SRC := chess/attacks.cpp \
              chess/board.cpp \
              chess/misc.cpp \
              chess/perft.cpp \
-             chess/zobrist.cpp
+             chess/zobrist.cpp \
+             chess/cuckoo.cpp
 
 EVAL_SRC := eval/eval.cpp \
             eval/nnue.cpp \

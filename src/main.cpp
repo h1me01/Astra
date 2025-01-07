@@ -7,6 +7,7 @@ int main(int argc, char **argv)
 
     initLookUpTables();
     Zobrist::init();
+    initCuckoo();
     Astra::initReductions();
 
     NNUE::nnue.init();
