@@ -80,16 +80,17 @@ namespace Astra
                 int64_t elapsed = tm.elapsedTime();
                 Move move = pv_table[0][0];
 
-                // change time optimum based on stability
-                stability = bestmove == move ? std::min(12, stability + 1) : 0;
-                double stability_factor = 1.4115 - stability * 0.05193;
+                // adjust time optimum based on stability
+                stability = bestmove == move ? std::min(10, stability + 1) : 0;
+                double stability_factor = 1.3115 - stability * 0.05329;
 
-                // change time optimum based on last score
-                double result_change_factor = 0.9560 + std::clamp(prev_result - result, -8, 62) * 0.003901;
-                
-                // change time optimum based on move nodes
-                double node_count_factor = 1.6799 + 0.9209 * (double(move_nodes[move.from()][move.to()]) / double(nodes));
-                
+                // adjust time optimum based on last score
+                double result_change_factor = 0.1788 + std::clamp(prev_result - result, 0, 62) * 0.002657;
+  
+                // adjust time optimum based on node count
+                double not_best_nodes = 1.0 - double(move_nodes[move.from()][move.to()]) / double(nodes);
+                double node_count_factor = not_best_nodes * 1.9223 + 0.5999;
+
                 // check if we should stop
                 if (elapsed > limit.time.optimum * stability_factor * result_change_factor * node_count_factor)
                     break;

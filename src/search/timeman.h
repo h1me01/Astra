@@ -47,7 +47,7 @@ namespace Astra
             if (moves_to_go == 0)
                 time.optimum = adj_time * 0.05;
             else
-                time.optimum = std::min(time_left * 0.5, adj_time * 0.9 / std::max(1.0, mtg / 1.5));
+                time.optimum = std::min(time_left * 0.5, adj_time * 0.9 / std::max(1.0, mtg / 2.0));
 
             time.max = time_left * 0.8 - overhead;
 
