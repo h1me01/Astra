@@ -62,7 +62,7 @@ namespace Astra
             (ss - i)->conth = &history.conth[0][WHITE_PAWN][a1];
 
         int stability = 0;
-        Score prev_result = VALUE_NONE; 
+        Score prev_result = VALUE_NONE;
 
         Move bestmove = NO_MOVE;
         for (root_depth = 1; root_depth < MAX_PLY; root_depth++)
@@ -86,7 +86,7 @@ namespace Astra
 
                 // adjust time optimum based on last score
                 double result_change_factor = 0.1788 + std::clamp(prev_result - result, 0, 62) * 0.003657;
-  
+
                 // adjust time optimum based on node count
                 double not_best_nodes = 1.0 - double(move_nodes[move.from()][move.to()]) / double(nodes);
                 double node_count_factor = not_best_nodes * 2.1223 + 0.4599;
@@ -186,7 +186,7 @@ namespace Astra
 
         pv_table[ss->ply].length = 0;
 
-        if (!root_node && alpha < VALUE_DRAW && board.hasUpcomingRepetition(ss->ply)) 
+        if (!root_node && alpha < VALUE_DRAW && board.hasUpcomingRepetition(ss->ply))
         {
             alpha = VALUE_DRAW;
             if (alpha >= beta)
@@ -429,8 +429,6 @@ namespace Astra
 
             if (!root_node && best_score > -VALUE_TB_WIN_IN_MAX_PLY)
             {
-                int lmr_depth = std::max(1, depth - REDUCTIONS[depth][made_moves] - !improving);
-
                 // late move pruning
                 if (!pv_node && q_count > (3 + depth * depth) / (2 - improving))
                     mp.skip_quiets = true;
@@ -438,17 +436,16 @@ namespace Astra
                 if (!isCap(move) && move.type() != PQ_QUEEN)
                 {
                     // history pruning
-                    if (history_score < -hp_margin * depth && lmr_depth < 5)
+                    if (history_score < -hp_margin * depth && depth <= hp_depth)
                         continue;
 
                     // futility pruning
-                    if (!in_check && lmr_depth <= 9 && eval + fp_base + lmr_depth * fp_mult <= alpha)
+                    if (!in_check && depth <= 9 && eval + fp_base + depth * fp_mult <= alpha)
                         mp.skip_quiets = true;
                 }
 
                 // see pruning
-                int see_margin = isCap(move) ? depth * see_cap_margin : lmr_depth * see_quiet_margin;
-                if (!pv_node && !board.see(move, -see_margin))
+                if (depth <= (isCap(move) ? 4 : see_quiet_depth) && !board.see(move, depth * (isCap(move) ? -see_cap_margin : -see_quiet_margin)))
                     continue;
             }
 
@@ -488,6 +485,8 @@ namespace Astra
                     extension = -2 + pv_node;
                 else if (cut_node)
                     extension = -2;
+                else if (tt_score <= alpha)
+                    extension = -1;
             }
 
             int new_depth = depth - 1 + extension;
@@ -603,7 +602,7 @@ namespace Astra
     {
         assert(alpha < beta);
 
-        if (alpha < VALUE_DRAW && board.hasUpcomingRepetition(ss->ply)) 
+        if (alpha < VALUE_DRAW && board.hasUpcomingRepetition(ss->ply))
         {
             alpha = VALUE_DRAW;
             if (alpha >= beta)
