@@ -184,7 +184,7 @@ namespace Astra
         Score max_score = VALUE_MATE;
         Score best_score = -VALUE_MATE;
 
-        pv_table[ss->ply].length = 0;
+        pv_table[ss->ply].length = ss->ply;
 
         if (!root_node && alpha < VALUE_DRAW && board.hasUpcomingRepetition(ss->ply))
         {
@@ -774,10 +774,10 @@ namespace Astra
 
     void Search::updatePv(Move move, int ply)
     {
-        pv_table[ply][0] = move;
-        for (int i = 0; i < pv_table[ply + 1].length; i++)
-            pv_table[ply][i + 1] = pv_table[ply + 1][i];
-        pv_table[ply].length = pv_table[ply + 1].length + 1;
+        pv_table[ply][ply] = move;
+        for (int next_ply = ply + 1; next_ply < pv_table[ply + 1].length; next_ply++)
+            pv_table[ply][next_ply] = pv_table[ply + 1][next_ply];
+        pv_table[ply].length = pv_table[ply + 1].length;
     }
 
     void Search::printUciInfo(Score result, int depth, PVLine &pv_line) const
