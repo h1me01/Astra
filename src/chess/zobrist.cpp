@@ -1,80 +1,76 @@
 #include "zobrist.h"
 #include "misc.h"
 
-namespace Chess
+namespace Chess::Zobrist
 {
-    namespace Zobrist
+    U64 psq[NUM_PIECES][NUM_SQUARES];
+    U64 castle[16];
+    U64 ep[8];
+    U64 side;
+
+    void init()
     {
-        U64 psq[NUM_PIECES][NUM_SQUARES];
-        U64 castle[16];
-        U64 ep[8];
-        U64 side;
+        PRNG rng(1070372);
 
-        void init()
+        for (int pc = WHITE_PAWN; pc <= BLACK_KING; pc++)
+            for (int sq = a1; sq <= h8; sq++)
+                psq[pc][sq] = rng.rand<U64>();
+
+        for (int f = FILE_A; f <= FILE_H; f++)
+            ep[f] = rng.rand<U64>();
+
+        castle[0] = 0;
+        for (int i = 1; i < 16; i++)
+            castle[i] = rng.rand<U64>();
+
+        side = rng.rand<U64>();
+    }
+
+    U64 getPsq(Piece pc, Square sq)
+    {
+        assert(pc >= WHITE_PAWN && pc <= BLACK_KING);
+        assert(sq >= a1 && sq <= h8);
+        return psq[pc][sq];
+    }
+
+    U64 getCastle(int idx)
+    {
+        assert(idx >= 0 && idx < 16);
+        return castle[idx];
+    }
+
+    U64 getEp(Square sq)
+    {
+        assert(sq >= a1 && sq <= h8);
+        return ep[fileOf(sq)];
+    }
+
+    U64 getPawnZobrist(const Board &board)
+    {
+        U64 hash = 0;
+
+        for (Color c : {WHITE, BLACK})
         {
-            PRNG rng(1070372);
-
-            for (int pc = WHITE_PAWN; pc <= BLACK_KING; pc++)
-                for (int sq = a1; sq <= h8; sq++)
-                    psq[pc][sq] = rng.rand<U64>();
-
-            for (int f = FILE_A; f <= FILE_H; f++)
-                ep[f] = rng.rand<U64>();
-
-            castle[0] = 0;
-            for (int i = 1; i < 16; i++)
-                castle[i] = rng.rand<U64>();
-
-            side = rng.rand<U64>();
+            U64 pawns = board.getPieceBB(c, PAWN);
+            while (pawns)
+                hash ^= getPsq(makePiece(c, PAWN), popLsb(pawns));
         }
 
-        U64 getPsq(Piece pc, Square sq)
+        return hash;
+    }
+
+    U64 getNonPawnZobrist(const Board &board, Color c)
+    {
+        U64 hash = 0;
+
+        for (PieceType pt : {KNIGHT, BISHOP, ROOK, QUEEN, KING})
         {
-            assert(pc >= WHITE_PAWN && pc <= BLACK_KING);
-            assert(sq >= a1 && sq <= h8);
-            return psq[pc][sq];
+            U64 pieces = board.getPieceBB(c, pt);
+            while (pieces)
+                hash ^= getPsq(makePiece(c, pt), popLsb(pieces));
         }
 
-        U64 getCastle(int idx)
-        {
-            assert(idx >= 0 && idx < 16);
-            return castle[idx];
-        }
+        return hash;
+    }
 
-        U64 getEp(Square sq)
-        {
-            assert(sq >= a1 && sq <= h8);
-            return ep[fileOf(sq)];
-        }
-
-        U64 getPawnZobrist(const Board &board)
-        {
-            U64 hash = 0;
-
-            for (Color c : {WHITE, BLACK})
-            {
-                U64 pawns = board.getPieceBB(c, PAWN);
-                while (pawns)
-                    hash ^= getPsq(makePiece(c, PAWN), popLsb(pawns));
-            }
-
-            return hash;
-        }
-
-        U64 getNonPawnZobrist(const Board &board, Color c)
-        {
-            U64 hash = 0;
-
-            for (PieceType pt : {KNIGHT, BISHOP, ROOK, QUEEN, KING})
-            {
-                U64 pieces = board.getPieceBB(c, pt);
-                while (pieces)
-                    hash ^= getPsq(makePiece(c, pt), popLsb(pieces));
-            }
-
-            return hash;
-        }
-
-    } // namespace Zobrist
-
-} // namespace Chess
+} // namespace Chess::Zobrist

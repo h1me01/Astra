@@ -3,10 +3,9 @@
 
 #include "misc.h"
 
-namespace Chess
+namespace Chess::Cuckoo
 {
-
-    extern U64 cuckoo[8192];
+    extern U64 keys[8192];
     extern Move cuckoo_moves[8192];
 
     inline int cuckooH1(U64 hash)
@@ -21,6 +20,6 @@ namespace Chess
 
     void initCuckoo();
 
-} // namespace Chess
+} // namespace Chess::Cuckoo
 
 #endif // CHESS_CUCKOO_H

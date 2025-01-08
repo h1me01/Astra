@@ -2,9 +2,9 @@
 #include "attacks.h"
 #include "zobrist.h"
 
-namespace Chess
+namespace Chess::Cuckoo
 {
-    U64 cuckoo[8192];
+    U64 keys[8192];
     Move cuckoo_moves[8192];
 
     void initCuckoo()
@@ -13,7 +13,7 @@ namespace Chess
 
         for (int i = 0; i < 8192; i++)
         {
-            cuckoo[i] = 0;
+            keys[i] = 0;
             cuckoo_moves[i] = NO_MOVE;
         }
 
@@ -35,7 +35,7 @@ namespace Chess
 
                         while (true)
                         {
-                            std::swap(cuckoo[i], hash);
+                            std::swap(keys[i], hash);
                             std::swap(cuckoo_moves[i], move);
 
                             if (!move)
@@ -51,4 +51,4 @@ namespace Chess
         assert(count == 3668);
     }
 
-} // namespace Chess
+} // namespace Chess::Cuckoo

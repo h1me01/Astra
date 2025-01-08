@@ -704,14 +704,14 @@ namespace Chess
             prev -= 2;
             U64 move_key = info.hash ^ prev->hash;
 
-            int hash = cuckooH1(move_key);
-            if (cuckoo[hash] != move_key)
-                hash = cuckooH2(move_key);
+            int hash = Cuckoo::cuckooH1(move_key);
+            if (Cuckoo::keys[hash] != move_key)
+                hash = Cuckoo::cuckooH2(move_key);
 
-            if (cuckoo[hash] != move_key)
+            if (Cuckoo::keys[hash] != move_key)
                 continue;
 
-            Move move = cuckoo_moves[hash];
+            Move move = Cuckoo::cuckoo_moves[hash];
             Square from = move.from();
             Square to = move.to();
 
