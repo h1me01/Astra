@@ -630,14 +630,13 @@ namespace Chess
         if (swap <= 0)
             return true;
 
-        U64 occ = occupancy();
-        occ = occ ^ SQUARE_BB[from] ^ SQUARE_BB[to];
+        U64 occ = occupancy() ^ SQUARE_BB[from] ^ SQUARE_BB[to];
         U64 attackers = attackersTo(WHITE, to, occ) | attackersTo(BLACK, to, occ);
 
-        U64 diag = diagSliders(WHITE) | diagSliders(BLACK);
-        U64 orth = orthSliders(WHITE) | orthSliders(BLACK);
+        const U64 diag = diagSliders(WHITE) | diagSliders(BLACK);
+        const U64 orth = orthSliders(WHITE) | orthSliders(BLACK);
 
-        bool result = true;
+        int result = 1;
 
         Color curr_stm = getTurn();
 
@@ -649,7 +648,7 @@ namespace Chess
 
             if (!(my_attacker = (attackers & occupancy(curr_stm))))
                 break;
-            result = !result;
+            result ^= 1;
 
             if ((least_attacker = my_attacker & getPieceBB(curr_stm, PAWN)))
             {
@@ -689,7 +688,7 @@ namespace Chess
                 return (attackers & ~occupancy(curr_stm)) ? result ^ 1 : result;
         }
 
-        return result;
+        return bool(result);
     }
 
     bool Board::hasUpcomingRepetition(int ply)

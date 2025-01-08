@@ -112,44 +112,47 @@ namespace Astra
 
     Score Search::aspSearch(int depth, Score prev_eval, Stack *ss)
     {
-        Score alpha = -VALUE_MATE;
-        Score beta = VALUE_MATE;
+        Score alpha = -VALUE_INFINITE;
+        Score beta = VALUE_INFINITE;
         Score result = VALUE_NONE;
 
-        int window = VALUE_MATE;
+        int window = asp_window;
         if (depth >= asp_depth)
         {
-            window = asp_window;
-            alpha = std::max(prev_eval - window, -int(VALUE_MATE));
-            beta = std::min(prev_eval + window, int(VALUE_MATE));
+            alpha = std::max(prev_eval - window, -int(VALUE_INFINITE));
+            beta = std::min(prev_eval + window, int(VALUE_INFINITE));
         }
 
-        int search_depth = depth;
+        int fail_high_count = 0;
         while (true)
         {
             if (alpha < -2000)
-                alpha = -VALUE_MATE;
-            if (beta > 2000)
-                beta = VALUE_MATE;
+                alpha = -VALUE_INFINITE;
 
-            result = negamax(std::max(1, search_depth), alpha, beta, ss, false);
+            if (beta > 2000)
+                beta = VALUE_INFINITE;
+
+            result = negamax(std::max(1, root_depth - fail_high_count), alpha, beta, ss, false);
 
             if (isLimitReached(depth))
                 return result;
-            else if (id == 0 && (result <= alpha || result >= beta) && tm.elapsedTime() > 5000)
-                printUciInfo(result, depth, pv_table[0]);
+            //else if (id == 0 && (result <= alpha || result >= beta) && tm.elapsedTime() > 5000)
+            //    printUciInfo(result, depth, pv_table[0]);
 
             if (result <= alpha)
             {
+                // if result is lower than alpha, than we can lower alpha for next iteration
                 beta = (alpha + beta) / 2;
-                alpha = std::max(alpha - window, -int(VALUE_MATE));
-                search_depth = depth;
+                alpha = std::max(alpha - window, -int(VALUE_INFINITE));
+                fail_high_count = 0;
             }
             else if (result >= beta)
             {
-                beta = std::min(beta + window, int(VALUE_MATE));
+                // if result is higher than beta, than we can raise beta for next iteration
+                beta = std::min(beta + window, int(VALUE_INFINITE));
+                
                 if (std::abs(result) < VALUE_TB_WIN_IN_MAX_PLY)
-                    search_depth--;
+                    fail_high_count++;
             }
             else
                 break;
@@ -455,8 +458,8 @@ namespace Astra
                 q_moves[q_count++] = move;
 
             // print current move information
-            if (id == 0 && root_node && tm.elapsedTime() > 5000 && !threads.isStopped())
-                std::cout << "info depth " << depth << " currmove " << move << " currmovenumber " << made_moves << std::endl;
+            //if (id == 0 && root_node && tm.elapsedTime() > 5000 && !threads.isStopped())
+            //    std::cout << "info depth " << depth << " currmove " << move << " currmovenumber " << made_moves << std::endl;
 
             int extension = 0;
 
