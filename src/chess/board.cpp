@@ -692,10 +692,10 @@ namespace Chess
         return result;
     }
 
-  bool Board::hasUpcomingRepetition(int ply)
+    bool Board::hasUpcomingRepetition(int ply)
     {
         const U64 occ = occupancy();
-        
+
         const StateInfo &info = history[curr_ply];
         StateInfo *prev = &history[curr_ply - 1];
 

@@ -85,11 +85,11 @@ namespace Astra
                 double stability_factor = 1.3115 - stability * 0.05329;
 
                 // adjust time optimum based on last score
-                double result_change_factor = 0.1788 + std::clamp(prev_result - result, 0, 62) * 0.002657;
+                double result_change_factor = 0.1788 + std::clamp(prev_result - result, 0, 62) * 0.003657;
   
                 // adjust time optimum based on node count
                 double not_best_nodes = 1.0 - double(move_nodes[move.from()][move.to()]) / double(nodes);
-                double node_count_factor = not_best_nodes * 1.9223 + 0.5999;
+                double node_count_factor = not_best_nodes * 2.1223 + 0.4599;
 
                 // check if we should stop
                 if (elapsed > limit.time.optimum * stability_factor * result_change_factor * node_count_factor)
@@ -448,7 +448,7 @@ namespace Astra
 
                 // see pruning
                 int see_margin = isCap(move) ? depth * see_cap_margin : lmr_depth * see_quiet_margin;
-                if (!board.see(move, -see_margin))
+                if (!pv_node && !board.see(move, -see_margin))
                     continue;
             }
 
