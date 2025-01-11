@@ -9,7 +9,7 @@ namespace NNUE
         Square ksq = board.kingSq(view);
         const bool king_side = fileOf(ksq) > 3;
 
-        AccumulatorEntry &entry = entries[view][king_side * 10 + KING_BUCKET[relativeSquare(view, ksq)]];
+        AccumulatorEntry &entry = entries[view][king_side * BUCKET_SIZE + KING_BUCKET[relativeSquare(view, ksq)]];
 
         for (Color c : {WHITE, BLACK})
             for (int i = PAWN; i <= KING; i++)

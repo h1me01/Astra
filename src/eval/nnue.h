@@ -27,7 +27,8 @@ namespace NNUE
     constexpr int OUTPUT_SIZE = 1;
 
     // clang-format off
-    constexpr int KING_BUCKET[NUM_SQUARES] {
+    constexpr int KING_BUCKET[NUM_SQUARES]
+    {
         0, 1, 2, 3, 3, 2, 1, 0,
         4, 4, 5, 5, 5, 5, 4, 4,
         6, 6, 6, 6, 6, 6, 6, 6,

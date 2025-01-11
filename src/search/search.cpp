@@ -439,7 +439,7 @@ namespace Astra
                 if (!isCap(move) && move.type() != PQ_QUEEN)
                 {
                     // history pruning
-                    if (history_score < -hp_margin * depth && depth <= hp_depth)
+                    if (history_score < -hp_margin * depth && depth <= 7)
                         continue;
 
                     // futility pruning
@@ -448,7 +448,7 @@ namespace Astra
                 }
 
                 // see pruning
-                if (depth <= (isCap(move) ? 4 : see_quiet_depth) && !board.see(move, depth * (isCap(move) ? -see_cap_margin : -see_quiet_margin)))
+                if (depth <= (isCap(move) ? 4 : 8) && !board.see(move, depth * (isCap(move) ? -see_cap_margin : -see_quiet_margin)))
                     continue;
             }
 
