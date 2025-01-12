@@ -214,13 +214,13 @@ namespace Chess
         Square from = m.from();
         Square to = m.to();
 
-        Piece pc = pieceAt(from);
+        Piece p = pieceAt(from);
         Piece captured = pieceAt(to);
 
         if (captured != NO_PIECE)
             new_hash ^= Zobrist::getPsq(captured, to);
 
-        new_hash ^= Zobrist::getPsq(pc, from) ^ Zobrist::getPsq(pc, to);
+        new_hash ^= Zobrist::getPsq(p, from) ^ Zobrist::getPsq(p, to);
         new_hash ^= Zobrist::side;
 
         return new_hash;
@@ -246,7 +246,7 @@ namespace Chess
             Square cap_sq = Square(to ^ 8);
             U64 occ = (occupancy() ^ SQUARE_BB[from] ^ SQUARE_BB[cap_sq]) | SQUARE_BB[to];
 
-            assert(board[cap_sq] == makePiece(~stm, PAWN));
+            assert(pieceAt(cap_sq) == makePiece(~stm, PAWN));
             assert(pieceAt(to) == NO_PIECE);
 
             U64 attackers = getBishopAttacks(ksq, occ) & (getPieceBB(~stm, BISHOP) | getPieceBB(~stm, QUEEN));
@@ -267,8 +267,9 @@ namespace Chess
         const Square to = m.to();
         const Square ksq = kingSq(stm);
 
-        const Piece pc = pieceAt(from);
-        const PieceType pt = typeOf(pc);
+        const Piece from_p = pieceAt(from);
+        const Piece to_p = pieceAt(to);
+        const PieceType pt = typeOf(from_p);
 
         const MoveType mt = m.type();
 
@@ -279,16 +280,16 @@ namespace Chess
         const Direction up = stm == WHITE ? NORTH : SOUTH;
 
         // move must exist, piece must exist, piece must match the current stm
-        if (!m || pc == NO_PIECE || colorOf(pc) != stm)
+        if (!m || from_p == NO_PIECE || colorOf(from_p) != stm)
             return false;
         // if double check, then only king can move
         if (popCount(info.checkers) > 1 && pt != KING)
             return false;
         // if capture move, then target square must be occupied by enemy piece
-        if (mt != EN_PASSANT && isCap(m) && pieceAt(to) == NO_PIECE)
+        if (mt != EN_PASSANT && isCap(m) && to_p == NO_PIECE)
             return false;
         // if quiet move, then target square must be empty
-        if (!isCap(m) && pieceAt(to) != NO_PIECE)
+        if (!isCap(m) && to_p != NO_PIECE)
             return false;
         // we must not capture our own piece
         if (SQUARE_BB[to] & us_bb)
@@ -323,7 +324,7 @@ namespace Chess
             if (pt != PAWN)
                 return false;
             // to-square must not be occupied
-            if (pieceAt(to) != NO_PIECE)
+            if (to_p != NO_PIECE)
                 return false;
             // ep square must be same
             if (info.ep_sq != to)
@@ -357,10 +358,10 @@ namespace Chess
                 // is capture?
                 bool capture = getPawnAttacks(stm, from) & them_bb & SQUARE_BB[to];
                 // is single push?
-                bool singe_push = (Square(from + up) == to) && pieceAt(to) == NO_PIECE;
+                bool singe_push = (Square(from + up) == to) && to_p == NO_PIECE;
                 // is double push?
-                bool double_push = relativeRank(stm, RANK_2) == rankOf(from) && (Square(from + 2 * up) == to) &&
-                                   pieceAt(to) == NO_PIECE && pieceAt(to - up) == NO_PIECE;
+                bool double_push = relativeRank(stm, RANK_2) == rankOf(from) && (Square(from + 2 * up) == to) 
+                                   && to_p == NO_PIECE && pieceAt(to - up) == NO_PIECE;
 
                 // if none of the conditions above are met, then it's not pseudo legal
                 if (!capture && !singe_push && !double_push)
@@ -390,12 +391,12 @@ namespace Chess
         const MoveType mt = m.type();
         const Square from = m.from();
         const Square to = m.to();
-        const Piece pc = pieceAt(from);
-        const PieceType pt = typeOf(pc);
+        const Piece p = pieceAt(from);
+        const PieceType pt = typeOf(p);
         const Piece captured = mt == EN_PASSANT ? makePiece(~stm, PAWN) : pieceAt(to);
 
         assert(typeOf(captured) != KING);
-        assert(pc != NO_PIECE);
+        assert(p != NO_PIECE);
 
         curr_ply++;
         history[curr_ply] = StateInfo(history[curr_ply - 1]);
@@ -447,11 +448,11 @@ namespace Chess
         }
 
         // update hash of moving piece
-        info.hash ^= Zobrist::getPsq(pc, from) ^ Zobrist::getPsq(pc, to);
+        info.hash ^= Zobrist::getPsq(p, from) ^ Zobrist::getPsq(p, to);
         if (pt == PAWN)
-            info.pawn_hash ^= Zobrist::getPsq(pc, from) ^ Zobrist::getPsq(pc, to);
+            info.pawn_hash ^= Zobrist::getPsq(p, from) ^ Zobrist::getPsq(p, to);
         else
-            info.non_pawn_hash[stm] ^= Zobrist::getPsq(pc, from) ^ Zobrist::getPsq(pc, to);
+            info.non_pawn_hash[stm] ^= Zobrist::getPsq(p, from) ^ Zobrist::getPsq(p, to);
 
         // reset ep square if it exists
         if (info.ep_sq != NO_SQUARE)
@@ -487,18 +488,18 @@ namespace Chess
             else if (isProm(m))
             {
                 PieceType prom_type = typeOfPromotion(mt);
-                Piece prom_pc = makePiece(stm, prom_type);
+                Piece prom_p = makePiece(stm, prom_type);
 
                 assert(prom_type != PAWN);
-                assert(prom_pc != NO_PIECE);
+                assert(prom_p != NO_PIECE);
 
                 // update hash of promoting piece
-                info.hash ^= Zobrist::getPsq(pc, to) ^ Zobrist::getPsq(prom_pc, to);
-                info.pawn_hash ^= Zobrist::getPsq(pc, to);
+                info.hash ^= Zobrist::getPsq(p, to) ^ Zobrist::getPsq(prom_p, to);
+                info.pawn_hash ^= Zobrist::getPsq(p, to);
 
                 // add promoted piece and remove pawn
                 removePiece(to, update_nnue);
-                putPiece(prom_pc, to, update_nnue);
+                putPiece(prom_p, to, update_nnue);
             }
         }
 
@@ -722,8 +723,8 @@ namespace Chess
             if (ply > i)
                 return true;
 
-            Piece pc = pieceAt(from) != NO_PIECE ? pieceAt(from) : pieceAt(to);
-            if (colorOf(pc) != stm)
+            Piece p = pieceAt(from) != NO_PIECE ? pieceAt(from) : pieceAt(to);
+            if (colorOf(p) != stm)
                 continue;
 
             StateInfo *prev2 = prev - 2;

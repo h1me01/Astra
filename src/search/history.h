@@ -55,25 +55,25 @@ namespace Astra
     {
         Square from = move.from();
         Square to = move.to();
-        Piece pc = board.pieceAt(from);
+        Piece p = board.pieceAt(from);
 
-        assert(pc != NO_PIECE);
+        assert(p != NO_PIECE);
 
         return hh[board.getTurn()][from][to] +
-               (int)(*(ss - 1)->conth)[pc][to] +
-               (int)(*(ss - 2)->conth)[pc][to] +
-               (int)(*(ss - 4)->conth)[pc][to];
+               (int)(*(ss - 1)->conth)[p][to] +
+               (int)(*(ss - 2)->conth)[p][to] +
+               (int)(*(ss - 4)->conth)[p][to];
     }
 
     inline int History::getCapHistory(const Board &board, Move &move) const
     {
         PieceType captured = move.type() == EN_PASSANT ? PAWN : typeOf(board.pieceAt(move.to()));
-        Piece pc = board.pieceAt(move.from());
+        Piece p = board.pieceAt(move.from());
 
-        assert(pc != NO_PIECE);
+        assert(p != NO_PIECE);
         assert(captured != NO_PIECE_TYPE);
 
-        return ch[pc][move.to()][captured];
+        return ch[p][move.to()][captured];
     }
 
     inline Move History::getCounterMove(Move prev_move) const
@@ -95,13 +95,13 @@ namespace Astra
         const Move prev_move = (ss - 1)->curr_move;
         const Move pprev_move = (ss - 2)->curr_move;
 
-        Piece prev_pc = (ss - 1)->moved_piece;
-        Piece pprev_pc = (ss - 2)->moved_piece;
+        Piece prev_p = (ss - 1)->moved_piece;
+        Piece pprev_p = (ss - 2)->moved_piece;
 
         if (!prev_move || !pprev_move)
             return 0;
 
-        return cont_corr[prev_pc][prev_move.to()][pprev_pc][pprev_move.to()] / 512;
+        return cont_corr[prev_p][prev_move.to()][pprev_p][pprev_move.to()] / 512;
     }
 
 } // namespace Astra

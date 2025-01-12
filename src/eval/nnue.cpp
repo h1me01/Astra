@@ -50,9 +50,9 @@ namespace NNUE
 #endif
 
     // helper
-    int index(Square psq, Square ksq, Piece pc, Color view)
+    int index(Square psq, Square ksq, Piece p, Color view)
     {
-        assert(pc != NO_PIECE);
+        assert(p != NO_PIECE);
         assert(psq != NO_SQUARE);
 
         // mirror psq horizontally if king is on other half
@@ -62,7 +62,7 @@ namespace NNUE
         psq = relativeSquare(view, psq);
         ksq = relativeSquare(view, ksq);
 
-        return psq + typeOf(pc) * 64 + (colorOf(pc) != view) * 64 * 6 + KING_BUCKET[ksq] * FEATURE_SIZE;
+        return psq + typeOf(p) * 64 + (colorOf(p) != view) * 64 * 6 + KING_BUCKET[ksq] * FEATURE_SIZE;
     }
 
     // nnue

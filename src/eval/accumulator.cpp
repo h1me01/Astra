@@ -15,7 +15,7 @@ namespace NNUE
             for (int i = PAWN; i <= KING; i++)
             {
                 PieceType pt = PieceType(i);
-                Piece pc = makePiece(c, pt);
+                Piece p = makePiece(c, pt);
 
                 U64 pc_bb = board.getPieceBB(c, pt);
                 U64 entry_bb = entry.piece_bb[c][pt];
@@ -24,10 +24,10 @@ namespace NNUE
                 U64 to_clear = entry_bb & ~pc_bb;
 
                 while (to_set)
-                    nnue.putPiece(entry.acc, pc, popLsb(to_set), ksq, view);
+                    nnue.putPiece(entry.acc, p, popLsb(to_set), ksq, view);
 
                 while (to_clear)
-                    nnue.removePiece(entry.acc, pc, popLsb(to_clear), ksq, view);
+                    nnue.removePiece(entry.acc, p, popLsb(to_clear), ksq, view);
 
                 entry.piece_bb[c][pt] = pc_bb;
             }

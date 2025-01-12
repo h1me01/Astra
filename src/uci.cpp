@@ -308,14 +308,14 @@ namespace UCI
     {
         Square from = squareFromString(str_move.substr(0, 2));
         Square to = squareFromString(str_move.substr(2, 2));
-        Piece pc = board.pieceAt(from);
+        Piece p = board.pieceAt(from);
         Piece captured = board.pieceAt(to);
         MoveType mt = QUIET;
 
         if (captured != NO_PIECE)
             mt = CAPTURE;
 
-        if (typeOf(pc) == PAWN)
+        if (typeOf(p) == PAWN)
         {
             if (board.history[board.getPly()].ep_sq == to)
                 mt = EN_PASSANT;
@@ -332,7 +332,7 @@ namespace UCI
                     mt = MoveType(mt - 3);
             }
         }
-        else if (typeOf(pc) == KING)
+        else if (typeOf(p) == KING)
         {
             if ((from == e1 && to == g1) || (from == e8 && to == g8))
                 mt = CASTLING;

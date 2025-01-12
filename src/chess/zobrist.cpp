@@ -12,9 +12,9 @@ namespace Chess::Zobrist
     {
         PRNG rng(1070372);
 
-        for (int pc = WHITE_PAWN; pc <= BLACK_KING; pc++)
+        for (int p = WHITE_PAWN; p <= BLACK_KING; p++)
             for (int sq = a1; sq <= h8; sq++)
-                psq[pc][sq] = rng.rand<U64>();
+                psq[p][sq] = rng.rand<U64>();
 
         for (int f = FILE_A; f <= FILE_H; f++)
             ep[f] = rng.rand<U64>();
@@ -26,11 +26,11 @@ namespace Chess::Zobrist
         side = rng.rand<U64>();
     }
 
-    U64 getPsq(Piece pc, Square sq)
+    U64 getPsq(Piece p, Square sq)
     {
-        assert(pc >= WHITE_PAWN && pc <= BLACK_KING);
+        assert(p >= WHITE_PAWN && p <= BLACK_KING);
         assert(sq >= a1 && sq <= h8);
-        return psq[pc][sq];
+        return psq[p][sq];
     }
 
     U64 getCastle(int idx)

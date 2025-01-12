@@ -20,7 +20,7 @@ namespace Chess::Cuckoo
         for (Color c : {WHITE, BLACK})
             for (PieceType pt : {KNIGHT, BISHOP, ROOK, QUEEN, KING})
             {
-                Piece pc = makePiece(c, pt);
+                Piece p = makePiece(c, pt);
 
                 for (Square sq1 = a1; sq1 <= h8; ++sq1)
                     for (Square sq2 = Square(sq1 + 1); sq2 <= h8; ++sq2)
@@ -30,7 +30,7 @@ namespace Chess::Cuckoo
 
                         Move move = Move(sq1, sq2, QUIET);
 
-                        U64 hash = Zobrist::getPsq(pc, sq1) ^ Zobrist::getPsq(pc, sq2) ^ Zobrist::side;
+                        U64 hash = Zobrist::getPsq(p, sq1) ^ Zobrist::getPsq(p, sq2) ^ Zobrist::side;
                         int i = cuckooH1(hash);
 
                         while (true)
