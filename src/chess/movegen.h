@@ -178,12 +178,12 @@ namespace Chess
         // castling moves
         if (gt != NOISY && !checkers)
         {
-            U64 not_free = (occ | danger) & ooBlockersMask(us);
+            U64 not_free = (occ | danger) & OO_BLOCKERS_MASK[us];
             if (!not_free && info.castle_rights.kingSide(us))
                 *ml++ = us == WHITE ? Move(e1, g1, CASTLING) : Move(e8, g8, CASTLING);
 
             // ignore the square b1/b8 since the king does move there
-            not_free = (occ | (danger & ~SQUARE_BB[relativeSquare(us, b1)])) & oooBlockersMask(us);
+            not_free = (occ | (danger & ~SQUARE_BB[relativeSquare(us, b1)])) & OOO_BLOCKERS_MASK[us];
             if (!not_free && info.castle_rights.queenSide(us))
                 *ml++ = us == WHITE ? Move(e1, c1, CASTLING) : Move(e8, c8, CASTLING);
         }

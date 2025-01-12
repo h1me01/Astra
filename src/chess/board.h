@@ -18,12 +18,12 @@ namespace Chess
 
         bool kingSide(const Color c) const
         {
-            return (mask & ooMask(c)) == ooMask(c);
+            return (mask & OO_MASK[c]) == OO_MASK[c];
         }
 
         bool queenSide(const Color c) const
         {
-            return (mask & oooMask(c)) == oooMask(c);
+            return (mask & OOO_MASK[c]) == OOO_MASK[c];
         }
 
         bool any(const Color c) const { return kingSide(c) || queenSide(c); }

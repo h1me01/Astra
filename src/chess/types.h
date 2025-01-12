@@ -14,7 +14,7 @@ namespace Chess
 
     constexpr int MAX_PLY = 121;
 
-    const int PIECE_VALUES[] = {100, 325, 325, 500, 1000, 30000, 0};
+    constexpr int PIECE_VALUES[] = {100, 325, 325, 500, 1000, 30000, 0};
 
     // clang-format off
     enum Color
@@ -39,26 +39,29 @@ namespace Chess
         SOUTH_SOUTH = -16
     };
 
+    constexpr int NUM_PIECE_TYPES = 6;
     enum PieceType
     {
         PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING,
-        NO_PIECE_TYPE, NUM_PIECE_TYPES = 6
+        NO_PIECE_TYPE
     };
 
-    constexpr PieceType PIECE_TO_PIECE_TYPE[13] =
+    constexpr PieceType PIECE_TO_PIECE_TYPE[] =
     {
         PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING,
         PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING,
         NO_PIECE_TYPE
     };
 
+    constexpr int NUM_PIECES = 12;
     enum Piece
     {
         WHITE_PAWN, WHITE_KNIGHT, WHITE_BISHOP, WHITE_ROOK, WHITE_QUEEN, WHITE_KING,
         BLACK_PAWN, BLACK_KNIGHT, BLACK_BISHOP, BLACK_ROOK, BLACK_QUEEN, BLACK_KING,
-        NO_PIECE, NUM_PIECES = 12
+        NO_PIECE
     };
 
+    constexpr int NUM_SQUARES = 64;
     enum Square
     {
         a1, b1, c1, d1, e1, f1, g1, h1,
@@ -69,10 +72,10 @@ namespace Chess
         a6, b6, c6, d6, e6, f6, g6, h6,
         a7, b7, c7, d7, e7, f7, g7, h7,
         a8, b8, c8, d8, e8, f8, g8, h8,
-        NO_SQUARE, NUM_SQUARES = 64
+        NO_SQUARE
     };
 
-    const std::string SQSTR[65] =
+    const std::string SQSTR[] =
     {
         "a1", "b1", "c1", "d1", "e1", "f1", "g1", "h1",
         "a2", "b2", "c2", "d2", "e2", "f2", "g2", "h2",
@@ -82,7 +85,7 @@ namespace Chess
         "a6", "b6", "c6", "d6", "e6", "f6", "g6", "h6",
         "a7", "b7", "c7", "d7", "e7", "f7", "g7", "h7",
         "a8", "b8", "c8", "d8", "e8", "f8", "g8", "h8",
-        "None"
+        "NO SQUARE"
     };
 
     enum File
@@ -103,21 +106,17 @@ namespace Chess
     constexpr Score VALUE_TB_WIN = VALUE_MATE;
     constexpr Score VALUE_TB_WIN_IN_MAX_PLY = VALUE_TB_WIN - MAX_PLY;
 
+    // clang-format off
     enum MoveType
     {
         QUIET,
         CAPTURE,
         CASTLING,
         EN_PASSANT,
-        PQ_KNIGHT,
-        PQ_BISHOP,
-        PQ_ROOK,
-        PQ_QUEEN,
-        PC_KNIGHT,
-        PC_BISHOP,
-        PC_ROOK,
-        PC_QUEEN
+        PQ_KNIGHT, PQ_BISHOP, PQ_ROOK, PQ_QUEEN,
+        PC_KNIGHT, PC_BISHOP, PC_ROOK, PC_QUEEN
     };
+    // clang-format on
 
     // max number of possible legal moves in chess are 218
     // use 128 for faster move generation

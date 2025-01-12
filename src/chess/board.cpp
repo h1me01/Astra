@@ -55,10 +55,10 @@ namespace Chess
             // clang-format off
             switch (c)
             {
-            case 'K': info.castle_rights.mask |= WHITE_OO_MASK; break;
-            case 'Q': info.castle_rights.mask |= WHITE_OOO_MASK; break;
-            case 'k': info.castle_rights.mask |= BLACK_OO_MASK; break;
-            case 'q': info.castle_rights.mask |= BLACK_OOO_MASK; break;
+            case 'K': info.castle_rights.mask |= OO_MASK[WHITE]; break;
+            case 'Q': info.castle_rights.mask |= OOO_MASK[WHITE]; break;
+            case 'k': info.castle_rights.mask |= OO_MASK[BLACK]; break;
+            case 'q': info.castle_rights.mask |= OOO_MASK[BLACK]; break;
             default: break;
             }
             // clang-format on
@@ -307,11 +307,11 @@ namespace Chess
             if (info.checkers || !info.castle_rights.any(stm))
                 return false;
             // short castling
-            U64 not_free = (occ | info.danger) & ooBlockersMask(stm);
+            U64 not_free = (occ | info.danger) & OO_BLOCKERS_MASK[stm];
             if (!not_free && info.castle_rights.kingSide(stm) && to == relativeSquare(stm, g1))
                 return true;
             // long castling
-            not_free = (occ | (info.danger & ~SQUARE_BB[relativeSquare(stm, b1)])) & oooBlockersMask(stm);
+            not_free = (occ | (info.danger & ~SQUARE_BB[relativeSquare(stm, b1)])) & OOO_BLOCKERS_MASK[stm];
             if (!not_free && info.castle_rights.queenSide(stm) && to == relativeSquare(stm, c1))
                 return true;
             // if short/long castling condition is not met, then it's not pseudo legal
@@ -360,8 +360,7 @@ namespace Chess
                 // is single push?
                 bool singe_push = (Square(from + up) == to) && to_p == NO_PIECE;
                 // is double push?
-                bool double_push = relativeRank(stm, RANK_2) == rankOf(from) && (Square(from + 2 * up) == to) 
-                                   && to_p == NO_PIECE && pieceAt(to - up) == NO_PIECE;
+                bool double_push = relativeRank(stm, RANK_2) == rankOf(from) && (Square(from + 2 * up) == to) && (to_p + pieceAt(to - up)) == 2 * NO_PIECE;
 
                 // if none of the conditions above are met, then it's not pseudo legal
                 if (!capture && !singe_push && !double_push)
