@@ -2,6 +2,7 @@
 #define TT_H
 
 #include "../chess/types.h"
+#include <iostream>
 
 using namespace Chess;
 
@@ -12,18 +13,25 @@ namespace Astra
         NO_BOUND = 0,
         LOWER_BOUND = 1,
         UPPER_BOUND = 2,
-        EXACT_BOUND = 3
+        EXACT_BOUND = 3,
+        PV_BOUND = 4
     };
+
+    constexpr int BUCKET_SIZE = 3;
+
+    constexpr int BOUND_MASK = 0x3;
+    constexpr int AGE_STEP = 0x8;
+    constexpr int AGE_CYCLE = 255 + AGE_STEP;
+    constexpr int AGE_MASK = 0xF8;
 
     struct TTEntry
     {
-        U64 hash = 0;
-        uint8_t age = 0;
+        uint16_t hash = 0;
         uint8_t depth = 0;
         Move move = NO_MOVE;
         Score score = VALUE_NONE;
         Score eval = VALUE_NONE;
-        Bound bound = NO_BOUND;
+        uint8_t age_pv_bound = NO_BOUND;
 
         Score getScore(int ply) const
         {
@@ -36,7 +44,28 @@ namespace Astra
             return score;
         }
 
-        void store(U64 hash, Move move, Score score, Score eval, Bound bound, int depth, int ply);
+        Bound getBound() const
+        {
+            return Bound(age_pv_bound & EXACT_BOUND);
+        }
+
+        uint8_t getAge() const
+        {
+            return age_pv_bound >> 3;
+        }
+
+        bool getTtPv()
+        {
+            return age_pv_bound & PV_BOUND;
+        }
+
+        void store(U64 hash, Move move, Score score, Score eval, Bound bound, int depth, int ply, bool pv);
+    };
+
+    struct TTBUCKET
+    {
+        TTEntry entries[BUCKET_SIZE];
+        char padding[2];
     };
 
     class TTable
@@ -54,33 +83,39 @@ namespace Astra
 
         void incrementAge()
         {
-            age++;
-            if (age == 255)
-                age = 0;
+            age += AGE_STEP;
+        }
+
+        size_t index(U64 hash) const
+        {
+            return ((unsigned __int128) hash * (unsigned __int128) bucket_size) >> 64;           
         }
 
         void prefetch(U64 hash) const
         {
-            __builtin_prefetch(&entries[hash & mask]);
+            __builtin_prefetch(&buckets[index(hash)]);
         }
 
         int hashfull() const
         {
             int used = 0;
-            for (U64 i = 0; i < 1000; i++)
-                if (entries[i].hash)
-                    used++;
+            for (int i = 0; i < 1000; i++)
+                for (int j = 0; j < BUCKET_SIZE; j++)
+                {
+                    TTEntry *entry = &buckets[i].entries[j];
+                    if (entry->getAge() == age && entry->eval != VALUE_NONE)
+                        used++;
+                }
 
-            return used;
+            return used / BUCKET_SIZE;
         }
 
         int getAge() const { return age; }
 
     private:
         uint8_t age;
-        U64 tt_size{};
-        U64 mask{};
-        TTEntry *entries;
+        U64 bucket_size{};
+        TTBUCKET *buckets;
     };
 
     extern TTable tt;

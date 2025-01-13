@@ -4,12 +4,45 @@
 #include <vector>
 #include <cstring>
 
+#if defined(__linux__)
+#include <sys/mman.h>
+#endif
+#include <cstdlib>
+
+#include <iostream>
+
 namespace Astra
 {
+
+    inline void *allocAlign(size_t size)
+    {
+#if defined(__linux__)
+        constexpr size_t align = 2 * 1024 * 1024;
+#else
+        constexpr size_t align = 4096;
+#endif
+        size = ((size + align - 1) / align) * align; // not actually required
+        void *result = _mm_malloc(size, align);
+#if defined(__linux__)
+        madvise(result, size, MADV_HUGEPAGE);
+#endif
+        return result;
+    }
+
+    inline void freeAlign(void *ptr)
+    {
+        _mm_free(ptr);
+    }
+
     // struct TTEntry
 
-    void TTEntry::store(U64 hash, Move move, Score score, Score eval, Bound bound, int depth, int ply)
+    void TTEntry::store(U64 hash, Move move, Score score, Score eval, Bound bound, int depth, int ply, bool pv)
     {
+        uint16_t hash16 = (uint16_t)hash;
+
+        if (move != NO_MOVE || this->hash != hash16)
+            this->move = move;
+
         if (score != VALUE_NONE)
         {
             if (score >= VALUE_TB_WIN_IN_MAX_PLY)
@@ -18,39 +51,34 @@ namespace Astra
                 score = -ply;
         }
 
-        if (bound == EXACT_BOUND || this->hash != hash || this->age != tt.getAge() || depth + 4 > this->depth)
+        if (bound == EXACT_BOUND || this->hash != hash16 || depth + 2 + 2 * pv > this->depth)
         {
-            this->hash = hash;
-            this->age = tt.getAge();
+            this->hash = hash16;
             this->depth = depth;
-            this->move = move;
             this->score = score;
             this->eval = eval;
-            this->bound = bound;
+            age_pv_bound = (uint8_t)(bound + (pv << 2)) | tt.getAge();
         }
     }
 
     // class TTable
-    TTable::TTable(U64 size_mb) : entries(nullptr)
+    TTable::TTable(U64 size_mb) : buckets(nullptr)
     {
         init(size_mb);
     }
 
-    TTable::~TTable() { delete[] entries; }
+    TTable::~TTable() { freeAlign(buckets); }
 
     void TTable::init(U64 size_mb)
     {
-        if (entries != nullptr)
-            delete[] entries;
+        if (buckets)
+            freeAlign(buckets);
 
         U64 size_bytes = size_mb * 1024 * 1024;
-        U64 max_entries = size_bytes / sizeof(TTEntry);
+        bucket_size = size_bytes / sizeof(TTBUCKET);
 
-        // find the next power of 2
-        tt_size = 1ULL << (63 - __builtin_clzll(max_entries));
-        mask = tt_size - 1;
+        buckets = (TTBUCKET *)allocAlign(size_bytes);
 
-        entries = new TTEntry[tt_size];
         clear();
     }
 
@@ -58,7 +86,7 @@ namespace Astra
     {
         age = 0;
 
-        const U64 chunk_size = tt_size / num_workers;
+        const U64 chunk_size = bucket_size / num_workers;
 
         std::vector<std::thread> threads;
         threads.reserve(num_workers);
@@ -67,12 +95,12 @@ namespace Astra
             threads.emplace_back([this, i, chunk_size]()
                                  {
                                      for (U64 j = 0; j < chunk_size; ++j)
-                                         entries[i * chunk_size + j] = TTEntry{}; });
+                                         buckets[i * chunk_size + j] = TTBUCKET{}; });
 
         const U64 cleared = chunk_size * num_workers;
-        if (cleared < tt_size)
-            for (U64 i = cleared; i < tt_size; ++i)
-                entries[i] = TTEntry{};
+        if (cleared < bucket_size)
+            for (U64 i = cleared; i < bucket_size; ++i)
+                buckets[i] = TTBUCKET{};
 
         for (auto &t : threads)
             t.join();
@@ -80,15 +108,30 @@ namespace Astra
 
     TTEntry *TTable::lookup(U64 hash, bool *hit) const
     {
-        U64 idx = hash & mask;
-        if (entries[idx].hash == hash)
+        uint16_t hash16 = (uint16_t)hash;
+        TTEntry *entries = buckets[index(hash)].entries;
+
+        for (int i = 0; i < BUCKET_SIZE; i++)
+            if (entries[i].hash == hash16 || !entries[i].depth)
+            {
+                entries[i].age_pv_bound = (uint8_t)(tt.getAge() | (entries[i].age_pv_bound & (AGE_STEP - 1)));
+                *hit = entries[i].depth;
+                return &entries[i];
+            }
+
+        TTEntry *worst_entry = &entries[0];
+
+        for (int i = 1; i < BUCKET_SIZE; i++)
         {
-            *hit = true;
-            return &entries[idx];
+            int worst_value = worst_entry->depth - ((AGE_CYCLE + tt.getAge() - worst_entry->age_pv_bound) & AGE_MASK) / 2;
+            int entry_value = entries[i].depth - ((AGE_CYCLE + tt.getAge() - entries[i].age_pv_bound) & AGE_MASK) / 2;
+
+            if (entry_value < worst_value)
+                worst_entry = &entries[i];
         }
 
         *hit = false;
-        return &entries[idx];
+        return worst_entry;
     }
 
     TTable tt(16);
