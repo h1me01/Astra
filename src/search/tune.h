@@ -44,8 +44,10 @@ namespace Astra
     PARAM(asp_depth, 6, 5, 9, 1);
     PARAM(asp_window, 9, 5, 30, 5);
 
-    PARAM(rzr_depth_mult, 199, 150, 250, 15);
+    PARAM(rfp_depth, 8, 7, 9, 1);
     PARAM(rfp_depth_mult, 89, 70, 110, 6);
+
+    PARAM(rzr_depth_mult, 199, 150, 250, 15);
 
     PARAM(nmp_min, 4, 3, 6, 1);
     PARAM(nmp_depth_div, 4, 3, 15, 1);
@@ -56,6 +58,9 @@ namespace Astra
     PARAM(see_cap_margin, 87, 80, 110, 6);
     PARAM(see_quiet_margin, 43, 30, 60, 6);
 
+    PARAM(hp_depth, 7, 5, 8, 1);
+
+    PARAM(fp_depth, 9, 7, 11, 1);
     PARAM(fp_base, 161, 120, 180, 8);
     PARAM(fp_mult, 103, 80, 150, 8);
 

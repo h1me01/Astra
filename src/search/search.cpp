@@ -333,7 +333,7 @@ namespace Astra
         {
             // reverse futility pruning
             int rfp_margin = std::max(rfp_depth_mult * (depth - (improving && !board.oppHasGoodCaptures())), 20);
-            if (depth <= 8 && eval < VALUE_TB_WIN_IN_MAX_PLY && eval - rfp_margin >= beta)
+            if (depth <= rfp_depth && eval < VALUE_TB_WIN_IN_MAX_PLY && eval - rfp_margin >= beta)
                 return (eval + beta) / 2;
 
             // razoring
@@ -346,8 +346,8 @@ namespace Astra
 
             // null move pruning
             // clang-format off
-            if (depth >= 3 && !skipped && eval >= beta && ss->eval + 30 * depth - 200 >= beta
-                && board.nonPawnMat(stm) && (ss - 1)->curr_move != NULL_MOVE && beta > -VALUE_TB_WIN_IN_MAX_PLY)
+            if (depth >= 4 && !skipped && eval >= beta && !skipped && board.nonPawnMat(stm) 
+                && (ss - 1)->curr_move != NULL_MOVE && beta > -VALUE_TB_WIN_IN_MAX_PLY)
             {
                 // clang-format on
                 int R = 4 + depth / nmp_depth_div + std::min(int(nmp_min), (eval - beta) / nmp_div);
@@ -441,16 +441,16 @@ namespace Astra
                 if (!isCap(move) && move.type() != PQ_QUEEN)
                 {
                     // history pruning
-                    if (history_score < -hp_margin * depth && depth <= 7)
+                    if (history_score < -hp_margin * depth && depth <= hp_depth)
                         continue;
 
                     // futility pruning
-                    if (!in_check && depth <= 9 && eval + fp_base + depth * fp_mult <= alpha)
+                    if (!in_check && depth <= fp_depth && eval + fp_base + depth * fp_mult <= alpha)
                         mp.skip_quiets = true;
                 }
 
                 // see pruning
-                if (depth <= (isCap(move) ? 4 : 8) && !board.see(move, depth * (isCap(move) ? -see_cap_margin : -see_quiet_margin)))
+                if (!board.see(move, depth * (isCap(move) ? -see_cap_margin : -see_quiet_margin)))
                     continue;
             }
 
