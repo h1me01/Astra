@@ -38,39 +38,39 @@ namespace Astra
 #endif
 
     // search parameters
-    PARAM(lmr_base, 101, 80, 120, 8);
-    PARAM(lmr_div, 187, 150, 200, 8);
+    PARAM(lmr_base, 104, 80, 120, 8);
+    PARAM(lmr_div, 184, 150, 200, 8);
 
     PARAM(asp_depth, 6, 5, 9, 1);
-    PARAM(asp_window, 8, 5, 30, 5);
+    PARAM(asp_window, 9, 5, 30, 5);
 
-    PARAM(rzr_depth_mult, 202, 150, 250, 15);
+    PARAM(rzr_depth_mult, 199, 150, 250, 15);
     PARAM(rfp_depth_mult, 89, 70, 110, 6);
 
     PARAM(nmp_min, 4, 3, 6, 1);
     PARAM(nmp_depth_div, 4, 3, 15, 1);
-    PARAM(nmp_div, 227, 190, 235, 8);
+    PARAM(nmp_div, 222, 190, 235, 8);
 
-    PARAM(probcut_margin, 173, 130, 180, 15);
+    PARAM(probcut_margin, 179, 130, 180, 15);
 
     PARAM(see_cap_margin, 87, 80, 110, 6);
     PARAM(see_quiet_margin, 43, 30, 60, 6);
 
-    PARAM(fp_base, 159, 120, 180, 8);
-    PARAM(fp_mult, 101, 80, 150, 8);
+    PARAM(fp_base, 161, 120, 180, 8);
+    PARAM(fp_mult, 103, 80, 150, 8);
 
-    PARAM(ext_margin, 123, 65, 150, 12);
+    PARAM(ext_margin, 116, 65, 150, 12);
 
-    PARAM(hp_margin, 4854, 3500, 5000, 400);
-    PARAM(hp_div, 8286, 7000, 8500, 400);
+    PARAM(hp_margin, 4957, 3500, 5000, 400);
+    PARAM(hp_div, 8390, 7000, 8500, 400);
     PARAM(hbonus_margin, 76, 65, 80, 5);
 
-    PARAM(qfp_margin, 95, 60, 150, 15);
+    PARAM(qfp_margin, 88, 60, 150, 15);
 
     // history parameters
     PARAM(history_mult, 149, 130, 180, 8);
-    PARAM(history_minus, 38, 10, 50, 10);
-    PARAM(max_history_bonus, 1570, 1100, 1750, 50);
+    PARAM(history_minus, 39, 10, 50, 10);
+    PARAM(max_history_bonus, 1557, 1100, 1750, 50);
 
 } // namespace Astra
 
