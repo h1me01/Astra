@@ -2,7 +2,6 @@
 #define TT_H
 
 #include "../chess/types.h"
-#include <iostream>
 
 using namespace Chess;
 
@@ -16,8 +15,6 @@ namespace Astra
         EXACT_BOUND = 3,
         PV_BOUND = 4
     };
-
-    constexpr int BUCKET_SIZE = 3;
 
     constexpr int BOUND_MASK = 0x3;
     constexpr int AGE_STEP = 0x8;
@@ -51,7 +48,7 @@ namespace Astra
 
         uint8_t getAge() const
         {
-            return age_pv_bound >> 3;
+            return age_pv_bound & AGE_MASK;
         }
 
         bool getTtPv()
@@ -61,6 +58,8 @@ namespace Astra
 
         void store(U64 hash, Move move, Score score, Score eval, Bound bound, int depth, int ply, bool pv);
     };
+
+    constexpr int BUCKET_SIZE = 3;
 
     struct TTBUCKET
     {
@@ -88,7 +87,7 @@ namespace Astra
 
         size_t index(U64 hash) const
         {
-            return ((unsigned __int128) hash * (unsigned __int128) bucket_size) >> 64;           
+            return ((unsigned __int128)hash * (unsigned __int128)bucket_size) >> 64;
         }
 
         void prefetch(U64 hash) const
@@ -103,7 +102,7 @@ namespace Astra
                 for (int j = 0; j < BUCKET_SIZE; j++)
                 {
                     TTEntry *entry = &buckets[i].entries[j];
-                    if (entry->getAge() == age && entry->eval != VALUE_NONE)
+                    if (entry->getAge() == age && entry->depth)
                         used++;
                 }
 

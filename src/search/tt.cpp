@@ -3,33 +3,32 @@
 #include <thread>
 #include <vector>
 #include <cstring>
+#include <cstdlib>
 
 #if defined(__linux__)
 #include <sys/mman.h>
+#include <xmmintrin.h>
 #endif
-#include <cstdlib>
-
-#include <iostream>
 
 namespace Astra
 {
 
-    inline void *allocAlign(size_t size)
+    void *allocAlign(size_t size)
     {
 #if defined(__linux__)
-        constexpr size_t align = 2 * 1024 * 1024;
+        constexpr size_t alignment = 2 * 1024 * 1024;
 #else
-        constexpr size_t align = 4096;
+        constexpr size_t alignment = 4096;
 #endif
-        size = ((size + align - 1) / align) * align; // not actually required
-        void *result = _mm_malloc(size, align);
+        size = ((size + alignment - 1) / alignment) * alignment;
+        void *ptr = _mm_malloc(size, alignment);
 #if defined(__linux__)
-        madvise(result, size, MADV_HUGEPAGE);
+        madvise(ptr, size, MADV_HUGEPAGE);
 #endif
-        return result;
+        return ptr;
     }
 
-    inline void freeAlign(void *ptr)
+    void freeAlign(void *ptr)
     {
         _mm_free(ptr);
     }
