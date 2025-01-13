@@ -51,7 +51,7 @@ namespace Astra
             return age_pv_bound & AGE_MASK;
         }
 
-        bool getTtPv()
+        bool getTTPv()
         {
             return age_pv_bound & PV_BOUND;
         }

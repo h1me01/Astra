@@ -150,7 +150,7 @@ namespace Astra
             {
                 // if result is higher than beta, than we can raise beta for next iteration
                 beta = std::min(beta + window, int(VALUE_INFINITE));
-                
+
                 if (std::abs(result) < VALUE_TB_WIN_IN_MAX_PLY)
                     fail_high_count++;
             }
@@ -247,7 +247,7 @@ namespace Astra
                 tt_score = ent->getScore(ss->ply);
                 tt_eval = ent->eval;
                 tt_depth = ent->depth;
-                tt_pv = pv_node || ent->getTtPv();
+                tt_pv = pv_node || ent->getTTPv();
             }
         }
 
@@ -346,8 +346,8 @@ namespace Astra
 
             // null move pruning
             // clang-format off
-            if (depth >= 4 && !skipped && eval >= beta && !skipped && board.nonPawnMat(stm) 
-                && (ss - 1)->curr_move != NULL_MOVE && beta > -VALUE_TB_WIN_IN_MAX_PLY)
+            if (depth >= 4 && !skipped && eval >= beta && ss->eval + nmp_depth_mult * depth - nmp_base >= beta
+                && board.nonPawnMat(stm) && (ss - 1)->curr_move != NULL_MOVE && beta > -VALUE_TB_WIN_IN_MAX_PLY)
             {
                 // clang-format on
                 int R = 4 + depth / nmp_depth_div + std::min(int(nmp_min), (eval - beta) / nmp_div);
@@ -507,7 +507,7 @@ namespace Astra
             Score score = VALUE_NONE;
 
             // late move reductions
-            if (depth >= 3 && made_moves > 2 + 2 * root_node && (!pv_node || !isCap(move)))
+            if (depth > 1 && made_moves > 2 + 2 * root_node && (!pv_node || !isCap(move)))
             {
                 int r = REDUCTIONS[depth][made_moves];
                 // increase when not improving
@@ -651,7 +651,7 @@ namespace Astra
             tt_bound = ent->getBound();
             tt_score = ent->getScore(ss->ply);
             tt_eval = ent->eval;
-            tt_pv = pv_node || ent->getTtPv();
+            tt_pv = pv_node || ent->getTTPv();
         }
 
         if (!pv_node && tt_score != VALUE_NONE && (tt_bound & (tt_score >= beta ? LOWER_BOUND : UPPER_BOUND)))
