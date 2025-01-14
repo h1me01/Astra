@@ -41,20 +41,9 @@ namespace Astra
             return score;
         }
 
-        Bound getBound() const
-        {
-            return Bound(age_pv_bound & EXACT_BOUND);
-        }
-
-        uint8_t getAge() const
-        {
-            return age_pv_bound & AGE_MASK;
-        }
-
-        bool getTTPv()
-        {
-            return age_pv_bound & PV_BOUND;
-        }
+        Bound getBound() const { return Bound(age_pv_bound & EXACT_BOUND); }
+        uint8_t getAge() const { return age_pv_bound & AGE_MASK; }
+        bool getTTPv() { return age_pv_bound & PV_BOUND; }
 
         void store(U64 hash, Move move, Score score, Score eval, Bound bound, int depth, int ply, bool pv);
     };
@@ -80,11 +69,6 @@ namespace Astra
 
         TTEntry *lookup(U64 hash, bool *hit) const;
 
-        void incrementAge()
-        {
-            age += AGE_STEP;
-        }
-
         size_t index(U64 hash) const
         {
             return ((unsigned __int128)hash * (unsigned __int128)bucket_size) >> 64;
@@ -108,6 +92,8 @@ namespace Astra
 
             return used / BUCKET_SIZE;
         }
+
+        void incrementAge() { age += AGE_STEP; }
 
         int getAge() const { return age; }
 
