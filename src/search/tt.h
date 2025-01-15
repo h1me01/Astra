@@ -54,7 +54,7 @@ namespace Astra
     struct TTBucket
     {
         TTEntry entries[BUCKET_SIZE];
-        char padding[2];
+        int16_t padding;
     };
 
     static_assert(sizeof(TTBucket) == 32, "TTBucket is not packed as expected!");
