@@ -7,7 +7,7 @@ namespace Chess::Cuckoo
     U64 keys[8192];
     Move cuckoo_moves[8192];
 
-    void initCuckoo()
+    void init()
     {
         int count = 0;
 

@@ -18,7 +18,7 @@ namespace Chess::Cuckoo
         return (hash >> 16) & 0x1fff;
     }
 
-    void initCuckoo();
+    void init();
 
 } // namespace Chess::Cuckoo
 

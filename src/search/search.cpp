@@ -236,9 +236,11 @@ namespace Astra
         int tt_depth = tt_hit * ent->depth;
         bool tt_pv = pv_node || (tt_hit ? ent->getTTPv() : false);
 
-        if (!pv_node && tt_depth >= depth && tt_score != VALUE_NONE 
-            && board.halfMoveClock() < 85 && (tt_bound & (tt_score >= beta ? LOWER_BOUND : UPPER_BOUND)))
+        // clang-format off
+        if (!pv_node && tt_depth >= depth && tt_score != VALUE_NONE && board.halfMoveClock() < 85 
+            && (tt_bound & (tt_score >= beta ? LOWER_BOUND : UPPER_BOUND)))
             return tt_score;
+        // clang-format on
 
         // tablebase probing
         if (use_tb && !root_node)
@@ -625,20 +627,11 @@ namespace Astra
         // look up in transposition table
         bool tt_hit = false;
         TTEntry *ent = tt.lookup(hash, &tt_hit);
-        Move tt_move = NO_MOVE;
-        Bound tt_bound = NO_BOUND;
-        Score tt_score = VALUE_NONE;
-        Score tt_eval = VALUE_NONE;
-        bool tt_pv = pv_node;
-
-        if (tt_hit)
-        {
-            tt_move = ent->move;
-            tt_bound = ent->getBound();
-            tt_score = ent->getScore(ss->ply);
-            tt_eval = ent->eval;
-            tt_pv = pv_node || ent->getTTPv();
-        }
+        Move tt_move = tt_hit ? ent->move : NO_MOVE;
+        Bound tt_bound = tt_hit ? ent->getBound() : NO_BOUND;
+        Score tt_score = tt_hit ? ent->getScore(ss->ply) : VALUE_NONE;
+        Score tt_eval = tt_hit ? ent->eval : VALUE_NONE;
+        bool tt_pv = pv_node || (tt_hit ? ent->getTTPv() : false);
 
         if (!pv_node && tt_score != VALUE_NONE && (tt_bound & (tt_score >= beta ? LOWER_BOUND : UPPER_BOUND)))
             return tt_score;
