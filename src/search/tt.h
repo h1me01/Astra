@@ -12,20 +12,19 @@ namespace Astra
         NO_BOUND = 0,
         LOWER_BOUND = 1,
         UPPER_BOUND = 2,
-        EXACT_BOUND = 3,
-        PV_BOUND = 4
+        EXACT_BOUND = 3
     };
 
-    constexpr int BOUND_MASK = 0x3;
     constexpr int AGE_STEP = 0x8;
     constexpr int AGE_CYCLE = 255 + AGE_STEP;
     constexpr int AGE_MASK = 0xF8;
 
+    #pragma pack(push, 1)
     struct TTEntry
     {
         uint16_t hash = 0;
         uint8_t depth = 0;
-        Move move = NO_MOVE;
+        uint16_t move = 0;
         Score score = VALUE_NONE;
         Score eval = VALUE_NONE;
         uint8_t age_pv_bound = NO_BOUND;
@@ -41,20 +40,24 @@ namespace Astra
             return score;
         }
 
-        Bound getBound() const { return Bound(age_pv_bound & EXACT_BOUND); }
+        Move getMove() const { return Move(move); }
+        Bound getBound() const { return Bound(age_pv_bound & 0x3); }
         uint8_t getAge() const { return age_pv_bound & AGE_MASK; }
-        bool getTTPv() { return age_pv_bound & PV_BOUND; }
+        bool getTTPv() { return age_pv_bound & 0x4; }
 
         void store(U64 hash, Move move, Score score, Score eval, Bound bound, int depth, int ply, bool pv);
-    };
+    };  
+    #pragma pack(pop)
 
     constexpr int BUCKET_SIZE = 3;
 
-    struct TTBUCKET
+    struct TTBucket
     {
         TTEntry entries[BUCKET_SIZE];
         char padding[2];
     };
+
+    static_assert(sizeof(TTBucket) == 32, "TTBucket is not packed as expected!");
 
     class TTable
     {
@@ -100,7 +103,7 @@ namespace Astra
     private:
         uint8_t age;
         U64 bucket_size{};
-        TTBUCKET *buckets;
+        TTBucket *buckets;
     };
 
     extern TTable tt;

@@ -229,7 +229,7 @@ namespace Astra
         // look up in transposition table
         bool tt_hit = false;
         TTEntry *ent = !skipped ? tt.lookup(hash, &tt_hit) : nullptr;
-        Move tt_move = tt_hit ? ent->move : NO_MOVE;
+        Move tt_move = tt_hit ? ent->getMove() : NO_MOVE;
         Bound tt_bound = tt_hit ? ent->getBound() : NO_BOUND;
         Score tt_score = tt_hit ? ent->getScore(ss->ply) : VALUE_NONE;
         Score tt_eval = tt_hit ? ent->eval : VALUE_NONE;
@@ -627,7 +627,7 @@ namespace Astra
         // look up in transposition table
         bool tt_hit = false;
         TTEntry *ent = tt.lookup(hash, &tt_hit);
-        Move tt_move = tt_hit ? ent->move : NO_MOVE;
+        Move tt_move = tt_hit ? ent->getMove() : NO_MOVE;
         Bound tt_bound = tt_hit ? ent->getBound() : NO_BOUND;
         Score tt_score = tt_hit ? ent->getScore(ss->ply) : VALUE_NONE;
         Score tt_eval = tt_hit ? ent->eval : VALUE_NONE;

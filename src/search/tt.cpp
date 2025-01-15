@@ -40,7 +40,7 @@ namespace Astra
         uint16_t hash16 = (uint16_t)hash;
 
         if (move != NO_MOVE || this->hash != hash16)
-            this->move = move;
+            this->move = move.raw();
 
         if (score != VALUE_NONE)
         {
@@ -74,9 +74,9 @@ namespace Astra
             freeAlign(buckets);
 
         U64 size_bytes = size_mb * 1024 * 1024;
-        bucket_size = size_bytes / sizeof(TTBUCKET);
+        bucket_size = size_bytes / sizeof(TTBucket);
 
-        buckets = (TTBUCKET *)allocAlign(size_bytes);
+        buckets = (TTBucket *)allocAlign(size_bytes);
 
         clear();
     }
@@ -94,12 +94,12 @@ namespace Astra
             threads.emplace_back([this, i, chunk_size]()
                                  {
                                      for (U64 j = 0; j < chunk_size; ++j)
-                                         buckets[i * chunk_size + j] = TTBUCKET{}; });
+                                         buckets[i * chunk_size + j] = TTBucket{}; });
 
         const U64 cleared = chunk_size * num_workers;
         if (cleared < bucket_size)
             for (U64 i = cleared; i < bucket_size; ++i)
-                buckets[i] = TTBUCKET{};
+                buckets[i] = TTBucket{};
 
         for (auto &t : threads)
             t.join();
