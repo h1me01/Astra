@@ -50,7 +50,7 @@ namespace Astra
                 score = -ply;
         }
 
-        if (bound == EXACT_BOUND || this->hash != hash16 || depth + 2 + 2 * pv > this->depth)
+        if (bound == EXACT_BOUND || this->hash != hash16 || depth + 4 + 2 * pv > this->depth)
         {
             this->hash = hash16;
             this->depth = depth;
