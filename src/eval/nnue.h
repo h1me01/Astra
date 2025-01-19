@@ -19,6 +19,8 @@ namespace NNUE
 {
     class Accumulator;
 
+    // 2x(10x768->1024)->1
+
     constexpr int BUCKET_SIZE = 10;
     constexpr int FEATURE_SIZE = 768;
 
