@@ -114,7 +114,7 @@ namespace Astra
             if (entries[i].hash == hash16 || !entries[i].depth)
             {
                 entries[i].age_pv_bound = (uint8_t)(tt.getAge() | (entries[i].age_pv_bound & (AGE_STEP - 1)));
-                *hit = entries[i].hash == hash16;
+                *hit = entries[i].depth;
                 return &entries[i];
             }
 
