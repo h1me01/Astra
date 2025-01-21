@@ -522,7 +522,7 @@ namespace Astra
                     new_depth += (score > best_score + zws_margin);
                     new_depth -= (score < best_score + new_depth);
 
-                    if (new_depth - 1 > lmr_depth)
+                    if (new_depth > lmr_depth)
                         score = -negamax(new_depth, -alpha - 1, -alpha, ss + 1, !cut_node);
 
                     if (!isCap(move))
