@@ -136,8 +136,8 @@ namespace Astra
 
             if (isLimitReached(depth))
                 return result;
-            else if (id == 0 && (result <= alpha || result >= beta) && tm.elapsedTime() > 5000)
-                printUciInfo(result, depth, pv_table[0]);
+            //else if (id == 0 && (result <= alpha || result >= beta) && tm.elapsedTime() > 5000)
+            //    printUciInfo(result, depth, pv_table[0]);
 
             if (result <= alpha)
             {
@@ -150,7 +150,6 @@ namespace Astra
             {
                 // if result is higher than beta, than we can raise beta for next iteration
                 beta = std::min(beta + window, int(VALUE_INFINITE));
-
                 if (std::abs(result) < VALUE_TB_WIN_IN_MAX_PLY)
                     fail_high_count++;
             }
@@ -182,10 +181,8 @@ namespace Astra
         const Color stm = board.getTurn();
 
         const Score old_alpha = alpha;
-        Score eval = ss->eval;
-        Score raw_eval = eval;
-        Score max_score = VALUE_MATE;
-        Score best_score = -VALUE_MATE;
+        Score eval = ss->eval, raw_eval = eval;
+        Score max_score = VALUE_MATE, best_score = -VALUE_MATE;
 
         pv_table[ss->ply].length = ss->ply;
 
@@ -317,7 +314,7 @@ namespace Astra
             depth--;
 
         // only use pruning when not in check and pv node
-        if (!in_check && !pv_node)
+        if (!in_check && !pv_node && !skipped)
         {
             // reverse futility pruning
             int rfp_margin = std::max(rfp_depth_mult * (depth - (improving && !board.oppHasGoodCaptures())), 20);
@@ -334,7 +331,7 @@ namespace Astra
 
             // null move pruning
             // clang-format off
-            if (depth >= 4 && !skipped && eval >= beta && ss->eval + nmp_depth_mult * depth - nmp_base >= beta
+            if (depth >= 4 && eval >= beta && ss->eval + nmp_depth_mult * depth - nmp_base >= beta
                 && board.nonPawnMat(stm) && (ss - 1)->curr_move != NULL_MOVE && beta > -VALUE_TB_WIN_IN_MAX_PLY)
             {
                 // clang-format on
@@ -360,7 +357,7 @@ namespace Astra
             // probcut
             // clang-format off
             int beta_cut = beta + probcut_margin;
-            if (!skipped && depth > 4 && std::abs(beta) < VALUE_TB_WIN_IN_MAX_PLY 
+            if (depth > 4 && std::abs(beta) < VALUE_TB_WIN_IN_MAX_PLY 
                 && !(tt_depth >= depth - 3 && tt_score != VALUE_NONE && tt_score < beta_cut))
             {
                 // clang-format on
@@ -448,8 +445,8 @@ namespace Astra
                 q_moves[q_count++] = move;
 
             // print current move information
-            if (id == 0 && root_node && tm.elapsedTime() > 5000 && !threads.isStopped())
-                std::cout << "info depth " << depth << " currmove " << move << " currmovenumber " << made_moves << std::endl;
+            //if (id == 0 && root_node && tm.elapsedTime() > 5000 && !threads.isStopped())
+            //    std::cout << "info depth " << depth << " currmove " << move << " currmovenumber " << made_moves << std::endl;
 
             int extension = 0;
 
