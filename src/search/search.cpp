@@ -515,10 +515,6 @@ namespace Astra
                 // if late move reduction failed high and we actually reduced, do a research
                 if (score > alpha && lmr_depth < new_depth)
                 {
-                    // credits to stockfish
-                    new_depth += (score > best_score + zws_margin);
-                    new_depth -= (score < best_score + new_depth);
-
                     if (new_depth > lmr_depth)
                         score = -negamax(new_depth, -alpha - 1, -alpha, ss + 1, !cut_node);
 
@@ -730,6 +726,9 @@ namespace Astra
 
         if (in_check && made_moves == 0)
             return -VALUE_MATE + ss->ply;
+
+        if (best_score >= beta && abs(best_score) < VALUE_TB_WIN_IN_MAX_PLY)
+            best_score = (best_score + beta) / 2;
 
         // store in transposition table
         Bound bound = best_score >= beta ? LOWER_BOUND : UPPER_BOUND; // no exact bound in qsearch
