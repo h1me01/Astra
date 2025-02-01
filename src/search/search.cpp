@@ -435,7 +435,9 @@ namespace Astra
                 }
 
                 // see pruning
-                if (!board.see(move, depth * (isCap(move) ? -see_cap_margin : -see_quiet_margin)))
+                int see_margin = isCap(move) ? -see_cap_margin : -see_quiet_margin;
+                int see_depth = isCap(move) ? see_cap_depth : see_quiet_depth;
+                if (depth <= see_depth && !board.see(move, depth * see_margin))
                     continue;
             }
 

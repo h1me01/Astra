@@ -57,6 +57,8 @@ namespace Astra
 
     PARAM(probcut_margin, 165, 130, 180, 15);
 
+    PARAM(see_cap_depth, 6, 4, 6, 1);
+    PARAM(see_quiet_depth, 8, 7, 9, 1);
     PARAM(see_cap_margin, 95, 80, 110, 10);
     PARAM(see_quiet_margin, 51, 30, 60, 10);
 
