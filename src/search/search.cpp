@@ -136,8 +136,8 @@ namespace Astra
 
             if (isLimitReached(depth))
                 return result;
-            //else if (id == 0 && (result <= alpha || result >= beta) && tm.elapsedTime() > 5000)
-            //    printUciInfo(result, depth, pv_table[0]);
+            // else if (id == 0 && (result <= alpha || result >= beta) && tm.elapsedTime() > 5000)
+            //     printUciInfo(result, depth, pv_table[0]);
 
             if (result <= alpha)
             {
@@ -233,11 +233,8 @@ namespace Astra
         int tt_depth = tt_hit * ent->depth;
         bool tt_pv = pv_node || (tt_hit ? ent->getTTPv() : false);
 
-        // clang-format off
-        if (!pv_node && tt_depth >= depth && tt_score != VALUE_NONE 
-            && (tt_bound & (tt_score >= beta ? LOWER_BOUND : UPPER_BOUND)))
+        if (!pv_node && tt_depth >= depth && tt_score != VALUE_NONE && (tt_bound & (tt_score >= beta ? LOWER_BOUND : UPPER_BOUND)))
             return tt_score;
-        // clang-format on
 
         // tablebase probing
         if (use_tb && !root_node)
@@ -447,7 +444,7 @@ namespace Astra
                 q_moves[q_count++] = move;
 
             // print current move information
-            //if (id == 0 && root_node && tm.elapsedTime() > 5000 && !threads.isStopped())
+            // if (id == 0 && root_node && tm.elapsedTime() > 5000 && !threads.isStopped())
             //    std::cout << "info depth " << depth << " currmove " << move << " currmovenumber " << made_moves << std::endl;
 
             int extension = 0;
