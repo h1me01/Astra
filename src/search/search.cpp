@@ -233,8 +233,11 @@ namespace Astra
         int tt_depth = tt_hit * ent->depth;
         bool tt_pv = pv_node || (tt_hit ? ent->getTTPv() : false);
 
-        if (!pv_node && tt_depth >= depth && tt_score != VALUE_NONE && (tt_bound & (tt_score >= beta ? LOWER_BOUND : UPPER_BOUND)))
+        // clang-format off
+        if (!pv_node && tt_depth >= depth && tt_score != VALUE_NONE && board.halfMoveClock() < 85 
+            && (tt_bound & (tt_score >= beta ? LOWER_BOUND : UPPER_BOUND)))
             return tt_score;
+        // clang-format on
 
         // tablebase probing
         if (use_tb && !root_node)
