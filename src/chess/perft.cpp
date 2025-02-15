@@ -10,7 +10,7 @@ namespace Chess
     {
         if (depth == 0)
             return 1;
-            
+
         MoveList ml;
         ml.gen<LEGALS>(board);
 
@@ -60,7 +60,8 @@ namespace Chess
         double time_ms = diff.count();
 
         std::cout << "\nTotal nodes: " << total_nodes << std::endl;
-        std::cout << "Total time: " << time_ms << "ms\n" << std::endl;
+        std::cout << "Total time: " << time_ms << "ms\n"
+                  << std::endl;
     }
 
 } // namespace Chess

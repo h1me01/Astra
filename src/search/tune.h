@@ -81,7 +81,7 @@ namespace Astra
     PARAM(history_mult, 132, 130, 180, 15);
     PARAM(history_minus, 26, 10, 30, 8);
     PARAM(max_history_bonus, 1488, 1100, 1750, 100);
-    
+
 } // namespace Astra
 
 #endif // SEARCHPARAMS_H

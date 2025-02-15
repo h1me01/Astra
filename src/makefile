@@ -47,10 +47,8 @@ MAIN_SRC := main.cpp \
 
 SRC := $(CHESS_SRC) $(EVAL_SRC) $(SEARCH_SRC) $(SYZYGY_SRC) $(MAIN_SRC)
 
-# Default target executable
 TARGET = astra
 
-# Detect Operating System
 ifeq ($(OS), Windows_NT)
     SUFFIX := .exe
     LDFLAGS := -lstdc++ -static
@@ -59,7 +57,6 @@ else
     LDFLAGS := -lpthread -lstdc++
 endif
 
-# Detect Platform-specific Cleanup Command
 ifeq ($(OS), Windows_NT)
     RM = del /Q
 else
@@ -68,13 +65,11 @@ endif
 
 TARGET_SUFFIX := $(TARGET)$(SUFFIX)
 
-# Default rule to build executable
 all: $(TARGET_SUFFIX)
 
 $(TARGET_SUFFIX): $(SRC)
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
 
-# Clean target
 clean:
 	$(RM) $(TARGET_SUFFIX)
 

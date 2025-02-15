@@ -1,17 +1,17 @@
 #include <iostream>
 #include <cmath>
-#include <algorithm>
+
 #include "search.h"
 #include "tune.h"
 #include "syzygy.h"
 #include "threads.h"
 #include "movepicker.h"
+
 #include "../eval/eval.h"
+#include "../uci.h"
 
 namespace Astra
 {
-    // search helper
-
     int REDUCTIONS[MAX_PLY][MAX_MOVES];
 
     void initReductions()
@@ -27,11 +27,6 @@ namespace Astra
     }
 
     // search class
-
-    Search::Search(const std::string &fen) : board(fen)
-    {
-        tt.clear();
-    }
 
     Move Search::bestMove()
     {
@@ -128,7 +123,6 @@ namespace Astra
         {
             if (alpha < -2000)
                 alpha = -VALUE_INFINITE;
-
             if (beta > 2000)
                 beta = VALUE_INFINITE;
 
@@ -136,8 +130,8 @@ namespace Astra
 
             if (isLimitReached(depth))
                 return result;
-            // else if (id == 0 && (result <= alpha || result >= beta) && tm.elapsedTime() > 5000)
-            //     printUciInfo(result, depth, pv_table[0]);
+            else if (id == 0 && tm.elapsedTime() > 5000)
+                UCI::printUciInfo(result, depth, tm.elapsedTime(), pv_table[0]);
 
             if (result <= alpha)
             {
@@ -160,7 +154,7 @@ namespace Astra
         }
 
         if (id == 0)
-            printUciInfo(result, depth, pv_table[0]);
+            UCI::printUciInfo(result, depth, tm.elapsedTime(), pv_table[0]);
 
         return result;
     }
@@ -177,7 +171,6 @@ namespace Astra
         bool improving = false;
 
         const U64 hash = board.getHash();
-
         const Color stm = board.getTurn();
 
         const Score old_alpha = alpha;
@@ -447,8 +440,8 @@ namespace Astra
                 q_moves[q_count++] = move;
 
             // print current move information
-            // if (id == 0 && root_node && tm.elapsedTime() > 5000 && !threads.isStopped())
-            //    std::cout << "info depth " << depth << " currmove " << move << " currmovenumber " << made_moves << std::endl;
+            if (id == 0 && root_node && tm.elapsedTime() > 5000 && !threads.isStopped())
+                std::cout << "info depth " << depth << " currmove " << move << " currmovenumber " << made_moves << std::endl;
 
             int extension = 0;
 
@@ -517,8 +510,7 @@ namespace Astra
                 // if late move reduction failed high and we actually reduced, do a research
                 if (score > alpha && lmr_depth < new_depth)
                 {
-                    if (new_depth > lmr_depth)
-                        score = -negamax(new_depth, -alpha - 1, -alpha, ss + 1, !cut_node);
+                    score = -negamax(new_depth, -alpha - 1, -alpha, ss + 1, !cut_node);
 
                     if (!isCap(move))
                     {
@@ -540,6 +532,9 @@ namespace Astra
             board.unmakeMove(move);
 
             assert(score > -VALUE_INFINITE && score < VALUE_INFINITE);
+
+            if (isLimitReached(depth))
+                return 0;
 
             if (root_node)
                 move_nodes[move.from()][move.to()] = nodes - start_nodes;
@@ -595,15 +590,15 @@ namespace Astra
     {
         assert(alpha < beta);
 
+        if (isLimitReached(1))
+            return 0;
+
         if (alpha < VALUE_DRAW && board.hasUpcomingRepetition(ss->ply))
         {
             alpha = VALUE_DRAW;
             if (alpha >= beta)
                 return alpha;
         }
-
-        if (isLimitReached(1))
-            return 0;
 
         if (board.isDraw(ss->ply))
             return VALUE_DRAW;
@@ -739,13 +734,7 @@ namespace Astra
         return best_score;
     }
 
-    int Search::adjustEval(const Board &board, const Stack *ss, Score eval) const
-    {
-        eval += history.getMaterialCorr(board) + history.getContCorr(ss);
-        return std::clamp(eval, Score(-VALUE_TB_WIN_IN_MAX_PLY + 1), Score(VALUE_TB_WIN_IN_MAX_PLY - 1));
-    }
-
-    bool Search::isLimitReached(const int depth) const
+    bool Search::isLimitReached(int depth) const
     {
         if (limit.infinite)
             return false;
@@ -767,37 +756,6 @@ namespace Astra
         for (int next_ply = ply + 1; next_ply < pv_table[ply + 1].length; next_ply++)
             pv_table[ply][next_ply] = pv_table[ply + 1][next_ply];
         pv_table[ply].length = pv_table[ply + 1].length;
-    }
-
-    void Search::printUciInfo(Score result, int depth, PVLine &pv_line) const
-    {
-        std::cout << "info depth " << depth
-                  << " seldepth " << threads.getSelDepth()
-                  << " score ";
-
-        if (abs(result) >= VALUE_MATE - MAX_PLY)
-            std::cout << "mate " << (VALUE_MATE - abs(result) + 1) / 2 * (result > 0 ? 1 : -1);
-        else
-            std::cout << "cp " << Score(result / 1.8); // normalize
-
-        U64 elapsed_time = tm.elapsedTime();
-        U64 total_nodes = threads.getTotalNodes();
-
-        std::cout << " nodes " << total_nodes
-                  << " nps " << total_nodes * 1000 / (elapsed_time + 1)
-                  << " tbhits " << threads.getTotalTbHits()
-                  << " hashfull " << tt.hashfull()
-                  << " time " << elapsed_time
-                  << " pv";
-
-        // print the pv
-        if (pv_line.length == 0)
-            std::cout << " " << pv_line[0];
-        else
-            for (int i = 0; i < pv_line.length; i++)
-                std::cout << " " << pv_line[i];
-
-        std::cout << std::endl;
     }
 
 } // namespace Astra

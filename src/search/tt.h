@@ -19,7 +19,7 @@ namespace Astra
     constexpr int AGE_CYCLE = 255 + AGE_STEP;
     constexpr int AGE_MASK = 0xF8;
 
-    #pragma pack(push, 1)
+#pragma pack(push, 1)
     struct TTEntry
     {
         uint16_t hash = 0;
@@ -46,8 +46,8 @@ namespace Astra
         bool getTTPv() { return age_pv_bound & 0x4; }
 
         void store(U64 hash, Move move, Score score, Score eval, Bound bound, int depth, int ply, bool pv);
-    };  
-    #pragma pack(pop)
+    };
+#pragma pack(pop)
 
     constexpr int BUCKET_SIZE = 3;
 

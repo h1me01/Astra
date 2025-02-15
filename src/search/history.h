@@ -83,7 +83,7 @@ namespace Astra
 
     inline int History::getMaterialCorr(const Board &board) const
     {
-        // can't combine their division because they are type 
+        // can't combine their division because they are type
         // int16_t and that would cause an potential overflow
         return pawn_corr[board.getTurn()][CORR_IDX(board.getPawnHash())] / 512 +
                w_non_pawn_corr[board.getTurn()][CORR_IDX(board.getNonPawnHash(WHITE))] / 512 +

@@ -1,7 +1,9 @@
-#include <cstring> // std::memcpy
 #include "nnue.h"
 #include "accumulator.h"
 #include "../chess/misc.h"
+
+#include <cstring> // std::memcpy
+#include <algorithm>
 
 #include "incbin.h"
 
@@ -19,6 +21,7 @@ using avx_type = __m512i;
 #define avx_max_epi16 _mm512_max_epi16
 #define avx_min_epi16 _mm512_min_epi16
 #define avx_set1_epi16 _mm512_set1_epi16
+#define avx_mullo_epi16 _mm512_mullo_epi16
 
 #elif defined(__AVX2__) || defined(__AVX__)
 using avx_type = __m256i;
@@ -30,14 +33,14 @@ using avx_type = __m256i;
 #define avx_max_epi16 _mm256_max_epi16
 #define avx_min_epi16 _mm256_min_epi16
 #define avx_set1_epi16 _mm256_set1_epi16
+#define avx_mullo_epi16 _mm256_mullo_epi16
+
 #endif
 
 namespace NNUE
 {
-    constexpr int16_t max_clipped_value = 127 * 32;
-
 #if defined(__AVX512F__) || defined(__AVX2__) || defined(__AVX__)
-    inline int32_t sumRegisterEpi32(avx_type &reg)
+    int32_t horizontalSum(avx_type &reg)
     {
 #if defined(__AVX512F__)
         const __m256i red_8 = _mm256_add_epi32(_mm512_castsi512_si256(reg), _mm512_extracti32x8_epi32(reg, 1));
@@ -91,6 +94,7 @@ namespace NNUE
     {
 #if defined(__AVX512F__) || defined(__AVX2__) || defined(__AVX__)
         constexpr avx_type zero{};
+        const avx_type max_clipped_value = avx_set1_epi16(32);
 
         const auto acc_stm = (const avx_type *)acc.data[stm];
         const auto acc_opp = (const avx_type *)acc.data[~stm];
@@ -100,33 +104,25 @@ namespace NNUE
 
         for (int i = 0; i < HIDDEN_SIZE / div; i++)
         {
-            auto clipped_stm = avx_min_epi16(avx_max_epi16(acc_stm[i], zero), avx_set1_epi16(max_clipped_value));
-            res = avx_add_epi32(res, avx_madd_epi16(clipped_stm, weights[i]));
-        }
-        for (int i = 0; i < HIDDEN_SIZE / div; i++)
-        {
-            auto clipped_opp = avx_min_epi16(avx_max_epi16(acc_opp[i], zero), avx_set1_epi16(max_clipped_value));
-            res = avx_add_epi32(res, avx_madd_epi16(clipped_opp, weights[i + HIDDEN_SIZE / div]));
+            auto clipped_stm = avx_min_epi16(avx_max_epi16(acc_stm[i], zero), max_clipped_value);
+            res = avx_add_epi32(res, avx_madd_epi16(weights[i], clipped_stm));
         }
 
-        const auto output = sumRegisterEpi32(res) + fc2_biases[0];
+        for (int i = 0; i < HIDDEN_SIZE / div; i++)
+        {
+            auto clipped_opp = avx_min_epi16(avx_max_epi16(acc_opp[i], zero), max_clipped_value);
+            res = avx_add_epi32(res, avx_madd_epi16(weights[i + HIDDEN_SIZE / div], clipped_opp));
+        }
+
+        const auto output = horizontalSum(res) + fc2_biases[0];
         return output / 128 / 32;
 #else
-        constexpr int32_t max_clipped_value = 127 * 32; // Scale max value by 32
         int32_t output = fc2_biases[0];
 
         for (int j = 0; j < HIDDEN_SIZE; j++)
         {
-            if (acc.data[stm][j] > 0)
-            {
-                int32_t value = std::min(acc.data[stm][j], max_clipped_value);
-                output += fc2_weights[j] * value;
-            }
-            if (acc.data[~stm][j] > 0)
-            {
-                int32_t value = std::min(acc.data[~stm][j], max_clipped_value);
-                output += fc2_weights[HIDDEN_SIZE + j] * value;
-            }
+            output += fc2_weights[j] * std::clamp(int32_t(acc.data[stm][j]), 0, 32);
+            output += fc2_weights[HIDDEN_SIZE + j] * std::clamp(int32_t(acc.data[~stm][j]), 0, 32);
         }
 
         return output / 128 / 32;

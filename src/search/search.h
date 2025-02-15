@@ -5,6 +5,8 @@
 #include "history.h"
 #include "timeman.h"
 
+#include <algorithm>
+
 namespace Astra
 {
 
@@ -33,18 +35,21 @@ namespace Astra
         Limits limit;
         Board board;
 
-        Search(const std::string &fen);
+        Search(const std::string &fen) : board(fen)
+        {
+            tt.clear();
+        }
 
         Move bestMove();
 
     private:
         int root_depth = 0;
-        
+
         PVLine pv_table[MAX_PLY + 1];
         History history;
         TimeMan tm;
 
-        U64 move_nodes[NUM_SQUARES][NUM_SQUARES] {};
+        U64 move_nodes[NUM_SQUARES][NUM_SQUARES]{};
 
         Score aspSearch(int depth, Score prev_eval, Stack *ss);
         Score negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_node, const Move skipped = NO_MOVE);
@@ -53,8 +58,13 @@ namespace Astra
         int adjustEval(const Board &board, const Stack *ss, Score eval) const;
         bool isLimitReached(int depth) const;
         void updatePv(Move move, int ply);
-        void printUciInfo(Score result, int depth, PVLine &pv_line) const;
     };
+
+    inline int Search::adjustEval(const Board &board, const Stack *ss, Score eval) const
+    {
+        eval += history.getMaterialCorr(board) + history.getContCorr(ss);
+        return std::clamp(eval, Score(-VALUE_TB_WIN_IN_MAX_PLY + 1), Score(VALUE_TB_WIN_IN_MAX_PLY - 1));
+    }
 
 } // namespace Astra
 

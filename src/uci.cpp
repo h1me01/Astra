@@ -368,4 +368,34 @@ namespace UCI
         }
     }
 
+    void printUciInfo(Score result, int depth, int64_t elapsed_time, Astra::PVLine &pv_line)
+    {
+        std::cout << "info depth " << depth
+                  << " seldepth " << Astra::threads.getSelDepth()
+                  << " score ";
+
+        if (abs(result) >= VALUE_MATE - MAX_PLY)
+            std::cout << "mate " << (VALUE_MATE - abs(result) + 1) / 2 * (result > 0 ? 1 : -1);
+        else
+            std::cout << "cp " << Score(result / 2); // normalize
+
+        U64 total_nodes = Astra::threads.getTotalNodes();
+
+        std::cout << " nodes " << total_nodes
+                  << " nps " << total_nodes * 1000 / (elapsed_time + 1)
+                  << " tbhits " << Astra::threads.getTotalTbHits()
+                  << " hashfull " << Astra::tt.hashfull()
+                  << " time " << elapsed_time
+                  << " pv";
+
+        // print the pv
+        if (pv_line.length == 0)
+            std::cout << " " << pv_line[0];
+        else
+            for (int i = 0; i < pv_line.length; i++)
+                std::cout << " " << pv_line[i];
+
+        std::cout << std::endl;
+    }
+
 } // namespace UCI
