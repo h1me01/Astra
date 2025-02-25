@@ -1,9 +1,9 @@
+#include <cstring> // std::memcpy
+#include <algorithm>
+
 #include "nnue.h"
 #include "accumulator.h"
 #include "../chess/misc.h"
-
-#include <cstring> // std::memcpy
-#include <algorithm>
 
 #include "incbin.h"
 
@@ -94,7 +94,7 @@ namespace NNUE
     {
 #if defined(__AVX512F__) || defined(__AVX2__) || defined(__AVX__)
         constexpr avx_type zero{};
-        const avx_type max_clipped_value = avx_set1_epi16(32);
+        const avx_type max_clipped_value = avx_set1_epi16(127 * 32);
 
         const auto acc_stm = (const avx_type *)acc.data[stm];
         const auto acc_opp = (const avx_type *)acc.data[~stm];
@@ -121,11 +121,11 @@ namespace NNUE
 
         for (int j = 0; j < HIDDEN_SIZE; j++)
         {
-            output += fc2_weights[j] * std::clamp(int32_t(acc.data[stm][j]), 0, 32);
-            output += fc2_weights[HIDDEN_SIZE + j] * std::clamp(int32_t(acc.data[~stm][j]), 0, 32);
+            output += fc2_weights[j] * std::clamp(int32_t(acc.data[stm][j]), 0, 255);
+            output += fc2_weights[HIDDEN_SIZE + j] * std::clamp(int32_t(acc.data[~stm][j]), 0, 255);
         }
 
-        return output / 128 / 32;
+        return output / 255 / 64;
 #endif
     }
 

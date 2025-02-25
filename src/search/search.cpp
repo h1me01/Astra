@@ -28,6 +28,30 @@ namespace Astra
 
     // search class
 
+    bool Search::isLimitReached(int depth) const
+    {
+        if (limit.infinite)
+            return false;
+        if (threads.isStopped())
+            return true;
+        if (limit.nodes != 0 && nodes >= limit.nodes)
+            return true;
+        if (depth > limit.depth)
+            return true;
+        if (limit.time.max != 0 && tm.elapsedTime() >= limit.time.max)
+            return true;
+
+        return false;
+    }
+
+    void Search::updatePv(Move move, int ply)
+    {
+        pv_table[ply][ply] = move;
+        for (int next_ply = ply + 1; next_ply < pv_table[ply + 1].length; next_ply++)
+            pv_table[ply][next_ply] = pv_table[ply + 1][next_ply];
+        pv_table[ply].length = pv_table[ply + 1].length;
+    }
+
     Move Search::bestMove()
     {
         tm.start();
@@ -39,7 +63,6 @@ namespace Astra
             {
                 if (id == 0)
                     std::cout << "bestmove " << dtz.second << std::endl;
-
                 return dtz.second;
             }
         }
@@ -80,7 +103,7 @@ namespace Astra
                 double stability_factor = 1.3115 - stability * 0.05329;
 
                 // adjust time optimum based on last score
-                double result_change_factor = 0.1788 + std::clamp(prev_result - result, 0, 62) * 0.003657;
+                double result_change_factor = 0.2788 + std::clamp(prev_result - result, 0, 62) * 0.003657;
 
                 // adjust time optimum based on node count
                 double not_best_nodes = 1.0 - double(move_nodes[move.from()][move.to()]) / double(nodes);
@@ -199,7 +222,6 @@ namespace Astra
         {
             if (ss->ply >= MAX_PLY - 1)
                 return Eval::evaluate(board);
-
             if (isLimitReached(depth))
                 return 0;
 
@@ -602,7 +624,6 @@ namespace Astra
 
         if (board.isDraw(ss->ply))
             return VALUE_DRAW;
-
         if (ss->ply >= MAX_PLY - 1)
             return Eval::evaluate(board);
 
@@ -732,30 +753,6 @@ namespace Astra
         ent->store(hash, best_move, best_score, raw_eval, bound, 0, ss->ply, tt_pv);
 
         return best_score;
-    }
-
-    bool Search::isLimitReached(int depth) const
-    {
-        if (limit.infinite)
-            return false;
-        if (threads.isStopped())
-            return true;
-        if (limit.nodes != 0 && nodes >= limit.nodes)
-            return true;
-        if (depth > limit.depth)
-            return true;
-        if (limit.time.max != 0 && tm.elapsedTime() >= limit.time.max)
-            return true;
-
-        return false;
-    }
-
-    void Search::updatePv(Move move, int ply)
-    {
-        pv_table[ply][ply] = move;
-        for (int next_ply = ply + 1; next_ply < pv_table[ply + 1].length; next_ply++)
-            pv_table[ply][next_ply] = pv_table[ply + 1][next_ply];
-        pv_table[ply].length = pv_table[ply + 1].length;
     }
 
 } // namespace Astra
