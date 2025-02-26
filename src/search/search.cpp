@@ -134,7 +134,7 @@ namespace Astra
 
             for (multipv_idx = 0; multipv_idx < multipv_size; multipv_idx++)
                 aspSearch(root_depth, ss);
-
+    
             if (isLimitReached(root_depth))
                 break;
 
@@ -143,6 +143,10 @@ namespace Astra
 
             if (id == 0 && root_depth >= 5 && limit.time.optimum)
             {
+                // print final pv info
+                for (multipv_idx = 0; multipv_idx < multipv_size; multipv_idx++)
+                    printUciInfo();
+
                 int64_t elapsed = tm.elapsedTime();
 
                 // adjust time optimum based on stability
@@ -198,12 +202,13 @@ namespace Astra
                 beta = VALUE_INFINITE;
 
             result = negamax(std::max(1, root_depth - fail_high_count), alpha, beta, ss, false);
-            sortRootMoves(multipv_idx);
 
             if (isLimitReached(depth))
                 return 0;
-            else if (id == 0 && limit.multipv == 1 && tm.elapsedTime() > 5000)
+            if (id == 0 && limit.multipv == 1 && tm.elapsedTime() > 5000)
                 printUciInfo();
+
+            sortRootMoves(multipv_idx);
 
             if (result <= alpha)
             {
@@ -226,9 +231,6 @@ namespace Astra
         }
 
         sortRootMoves(0);
-
-        if (id == 0)
-            printUciInfo();
 
         return result;
     }
@@ -615,7 +617,7 @@ namespace Astra
             if (root_node)
             {
                 RootMove *rm = &root_moves[0];
-                for (int i = 0; i < root_moves.size(); i++)
+                for (int i = 1; i < root_moves.size(); i++)
                     if (root_moves[i].move == move)
                     {
                         rm = &root_moves[i];
