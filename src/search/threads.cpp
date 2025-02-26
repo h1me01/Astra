@@ -60,7 +60,7 @@ namespace Astra
     {
         int max_sel_depth = 0;
         for (const auto &t : threads)
-            max_sel_depth = std::max(max_sel_depth, t->sel_depth);
+            max_sel_depth = std::max(max_sel_depth, t->seldepth);
         return max_sel_depth;
     }
 

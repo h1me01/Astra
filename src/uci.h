@@ -70,8 +70,6 @@ namespace UCI
         void writeLog(const std::string &message);
     };
 
-    void printUciInfo(Score result, int depth, int64_t elapsed_time, Astra::PVLine &pv_line);
-
 } // namespace UCI
 
 #endif // UCI_H

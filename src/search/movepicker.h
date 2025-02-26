@@ -50,8 +50,8 @@ namespace Astra
 
         bool gen_checkers;
 
-        MoveList ml_main;
-        MoveList ml_bad_noisy;
+        MoveList<> ml_main;
+        MoveList<> ml_bad_noisy;
         Move tt_move, killer, counter;
 
         void scoreQuietMoves();

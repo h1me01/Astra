@@ -11,7 +11,7 @@ namespace Chess
         if (depth == 0)
             return 1;
 
-        MoveList ml;
+        MoveList<> ml;
         ml.gen<LEGALS>(board);
 
         if (depth == 1)
@@ -37,14 +37,12 @@ namespace Chess
         }
 
         std::cout << "\nPerft test at depth " << depth << ":\n\n";
-
-        U64 total_nodes = 0;
-
         auto start = std::chrono::high_resolution_clock::now();
 
-        MoveList ml;
+        MoveList<> ml;
         ml.gen<LEGALS>(board);
 
+        U64 total_nodes = 0;
         for (const Move &move : ml)
         {
             board.makeMove(move);

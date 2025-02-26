@@ -1,6 +1,7 @@
 #ifndef MOVEGEN_H
 #define MOVEGEN_H
 
+#include <type_traits> // std::is_same
 #include "board.h"
 
 namespace Chess
@@ -226,12 +227,13 @@ namespace Chess
         return ml;
     }
 
+    template <typename Type = Move>
     class MoveList
     {
     public:
         MoveList() : last(list) {}
 
-        constexpr Move &operator[](int i)
+        constexpr Type &operator[](int i)
         {
             return list[i];
         }
@@ -239,6 +241,7 @@ namespace Chess
         template <GenType gt>
         void gen(const Board &board)
         {
+            static_assert(std::is_same<Type, Move>::value, "MoveList type must be Move to generate moves.");
             last = list; // reset the list
 
             if (gt == LEGALS)
@@ -249,19 +252,19 @@ namespace Chess
                 last = board.getTurn() == WHITE ? genAll<WHITE, gt>(board, list) : genAll<BLACK, gt>(board, list);
         }
 
-        void add(Move m)
+        void add(Type m)
         {
             assert(last < list + MAX_MOVES);
             *last++ = m;
         }
 
-        const Move *begin() const { return list; }
-        const Move *end() const { return last; }
+        const Type *begin() const { return list; }
+        const Type *end() const { return last; }
         int size() const { return last - list; }
 
     private:
-        Move list[MAX_MOVES];
-        Move *last;
+        Type list[MAX_MOVES];
+        Type *last;
     };
 
 } // namespace Chess

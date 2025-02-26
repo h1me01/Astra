@@ -22,6 +22,7 @@ namespace Astra
         Time time;
         U64 nodes = 0;
         int depth = MAX_PLY - 1;
+        int multipv = 1;
         bool infinite = false;
     };
 

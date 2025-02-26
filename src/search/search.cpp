@@ -52,9 +52,51 @@ namespace Astra
         pv_table[ply].length = pv_table[ply + 1].length;
     }
 
+    void Search::printUciInfo()
+    {
+        const int64_t elapsed_time = tm.elapsedTime();
+        const U64 total_nodes = Astra::threads.getTotalNodes();
+        const Score result = root_moves[multipv_idx].score;
+        const PVLine pv_line = root_moves[multipv_idx].pv;
+
+        std::cout << "info depth " << root_depth
+                  << " seldepth " << Astra::threads.getSelDepth()
+                  << " multipv " << multipv_idx + 1
+                  << " score ";
+
+        if (abs(result) >= VALUE_MATE - MAX_PLY)
+            std::cout << "mate " << (VALUE_MATE - abs(result) + 1) / 2 * (result > 0 ? 1 : -1);
+        else
+            std::cout << "cp " << Score(result / 1.8); // normalize
+
+        std::cout << " nodes " << total_nodes
+                  << " nps " << total_nodes * 1000 / (elapsed_time + 1)
+                  << " tbhits " << Astra::threads.getTotalTbHits()
+                  << " hashfull " << Astra::tt.hashfull()
+                  << " time " << elapsed_time
+                  << " pv";
+
+        // print the pv
+        if (!pv_line.length)
+            std::cout << " " << pv_line[0];
+        else
+            for (int i = 0; i < pv_line.length; i++)
+                std::cout << " " << pv_line[i];
+
+        std::cout << std::endl;
+    }
+
+    // main search
+
     Move Search::bestMove()
     {
         tm.start();
+
+        MoveList<> legals;
+        legals.gen<LEGALS>(board);
+
+        for (int i = 0; i < legals.size(); i++)
+            root_moves.add({legals[i], 0, 0, 0, {}});
 
         if (use_tb)
         {
@@ -82,31 +124,32 @@ namespace Astra
         int stability = 0;
         Score prev_result = VALUE_NONE;
 
-        Move bestmove = NO_MOVE;
+        Move bestmove = NO_MOVE, prev_bestmove = NO_MOVE;
         for (root_depth = 1; root_depth < MAX_PLY; root_depth++)
         {
             // reset selective depth
-            sel_depth = 0;
+            seldepth = 0;
 
-            Score result = aspSearch(root_depth, prev_result, ss);
+            Score result = aspSearch(root_depth, ss);
 
             if (isLimitReached(root_depth))
                 break;
 
+            bestmove = root_moves[0].move;
+
             if (id == 0 && root_depth >= 5 && limit.time.optimum)
             {
                 int64_t elapsed = tm.elapsedTime();
-                Move move = pv_table[0][0];
 
                 // adjust time optimum based on stability
-                stability = bestmove == move ? std::min(10, stability + 1) : 0;
+                stability = bestmove == prev_bestmove ? std::min(10, stability + 1) : 0;
                 double stability_factor = 1.3115 - stability * 0.05329;
 
                 // adjust time optimum based on last score
-                double result_change_factor = 0.2788 + std::clamp(prev_result - result, 0, 62) * 0.003657;
+                double result_change_factor = 0.4788 + std::clamp(prev_result - result, 0, 62) * 0.003657;
 
                 // adjust time optimum based on node count
-                double not_best_nodes = 1.0 - double(move_nodes[move.from()][move.to()]) / double(nodes);
+                double not_best_nodes = 1.0 - double(root_moves[0].nodes / double(nodes));
                 double node_count_factor = not_best_nodes * 2.1223 + 0.4599;
 
                 // check if we should stop
@@ -114,13 +157,13 @@ namespace Astra
                     break;
             }
 
-            bestmove = pv_table[0][0];
+            prev_bestmove = bestmove;
             prev_result = result;
         }
 
         // make sure to atleast have a best move
         if (bestmove == NO_MOVE)
-            bestmove = pv_table[0][0];
+            bestmove = root_moves[0].move;
 
         if (id == 0)
             std::cout << "bestmove " << bestmove << std::endl;
@@ -128,58 +171,69 @@ namespace Astra
         return bestmove;
     }
 
-    Score Search::aspSearch(int depth, Score prev_eval, Stack *ss)
+    Score Search::aspSearch(int depth, Stack *ss)
     {
-        Score alpha = -VALUE_INFINITE;
-        Score beta = VALUE_INFINITE;
-        Score result = VALUE_NONE;
+        const int multipv_size = std::min(limit.multipv, root_moves.size());
 
-        int window = asp_window;
-        if (depth >= asp_depth)
+        for (multipv_idx = 0; multipv_idx < multipv_size; multipv_idx++)
         {
-            alpha = std::max(prev_eval - window, -int(VALUE_INFINITE));
-            beta = std::min(prev_eval + window, int(VALUE_INFINITE));
+            Score alpha = -VALUE_INFINITE;
+            Score beta = VALUE_INFINITE;
+
+            int window = asp_window;
+            if (depth >= asp_depth)
+            {
+                Score eval = root_moves[multipv_idx].score;
+                alpha = std::max(eval - window, -int(VALUE_INFINITE));
+                beta = std::min(eval + window, int(VALUE_INFINITE));
+            }
+
+            int fail_high_count = 0;
+            while (true)
+            {
+                if (alpha < -2000)
+                    alpha = -VALUE_INFINITE;
+                if (beta > 2000)
+                    beta = VALUE_INFINITE;
+
+                Score result = negamax(std::max(1, root_depth - fail_high_count), alpha, beta, ss, false);
+
+                sortRootMoves(multipv_idx);
+
+                if (isLimitReached(depth))
+                    return 0;
+                else if (id == 0 && limit.multipv == 1 && tm.elapsedTime() > 5000)
+                    printUciInfo();
+
+                if (result <= alpha)
+                {
+                    // if result is lower than alpha, than we can lower alpha for next iteration
+                    beta = (alpha + beta) / 2;
+                    alpha = std::max(alpha - window, -int(VALUE_INFINITE));
+                    fail_high_count = 0;
+                }
+                else if (result >= beta)
+                {
+                    // if result is higher than beta, than we can raise beta for next iteration
+                    beta = std::min(beta + window, int(VALUE_INFINITE));
+                    if (std::abs(result) < VALUE_TB_WIN_IN_MAX_PLY)
+                        fail_high_count++;
+                }
+                else
+                    break;
+
+                window += window / 3.75;
+            }
+
+            sortRootMoves(0);
+
+            if (id != 0)
+                continue;
+
+            printUciInfo();
         }
 
-        int fail_high_count = 0;
-        while (true)
-        {
-            if (alpha < -2000)
-                alpha = -VALUE_INFINITE;
-            if (beta > 2000)
-                beta = VALUE_INFINITE;
-
-            result = negamax(std::max(1, root_depth - fail_high_count), alpha, beta, ss, false);
-
-            if (isLimitReached(depth))
-                return result;
-            else if (id == 0 && tm.elapsedTime() > 5000)
-                UCI::printUciInfo(result, depth, tm.elapsedTime(), pv_table[0]);
-
-            if (result <= alpha)
-            {
-                // if result is lower than alpha, than we can lower alpha for next iteration
-                beta = (alpha + beta) / 2;
-                alpha = std::max(alpha - window, -int(VALUE_INFINITE));
-                fail_high_count = 0;
-            }
-            else if (result >= beta)
-            {
-                // if result is higher than beta, than we can raise beta for next iteration
-                beta = std::min(beta + window, int(VALUE_INFINITE));
-                if (std::abs(result) < VALUE_TB_WIN_IN_MAX_PLY)
-                    fail_high_count++;
-            }
-            else
-                break;
-
-            window += window / 3.75;
-        }
-
-        if (id == 0)
-            UCI::printUciInfo(result, depth, tm.elapsedTime(), pv_table[0]);
-
-        return result;
+        return root_moves[0].score;
     }
 
     Score Search::negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_node, const Move skipped)
@@ -214,8 +268,8 @@ namespace Astra
             return qSearch(0, alpha, beta, ss);
 
         // selective depth
-        if (pv_node && ss->ply > sel_depth)
-            sel_depth = ss->ply; // heighest depth a pv node has reached
+        if (pv_node && ss->ply > seldepth)
+            seldepth = ss->ply; // heighest depth a pv node has reached
 
         // check for terminal state
         if (!root_node)
@@ -235,13 +289,10 @@ namespace Astra
                 return VALUE_DRAW;
         }
 
-        // reset killer
-        (ss + 1)->killer = NO_MOVE;
-
         // look up in transposition table
         bool tt_hit = false;
         TTEntry *ent = !skipped ? tt.lookup(hash, &tt_hit) : nullptr;
-        Move tt_move = tt_hit ? ent->getMove() : NO_MOVE;
+        Move tt_move = tt_hit ? root_node ? root_moves[multipv_idx].move : ent->getMove() : NO_MOVE;
         Bound tt_bound = tt_hit ? ent->getBound() : NO_BOUND;
         Score tt_score = tt_hit ? ent->getScore(ss->ply) : VALUE_NONE;
         Score tt_eval = tt_hit ? ent->eval : VALUE_NONE;
@@ -315,6 +366,9 @@ namespace Astra
             else if ((ss - 4)->eval != VALUE_NONE)
                 improving = ss->eval > (ss - 4)->eval;
         }
+
+        // reset killer
+        (ss + 1)->killer = NO_MOVE;
 
         // update quiet history
         Move prev_move = (ss - 1)->curr_move;
@@ -422,6 +476,8 @@ namespace Astra
         {
             if (move == skipped || !board.isLegal(move))
                 continue;
+            if (root_node && !foundRootMove(move))
+                continue;
 
             U64 start_nodes = nodes;
 
@@ -462,7 +518,7 @@ namespace Astra
                 q_moves[q_count++] = move;
 
             // print current move information
-            if (id == 0 && root_node && tm.elapsedTime() > 5000 && !threads.isStopped())
+            if (id == 0 && root_node && limit.multipv == 1 && tm.elapsedTime() > 5000 && !threads.isStopped())
                 std::cout << "info depth " << depth << " currmove " << move << " currmovenumber " << made_moves << std::endl;
 
             int extension = 0;
@@ -559,7 +615,34 @@ namespace Astra
                 return 0;
 
             if (root_node)
-                move_nodes[move.from()][move.to()] = nodes - start_nodes;
+            {
+                int rm_idx = -1;
+                for (int i = 0; i < root_moves.size(); i++)
+                    if (root_moves[i].move == move)
+                    {
+                        rm_idx = i;
+                        break;
+                    }
+
+                assert(rm_idx != -1);
+                RootMove &rm = root_moves[rm_idx];
+                rm.nodes += nodes - start_nodes;
+
+                if (made_moves == 1 || score > alpha)
+                {
+                    rm.score = score;
+                    rm.seldepth = seldepth;
+
+                    // copy pv line
+                    rm.pv[0] = move;
+
+                    rm.pv.length = pv_table[ss->ply + 1].length;
+                    for (int i = 1; i < rm.pv.length; i++)
+                        rm.pv[i] = pv_table[ss->ply + 1][i];
+                }
+                else
+                    rm.score = -VALUE_INFINITE;
+            }
 
             if (score > best_score)
             {
@@ -570,8 +653,7 @@ namespace Astra
                     alpha = score;
                     best_move = move;
 
-                    // update pv node when in pv node
-                    if (id == 0 && pv_node)
+                    if (id == 0 && pv_node && !root_node)
                         updatePv(move, ss->ply);
                 }
 
@@ -595,7 +677,7 @@ namespace Astra
         // clang-format off
         Bound bound = best_score >= beta ? LOWER_BOUND : best_score <= old_alpha ? UPPER_BOUND : EXACT_BOUND;
         // clang-format on
-        if (!skipped)
+        if (!skipped && (!root_node || multipv_idx == 0))
             ent->store(hash, best_move, best_score, raw_eval, bound, depth, ss->ply, tt_pv);
 
         // update correction histories
@@ -682,6 +764,8 @@ namespace Astra
             if (best_score > alpha)
                 alpha = best_score;
         }
+
+        (ss + 1)->killer = NO_MOVE;
 
         MovePicker mp(Q_SEARCH, board, history, ss, tt_move, depth >= -1);
 

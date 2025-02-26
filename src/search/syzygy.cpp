@@ -105,7 +105,7 @@ namespace Astra
         const auto from = Square(TB_GET_FROM(result));
         const auto to = Square(TB_GET_TO(result));
 
-        MoveList moves;
+        MoveList<> moves;
         moves.gen<LEGALS>(board);
         for (auto m : moves)
         {

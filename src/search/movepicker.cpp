@@ -2,7 +2,7 @@
 
 namespace Astra
 {
-    void partialInsertionSort(MoveList &ml, int idx)
+    void partialInsertionSort(MoveList<> &ml, int idx)
     {
         int best_idx = idx;
 

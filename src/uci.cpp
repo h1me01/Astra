@@ -129,6 +129,7 @@ namespace UCI
     {
         options.add("Hash", Option("spin", "16", "16", 1, 8192));
         options.add("Threads", Option("spin", "1", "1", 1, 128));
+        options.add("MultiPV", Option("spin", "1", "1", 1, 256));
         options.add("MoveOverhead", Option("spin", "10", "10", 1, 1000));
 #ifndef TUNE
         options.add("SyzygyPath", Option("string", "", "", 0, 0));
@@ -300,6 +301,8 @@ namespace UCI
         else if (time_left != 0)
             limit.time = Astra::TimeMan::getOptimum(time_left, inc, moves_to_go, std::stoi(options.get("MoveOverhead")));
 
+
+        limit.multipv = std::stoi(options.get("MultiPV"));
         // start search
         Astra::threads.launchWorkers(board, limit, options.num_workers, options.use_tb);
     }
@@ -367,35 +370,5 @@ namespace UCI
             logFile << std::ctime(&time) << ": " << message << std::endl;
         }
     }
-
-    void printUciInfo(Score result, int depth, int64_t elapsed_time, Astra::PVLine &pv_line)
-    {
-        std::cout << "info depth " << depth
-                  << " seldepth " << Astra::threads.getSelDepth()
-                  << " score ";
-
-        if (abs(result) >= VALUE_MATE - MAX_PLY)
-            std::cout << "mate " << (VALUE_MATE - abs(result) + 1) / 2 * (result > 0 ? 1 : -1);
-        else
-            std::cout << "cp " << Score(result / 1.8); // normalize
-
-        U64 total_nodes = Astra::threads.getTotalNodes();
-
-        std::cout << " nodes " << total_nodes
-                  << " nps " << total_nodes * 1000 / (elapsed_time + 1)
-                  << " tbhits " << Astra::threads.getTotalTbHits()
-                  << " hashfull " << Astra::tt.hashfull()
-                  << " time " << elapsed_time
-                  << " pv";
-
-        // print the pv
-        if (pv_line.length == 0)
-            std::cout << " " << pv_line[0];
-        else
-            for (int i = 0; i < pv_line.length; i++)
-                std::cout << " " << pv_line[i];
-
-        std::cout << std::endl;
-    }
-
+    
 } // namespace UCI
