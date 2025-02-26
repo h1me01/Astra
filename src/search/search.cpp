@@ -57,7 +57,7 @@ namespace Astra
         const int64_t elapsed_time = tm.elapsedTime();
         const U64 total_nodes = Astra::threads.getTotalNodes();
         const Score result = root_moves[multipv_idx].score;
-        const PVLine pv_line = root_moves[multipv_idx].pv;
+        const PVLine &pv_line = root_moves[multipv_idx].pv;
 
         std::cout << "info depth " << root_depth
                   << " seldepth " << Astra::threads.getSelDepth()
@@ -96,7 +96,9 @@ namespace Astra
         legals.gen<LEGALS>(board);
 
         for (int i = 0; i < legals.size(); i++)
-            root_moves.add({legals[i], 0, 0, 0, {}});
+            root_moves.add({legals[i], 0, 0, 0, 0, {}});
+
+        const int multipv_size = std::min(limit.multipv, root_moves.size());
 
         if (use_tb)
         {
@@ -130,11 +132,13 @@ namespace Astra
             // reset selective depth
             seldepth = 0;
 
-            Score result = aspSearch(root_depth, ss);
+            for (multipv_idx = 0; multipv_idx < multipv_size; multipv_idx++)
+                aspSearch(root_depth, ss);
 
             if (isLimitReached(root_depth))
                 break;
 
+            Score result = root_moves[0].score;
             bestmove = root_moves[0].move;
 
             if (id == 0 && root_depth >= 5 && limit.time.optimum)
@@ -173,67 +177,60 @@ namespace Astra
 
     Score Search::aspSearch(int depth, Stack *ss)
     {
-        const int multipv_size = std::min(limit.multipv, root_moves.size());
+        Score result;
+        Score alpha = -VALUE_INFINITE;
+        Score beta = VALUE_INFINITE;
 
-        for (multipv_idx = 0; multipv_idx < multipv_size; multipv_idx++)
+        int window = asp_window;
+        if (depth >= asp_depth)
         {
-            Score alpha = -VALUE_INFINITE;
-            Score beta = VALUE_INFINITE;
-
-            int window = asp_window;
-            if (depth >= asp_depth)
-            {
-                Score eval = root_moves[multipv_idx].score;
-                alpha = std::max(eval - window, -int(VALUE_INFINITE));
-                beta = std::min(eval + window, int(VALUE_INFINITE));
-            }
-
-            int fail_high_count = 0;
-            while (true)
-            {
-                if (alpha < -2000)
-                    alpha = -VALUE_INFINITE;
-                if (beta > 2000)
-                    beta = VALUE_INFINITE;
-
-                Score result = negamax(std::max(1, root_depth - fail_high_count), alpha, beta, ss, false);
-
-                sortRootMoves(multipv_idx);
-
-                if (isLimitReached(depth))
-                    return 0;
-                else if (id == 0 && limit.multipv == 1 && tm.elapsedTime() > 5000)
-                    printUciInfo();
-
-                if (result <= alpha)
-                {
-                    // if result is lower than alpha, than we can lower alpha for next iteration
-                    beta = (alpha + beta) / 2;
-                    alpha = std::max(alpha - window, -int(VALUE_INFINITE));
-                    fail_high_count = 0;
-                }
-                else if (result >= beta)
-                {
-                    // if result is higher than beta, than we can raise beta for next iteration
-                    beta = std::min(beta + window, int(VALUE_INFINITE));
-                    if (std::abs(result) < VALUE_TB_WIN_IN_MAX_PLY)
-                        fail_high_count++;
-                }
-                else
-                    break;
-
-                window += window / 3.75;
-            }
-
-            sortRootMoves(0);
-
-            if (id != 0)
-                continue;
-
-            printUciInfo();
+            Score avg_score = root_moves[multipv_idx].avg_score;
+            alpha = std::max(avg_score - window, -int(VALUE_INFINITE));
+            beta = std::min(avg_score + window, int(VALUE_INFINITE));
         }
 
-        return root_moves[0].score;
+        int fail_high_count = 0;
+        while (true)
+        {
+            if (alpha < -2000)
+                alpha = -VALUE_INFINITE;
+            if (beta > 2000)
+                beta = VALUE_INFINITE;
+
+            result = negamax(std::max(1, root_depth - fail_high_count), alpha, beta, ss, false);
+            sortRootMoves(multipv_idx);
+
+            if (isLimitReached(depth))
+                return 0;
+            else if (id == 0 && limit.multipv == 1 && tm.elapsedTime() > 5000)
+                printUciInfo();
+
+            if (result <= alpha)
+            {
+                // if result is lower than alpha, than we can lower alpha for next iteration
+                beta = (alpha + beta) / 2;
+                alpha = std::max(alpha - window, -int(VALUE_INFINITE));
+                fail_high_count = 0;
+            }
+            else if (result >= beta)
+            {
+                // if result is higher than beta, than we can raise beta for next iteration
+                beta = std::min(beta + window, int(VALUE_INFINITE));
+                if (std::abs(result) < VALUE_TB_WIN_IN_MAX_PLY)
+                    fail_high_count++;
+            }
+            else
+                break;
+
+            window += window / 3.75;
+        }
+
+        sortRootMoves(0);
+
+        if (id == 0)
+            printUciInfo();
+
+        return result;
     }
 
     Score Search::negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_node, const Move skipped)
@@ -254,7 +251,8 @@ namespace Astra
         Score eval = ss->eval, raw_eval = eval;
         Score max_score = VALUE_MATE, best_score = -VALUE_MATE;
 
-        pv_table[ss->ply].length = ss->ply;
+        if (pv_node)
+            pv_table[ss->ply].length = ss->ply;
 
         if (!root_node && alpha < VALUE_DRAW && board.hasUpcomingRepetition(ss->ply))
         {
@@ -616,32 +614,31 @@ namespace Astra
 
             if (root_node)
             {
-                int rm_idx = -1;
+                RootMove *rm = &root_moves[0];
                 for (int i = 0; i < root_moves.size(); i++)
                     if (root_moves[i].move == move)
                     {
-                        rm_idx = i;
+                        rm = &root_moves[i];
                         break;
                     }
 
-                assert(rm_idx != -1);
-                RootMove &rm = root_moves[rm_idx];
-                rm.nodes += nodes - start_nodes;
+                rm->nodes += nodes - start_nodes;
+                rm->avg_score = rm->avg_score == -VALUE_INFINITE ? score : (rm->avg_score + score) / 2;
 
                 if (made_moves == 1 || score > alpha)
                 {
-                    rm.score = score;
-                    rm.seldepth = seldepth;
+                    rm->score = score;
+                    rm->seldepth = seldepth;
 
                     // copy pv line
-                    rm.pv[0] = move;
+                    rm->pv[0] = move;
 
-                    rm.pv.length = pv_table[ss->ply + 1].length;
-                    for (int i = 1; i < rm.pv.length; i++)
-                        rm.pv[i] = pv_table[ss->ply + 1][i];
+                    rm->pv.length = pv_table[ss->ply + 1].length;
+                    for (int i = 1; i < rm->pv.length; i++)
+                        rm->pv[i] = pv_table[ss->ply + 1][i];
                 }
                 else
-                    rm.score = -VALUE_INFINITE;
+                    rm->score = -VALUE_INFINITE;
             }
 
             if (score > best_score)
@@ -653,7 +650,7 @@ namespace Astra
                     alpha = score;
                     best_move = move;
 
-                    if (id == 0 && pv_node && !root_node)
+                    if (pv_node && !root_node)
                         updatePv(move, ss->ply);
                 }
 

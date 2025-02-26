@@ -301,7 +301,6 @@ namespace UCI
         else if (time_left != 0)
             limit.time = Astra::TimeMan::getOptimum(time_left, inc, moves_to_go, std::stoi(options.get("MoveOverhead")));
 
-
         limit.multipv = std::stoi(options.get("MultiPV"));
         // start search
         Astra::threads.launchWorkers(board, limit, options.num_workers, options.use_tb);
@@ -370,5 +369,5 @@ namespace UCI
             logFile << std::ctime(&time) << ": " << message << std::endl;
         }
     }
-    
+
 } // namespace UCI

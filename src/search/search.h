@@ -24,6 +24,7 @@ namespace Astra
     {
         Move move;
         Score score;
+        Score avg_score;
         int seldepth;
         U64 nodes;
         PVLine pv;
@@ -53,8 +54,7 @@ namespace Astra
         Move bestMove();
 
     private:
-        int multipv_idx;
-        int root_depth;
+        int multipv_idx, root_depth;
 
         MoveList<RootMove> root_moves;
 
@@ -85,11 +85,10 @@ namespace Astra
 
     inline void Search::sortRootMoves(int offset)
     {
-        int num_root_moves = root_moves.size();
-        for (int i = offset; i < num_root_moves; i++)
+        for (int i = offset; i < root_moves.size(); i++)
         {
             int best = i;
-            for (int j = i + 1; j < num_root_moves; j++)
+            for (int j = i + 1; j < root_moves.size(); j++)
                 if (root_moves[j].score > root_moves[i].score)
                     best = j;
 

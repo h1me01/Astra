@@ -21,7 +21,6 @@ using avx_type = __m512i;
 #define avx_max_epi16 _mm512_max_epi16
 #define avx_min_epi16 _mm512_min_epi16
 #define avx_set1_epi16 _mm512_set1_epi16
-#define avx_mullo_epi16 _mm512_mullo_epi16
 
 #elif defined(__AVX2__) || defined(__AVX__)
 using avx_type = __m256i;
@@ -33,7 +32,6 @@ using avx_type = __m256i;
 #define avx_max_epi16 _mm256_max_epi16
 #define avx_min_epi16 _mm256_min_epi16
 #define avx_set1_epi16 _mm256_set1_epi16
-#define avx_mullo_epi16 _mm256_mullo_epi16
 
 #endif
 
@@ -115,17 +113,18 @@ namespace NNUE
         }
 
         const auto output = horizontalSum(res) + fc2_biases[0];
+
         return output / 128 / 32;
 #else
         int32_t output = fc2_biases[0];
 
         for (int j = 0; j < HIDDEN_SIZE; j++)
         {
-            output += fc2_weights[j] * std::clamp(int32_t(acc.data[stm][j]), 0, 255);
-            output += fc2_weights[HIDDEN_SIZE + j] * std::clamp(int32_t(acc.data[~stm][j]), 0, 255);
+            output += fc2_weights[j] * std::clamp(int32_t(acc.data[stm][j]), 0, 32 * 127);
+            output += fc2_weights[HIDDEN_SIZE + j] * std::clamp(int32_t(acc.data[~stm][j]), 0, 32 * 127);
         }
 
-        return output / 255 / 64;
+        return output / 128 / 32;
 #endif
     }
 
