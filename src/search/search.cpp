@@ -30,10 +30,10 @@ namespace Astra
 
     bool Search::isLimitReached(int depth) const
     {
-        if (limit.infinite)
-            return false;
         if (threads.isStopped())
             return true;
+        if (limit.infinite)
+            return false;
         if (limit.nodes != 0 && nodes >= limit.nodes)
             return true;
         if (depth > limit.depth)
@@ -134,19 +134,19 @@ namespace Astra
 
             for (multipv_idx = 0; multipv_idx < multipv_size; multipv_idx++)
                 aspSearch(root_depth, ss);
-    
+
             if (isLimitReached(root_depth))
                 break;
+
+            // print final pv info if main thread
+            for (multipv_idx = 0; multipv_idx < multipv_size && id == 0; multipv_idx++)
+                printUciInfo();
 
             Score result = root_moves[0].score;
             bestmove = root_moves[0].move;
 
             if (id == 0 && root_depth >= 5 && limit.time.optimum)
             {
-                // print final pv info
-                for (multipv_idx = 0; multipv_idx < multipv_size; multipv_idx++)
-                    printUciInfo();
-
                 int64_t elapsed = tm.elapsedTime();
 
                 // adjust time optimum based on stability
