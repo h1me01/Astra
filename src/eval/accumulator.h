@@ -16,14 +16,13 @@ namespace NNUE
 
     struct Accumulator
     {
+        bool initialized[NUM_COLORS]{false, false};
         alignas(ALIGNMENT) int16_t data[NUM_COLORS][HIDDEN_SIZE];
     };
 
     class Accumulators
     {
     public:
-        bool acc_initialized[NUM_COLORS]{false, false};
-
         Accumulators() : index(0) {}
 
         int size() const { return index; }
@@ -34,21 +33,25 @@ namespace NNUE
         {
             index++;
             assert(index < MAX_PLY + 1);
-            acc_initialized[WHITE] = acc_initialized[BLACK] = false;
+
+            accumulators[index].initialized[WHITE] = false;
+            accumulators[index].initialized[BLACK] = false;
         }
 
         void pop()
         {
             assert(index > 0);
             index--;
-            acc_initialized[WHITE] = acc_initialized[BLACK] = true;
+
+            accumulators[index].initialized[WHITE] = true;
+            accumulators[index].initialized[BLACK] = true;
         }
 
         Accumulator &back(Color c)
         {
-            if (c != BLACK && !acc_initialized[WHITE])
+            if (c != BLACK)
                 copyAcc(WHITE);
-            if (c != WHITE && !acc_initialized[BLACK])
+            if (c != WHITE)
                 copyAcc(BLACK);
 
             return accumulators[index];
@@ -57,11 +60,11 @@ namespace NNUE
     private:
         void copyAcc(Color c)
         {
-            if (!acc_initialized[c])
-            {
-                std::memcpy(accumulators[index].data[c], accumulators[index - 1].data[c], sizeof(int16_t) * HIDDEN_SIZE);
-                acc_initialized[c] = true;
-            }
+            if (accumulators[index].initialized[c])
+                return;
+
+            std::memcpy(accumulators[index].data[c], accumulators[index - 1].data[c], sizeof(int16_t) * HIDDEN_SIZE);
+            accumulators[index].initialized[c] = true;
         }
 
         int index;

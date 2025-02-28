@@ -34,6 +34,7 @@ namespace NNUE
 
         Accumulator &acc = board.getAccumulator();
         std::memcpy(acc.data[view], entry.acc.data[view], sizeof(int16_t) * HIDDEN_SIZE);
+        acc.initialized[view] = true;
     }
 
     void AccumulatorTable::reset()

@@ -248,7 +248,6 @@ namespace Chess
                     NNUE::nnue.movePiece(getAccumulator(~stm), p, from, to, kingSq(~stm), ~stm);
 
                     accumulator_table->refresh(stm, *this);
-                    accumulators.acc_initialized[stm] = true;
                     return;
                 }
             }
