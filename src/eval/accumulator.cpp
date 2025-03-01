@@ -24,17 +24,16 @@ namespace NNUE
                 U64 to_clear = entry_bb & ~pc_bb;
 
                 while (to_set)
-                    nnue.putPiece(entry.acc, p, popLsb(to_set), ksq, view);
+                    nnue.putPiece(entry.acc, entry.acc, p, popLsb(to_set), ksq, view);
 
                 while (to_clear)
-                    nnue.removePiece(entry.acc, p, popLsb(to_clear), ksq, view);
+                    nnue.removePiece(entry.acc, entry.acc, p, popLsb(to_clear), ksq, view);
 
                 entry.piece_bb[c][pt] = pc_bb;
             }
 
         Accumulator &acc = board.getAccumulator();
         std::memcpy(acc.data[view], entry.acc.data[view], sizeof(int16_t) * HIDDEN_SIZE);
-        acc.initialized[view] = true;
     }
 
     void AccumulatorTable::reset()
@@ -42,7 +41,8 @@ namespace NNUE
         for (Color c : {WHITE, BLACK})
             for (int i = 0; i < 2 * BUCKET_SIZE; i++)
             {
-                std::memcpy(entries[c][i].acc.data[c], nnue.fc1_biases, sizeof(int16_t) * HIDDEN_SIZE);
+                std::memcpy(entries[c][i].acc.data[WHITE], nnue.fc1_biases, sizeof(int16_t) * HIDDEN_SIZE);
+                std::memcpy(entries[c][i].acc.data[BLACK], nnue.fc1_biases, sizeof(int16_t) * HIDDEN_SIZE);
                 std::memset(entries[c][i].piece_bb, 0, sizeof(entries[c][i].piece_bb));
             }
     }

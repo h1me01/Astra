@@ -86,9 +86,9 @@ namespace Chess
         U64 getNonPawnHash(Color c) const;
         U64 getThreats(PieceType pt) const;
         Square kingSq(Color c) const;
-        NNUE::Accumulator &getAccumulator(Color c = BOTH_COLORS);
+        NNUE::Accumulator &getAccumulator();
 
-        void refreshAccumulator();
+        void resetAccumulator();
         void resetPly();
 
         U64 diagSliders(Color c) const;
@@ -125,8 +125,8 @@ namespace Chess
         NNUE::Accumulators accumulators;
         std::unique_ptr<NNUE::AccumulatorTable> accumulator_table = std::make_unique<NNUE::AccumulatorTable>(NNUE::AccumulatorTable());
 
-        void putPiece(Piece p, Square s, bool update_nnue);
-        void removePiece(Square s, bool update_nnue);
+        void putPiece(Piece pc, Square sq, bool update_nnue);
+        void removePiece(Square sq, bool update_nnue);
         void movePiece(Square from, Square to, bool update_nnue);
 
         void initThreats();
@@ -151,7 +151,7 @@ namespace Chess
 
     inline Square Board::kingSq(Color c) const { return lsb(getPieceBB(c, KING)); }
 
-    inline NNUE::Accumulator &Board::getAccumulator(Color c) { return accumulators.back(c); }
+    inline NNUE::Accumulator &Board::getAccumulator() { return accumulators.back(); }
 
     inline void Board::resetPly() { curr_ply = 0; }
 
@@ -199,44 +199,59 @@ namespace Chess
         return phase;
     }
 
-    inline void Board::putPiece(Piece p, Square psq, bool update_nnue)
+    inline void Board::putPiece(Piece pc, Square sq, bool update_nnue)
     {
-        assert(p != NO_PIECE);
+        assert(pc != NO_PIECE);
 
-        board[psq] = p;
-        piece_bb[p] |= SQUARE_BB[psq];
-        history[curr_ply].occ[colorOf(p)] ^= SQUARE_BB[psq];
+        board[sq] = pc;
+        piece_bb[pc] |= SQUARE_BB[sq];
+        history[curr_ply].occ[colorOf(pc)] ^= SQUARE_BB[sq];
 
         if (update_nnue)
-            NNUE::nnue.putPiece(getAccumulator(), p, psq, kingSq(WHITE), kingSq(BLACK));
+        {
+            NNUE::Accumulator &acc = getAccumulator();
+            NNUE::Accumulator &input = accumulators[accumulators.size() - 1];
+
+            NNUE::nnue.putPiece(acc, input, pc, sq, kingSq(WHITE), WHITE);
+            NNUE::nnue.putPiece(acc, input, pc, sq, kingSq(BLACK), BLACK);
+        }
     }
 
-    inline void Board::removePiece(Square s, bool update_nnue)
+    inline void Board::removePiece(Square sq, bool update_nnue)
     {
-        Piece p = board[s];
+        Piece p = board[sq];
         assert(p != NO_PIECE);
 
-        piece_bb[p] ^= SQUARE_BB[s];
-        board[s] = NO_PIECE;
-        history[curr_ply].occ[colorOf(p)] ^= SQUARE_BB[s];
+        piece_bb[p] ^= SQUARE_BB[sq];
+        board[sq] = NO_PIECE;
+        history[curr_ply].occ[colorOf(p)] ^= SQUARE_BB[sq];
 
         if (update_nnue)
-            NNUE::nnue.removePiece(getAccumulator(), p, s, kingSq(WHITE), kingSq(BLACK));
+        {
+            NNUE::Accumulator &acc = getAccumulator();
+            NNUE::Accumulator &input = accumulators[accumulators.size() - 1];
+
+            NNUE::nnue.removePiece(acc, input, p, sq, kingSq(WHITE), WHITE);
+            NNUE::nnue.removePiece(acc, input, p, sq, kingSq(BLACK), BLACK);
+        }
     }
 
     inline void Board::movePiece(Square from, Square to, bool update_nnue)
     {
-        Piece p = board[from];
-        assert(p != NO_PIECE);
+        Piece pc = board[from];
+        assert(pc != NO_PIECE);
 
-        piece_bb[p] ^= SQUARE_BB[from] | SQUARE_BB[to];
-        board[to] = p;
+        piece_bb[pc] ^= SQUARE_BB[from] | SQUARE_BB[to];
+        board[to] = pc;
         board[from] = NO_PIECE;
-        history[curr_ply].occ[colorOf(p)] ^= SQUARE_BB[from] | SQUARE_BB[to];
+        history[curr_ply].occ[colorOf(pc)] ^= SQUARE_BB[from] | SQUARE_BB[to];
 
         if (update_nnue)
         {
-            if (typeOf(p) == KING)
+            NNUE::Accumulator &acc = getAccumulator();
+            NNUE::Accumulator &input = accumulators[accumulators.size() - 1];
+
+            if (typeOf(pc) == KING)
             {
                 Square rel_from = relativeSquare(stm, from);
                 Square rel_to = relativeSquare(stm, to);
@@ -245,14 +260,14 @@ namespace Chess
                 if (NNUE::KING_BUCKET[rel_from] != NNUE::KING_BUCKET[rel_to] || fileOf(from) + fileOf(to) == 7)
                 {
                     // other side doesn't need a refresh
-                    NNUE::nnue.movePiece(getAccumulator(~stm), p, from, to, kingSq(~stm), ~stm);
-
+                    NNUE::nnue.movePiece(acc, input, pc, from, to, kingSq(~stm), ~stm);
                     accumulator_table->refresh(stm, *this);
                     return;
                 }
             }
 
-            NNUE::nnue.movePiece(getAccumulator(), p, from, to, kingSq(WHITE), kingSq(BLACK));
+            NNUE::nnue.movePiece(acc, input, pc, from, to, kingSq(WHITE), WHITE);
+            NNUE::nnue.movePiece(acc, input, pc, from, to, kingSq(BLACK), BLACK);
         }
     }
 

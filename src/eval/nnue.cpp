@@ -128,73 +128,72 @@ namespace NNUE
 #endif
     }
 
-    void NNUE::putPiece(Accumulator &acc, Piece pc, Square psq, Square ksq, Color view) const
+    void NNUE::putPiece(Accumulator &acc, Accumulator &input, Piece pc, Square psq, Square ksq, Color view) const
     {
         const int idx = index(psq, ksq, pc, view);
+        const bool initialized = acc.initialized[view];
 
 #if defined(__AVX512F__) || defined(__AVX2__) || defined(__AVX__)
         avx_type *acc_view = (avx_type *)acc.data[view];
-        const auto weights = (const avx_type *)(fc1_weights + idx * HIDDEN_SIZE);
+        const avx_type *input_view = initialized ? acc_view : (avx_type *)input.data[view];
 
+        const auto weights = (const avx_type *)(fc1_weights + idx * HIDDEN_SIZE);
         for (int i = 0; i < HIDDEN_SIZE / div; i++)
-            acc_view[i] = avx_add_epi16(acc_view[i], weights[i]);
+            acc_view[i] = avx_add_epi16(input_view[i], weights[i]);
+
 #else
         for (int i = 0; i < HIDDEN_SIZE; i++)
-            acc.data[view][i] += fc1_weights[idx * HIDDEN_SIZE + i];
+            acc.data[view][i] = (initialized ? acc.data[view][i] : input.data[view][i]) + fc1_weights[idx * HIDDEN_SIZE + i];
 #endif
+
+        acc.initialized[view] = true;
     }
 
-    void NNUE::putPiece(Accumulator &acc, Piece pc, Square psq, Square wksq, Square bksq) const
-    {
-        putPiece(acc, pc, psq, wksq, WHITE);
-        putPiece(acc, pc, psq, bksq, BLACK);
-    }
-
-    void NNUE::removePiece(Accumulator &acc, Piece pc, Square psq, Square ksq, Color view) const
+    void NNUE::removePiece(Accumulator &acc, Accumulator &input, Piece pc, Square psq, Square ksq, Color view) const
     {
         const int idx = index(psq, ksq, pc, view);
+        const bool initialized = acc.initialized[view];
 
 #if defined(__AVX512F__) || defined(__AVX2__) || defined(__AVX__)
         avx_type *acc_view = (avx_type *)acc.data[view];
-        const auto weights = (const avx_type *)(fc1_weights + idx * HIDDEN_SIZE);
+        const avx_type *input_view = initialized ? acc_view : (avx_type *)input.data[view];
 
+        const auto weights = (const avx_type *)(fc1_weights + idx * HIDDEN_SIZE);
         for (int i = 0; i < HIDDEN_SIZE / div; i++)
-            acc_view[i] = avx_sub_epi16(acc_view[i], weights[i]);
+            acc_view[i] = avx_sub_epi16(input_view[i], weights[i]);
 #else
         for (int i = 0; i < HIDDEN_SIZE; i++)
-            acc.data[view][i] -= fc1_weights[idx * HIDDEN_SIZE + i];
+            acc.data[view][i] = (initialized ? acc.data[view][i] : input.data[view][i]) - fc1_weights[idx * HIDDEN_SIZE + i];
 #endif
+
+        acc.initialized[view] = true;
     }
 
-    void NNUE::removePiece(Accumulator &acc, Piece pc, Square psq, Square wksq, Square bksq) const
-    {
-        removePiece(acc, pc, psq, wksq, WHITE);
-        removePiece(acc, pc, psq, bksq, BLACK);
-    }
-
-    void NNUE::movePiece(Accumulator &acc, Piece pc, Square from, Square to, Square ksq, Color view) const
+    void NNUE::movePiece(Accumulator &acc, Accumulator &input, Piece pc, Square from, Square to, Square ksq, Color view) const
     {
         const int from_idx = index(from, ksq, pc, view);
         const int to_idx = index(to, ksq, pc, view);
+        const bool initialized = acc.initialized[view];
 
 #if defined(__AVX512F__) || defined(__AVX2__) || defined(__AVX__)
         avx_type *acc_view = (avx_type *)acc.data[view];
+        const avx_type *input_view = initialized ? acc_view : (avx_type *)input.data[view];
 
         const auto weights_from = (const avx_type *)(fc1_weights + from_idx * HIDDEN_SIZE);
         const auto weights_to = (const avx_type *)(fc1_weights + to_idx * HIDDEN_SIZE);
 
         for (int i = 0; i < HIDDEN_SIZE / div; i++)
-            acc_view[i] = avx_add_epi16(acc_view[i], avx_sub_epi16(weights_to[i], weights_from[i]));
+            acc_view[i] = avx_add_epi16(input_view[i], avx_sub_epi16(weights_to[i], weights_from[i]));
+
 #else
         for (int i = 0; i < HIDDEN_SIZE; i++)
-            acc.data[view][i] += fc1_weights[to_idx * HIDDEN_SIZE + i] - fc1_weights[from_idx * HIDDEN_SIZE + i];
+        {
+            int16_t diff = fc1_weights[to_idx * HIDDEN_SIZE + i] - fc1_weights[from_idx * HIDDEN_SIZE + i];
+            acc.data[view][i] = (initialized ? acc.data[view][i] : input.data[view][i]) + diff;
+        }
 #endif
-    }
 
-    void NNUE::movePiece(Accumulator &acc, Piece pc, Square from, Square to, Square wksq, Square bksq) const
-    {
-        movePiece(acc, pc, from, to, wksq, WHITE);
-        movePiece(acc, pc, from, to, bksq, BLACK);
+        acc.initialized[view] = true;
     }
 
     // global variable

@@ -16,7 +16,7 @@ namespace NNUE
 
     struct Accumulator
     {
-        bool initialized[NUM_COLORS]{false, false};
+        bool initialized[NUM_COLORS] = {false, false};
         alignas(ALIGNMENT) int16_t data[NUM_COLORS][HIDDEN_SIZE];
     };
 
@@ -29,7 +29,7 @@ namespace NNUE
 
         void clear() { index = 0; }
 
-        void push()
+        void increment()
         {
             index++;
             assert(index < MAX_PLY + 1);
@@ -38,35 +38,19 @@ namespace NNUE
             accumulators[index].initialized[BLACK] = false;
         }
 
-        void pop()
+        void decrement()
         {
             assert(index > 0);
             index--;
 
-            accumulators[index].initialized[WHITE] = true;
-            accumulators[index].initialized[BLACK] = true;
+            accumulators[index].initialized[WHITE] = false;
+            accumulators[index].initialized[BLACK] = false;
         }
 
-        Accumulator &back(Color c)
-        {
-            if (c != BLACK)
-                copyAcc(WHITE);
-            if (c != WHITE)
-                copyAcc(BLACK);
-
-            return accumulators[index];
-        }
+        Accumulator &back() { return accumulators[index]; }
+        Accumulator &operator[](int idx) { return accumulators[idx]; }
 
     private:
-        void copyAcc(Color c)
-        {
-            if (accumulators[index].initialized[c])
-                return;
-
-            std::memcpy(accumulators[index].data[c], accumulators[index - 1].data[c], sizeof(int16_t) * HIDDEN_SIZE);
-            accumulators[index].initialized[c] = true;
-        }
-
         int index;
         std::array<Accumulator, MAX_PLY + 1> accumulators{};
     };

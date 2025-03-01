@@ -1,4 +1,3 @@
-#include <iostream>
 #include <cassert>
 #include "board.h"
 
@@ -94,7 +93,7 @@ namespace Chess
         info.hash ^= Zobrist::side;
 
         if (update_nnue)
-            refreshAccumulator();
+            resetAccumulator();
     }
 
     Board &Board::operator=(const Board &other)
@@ -186,7 +185,7 @@ namespace Chess
         return fen.str();
     }
 
-    void Board::refreshAccumulator()
+    void Board::resetAccumulator()
     {
         accumulators.clear();
         accumulator_table->reset();
@@ -412,7 +411,7 @@ namespace Chess
         info.hash ^= Zobrist::side;
 
         if (update_nnue)
-            accumulators.push();
+            accumulators.increment();
 
         if (mt == CASTLING)
         {
@@ -522,7 +521,7 @@ namespace Chess
         assert(pieceAt(from) == NO_PIECE || mt == CASTLING);
 
         if (accumulators.size())
-            accumulators.pop();
+            accumulators.decrement();
 
         if (isProm(m))
         {

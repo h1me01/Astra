@@ -1,4 +1,3 @@
-#include <iostream>
 #include "uci.h"
 #include "bench.h"
 #include "search/threads.h"
@@ -239,7 +238,7 @@ namespace UCI
                 }
             }
 
-        board.refreshAccumulator();
+        board.resetAccumulator();
     }
 
     void Uci::go(std::istringstream &is)

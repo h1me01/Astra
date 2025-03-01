@@ -1,4 +1,3 @@
-#include <iostream>
 #include "misc.h"
 
 namespace Chess
