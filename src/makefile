@@ -27,8 +27,8 @@ CHESS_SRC := chess/attacks.cpp \
              chess/zobrist.cpp \
              chess/cuckoo.cpp
 
-EVAL_SRC := nn/nnue.cpp \
-            nn/accumulator.cpp
+EVAL_SRC := net/nnue.cpp \
+            net/accumulator.cpp
 
 SEARCH_SRC := search/history.cpp \
               search/movepicker.cpp \

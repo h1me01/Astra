@@ -5,8 +5,7 @@
 #include "syzygy.h"
 #include "threads.h"
 #include "movepicker.h"
-
-#include "../nn/nnue.h"
+#include "../net/nnue.h"
 #include "../uci.h"
 
 namespace Astra

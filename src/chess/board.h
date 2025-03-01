@@ -6,7 +6,7 @@
 #include "zobrist.h"
 #include "attacks.h"
 #include "cuckoo.h"
-#include "../nn/accumulator.h"
+#include "../net/accumulator.h"
 
 namespace Chess
 {
