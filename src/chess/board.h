@@ -29,7 +29,7 @@ namespace Chess
         bool any(const Color c) const { return kingSide(c) || queenSide(c); }
         bool any() const { return any(WHITE) || any(BLACK); }
 
-        bool onCastleSquare(Square s) const { return mask & SQUARE_BB[s]; }
+        bool onCastleSquare(Square sq) const { return mask & SQUARE_BB[sq]; }
 
         int getHashIndex() const
         {
@@ -77,7 +77,7 @@ namespace Chess
         std::string getFen() const;
 
         U64 getPieceBB(Color c, PieceType pt) const;
-        Piece pieceAt(Square s) const;
+        Piece pieceAt(Square sq) const;
         Color getTurn() const;
         int getPly() const;
         int halfMoveClock() const;
@@ -94,7 +94,7 @@ namespace Chess
         U64 diagSliders(Color c) const;
         U64 orthSliders(Color c) const;
         U64 occupancy(Color c) const;
-        U64 attackersTo(Color c, Square s, U64 occ) const;
+        U64 attackersTo(Color c, Square sq, U64 occ) const;
         U64 keyAfter(Move m) const;
 
         void makeMove(const Move &m, bool update_nnue = false);
@@ -139,7 +139,7 @@ namespace Chess
         return piece_bb[makePiece(c, pt)];
     }
 
-    inline Piece Board::pieceAt(Square s) const { return board[s]; }
+    inline Piece Board::pieceAt(Square sq) const { return board[sq]; }
     inline Color Board::getTurn() const { return stm; }
     inline int Board::getPly() const { return curr_ply; }
 

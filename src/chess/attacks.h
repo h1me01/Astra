@@ -183,45 +183,45 @@ namespace Chess
 
     void initLookUpTables();
 
-    constexpr U64 getPawnAttacks(Color c, Square s) { return PAWN_ATTACKS[c][s]; }
+    constexpr U64 getPawnAttacks(Color c, Square sq) { return PAWN_ATTACKS[c][sq]; }
 
-    constexpr U64 getKnightAttacks(Square s) { return KNIGHT_ATTACKS[s]; }
+    constexpr U64 getKnightAttacks(Square sq) { return KNIGHT_ATTACKS[sq]; }
 
-    constexpr U64 getKingAttacks(Square s) { return KING_ATTACKS[s]; }
+    constexpr U64 getKingAttacks(Square sq) { return KING_ATTACKS[sq]; }
 
-    inline U64 getRookAttacks(Square s, const U64 occ)
+    inline U64 getRookAttacks(Square sq, const U64 occ)
     {
 #ifdef __BMI2__
-        return ROOK_ATTACKS[s][_pext_u64(occ, ROOK_MASKS[s])];
+        return ROOK_ATTACKS[sq][_pext_u64(occ, ROOK_MASKS[sq])];
 #else
-        const U64 idx = (occ & ROOK_MASKS[s]) * ROOK_MAGICS[s] >> ROOK_SHIFTS[s];
-        return ROOK_ATTACKS[s][idx];
+        const U64 idx = (occ & ROOK_MASKS[sq]) * ROOK_MAGICS[sq] >> ROOK_SHIFTS[sq];
+        return ROOK_ATTACKS[sq][idx];
 #endif
     }
 
-    inline U64 getBishopAttacks(Square s, const U64 occ)
+    inline U64 getBishopAttacks(Square sq, const U64 occ)
     {
 #ifdef __BMI2__
-        return BISHOP_ATTACKS[s][_pext_u64(occ, BISHOP_MASKS[s])];
+        return BISHOP_ATTACKS[sq][_pext_u64(occ, BISHOP_MASKS[sq])];
 #else
-        const U64 idx = (occ & BISHOP_MASKS[s]) * BISHOP_MAGICS[s] >> BISHOP_SHIFTS[s];
-        return BISHOP_ATTACKS[s][idx];
+        const U64 idx = (occ & BISHOP_MASKS[sq]) * BISHOP_MAGICS[sq] >> BISHOP_SHIFTS[sq];
+        return BISHOP_ATTACKS[sq][idx];
 #endif
     }
 
-    inline U64 getAttacks(PieceType pt, Square s, const U64 occ)
+    inline U64 getAttacks(PieceType pt, Square sq, const U64 occ)
     {
         switch (pt)
         {
         case ROOK:
-            return getRookAttacks(s, occ);
+            return getRookAttacks(sq, occ);
         case BISHOP:
-            return getBishopAttacks(s, occ);
+            return getBishopAttacks(sq, occ);
         case QUEEN:
-            return getRookAttacks(s, occ) | getBishopAttacks(s, occ);
+            return getRookAttacks(sq, occ) | getBishopAttacks(sq, occ);
         case KNIGHT:
         case KING:
-            return PSEUDO_LEGAL_ATTACKS[pt][s];
+            return PSEUDO_LEGAL_ATTACKS[pt][sq];
         default:
             return 0;
         }

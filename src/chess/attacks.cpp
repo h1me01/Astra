@@ -11,11 +11,11 @@ namespace Chess
     U64 ROOK_ATTACKS[NUM_SQUARES][4096];
     U64 BISHOP_ATTACKS[NUM_SQUARES][512];
 
-    U64 slidingAttacks(Square s, const U64 occ, const U64 mask)
+    U64 slidingAttacks(Square sq, const U64 occ, const U64 mask)
     {
         // hyperbola quintessence algorithm
         const U64 mask_occ = mask & occ;
-        return ((mask_occ - SQUARE_BB[s] * 2) ^ (reverse(reverse(mask_occ) - reverse(SQUARE_BB[s]) * 2))) & mask;
+        return ((mask_occ - SQUARE_BB[sq] * 2) ^ (reverse(reverse(mask_occ) - reverse(SQUARE_BB[sq]) * 2))) & mask;
     }
 
     void initRookAttacks()

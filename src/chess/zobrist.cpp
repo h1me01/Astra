@@ -26,11 +26,11 @@ namespace Chess::Zobrist
         side = rng.rand<U64>();
     }
 
-    U64 getPsq(Piece p, Square sq)
+    U64 getPsq(Piece pc, Square sq)
     {
-        assert(p >= WHITE_PAWN && p <= BLACK_KING);
+        assert(pc >= WHITE_PAWN && pc <= BLACK_KING);
         assert(sq >= a1 && sq <= h8);
-        return psq[p][sq];
+        return psq[pc][sq];
     }
 
     U64 getCastle(int idx)

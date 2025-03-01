@@ -59,21 +59,21 @@ namespace Chess
 
     inline Square &operator++(Square &s) { return s = Square(int(s) + 1); }
 
-    constexpr Square operator+(Square s, Direction d) { return Square(int(s) + int(d)); }
-    constexpr Square operator-(Square s, Direction d) { return Square(int(s) - int(d)); }
+    constexpr Square operator+(Square sq, Direction d) { return Square(int(sq) + int(d)); }
+    constexpr Square operator-(Square sq, Direction d) { return Square(int(sq) - int(d)); }
 
-    constexpr Rank rankOf(Square s) { return Rank(s >> 3); }
-    constexpr File fileOf(Square s) { return File(s & 0b111); }
+    constexpr Rank rankOf(Square sq) { return Rank(sq >> 3); }
+    constexpr File fileOf(Square sq) { return File(sq & 0b111); }
 
     // gets the diagonal (a1 to h8) of the square
-    constexpr int diagOf(Square s) { return 7 + rankOf(s) - fileOf(s); }
+    constexpr int diagOf(Square sq) { return 7 + rankOf(sq) - fileOf(sq); }
     // gets the anti-diagonal (h1 to a8) of the square
-    constexpr int antiDiagOf(Square s) { return rankOf(s) + fileOf(s); }
+    constexpr int antiDiagOf(Square sq) { return rankOf(sq) + fileOf(sq); }
 
     inline Square &operator+=(Square &s, Direction d) { return s = s + d; }
     inline Square &operator-=(Square &s, Direction d) { return s = s - d; }
 
-    constexpr Square relativeSquare(Color c, Square s) { return c == WHITE ? s : Square(s ^ 56); }
+    constexpr Square relativeSquare(Color c, Square sq) { return c == WHITE ? sq : Square(sq ^ 56); }
 
     constexpr Rank relativeRank(Color c, Rank r) { return c == WHITE ? r : Rank(RANK_8 - r); }
 

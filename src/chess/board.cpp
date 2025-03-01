@@ -193,13 +193,13 @@ namespace Chess
         accumulator_table->refresh(BLACK, *this);
     }
 
-    U64 Board::attackersTo(Color c, Square s, const U64 occ) const
+    U64 Board::attackersTo(Color c, Square sq, const U64 occ) const
     {
-        U64 attacks = getPawnAttacks(~c, s) & getPieceBB(c, PAWN);
-        attacks |= getKnightAttacks(s) & getPieceBB(c, KNIGHT);
-        attacks |= getBishopAttacks(s, occ) & diagSliders(c);
-        attacks |= getRookAttacks(s, occ) & orthSliders(c);
-        attacks |= getKingAttacks(s) & getPieceBB(c, KING);
+        U64 attacks = getPawnAttacks(~c, sq) & getPieceBB(c, PAWN);
+        attacks |= getKnightAttacks(sq) & getPieceBB(c, KNIGHT);
+        attacks |= getBishopAttacks(sq, occ) & diagSliders(c);
+        attacks |= getRookAttacks(sq, occ) & orthSliders(c);
+        attacks |= getKingAttacks(sq) & getPieceBB(c, KING);
         return attacks;
     }
 
