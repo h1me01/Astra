@@ -210,7 +210,7 @@ namespace Chess
         if (update_nnue)
         {
             NNUE::Accumulator &acc = getAccumulator();
-            NNUE::Accumulator &input = accumulators[accumulators.size() - 1];
+            NNUE::Accumulator &input = accumulators[accumulators.getIndex() - 1];
 
             NNUE::nnue.putPiece(acc, input, pc, sq, kingSq(WHITE), WHITE);
             NNUE::nnue.putPiece(acc, input, pc, sq, kingSq(BLACK), BLACK);
@@ -229,7 +229,7 @@ namespace Chess
         if (update_nnue)
         {
             NNUE::Accumulator &acc = getAccumulator();
-            NNUE::Accumulator &input = accumulators[accumulators.size() - 1];
+            NNUE::Accumulator &input = accumulators[accumulators.getIndex() - 1];
 
             NNUE::nnue.removePiece(acc, input, p, sq, kingSq(WHITE), WHITE);
             NNUE::nnue.removePiece(acc, input, p, sq, kingSq(BLACK), BLACK);
@@ -249,7 +249,7 @@ namespace Chess
         if (update_nnue)
         {
             NNUE::Accumulator &acc = getAccumulator();
-            NNUE::Accumulator &input = accumulators[accumulators.size() - 1];
+            NNUE::Accumulator &input = accumulators[accumulators.getIndex() - 1];
 
             if (typeOf(pc) == KING)
             {

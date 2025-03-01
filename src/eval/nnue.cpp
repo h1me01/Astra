@@ -92,7 +92,7 @@ namespace NNUE
     {
 #if defined(__AVX512F__) || defined(__AVX2__) || defined(__AVX__)
         constexpr avx_type zero{};
-        const avx_type max_clipped_value = avx_set1_epi16(32 * 255);
+        const avx_type max_clipped_value = avx_set1_epi16(CRELU_CLIP);
 
         const auto acc_stm = (const avx_type *)acc.data[stm];
         const auto acc_opp = (const avx_type *)acc.data[~stm];
@@ -120,8 +120,8 @@ namespace NNUE
 
         for (int j = 0; j < HIDDEN_SIZE; j++)
         {
-            output += fc2_weights[j] * std::clamp(int32_t(acc.data[stm][j]), 0, 32 * 255);
-            output += fc2_weights[HIDDEN_SIZE + j] * std::clamp(int32_t(acc.data[~stm][j]), 0, 32 * 255);
+            output += fc2_weights[j] * std::clamp(int32_t(acc.data[stm][j]), 0, CRELU_CLIP);
+            output += fc2_weights[HIDDEN_SIZE + j] * std::clamp(int32_t(acc.data[~stm][j]), 0, CRELU_CLIP);
         }
 
         return output / 128 / 32;

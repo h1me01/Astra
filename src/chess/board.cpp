@@ -520,7 +520,7 @@ namespace Chess
         assert(pieceAt(to) != NO_PIECE);
         assert(pieceAt(from) == NO_PIECE || mt == CASTLING);
 
-        if (accumulators.size())
+        if (accumulators.getIndex())
             accumulators.decrement();
 
         if (isProm(m))

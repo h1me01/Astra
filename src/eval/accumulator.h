@@ -25,7 +25,7 @@ namespace NNUE
     public:
         Accumulators() : index(0) {}
 
-        int size() const { return index; }
+        int getIndex() const { return index; }
 
         void clear() { index = 0; }
 

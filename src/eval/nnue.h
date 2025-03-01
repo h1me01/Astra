@@ -28,6 +28,8 @@ namespace NNUE
     constexpr int HIDDEN_SIZE = 1024;
     constexpr int OUTPUT_SIZE = 1;
 
+    constexpr int CRELU_CLIP = 32 * 255;
+
     // clang-format off
     constexpr int KING_BUCKET[NUM_SQUARES]
     {
