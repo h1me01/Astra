@@ -4,10 +4,11 @@
 namespace NNUE
 {
 
-    void AccumulatorTable::refresh(Color view, Board &board)
+    void AccumTable::refresh(Color view, Board &board)
     {
         const Square ksq = board.kingSq(view);
-        AccumulatorEntry &entry = entries[view][fileOf(ksq) > 3 * BUCKET_SIZE + KING_BUCKET[relativeSquare(view, ksq)]];
+        const int ksq_idx = KING_BUCKET[relativeSquare(view, ksq)];
+        AccumEntry &entry = entries[view][(fileOf(ksq) > 3) * BUCKET_SIZE + ksq_idx];
 
         for (Color c : {WHITE, BLACK})
             for (int i = PAWN; i <= KING; i++)
@@ -29,13 +30,13 @@ namespace NNUE
                 entry.piece_bb[c][pt] = pc_bb;
             }
 
-        Accumulator &acc = board.getAccumulator();
-        acc.initialized[view] = true;
-        
+        Accum &acc = board.getAccumulator();
+        acc.init[view] = true;
+
         memcpy(acc.data[view], entry.acc.data[view], sizeof(int16_t) * HIDDEN_SIZE);
     }
 
-    void AccumulatorTable::reset()
+    void AccumTable::reset()
     {
         for (Color c : {WHITE, BLACK})
             for (int i = 0; i < 2 * BUCKET_SIZE; i++)

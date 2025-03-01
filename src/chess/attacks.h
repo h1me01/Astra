@@ -1,5 +1,4 @@
-#ifndef ATTACKS_H
-#define ATTACKS_H
+#pragma once
 
 #include "bitboard.h"
 #include "types.h"
@@ -228,5 +227,3 @@ namespace Chess
     }
 
 } // namespace Chess
-
-#endif // ATTACKS_H

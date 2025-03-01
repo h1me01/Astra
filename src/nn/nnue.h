@@ -1,10 +1,10 @@
-#ifndef NNUE_H
-#define NNUE_H
+#pragma once
 
 #include <array>
 #include <cassert>
 #include <immintrin.h>
 #include <cstring>
+
 #include "../chess/types.h"
 
 #if defined(__AVX512F__)
@@ -17,7 +17,7 @@ using namespace Chess;
 
 namespace NNUE
 {
-    class Accumulator;
+    class Accum;
 
     // 2x(10x768->1024)->1
 
@@ -28,7 +28,7 @@ namespace NNUE
     constexpr int HIDDEN_SIZE = 1024;
     constexpr int OUTPUT_SIZE = 1;
 
-    constexpr int CRELU_CLIP = 32 * 255;
+    constexpr int CRELU_CLIP = 32 * 127;
 
     // clang-format off
     constexpr int KING_BUCKET[NUM_SQUARES]
@@ -53,16 +53,14 @@ namespace NNUE
 
         void init();
 
-        int32_t forward(const Accumulator &acc, Color stm) const;
+        int32_t forward(const Accum &acc, Color stm) const;
 
-        void putPiece(Accumulator &acc, Accumulator &input, Piece pc, Square psq, Square ksq, Color view) const;
-        void removePiece(Accumulator &acc, Accumulator &input, Piece pc, Square psq, Square ksq, Color view) const;
-        void movePiece(Accumulator &acc, Accumulator &input, Piece pc, Square from, Square to, Square ksq, Color view) const;
+        void putPiece(Accum &acc, Accum &prev, Piece pc, Square psq, Square ksq, Color view) const;
+        void removePiece(Accum &acc, Accum &prev, Piece pc, Square psq, Square ksq, Color view) const;
+        void movePiece(Accum &acc, Accum &prev, Piece pc, Square from, Square to, Square ksq, Color view) const;
     };
 
     // global variable
     extern NNUE nnue;
 
 } // namespace NNUE
-
-#endif // NNUE_H

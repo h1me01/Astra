@@ -1,6 +1,7 @@
 #include <cstring> // memcpy
-#include "attacks.h"
+
 #include "misc.h"
+#include "attacks.h"
 
 namespace Chess
 {

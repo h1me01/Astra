@@ -1,4 +1,5 @@
 #include <cassert>
+
 #include "board.h"
 
 namespace Chess

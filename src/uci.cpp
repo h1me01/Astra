@@ -1,12 +1,11 @@
+#include <cstring> // strncmp
+
 #include "uci.h"
 #include "bench.h"
-#include "search/threads.h"
 #include "chess/perft.h"
 #include "search/tune.h"
+#include "search/threads.h"
 #include "fathom/tbprobe.h"
-#include "eval/eval.h"
-
-#include <cstring> // strncmp
 
 namespace UCI
 {

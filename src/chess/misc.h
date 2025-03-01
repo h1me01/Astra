@@ -1,5 +1,4 @@
-#ifndef MISC_H
-#define MISC_H
+#pragma once
 
 #include <vector>
 #include <sstream>
@@ -78,5 +77,3 @@ namespace Chess
     constexpr Rank relativeRank(Color c, Rank r) { return c == WHITE ? r : Rank(RANK_8 - r); }
 
 } // namespace Chess
-
-#endif // MISC_H

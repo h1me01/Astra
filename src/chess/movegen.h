@@ -1,7 +1,7 @@
-#ifndef MOVEGEN_H
-#define MOVEGEN_H
+#pragma once
 
 #include <type_traits> // std::is_same
+
 #include "board.h"
 
 namespace Chess
@@ -268,5 +268,3 @@ namespace Chess
     };
 
 } // namespace Chess
-
-#endif // MOVEGEN_H

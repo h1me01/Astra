@@ -1,5 +1,4 @@
-#ifndef BITBOARD_H
-#define BITBOARD_H
+#pragma once
 
 #include "types.h"
 
@@ -127,5 +126,3 @@ namespace Chess
     }
 
 } // namespace Chess
-
-#endif // BITBOARD_H

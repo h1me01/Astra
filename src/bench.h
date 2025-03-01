@@ -1,5 +1,4 @@
-#ifndef BENCH_H
-#define BENCH_H
+#pragma once
 
 namespace Bench
 {
@@ -7,5 +6,3 @@ namespace Bench
     void bench(int depth);
 
 } // namespace Bench
-
-#endif // BENCH_H

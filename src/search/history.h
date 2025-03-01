@@ -1,5 +1,4 @@
-#ifndef HISTORY_H
-#define HISTORY_H
+#pragma once
 
 #include "stack.h"
 #include "../chess/board.h"
@@ -105,5 +104,3 @@ namespace Astra
     }
 
 } // namespace Astra
-
-#endif // HISTORY_H

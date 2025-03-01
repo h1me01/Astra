@@ -1,12 +1,12 @@
-#ifndef BOARD_H
-#define BOARD_H
+#pragma once
 
 #include <memory>
+
 #include "misc.h"
 #include "zobrist.h"
 #include "attacks.h"
 #include "cuckoo.h"
-#include "../eval/accumulator.h"
+#include "../nn/accumulator.h"
 
 namespace Chess
 {
@@ -86,7 +86,7 @@ namespace Chess
         U64 getNonPawnHash(Color c) const;
         U64 getThreats(PieceType pt) const;
         Square kingSq(Color c) const;
-        NNUE::Accumulator &getAccumulator();
+        NNUE::Accum &getAccumulator();
 
         void resetAccumulator();
         void resetPly();
@@ -123,7 +123,7 @@ namespace Chess
         Color stm;
         int curr_ply;
         NNUE::Accumulators accumulators;
-        std::unique_ptr<NNUE::AccumulatorTable> accumulator_table = std::make_unique<NNUE::AccumulatorTable>(NNUE::AccumulatorTable());
+        std::unique_ptr<NNUE::AccumTable> accumulator_table = std::make_unique<NNUE::AccumTable>(NNUE::AccumTable());
 
         void putPiece(Piece pc, Square sq, bool update_nnue);
         void removePiece(Square sq, bool update_nnue);
@@ -151,7 +151,7 @@ namespace Chess
 
     inline Square Board::kingSq(Color c) const { return lsb(getPieceBB(c, KING)); }
 
-    inline NNUE::Accumulator &Board::getAccumulator() { return accumulators.back(); }
+    inline NNUE::Accum &Board::getAccumulator() { return accumulators.back(); }
 
     inline void Board::resetPly() { curr_ply = 0; }
 
@@ -209,8 +209,8 @@ namespace Chess
 
         if (update_nnue)
         {
-            NNUE::Accumulator &acc = getAccumulator();
-            NNUE::Accumulator &input = accumulators[accumulators.getIndex() - 1];
+            NNUE::Accum &acc = getAccumulator();
+            NNUE::Accum &input = accumulators[accumulators.getIndex() - 1];
 
             NNUE::nnue.putPiece(acc, input, pc, sq, kingSq(WHITE), WHITE);
             NNUE::nnue.putPiece(acc, input, pc, sq, kingSq(BLACK), BLACK);
@@ -228,8 +228,8 @@ namespace Chess
 
         if (update_nnue)
         {
-            NNUE::Accumulator &acc = getAccumulator();
-            NNUE::Accumulator &input = accumulators[accumulators.getIndex() - 1];
+            NNUE::Accum &acc = getAccumulator();
+            NNUE::Accum &input = accumulators[accumulators.getIndex() - 1];
 
             NNUE::nnue.removePiece(acc, input, p, sq, kingSq(WHITE), WHITE);
             NNUE::nnue.removePiece(acc, input, p, sq, kingSq(BLACK), BLACK);
@@ -248,8 +248,8 @@ namespace Chess
 
         if (update_nnue)
         {
-            NNUE::Accumulator &acc = getAccumulator();
-            NNUE::Accumulator &input = accumulators[accumulators.getIndex() - 1];
+            NNUE::Accum &acc = getAccumulator();
+            NNUE::Accum &input = accumulators[accumulators.getIndex() - 1];
 
             if (typeOf(pc) == KING)
             {
@@ -272,5 +272,3 @@ namespace Chess
     }
 
 } // namespace Chess
-
-#endif // BOARD_H

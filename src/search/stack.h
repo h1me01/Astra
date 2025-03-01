@@ -1,5 +1,4 @@
-#ifndef STACK_H
-#define STACK_H
+#pragma once
 
 #include "../chess/types.h"
 
@@ -22,5 +21,3 @@ namespace Astra
         ContH *conth;
     };
 }
-
-#endif // STACK_H

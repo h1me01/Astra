@@ -1,5 +1,4 @@
-#ifndef ZOBRIST_H
-#define ZOBRIST_H
+#pragma once
 
 #include "types.h"
 #include "board.h"
@@ -43,5 +42,3 @@ namespace Chess
     } // namespace Zobrist
 
 } // namespace Chess
-
-#endif // ZOBRIST_H

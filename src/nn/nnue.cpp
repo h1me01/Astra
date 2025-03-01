@@ -88,7 +88,7 @@ namespace NNUE
         memcpy(fc2_biases, &gWeightsData[offset], OUTPUT_SIZE * sizeof(int32_t));
     }
 
-    int32_t NNUE::forward(const Accumulator &acc, Color stm) const
+    int32_t NNUE::forward(const Accum &acc, Color stm) const
     {
 #if defined(__AVX512F__) || defined(__AVX2__) || defined(__AVX__)
         constexpr avx_type zero{};
@@ -128,14 +128,13 @@ namespace NNUE
 #endif
     }
 
-    void NNUE::putPiece(Accumulator &acc, Accumulator &input, Piece pc, Square psq, Square ksq, Color view) const
+    void NNUE::putPiece(Accum &acc, Accum &prev, Piece pc, Square psq, Square ksq, Color view) const
     {
         const int idx = index(psq, ksq, pc, view);
-        const bool initialized = acc.initialized[view];
 
 #if defined(__AVX512F__) || defined(__AVX2__) || defined(__AVX__)
         avx_type *acc_view = (avx_type *)acc.data[view];
-        const avx_type *input_view = initialized ? acc_view : (avx_type *)input.data[view];
+        const avx_type *input_view = acc.init[view] ? acc_view : (avx_type *)prev.data[view];
 
         const auto weights = (const avx_type *)(fc1_weights + idx * HIDDEN_SIZE);
         for (int i = 0; i < HIDDEN_SIZE / div; i++)
@@ -143,57 +142,55 @@ namespace NNUE
 
 #else
         for (int i = 0; i < HIDDEN_SIZE; i++)
-            acc.data[view][i] = (initialized ? acc.data[view][i] : input.data[view][i]) + fc1_weights[idx * HIDDEN_SIZE + i];
+            acc.data[view][i] = (acc.init[view] ? acc.data[view][i] : input.data[view][i]) + fc1_weights[idx * HIDDEN_SIZE + i];
 #endif
 
-        acc.initialized[view] = true;
+        acc.init[view] = true;
     }
 
-    void NNUE::removePiece(Accumulator &acc, Accumulator &input, Piece pc, Square psq, Square ksq, Color view) const
+    void NNUE::removePiece(Accum &acc, Accum &prev, Piece pc, Square psq, Square ksq, Color view) const
     {
         const int idx = index(psq, ksq, pc, view);
-        const bool initialized = acc.initialized[view];
 
 #if defined(__AVX512F__) || defined(__AVX2__) || defined(__AVX__)
-        avx_type *acc_view = (avx_type *)acc.data[view];
-        const avx_type *input_view = initialized ? acc_view : (avx_type *)input.data[view];
+        avx_type *acc_data = (avx_type *)acc.data[view];
+        const avx_type *prev_data = acc.init[view] ? acc_data : (avx_type *)prev.data[view];
 
         const auto weights = (const avx_type *)(fc1_weights + idx * HIDDEN_SIZE);
         for (int i = 0; i < HIDDEN_SIZE / div; i++)
-            acc_view[i] = avx_sub_epi16(input_view[i], weights[i]);
+            acc_data[i] = avx_sub_epi16(prev_data[i], weights[i]);
 #else
         for (int i = 0; i < HIDDEN_SIZE; i++)
-            acc.data[view][i] = (initialized ? acc.data[view][i] : input.data[view][i]) - fc1_weights[idx * HIDDEN_SIZE + i];
+            acc.data[view][i] = (acc.init[view] ? acc.data[view][i] : prev.data[view][i]) - fc1_weights[idx * HIDDEN_SIZE + i];
 #endif
 
-        acc.initialized[view] = true;
+        acc.init[view] = true;
     }
 
-    void NNUE::movePiece(Accumulator &acc, Accumulator &input, Piece pc, Square from, Square to, Square ksq, Color view) const
+    void NNUE::movePiece(Accum &acc, Accum &prev, Piece pc, Square from, Square to, Square ksq, Color view) const
     {
         const int from_idx = index(from, ksq, pc, view);
         const int to_idx = index(to, ksq, pc, view);
-        const bool initialized = acc.initialized[view];
 
 #if defined(__AVX512F__) || defined(__AVX2__) || defined(__AVX__)
-        avx_type *acc_view = (avx_type *)acc.data[view];
-        const avx_type *input_view = initialized ? acc_view : (avx_type *)input.data[view];
+        avx_type *acc_data = (avx_type *)acc.data[view];
+        const avx_type *prev_data = acc.init[view] ? acc_data : (avx_type *)prev.data[view];
 
         const auto weights_from = (const avx_type *)(fc1_weights + from_idx * HIDDEN_SIZE);
         const auto weights_to = (const avx_type *)(fc1_weights + to_idx * HIDDEN_SIZE);
 
         for (int i = 0; i < HIDDEN_SIZE / div; i++)
-            acc_view[i] = avx_add_epi16(input_view[i], avx_sub_epi16(weights_to[i], weights_from[i]));
+            acc_data[i] = avx_add_epi16(prev_data[i], avx_sub_epi16(weights_to[i], weights_from[i]));
 
 #else
         for (int i = 0; i < HIDDEN_SIZE; i++)
         {
             int16_t diff = fc1_weights[to_idx * HIDDEN_SIZE + i] - fc1_weights[from_idx * HIDDEN_SIZE + i];
-            acc.data[view][i] = (initialized ? acc.data[view][i] : input.data[view][i]) + diff;
+            acc.data[view][i] = (acc.init[view] ? acc.data[view][i] : prev.data[view][i]) + diff;
         }
 #endif
 
-        acc.initialized[view] = true;
+        acc.init[view] = true;
     }
 
     // global variable

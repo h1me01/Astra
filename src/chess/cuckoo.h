@@ -1,5 +1,4 @@
-#ifndef CHESS_CUCKOO_H
-#define CHESS_CUCKOO_H
+#pragma once
 
 #include "misc.h"
 
@@ -21,5 +20,3 @@ namespace Chess::Cuckoo
     void init();
 
 } // namespace Chess::Cuckoo
-
-#endif // CHESS_CUCKOO_H

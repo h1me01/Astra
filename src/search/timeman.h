@@ -1,7 +1,7 @@
-#ifndef TIMEMANAGER_H
-#define TIMEMANAGER_H
+#pragma once
 
 #include <chrono>
+
 #include "../chess/types.h"
 
 using namespace Chess;
@@ -60,5 +60,3 @@ namespace Astra
     };
 
 } // namespace Astra
-
-#endif // TIMEMANAGER_H

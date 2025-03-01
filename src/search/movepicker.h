@@ -1,5 +1,4 @@
-#ifndef MOVEPICKER_H
-#define MOVEPICKER_H
+#pragma once
 
 #include "search.h"
 #include "stack.h"
@@ -59,5 +58,3 @@ namespace Astra
     };
 
 } // namespace Astra
-
-#endif // MOVEPICKER_H

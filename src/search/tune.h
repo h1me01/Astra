@@ -1,5 +1,4 @@
-#ifndef SEARCHPARAMS_H
-#define SEARCHPARAMS_H
+#pragma once
 
 #include <string>
 
@@ -83,5 +82,3 @@ namespace Astra
     PARAM(max_history_bonus, 1483, 1100, 1750, 100);
 
 } // namespace Astra
-
-#endif // SEARCHPARAMS_H

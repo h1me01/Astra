@@ -1,5 +1,4 @@
-#ifndef TYPES_H
-#define TYPES_H
+#pragma once
 
 #include <string>
 #include <cstdint>
@@ -167,5 +166,3 @@ namespace Chess
     const auto NO_MOVE = Move();
 
 } // namespace Chess
-
-#endif // TYPES_H

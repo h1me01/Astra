@@ -1,5 +1,4 @@
-#ifndef TT_H
-#define TT_H
+#pragma once
 
 #include "../chess/types.h"
 
@@ -109,5 +108,3 @@ namespace Astra
     extern TTable tt;
 
 } // namespace Astra
-
-#endif // TT_H

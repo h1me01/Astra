@@ -1,5 +1,4 @@
-#ifndef SEARCH_H
-#define SEARCH_H
+#pragma once
 
 #include "tt.h"
 #include "history.h"
@@ -106,5 +105,3 @@ namespace Astra
     }
 
 } // namespace Astra
-
-#endif // SEARCH_H

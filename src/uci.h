@@ -1,5 +1,4 @@
-#ifndef UCI_H
-#define UCI_H
+#pragma once
 
 #include <fstream>
 #include <unordered_map>
@@ -71,5 +70,3 @@ namespace UCI
     };
 
 } // namespace UCI
-
-#endif // UCI_H

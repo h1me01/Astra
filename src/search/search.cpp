@@ -6,7 +6,7 @@
 #include "threads.h"
 #include "movepicker.h"
 
-#include "../eval/eval.h"
+#include "../nn/nnue.h"
 #include "../uci.h"
 
 namespace Astra
@@ -23,6 +23,17 @@ namespace Astra
         for (int depth = 1; depth < MAX_PLY; depth++)
             for (int moves = 1; moves < MAX_MOVES; moves++)
                 REDUCTIONS[depth][moves] = base + log(depth) * log(moves) / div_factor;
+    }
+
+    // eval
+    Score evaluate(Board &board)
+    {
+        int32_t eval = NNUE::nnue.forward(board.getAccumulator(), board.getTurn());
+
+        // scale based on phase
+        eval = (128 + board.getPhase()) * eval / 128;
+
+        return std::clamp(eval, -(VALUE_MATE - MAX_PLY) + 1, VALUE_MATE - MAX_PLY - 1);
     }
 
     // search class
@@ -274,7 +285,7 @@ namespace Astra
         if (!root_node)
         {
             if (ss->ply >= MAX_PLY - 1)
-                return Eval::evaluate(board);
+                return evaluate(board);
             if (isLimitReached(depth))
                 return 0;
 
@@ -346,7 +357,7 @@ namespace Astra
             // use tt score for better evaluation
             if (tt_hit)
             {
-                raw_eval = tt_eval == VALUE_NONE ? Eval::evaluate(board) : tt_eval;
+                raw_eval = tt_eval == VALUE_NONE ? evaluate(board) : tt_eval;
                 eval = ss->eval = adjustEval(board, ss, raw_eval);
 
                 if (tt_score != VALUE_NONE && (tt_bound & (tt_score > eval ? LOWER_BOUND : UPPER_BOUND)))
@@ -354,7 +365,7 @@ namespace Astra
             }
             else if (!skipped)
             {
-                raw_eval = Eval::evaluate(board);
+                raw_eval = evaluate(board);
                 eval = ss->eval = adjustEval(board, ss, raw_eval);
                 ent->store(hash, NO_MOVE, VALUE_NONE, raw_eval, NO_BOUND, 0, ss->ply, tt_pv);
             }
@@ -705,7 +716,7 @@ namespace Astra
         if (board.isDraw(ss->ply))
             return VALUE_DRAW;
         if (ss->ply >= MAX_PLY - 1)
-            return Eval::evaluate(board);
+            return evaluate(board);
 
         // variables
         const bool pv_node = beta - alpha != 1;
@@ -740,7 +751,7 @@ namespace Astra
             // use tt score for better evaluation
             if (tt_hit)
             {
-                raw_eval = tt_eval == VALUE_NONE ? Eval::evaluate(board) : tt_eval;
+                raw_eval = tt_eval == VALUE_NONE ? evaluate(board) : tt_eval;
                 eval = ss->eval = adjustEval(board, ss, raw_eval);
 
                 if (tt_score != VALUE_NONE && (tt_bound & (tt_score > eval ? LOWER_BOUND : UPPER_BOUND)))
@@ -748,7 +759,7 @@ namespace Astra
             }
             else
             {
-                raw_eval = Eval::evaluate(board);
+                raw_eval = evaluate(board);
                 eval = ss->eval = adjustEval(board, ss, raw_eval);
                 ent->store(hash, NO_MOVE, VALUE_NONE, raw_eval, NO_BOUND, 0, ss->ply, tt_pv);
             }
