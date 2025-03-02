@@ -14,6 +14,7 @@ namespace Chess
 
     U64 slidingAttacks(Square sq, const U64 occ, const U64 mask)
     {
+        assert(sq >= a1 && sq <= h8);
         // hyperbola quintessence algorithm
         const U64 mask_occ = mask & occ;
         return ((mask_occ - SQUARE_BB[sq] * 2) ^ (reverse(reverse(mask_occ) - reverse(SQUARE_BB[sq]) * 2))) & mask;

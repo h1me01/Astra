@@ -14,19 +14,22 @@ namespace Chess
         return rights.find_first_of("kqKQ") != std::string::npos;
     }
 
-    std::pair<Square, Square> getCastleRookSquares(Color stm, Square to)
+    std::pair<Square, Square> getCastleRookSquares(Color c, Square to)
     {
+        assert(c == WHITE || c == BLACK);
+        assert(to == relativeSquare(c, g1) || to == relativeSquare(c, c1));
+
         Square rook_from, rook_to;
 
-        if (to == relativeSquare(stm, g1)) // kingside
+        if (to == relativeSquare(c, g1)) // kingside
         {
-            rook_from = relativeSquare(stm, h1);
-            rook_to = relativeSquare(stm, f1);
+            rook_from = relativeSquare(c, h1);
+            rook_to = relativeSquare(c, f1);
         }
         else // queenside
         {
-            rook_from = relativeSquare(stm, a1);
-            rook_to = relativeSquare(stm, d1);
+            rook_from = relativeSquare(c, a1);
+            rook_to = relativeSquare(c, d1);
         }
 
         return {rook_from, rook_to};
@@ -238,6 +241,7 @@ namespace Chess
         const Square to = m.to();
         const Square ksq = kingSq(stm);
 
+        assert(m != NO_MOVE);
         assert(pieceAt(from) != NO_PIECE);
         assert(pieceAt(ksq) == makePiece(stm, KING));
 
@@ -390,12 +394,13 @@ namespace Chess
         const MoveType mt = m.type();
         const Square from = m.from();
         const Square to = m.to();
-        const Piece p = pieceAt(from);
-        const PieceType pt = typeOf(p);
+        const Piece pc = pieceAt(from);
+        const PieceType pt = typeOf(pc);
         const Piece captured = mt == EN_PASSANT ? makePiece(~stm, PAWN) : pieceAt(to);
 
+        assert(pc != NO_PIECE);
         assert(typeOf(captured) != KING);
-        assert(p != NO_PIECE);
+        assert(m != NO_MOVE && m != NULL_MOVE);
 
         curr_ply++;
         history[curr_ply] = StateInfo(history[curr_ply - 1]);
@@ -447,11 +452,11 @@ namespace Chess
         }
 
         // update hash of moving piece
-        info.hash ^= Zobrist::getPsq(p, from) ^ Zobrist::getPsq(p, to);
+        info.hash ^= Zobrist::getPsq(pc, from) ^ Zobrist::getPsq(pc, to);
         if (pt == PAWN)
-            info.pawn_hash ^= Zobrist::getPsq(p, from) ^ Zobrist::getPsq(p, to);
+            info.pawn_hash ^= Zobrist::getPsq(pc, from) ^ Zobrist::getPsq(pc, to);
         else
-            info.non_pawn_hash[stm] ^= Zobrist::getPsq(p, from) ^ Zobrist::getPsq(p, to);
+            info.non_pawn_hash[stm] ^= Zobrist::getPsq(pc, from) ^ Zobrist::getPsq(pc, to);
 
         // reset ep square if it exists
         if (info.ep_sq != NO_SQUARE)
@@ -493,8 +498,8 @@ namespace Chess
                 assert(prom_p != NO_PIECE);
 
                 // update hash of promoting piece
-                info.hash ^= Zobrist::getPsq(p, to) ^ Zobrist::getPsq(prom_p, to);
-                info.pawn_hash ^= Zobrist::getPsq(p, to);
+                info.hash ^= Zobrist::getPsq(pc, to) ^ Zobrist::getPsq(prom_p, to);
+                info.pawn_hash ^= Zobrist::getPsq(pc, to);
 
                 // add promoted piece and remove pawn
                 removePiece(to, update_nnue);
@@ -518,33 +523,34 @@ namespace Chess
         const Square to = m.to();
         const Piece captured = history[curr_ply].captured;
 
+        assert(m != NO_MOVE && m != NULL_MOVE);
         assert(pieceAt(to) != NO_PIECE);
-        assert(pieceAt(from) == NO_PIECE || mt == CASTLING);
+        assert(pieceAt(from) == NO_PIECE);
 
         if (accumulators.getIndex())
             accumulators.decrement();
 
         if (isProm(m))
         {
-            removePiece(to, false);
-            putPiece(makePiece(stm, PAWN), to, false);
+            removePiece(to);
+            putPiece(makePiece(stm, PAWN), to);
         }
 
         if (mt == CASTLING)
         {
             auto [rook_to, rook_from] = getCastleRookSquares(stm, to);
 
-            movePiece(to, from, false); // move king
-            movePiece(rook_from, rook_to, false);
+            movePiece(to, from); // move king
+            movePiece(rook_from, rook_to);
         }
         else
         {
-            movePiece(to, from, false);
+            movePiece(to, from);
 
             if (captured != NO_PIECE)
             {
                 Square cap_sqr = mt == EN_PASSANT ? Square(to ^ 8) : to;
-                putPiece(captured, cap_sqr, false);
+                putPiece(captured, cap_sqr);
             }
         }
 
@@ -611,6 +617,8 @@ namespace Chess
 
     bool Board::see(Move &m, int threshold) const
     {
+        assert(m != NO_MOVE && m != NULL_MOVE);
+
         if (isProm(m) || m.type() == EN_PASSANT || m.type() == CASTLING)
             return true;
 
@@ -693,6 +701,8 @@ namespace Chess
 
     bool Board::hasUpcomingRepetition(int ply)
     {
+        assert(ply > 0);
+
         const U64 occ = occupancy();
 
         const StateInfo &info = history[curr_ply];

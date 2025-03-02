@@ -58,8 +58,10 @@ namespace NNUE
     // helper
     int index(Square psq, Square ksq, Piece pc, Color view)
     {
-        assert(pc != NO_PIECE);
-        assert(psq != NO_SQUARE);
+        assert(psq >= a1 && psq <= h8);
+        assert(ksq >= a1 && ksq <= h8);
+        assert(view == WHITE || view == BLACK);
+        assert(pc >= WHITE_PAWN && pc <= BLACK_KING);
 
         // mirror psq horizontally if king is on other half
         if (fileOf(ksq) > 3)
@@ -90,6 +92,8 @@ namespace NNUE
 
     int32_t NNUE::forward(const Accum &acc, Color stm) const
     {
+        assert(stm == WHITE || stm == BLACK);
+
 #if defined(__AVX512F__) || defined(__AVX2__) || defined(__AVX__)
         constexpr avx_type zero{};
         const avx_type max_clipped_value = avx_set1_epi16(CRELU_CLIP);

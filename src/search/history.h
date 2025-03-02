@@ -54,30 +54,38 @@ namespace Astra
     {
         Square from = move.from();
         Square to = move.to();
-        Piece p = board.pieceAt(from);
+        Piece pc = board.pieceAt(from);
 
-        assert(p != NO_PIECE);
+        assert(to >= a1 && to <= h8);
+        assert(from >= a1 && from <= h8);
+        assert(pc >= WHITE_PAWN && pc <= BLACK_KING);
 
         return hh[board.getTurn()][from][to] +
-               (int)(*(ss - 1)->conth)[p][to] +
-               (int)(*(ss - 2)->conth)[p][to] +
-               (int)(*(ss - 4)->conth)[p][to];
+               (int)(*(ss - 1)->conth)[pc][to] +
+               (int)(*(ss - 2)->conth)[pc][to] +
+               (int)(*(ss - 4)->conth)[pc][to];
     }
 
     inline int History::getCapHistory(const Board &board, Move &move) const
     {
         PieceType captured = move.type() == EN_PASSANT ? PAWN : typeOf(board.pieceAt(move.to()));
-        Piece p = board.pieceAt(move.from());
+        Piece pc = board.pieceAt(move.from());
 
-        assert(p != NO_PIECE);
-        assert(captured != NO_PIECE_TYPE);
+        assert(pc >= WHITE_PAWN && pc <= BLACK_KING);
+        assert(captured >= PAWN && captured <= KING);
 
-        return ch[p][move.to()][captured];
+        return ch[pc][move.to()][captured];
     }
 
     inline Move History::getCounterMove(Move prev_move) const
     {
-        return counters[prev_move.from()][prev_move.to()];
+        Square from = prev_move.from();
+        Square to = prev_move.to();
+
+        assert(to >= a1 && to <= h8);
+        assert(from >= a1 && from <= h8);
+
+        return counters[from][to];
     }
 
     inline int History::getMaterialCorr(const Board &board) const

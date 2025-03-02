@@ -45,10 +45,7 @@ namespace Astra
         Limits limit;
         Board board;
 
-        Search(const std::string &fen) : board(fen)
-        {
-            tt.clear();
-        }
+        Search(const std::string &fen);
 
         Move bestMove();
 
@@ -65,7 +62,9 @@ namespace Astra
         Score negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_node, const Move skipped = NO_MOVE);
         Score qSearch(int depth, Score alpha, Score beta, Stack *ss);
 
-        int adjustEval(const Board &board, const Stack *ss, Score eval) const;
+        Score evaluate();
+
+        Score adjustEval(const Stack *ss, Score eval) const;
 
         bool isLimitReached(int depth) const;
         void updatePv(Move move, int ply);
@@ -75,33 +74,5 @@ namespace Astra
 
         void printUciInfo();
     };
-
-    inline int Search::adjustEval(const Board &board, const Stack *ss, Score eval) const
-    {
-        eval += history.getMaterialCorr(board) + history.getContCorr(ss);
-        return std::clamp(eval, Score(-VALUE_TB_WIN_IN_MAX_PLY + 1), Score(VALUE_TB_WIN_IN_MAX_PLY - 1));
-    }
-
-    inline void Search::sortRootMoves(int offset)
-    {
-        for (int i = offset; i < root_moves.size(); i++)
-        {
-            int best = i;
-            for (int j = i + 1; j < root_moves.size(); j++)
-                if (root_moves[j].score > root_moves[i].score)
-                    best = j;
-
-            if (best != i)
-                std::swap(root_moves[i], root_moves[best]);
-        }
-    }
-
-    inline bool Search::foundRootMove(const Move &move)
-    {
-        for (int i = multipv_idx; i < root_moves.size(); i++)
-            if (root_moves[i].move == move)
-                return true;
-        return false;
-    }
 
 } // namespace Astra

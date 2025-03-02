@@ -17,6 +17,9 @@ namespace Chess
     template <GenType gt, Direction d, MoveType mt>
     Move *makePromotions(Move *ml, Square to)
     {
+        assert(to >= a1 && to <= h8);
+        assert(!(to >= a2 && to <= h7));
+
         if constexpr (gt != QUIETS)
             *ml++ = Move(to - d, to, mt);
 

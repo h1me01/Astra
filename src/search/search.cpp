@@ -24,78 +24,12 @@ namespace Astra
                 REDUCTIONS[depth][moves] = base + log(depth) * log(moves) / div_factor;
     }
 
-    // eval
-    Score evaluate(Board &board)
-    {
-        int32_t eval = NNUE::nnue.forward(board.getAccumulator(), board.getTurn());
-
-        // scale based on phase
-        eval = (128 + board.getPhase()) * eval / 128;
-
-        return std::clamp(eval, -(VALUE_MATE - MAX_PLY) + 1, VALUE_MATE - MAX_PLY - 1);
-    }
-
     // search class
 
-    bool Search::isLimitReached(int depth) const
+    Search::Search(const std::string &fen) : board(fen)
     {
-        if (threads.isStopped())
-            return true;
-        if (limit.infinite)
-            return false;
-        if (limit.nodes != 0 && nodes >= limit.nodes)
-            return true;
-        if (depth > limit.depth)
-            return true;
-        if (limit.time.max != 0 && tm.elapsedTime() >= limit.time.max)
-            return true;
-
-        return false;
+        tt.clear();
     }
-
-    void Search::updatePv(Move move, int ply)
-    {
-        pv_table[ply][ply] = move;
-        for (int next_ply = ply + 1; next_ply < pv_table[ply + 1].length; next_ply++)
-            pv_table[ply][next_ply] = pv_table[ply + 1][next_ply];
-        pv_table[ply].length = pv_table[ply + 1].length;
-    }
-
-    void Search::printUciInfo()
-    {
-        const int64_t elapsed_time = tm.elapsedTime();
-        const U64 total_nodes = Astra::threads.getTotalNodes();
-        const Score result = root_moves[multipv_idx].score;
-        const PVLine &pv_line = root_moves[multipv_idx].pv;
-
-        std::cout << "info depth " << root_depth
-                  << " seldepth " << Astra::threads.getSelDepth()
-                  << " multipv " << multipv_idx + 1
-                  << " score ";
-
-        if (abs(result) >= VALUE_MATE - MAX_PLY)
-            std::cout << "mate " << (VALUE_MATE - abs(result) + 1) / 2 * (result > 0 ? 1 : -1);
-        else
-            std::cout << "cp " << Score(result / 1.8); // normalize
-
-        std::cout << " nodes " << total_nodes
-                  << " nps " << total_nodes * 1000 / (elapsed_time + 1)
-                  << " tbhits " << Astra::threads.getTotalTbHits()
-                  << " hashfull " << Astra::tt.hashfull()
-                  << " time " << elapsed_time
-                  << " pv";
-
-        // print the pv
-        if (!pv_line.length)
-            std::cout << " " << pv_line[0];
-        else
-            for (int i = 0; i < pv_line.length; i++)
-                std::cout << " " << pv_line[i];
-
-        std::cout << std::endl;
-    }
-
-    // main search
 
     Move Search::bestMove()
     {
@@ -236,7 +170,7 @@ namespace Astra
             else
                 break;
 
-            window += window / 3.75;
+            window += window / 3;
         }
 
         sortRootMoves(0);
@@ -284,7 +218,7 @@ namespace Astra
         if (!root_node)
         {
             if (ss->ply >= MAX_PLY - 1)
-                return evaluate(board);
+                return evaluate();
             if (isLimitReached(depth))
                 return 0;
 
@@ -356,16 +290,16 @@ namespace Astra
             // use tt score for better evaluation
             if (tt_hit)
             {
-                raw_eval = tt_eval == VALUE_NONE ? evaluate(board) : tt_eval;
-                eval = ss->eval = adjustEval(board, ss, raw_eval);
+                raw_eval = tt_eval == VALUE_NONE ? evaluate() : tt_eval;
+                eval = ss->eval = adjustEval(ss, raw_eval);
 
                 if (tt_score != VALUE_NONE && (tt_bound & (tt_score > eval ? LOWER_BOUND : UPPER_BOUND)))
                     eval = tt_score;
             }
             else if (!skipped)
             {
-                raw_eval = evaluate(board);
-                eval = ss->eval = adjustEval(board, ss, raw_eval);
+                raw_eval = evaluate();
+                eval = ss->eval = adjustEval(ss, raw_eval);
                 ent->store(hash, NO_MOVE, VALUE_NONE, raw_eval, NO_BOUND, 0, ss->ply, tt_pv);
             }
 
@@ -381,7 +315,7 @@ namespace Astra
 
         // update quiet history
         Move prev_move = (ss - 1)->curr_move;
-        if (!prev_move && !isCap(prev_move) && (ss - 1)->eval != VALUE_NONE)
+        if (!skipped && prev_move != NO_MOVE && !isCap(prev_move) && (ss - 1)->eval != VALUE_NONE)
         {
             int bonus = std::clamp(-5 * (ss->eval + (ss - 1)->eval), -80, 150);
             history.updateQuietHistory(~stm, prev_move, bonus);
@@ -597,7 +531,12 @@ namespace Astra
                 // if late move reduction failed high and we actually reduced, do a research
                 if (score > alpha && lmr_depth < new_depth)
                 {
-                    score = -negamax(new_depth, -alpha - 1, -alpha, ss + 1, !cut_node);
+                    // credits to stockfish
+                    new_depth += (score > best_score + zws_margin);
+                    new_depth -= (score < best_score + new_depth);
+
+                    if (lmr_depth < new_depth)
+                        score = -negamax(new_depth, -alpha - 1, -alpha, ss + 1, !cut_node);
 
                     if (!isCap(move))
                     {
@@ -689,7 +628,7 @@ namespace Astra
             ent->store(hash, best_move, best_score, raw_eval, bound, depth, ss->ply, tt_pv);
 
         // update correction histories
-        if (!in_check && !isCap(best_move) && (bound & (best_score >= raw_eval ? LOWER_BOUND : UPPER_BOUND)))
+        if (!in_check && (!best_move || !isCap(best_move)) && (bound & (best_score >= raw_eval ? LOWER_BOUND : UPPER_BOUND)))
         {
             history.updateMaterialCorr(board, raw_eval, best_score, depth);
             history.updateContCorr(raw_eval, best_score, depth, ss);
@@ -715,7 +654,7 @@ namespace Astra
         if (board.isDraw(ss->ply))
             return VALUE_DRAW;
         if (ss->ply >= MAX_PLY - 1)
-            return evaluate(board);
+            return evaluate();
 
         // variables
         const bool pv_node = beta - alpha != 1;
@@ -750,16 +689,16 @@ namespace Astra
             // use tt score for better evaluation
             if (tt_hit)
             {
-                raw_eval = tt_eval == VALUE_NONE ? evaluate(board) : tt_eval;
-                eval = ss->eval = adjustEval(board, ss, raw_eval);
+                raw_eval = tt_eval == VALUE_NONE ? evaluate() : tt_eval;
+                eval = ss->eval = adjustEval(ss, raw_eval);
 
                 if (tt_score != VALUE_NONE && (tt_bound & (tt_score > eval ? LOWER_BOUND : UPPER_BOUND)))
                     eval = tt_score;
             }
             else
             {
-                raw_eval = evaluate(board);
-                eval = ss->eval = adjustEval(board, ss, raw_eval);
+                raw_eval = evaluate();
+                eval = ss->eval = adjustEval(ss, raw_eval);
                 ent->store(hash, NO_MOVE, VALUE_NONE, raw_eval, NO_BOUND, 0, ss->ply, tt_pv);
             }
 
@@ -845,6 +784,107 @@ namespace Astra
         ent->store(hash, best_move, best_score, raw_eval, bound, 0, ss->ply, tt_pv);
 
         return best_score;
+    }
+
+    // search eval
+
+    Score Search::evaluate()
+    {
+        int32_t eval = NNUE::nnue.forward(board.getAccumulator(), board.getTurn());
+        // scale based on phase
+        eval = (128 + board.getPhase()) * eval / 128;
+
+        return std::clamp(eval, -(VALUE_MATE - MAX_PLY) + 1, VALUE_MATE - MAX_PLY - 1);
+    }
+
+    Score Search::adjustEval(const Stack *ss, Score eval) const
+    {
+        eval += history.getMaterialCorr(board) + history.getContCorr(ss);
+        return std::clamp(eval, Score(-VALUE_TB_WIN_IN_MAX_PLY + 1), Score(VALUE_TB_WIN_IN_MAX_PLY - 1));
+    }
+
+    // search helper
+
+    bool Search::isLimitReached(int depth) const
+    {
+        if (threads.isStopped())
+            return true;
+        if (limit.infinite)
+            return false;
+        if (limit.nodes != 0 && nodes >= limit.nodes)
+            return true;
+        if (depth > limit.depth)
+            return true;
+        if (limit.time.max != 0 && tm.elapsedTime() >= limit.time.max)
+            return true;
+
+        return false;
+    }
+
+    void Search::updatePv(Move move, int ply)
+    {
+        pv_table[ply][ply] = move;
+        for (int next_ply = ply + 1; next_ply < pv_table[ply + 1].length; next_ply++)
+            pv_table[ply][next_ply] = pv_table[ply + 1][next_ply];
+        pv_table[ply].length = pv_table[ply + 1].length;
+    }
+
+    void Search::sortRootMoves(int offset)
+    {
+        assert(offset >= 0);
+
+        for (int i = offset; i < root_moves.size(); i++)
+        {
+            int best = i;
+            for (int j = i + 1; j < root_moves.size(); j++)
+                if (root_moves[j].score > root_moves[i].score)
+                    best = j;
+
+            if (best != i)
+                std::swap(root_moves[i], root_moves[best]);
+        }
+    }
+
+    bool Search::foundRootMove(const Move &move)
+    {
+        for (int i = multipv_idx; i < root_moves.size(); i++)
+            if (root_moves[i].move == move)
+                return true;
+        return false;
+    }
+
+    void Search::printUciInfo()
+    {
+        const int64_t elapsed_time = tm.elapsedTime();
+        const U64 total_nodes = Astra::threads.getTotalNodes();
+        const Score result = root_moves[multipv_idx].score;
+        const PVLine &pv_line = root_moves[multipv_idx].pv;
+
+        std::cout << "info depth " << root_depth
+                  << " seldepth " << Astra::threads.getSelDepth()
+                  << " multipv " << multipv_idx + 1
+                  << " score ";
+
+        if (abs(result) >= VALUE_MATE - MAX_PLY)
+            std::cout << "mate " << (VALUE_MATE - abs(result) + 1) / 2 * (result > 0 ? 1 : -1);
+        else
+            std::cout << "cp " << Score(result / 1.8); // normalize
+
+        std::cout << " nodes " << total_nodes
+                  << " nps " << total_nodes * 1000 / (elapsed_time + 1)
+                  << " tbhits " << Astra::threads.getTotalTbHits()
+                  << " hashfull " << Astra::tt.hashfull()
+                  << " time " << elapsed_time
+                  << " pv";
+
+        // print the pv
+        if (!pv_line.length)
+            std::cout << " " << pv_line[0];
+        else
+            for (int i = 0; i < pv_line.length; i++)
+                std::cout << " " << pv_line[i];
+
+        std::cout << std::endl;
     }
 
 } // namespace Astra

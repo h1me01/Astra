@@ -37,10 +37,15 @@ namespace Chess
         }
     }
 
-    inline bool isProm(const Move &m) { return m.type() >= PQ_KNIGHT; }
+    inline bool isProm(const Move &m)
+    {
+        assert(m != NO_MOVE);
+        return m.type() >= PQ_KNIGHT;
+    }
 
     inline bool isCap(const Move &m)
     {
+        assert(m != NO_MOVE);
         return m.type() == CAPTURE || m.type() == EN_PASSANT || m.type() >= PC_KNIGHT;
     }
 
@@ -52,28 +57,69 @@ namespace Chess
 
     constexpr Piece makePiece(Color c, PieceType pt) { return Piece(pt + 6 * c); }
 
-    constexpr PieceType typeOf(Piece p) { return PIECE_TO_PIECE_TYPE[p]; }
+    constexpr PieceType typeOf(Piece pc) { return PIECE_TO_PIECE_TYPE[pc]; }
 
-    constexpr Color colorOf(Piece p) { return p < 6 ? WHITE : BLACK; }
+    constexpr Color colorOf(Piece pc)
+    {
+        assert(pc != NO_PIECE);
+        return pc < 6 ? WHITE : BLACK;
+    }
 
     inline Square &operator++(Square &s) { return s = Square(int(s) + 1); }
 
-    constexpr Square operator+(Square sq, Direction d) { return Square(int(sq) + int(d)); }
-    constexpr Square operator-(Square sq, Direction d) { return Square(int(sq) - int(d)); }
+    constexpr Square operator+(Square sq, Direction d)
+    {
+        Square _sq = Square(int(sq) + int(d));
+        assert(_sq >= a1 && _sq <= h8);
+        return _sq;
+    }
 
-    constexpr Rank rankOf(Square sq) { return Rank(sq >> 3); }
-    constexpr File fileOf(Square sq) { return File(sq & 0b111); }
+    constexpr Square operator-(Square sq, Direction d)
+    {
+        Square _sq = Square(int(sq) - int(d));
+        assert(_sq >= a1 && _sq <= h8);
+        return _sq;
+    }
+
+    constexpr Rank rankOf(Square sq)
+    {
+        assert(sq >= a1 && sq <= h8);
+        return Rank(sq >> 3);
+    }
+
+    constexpr File fileOf(Square sq)
+    {
+        assert(sq >= a1 && sq <= h8);
+        return File(sq & 0b111);
+    }
 
     // gets the diagonal (a1 to h8) of the square
-    constexpr int diagOf(Square sq) { return 7 + rankOf(sq) - fileOf(sq); }
+    constexpr int diagOf(Square sq)
+    {
+        assert(sq >= a1 && sq <= h8);
+        return 7 + rankOf(sq) - fileOf(sq);
+    }
+
     // gets the anti-diagonal (h1 to a8) of the square
-    constexpr int antiDiagOf(Square sq) { return rankOf(sq) + fileOf(sq); }
+    constexpr int antiDiagOf(Square sq)
+    {
+        assert(sq >= a1 && sq <= h8);
+        return rankOf(sq) + fileOf(sq);
+    }
 
     inline Square &operator+=(Square &s, Direction d) { return s = s + d; }
     inline Square &operator-=(Square &s, Direction d) { return s = s - d; }
 
-    constexpr Square relativeSquare(Color c, Square sq) { return c == WHITE ? sq : Square(sq ^ 56); }
+    constexpr Square relativeSquare(Color c, Square sq)
+    {
+        assert(sq >= a1 && sq <= h8);
+        return c == WHITE ? sq : Square(sq ^ 56);
+    }
 
-    constexpr Rank relativeRank(Color c, Rank r) { return c == WHITE ? r : Rank(RANK_8 - r); }
+    constexpr Rank relativeRank(Color c, Rank r)
+    {
+        assert(r >= RANK_1 && r <= RANK_8);
+        return c == WHITE ? r : Rank(RANK_8 - r);
+    }
 
 } // namespace Chess

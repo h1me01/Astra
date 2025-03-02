@@ -182,14 +182,29 @@ namespace Chess
 
     void initLookUpTables();
 
-    constexpr U64 getPawnAttacks(Color c, Square sq) { return PAWN_ATTACKS[c][sq]; }
+    constexpr U64 getPawnAttacks(Color c, Square sq)
+    {
+        assert(c == WHITE || c == BLACK);
+        assert(sq >= a1 && sq <= h8);
+        return PAWN_ATTACKS[c][sq];
+    }
 
-    constexpr U64 getKnightAttacks(Square sq) { return KNIGHT_ATTACKS[sq]; }
+    constexpr U64 getKnightAttacks(Square sq)
+    {
+        assert(sq >= a1 && sq <= h8);
+        return KNIGHT_ATTACKS[sq];
+    }
 
-    constexpr U64 getKingAttacks(Square sq) { return KING_ATTACKS[sq]; }
+    constexpr U64 getKingAttacks(Square sq)
+    {
+        assert(sq >= a1 && sq <= h8);
+        return KING_ATTACKS[sq];
+    }
 
     inline U64 getRookAttacks(Square sq, const U64 occ)
     {
+        assert(sq >= a1 && sq <= h8);
+
 #ifdef __BMI2__
         return ROOK_ATTACKS[sq][_pext_u64(occ, ROOK_MASKS[sq])];
 #else
@@ -200,6 +215,8 @@ namespace Chess
 
     inline U64 getBishopAttacks(Square sq, const U64 occ)
     {
+        assert(sq >= a1 && sq <= h8);
+
 #ifdef __BMI2__
         return BISHOP_ATTACKS[sq][_pext_u64(occ, BISHOP_MASKS[sq])];
 #else
@@ -210,6 +227,9 @@ namespace Chess
 
     inline U64 getAttacks(PieceType pt, Square sq, const U64 occ)
     {
+        assert(sq >= a1 && sq <= h8);
+        assert(pt >= PAWN && pt <= KING);
+
         switch (pt)
         {
         case ROOK:

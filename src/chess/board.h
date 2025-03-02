@@ -18,18 +18,24 @@ namespace Chess
 
         bool kingSide(const Color c) const
         {
+            assert(c == WHITE || c == BLACK);
             return (mask & OO_MASK[c]) == OO_MASK[c];
         }
 
         bool queenSide(const Color c) const
         {
+            assert(c == WHITE || c == BLACK);
             return (mask & OOO_MASK[c]) == OOO_MASK[c];
         }
 
         bool any(const Color c) const { return kingSide(c) || queenSide(c); }
         bool any() const { return any(WHITE) || any(BLACK); }
 
-        bool onCastleSquare(Square sq) const { return mask & SQUARE_BB[sq]; }
+        bool onCastleSquare(Square sq) const
+        {
+            assert(sq >= a1 && sq <= h8);
+            return mask & SQUARE_BB[sq];
+        }
 
         int getHashIndex() const
         {
@@ -125,9 +131,9 @@ namespace Chess
         NNUE::Accumulators accumulators;
         std::unique_ptr<NNUE::AccumTable> accumulator_table = std::make_unique<NNUE::AccumTable>(NNUE::AccumTable());
 
-        void putPiece(Piece pc, Square sq, bool update_nnue);
-        void removePiece(Square sq, bool update_nnue);
-        void movePiece(Square from, Square to, bool update_nnue);
+        void putPiece(Piece pc, Square sq, bool update_nnue = false);
+        void removePiece(Square sq, bool update_nnue = false);
+        void movePiece(Square from, Square to, bool update_nnue = false);
 
         void initThreats();
         void initCheckersAndPinned();
@@ -135,11 +141,17 @@ namespace Chess
 
     inline U64 Board::getPieceBB(Color c, PieceType pt) const
     {
-        assert(pt != NO_PIECE_TYPE);
+        assert(c == WHITE || c == BLACK);
+        assert(pt >= PAWN && pt <= KING);
         return piece_bb[makePiece(c, pt)];
     }
 
-    inline Piece Board::pieceAt(Square sq) const { return board[sq]; }
+    inline Piece Board::pieceAt(Square sq) const
+    {
+        assert(sq >= a1 && sq <= h8);
+        return board[sq];
+    }
+
     inline Color Board::getTurn() const { return stm; }
     inline int Board::getPly() const { return curr_ply; }
 
@@ -147,7 +159,12 @@ namespace Chess
 
     inline U64 Board::getHash() const { return history[curr_ply].hash; }
     inline U64 Board::getPawnHash() const { return history[curr_ply].pawn_hash; }
-    inline U64 Board::getNonPawnHash(Color c) const { return history[curr_ply].non_pawn_hash[c]; }
+
+    inline U64 Board::getNonPawnHash(Color c) const
+    {
+        assert(c == WHITE || c == BLACK);
+        return history[curr_ply].non_pawn_hash[c];
+    }
 
     inline Square Board::kingSq(Color c) const { return lsb(getPieceBB(c, KING)); }
 
@@ -168,7 +185,7 @@ namespace Chess
 
     inline U64 Board::getThreats(PieceType pt) const
     {
-        assert(pt != NO_PIECE_TYPE);
+        assert(pt >= PAWN && pt <= KING);
         return history[curr_ply].threats[pt];
     }
 
@@ -201,7 +218,8 @@ namespace Chess
 
     inline void Board::putPiece(Piece pc, Square sq, bool update_nnue)
     {
-        assert(pc != NO_PIECE);
+        assert(sq >= a1 && sq <= h8);
+        assert(pc >= WHITE_PAWN && pc <= BLACK_KING);
 
         board[sq] = pc;
         piece_bb[pc] |= SQUARE_BB[sq];
@@ -219,25 +237,30 @@ namespace Chess
 
     inline void Board::removePiece(Square sq, bool update_nnue)
     {
-        Piece p = board[sq];
-        assert(p != NO_PIECE);
+        assert(sq >= a1 && sq <= h8);
 
-        piece_bb[p] ^= SQUARE_BB[sq];
+        Piece pc = board[sq];
+        assert(pc != NO_PIECE);
+
+        piece_bb[pc] ^= SQUARE_BB[sq];
         board[sq] = NO_PIECE;
-        history[curr_ply].occ[colorOf(p)] ^= SQUARE_BB[sq];
+        history[curr_ply].occ[colorOf(pc)] ^= SQUARE_BB[sq];
 
         if (update_nnue)
         {
             NNUE::Accum &acc = getAccumulator();
             NNUE::Accum &input = accumulators[accumulators.getIndex() - 1];
 
-            NNUE::nnue.removePiece(acc, input, p, sq, kingSq(WHITE), WHITE);
-            NNUE::nnue.removePiece(acc, input, p, sq, kingSq(BLACK), BLACK);
+            NNUE::nnue.removePiece(acc, input, pc, sq, kingSq(WHITE), WHITE);
+            NNUE::nnue.removePiece(acc, input, pc, sq, kingSq(BLACK), BLACK);
         }
     }
 
     inline void Board::movePiece(Square from, Square to, bool update_nnue)
     {
+        assert(from >= a1 && from <= h8);
+        assert(to >= a1 && to <= h8);
+
         Piece pc = board[from];
         assert(pc != NO_PIECE);
 

@@ -4,6 +4,8 @@ namespace Astra
 {
     void partialInsertionSort(MoveList<> &ml, int idx)
     {
+        assert(idx >= 0);
+
         int best_idx = idx;
 
         for (int i = 1 + idx; i < ml.size(); i++)
@@ -176,16 +178,21 @@ namespace Astra
     {
         for (int i = 0; i < ml_main.size(); i++)
         {
-            const Piece p = board.pieceAt(ml_main[i].from());
-            const PieceType pt = typeOf(p);
+            const Piece pc = board.pieceAt(ml_main[i].from());
+            const PieceType pt = typeOf(pc);
             const Square from = ml_main[i].from();
             const Square to = ml_main[i].to();
 
+            assert(to >= a1 && to <= h8);
+            assert(from >= a1 && from <= h8);
+            assert(pt >= PAWN && pt <= KING);
+            assert(pc >= WHITE_PAWN && pc <= BLACK_KING);
+
             ml_main[i].score = 2 * history.getHistoryHeuristic(board.getTurn(), ml_main[i]);
-            ml_main[i].score += 2 * (int)(*(ss - 1)->conth)[p][to];
-            ml_main[i].score += (int)(*(ss - 2)->conth)[p][to];
-            ml_main[i].score += (int)(*(ss - 4)->conth)[p][to];
-            ml_main[i].score += (int)(*(ss - 6)->conth)[p][to];
+            ml_main[i].score += 2 * (int)(*(ss - 1)->conth)[pc][to];
+            ml_main[i].score += (int)(*(ss - 2)->conth)[pc][to];
+            ml_main[i].score += (int)(*(ss - 4)->conth)[pc][to];
+            ml_main[i].score += (int)(*(ss - 6)->conth)[pc][to];
 
             if (pt != PAWN && pt != KING)
             {

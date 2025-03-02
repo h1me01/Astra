@@ -37,7 +37,7 @@ namespace Astra
 #endif
 
     // search parameters
-    PARAM(lmr_base, 120, 80, 120, 10);
+    PARAM(lmr_base, 120, 75, 150, 10);
     PARAM(lmr_div, 186, 150, 300, 25);
 
     PARAM(asp_depth, 6, 5, 9, 1);
@@ -46,7 +46,7 @@ namespace Astra
     PARAM(rfp_depth, 7, 7, 9, 1);
     PARAM(rfp_depth_mult, 93, 70, 120, 8);
 
-    PARAM(rzr_depth_mult, 237, 150, 300, 20);
+    PARAM(rzr_depth_mult, 237, 150, 350, 25);
 
     PARAM(nmp_depth_mult, 33, 27, 34, 3);
     PARAM(nmp_base, 202, 160, 220, 10);
@@ -68,13 +68,14 @@ namespace Astra
     PARAM(fp_mult, 110, 80, 150, 10);
 
     PARAM(ext_margin, 86, 65, 150, 12);
+    PARAM(zws_margin, 74, 60, 90, 8);
 
     PARAM(hp_margin, 4901, 3500, 6000, 400);
     PARAM(hp_qdiv, 7885, 7500, 9000, 600);
     PARAM(hp_cdiv, 6156, 5500, 7500, 600);
     PARAM(hbonus_margin, 80, 65, 85, 8);
 
-    PARAM(qfp_margin, 98, 60, 150, 15);
+    PARAM(qfp_margin, 98, 60, 150, 12);
 
     // history parameters
     PARAM(history_mult, 131, 130, 180, 15);

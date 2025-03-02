@@ -6,6 +6,8 @@ namespace NNUE
 
     void AccumTable::refresh(Color view, Board &board)
     {
+        assert(view == WHITE || view == BLACK);
+
         const Square ksq = board.kingSq(view);
         const int ksq_idx = KING_BUCKET[relativeSquare(view, ksq)];
         AccumEntry &entry = entries[view][(fileOf(ksq) > 3) * BUCKET_SIZE + ksq_idx];
