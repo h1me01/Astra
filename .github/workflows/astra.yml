@@ -1,17 +1,17 @@
 name: C/C++ CI
 
 on:
-  push:
-  pull_request:
-
-  workflow_dispatch:
+   push:
+    branches:
+      - master
 
 jobs:
-  Ubuntu:
+  build:
     runs-on: ubuntu-20.04
 
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout source code
+        uses: actions/checkout@v2
 
       - name: Install Dependencies
         run: |
@@ -23,11 +23,11 @@ jobs:
           cd src
           make -j
 
-      - name: Check valgrind
+      - name: Run Valgrind Memory Check
         if: github.event_name == 'push'
         run: |
           cd src
-          valgrind --track-origins=yes --error-exitcode=1 ./astra bench
+          valgrind --track-origins=yes --leak-check=full --error-exitcode=1 ./astra bench || exit $?
 
   Windows:
     runs-on: windows-2022
