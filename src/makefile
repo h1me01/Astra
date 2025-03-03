@@ -1,9 +1,9 @@
 ROOT := $(realpath $(dir $(abspath $(lastword $(MAKEFILE_LIST)))))
 EvalFile = $(ROOT)/weights.net
 
-# Compiler and flags
+# compiler and flags
 CXX := g++
-CXXFLAGS := -g \
+CXXFLAGS := -s \
             -std=c++17 \
             -Wall \
             -Wextra \
@@ -19,7 +19,7 @@ CXXFLAGS := -g \
 
 LDFLAGS := -lstdc++
 
-# Source files
+# source files
 CHESS_SRC := chess/attacks.cpp \
              chess/board.cpp \
              chess/misc.cpp \
@@ -81,7 +81,7 @@ pgo:
 
 	$(RM) *.gcda *.o profdata
 
-# Run with Valgrind to detect memory issues
+# run with valgrind to detect memory issues
 valgrind:
 	$(CXX) $(CXXFLAGS) -o $(TARGET_SUFFIX) $(SRC) $(LDFLAGS)
 	valgrind --track-origins=yes --leak-check=full --error-exitcode=1 ./$(TARGET_SUFFIX) bench
