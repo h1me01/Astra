@@ -137,16 +137,15 @@ namespace NNUE
         const int idx = index(psq, ksq, pc, view);
 
 #if defined(__AVX512F__) || defined(__AVX2__) || defined(__AVX__)
-        avx_type *acc_view = (avx_type *)acc.data[view];
-        const avx_type *input_view = acc.init[view] ? acc_view : (avx_type *)prev.data[view];
+        avx_type *acc_data = (avx_type *)acc.data[view];
+        const avx_type *prev_data = acc.init[view] ? acc_data : (avx_type *)prev.data[view];
 
         const auto weights = (const avx_type *)(fc1_weights + idx * HIDDEN_SIZE);
         for (int i = 0; i < HIDDEN_SIZE / div; i++)
-            acc_view[i] = avx_add_epi16(input_view[i], weights[i]);
-
+            acc_data[i] = avx_add_epi16(prev_data[i], weights[i]);
 #else
         for (int i = 0; i < HIDDEN_SIZE; i++)
-            acc.data[view][i] = (acc.init[view] ? acc.data[view][i] : input.data[view][i]) + fc1_weights[idx * HIDDEN_SIZE + i];
+            acc.data[view][i] = (acc.init[view] ? acc.data[view][i] : prev.data[view][i]) + fc1_weights[idx * HIDDEN_SIZE + i];
 #endif
 
         acc.init[view] = true;
@@ -185,7 +184,6 @@ namespace NNUE
 
         for (int i = 0; i < HIDDEN_SIZE / div; i++)
             acc_data[i] = avx_add_epi16(prev_data[i], avx_sub_epi16(weights_to[i], weights_from[i]));
-
 #else
         for (int i = 0; i < HIDDEN_SIZE; i++)
         {

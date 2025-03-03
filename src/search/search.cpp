@@ -68,6 +68,7 @@ namespace Astra
 
         int stability = 0;
         Score prev_result = VALUE_NONE;
+        Score scores[MAX_PLY];
 
         Move bestmove = NO_MOVE, prev_bestmove = NO_MOVE;
         for (root_depth = 1; root_depth < MAX_PLY; root_depth++)
@@ -93,15 +94,21 @@ namespace Astra
                 int64_t elapsed = tm.elapsedTime();
 
                 // adjust time optimum based on stability
-                stability = bestmove == prev_bestmove ? std::min(10, stability + 1) : 0;
-                double stability_factor = 1.3115 - stability * 0.05329;
+                stability = bestmove == prev_bestmove ? std::min(9, stability + 1) : 0;
+                double stability_factor = (stability_base / 100.0) - stability * (stability_mult / 100.0);
 
                 // adjust time optimum based on last score
-                double result_change_factor = 0.4788 + std::clamp(prev_result - result, 0, 62) * 0.003657;
+                // clang-format off
+                double result_change_factor = (results_base / 100.0) 
+                                            + (results_mult1 / 1000.0) * (prev_result - result) 
+                                            + (results_mult2 / 1000.0) * (scores[root_depth - 3] - result);
+                // clang-format on
+
+                result_change_factor = std::clamp(result_change_factor, results_min / 100.0, results_max / 100.0);
 
                 // adjust time optimum based on node count
                 double not_best_nodes = 1.0 - double(root_moves[0].nodes / double(nodes));
-                double node_count_factor = not_best_nodes * 2.1223 + 0.4599;
+                double node_count_factor = not_best_nodes * (node_mult / 100.0) + (node_base / 100.0);
 
                 // check if we should stop
                 if (elapsed > limit.time.optimum * stability_factor * result_change_factor * node_count_factor)
@@ -110,6 +117,7 @@ namespace Astra
 
             prev_bestmove = bestmove;
             prev_result = result;
+            scores[root_depth] = result;
         }
 
         // make sure to atleast have a best move
@@ -128,8 +136,8 @@ namespace Astra
         Score alpha = -VALUE_INFINITE;
         Score beta = VALUE_INFINITE;
 
-        int window = asp_window;
-        if (depth >= asp_depth)
+        int window = 9;
+        if (depth >= 6)
         {
             Score avg_score = root_moves[multipv_idx].avg_score;
             alpha = std::max(avg_score - window, -int(VALUE_INFINITE));
@@ -329,8 +337,8 @@ namespace Astra
         if (!in_check && !pv_node && !skipped)
         {
             // reverse futility pruning
-            int rfp_margin = std::max(rfp_depth_mult * (depth - (improving && !board.oppHasGoodCaptures())), 20);
-            if (depth <= rfp_depth && eval < VALUE_TB_WIN_IN_MAX_PLY && eval - rfp_margin >= beta)
+            int rfp_margin = rfp_depth_mult * depth - rfp_improving_mult * improving;
+            if (depth < 10 && eval < VALUE_TB_WIN_IN_MAX_PLY && eval - rfp_margin >= beta)
                 return (eval + beta) / 2;
 
             // razoring
@@ -347,7 +355,7 @@ namespace Astra
                 && board.nonPawnMat(stm) && (ss - 1)->curr_move != NULL_MOVE && beta > -VALUE_TB_WIN_IN_MAX_PLY)
             {
                 // clang-format on
-                int R = 4 + depth / nmp_depth_div + std::min(int(nmp_min), (eval - beta) / nmp_div);
+                int R = 4 + depth / 3 + std::min(4, (eval - beta) / nmp_eval_div);
 
                 ss->curr_move = NULL_MOVE;
                 ss->moved_piece = NO_PIECE;
@@ -368,7 +376,7 @@ namespace Astra
 
             // probcut
             // clang-format off
-            int beta_cut = beta + probcut_margin;
+            int beta_cut = beta + 174;
             if (depth > 4 && std::abs(beta) < VALUE_TB_WIN_IN_MAX_PLY 
                 && !(tt_depth >= depth - 3 && tt_score != VALUE_NONE && tt_score < beta_cut))
             {
@@ -440,17 +448,17 @@ namespace Astra
                 if (!isCap(move) && move.type() != PQ_QUEEN)
                 {
                     // history pruning
-                    if (history_score < -hp_margin * depth && depth <= hp_depth)
+                    if (history_score < -hp_depth_mult * depth && depth < 7)
                         continue;
 
                     // futility pruning
-                    if (!in_check && depth <= fp_depth && eval + fp_base + depth * fp_mult <= alpha)
+                    if (!in_check && depth < 11 && eval + fp_base + depth * fp_mult <= alpha)
                         mp.skip_quiets = true;
                 }
 
                 // see pruning
                 int see_margin = isCap(move) ? -see_cap_margin : -see_quiet_margin;
-                int see_depth = isCap(move) ? see_cap_depth : see_quiet_depth;
+                int see_depth = isCap(move) ? 6 : 8;
                 if (depth <= see_depth && !board.see(move, depth * see_margin))
                     continue;
             }

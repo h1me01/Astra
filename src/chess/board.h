@@ -119,8 +119,6 @@ namespace Chess
         bool see(Move &m, int threshold) const;
         bool hasUpcomingRepetition(int ply);
 
-        bool oppHasGoodCaptures() const;
-
         int getPhase() const;
 
     private:
@@ -193,19 +191,6 @@ namespace Chess
     inline U64 Board::orthSliders(Color c) const { return getPieceBB(c, ROOK) | getPieceBB(c, QUEEN); }
 
     inline bool Board::inCheck() const { return history[curr_ply].checkers; }
-
-    inline bool Board::oppHasGoodCaptures() const
-    {
-        const U64 queens = getPieceBB(stm, QUEEN);
-        const U64 rooks = getPieceBB(stm, ROOK);
-        const U64 minors = getPieceBB(stm, KNIGHT) | getPieceBB(stm, BISHOP);
-
-        const U64 pawn_threats = getThreats(PAWN);
-        const U64 minor_threats = pawn_threats | getThreats(KNIGHT) | getThreats(BISHOP);
-        const U64 rook_threats = minor_threats | getThreats(ROOK);
-
-        return (queens & rook_threats) | (rooks & minor_threats) | (minors & pawn_threats);
-    }
 
     inline int Board::getPhase() const
     {

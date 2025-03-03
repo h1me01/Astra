@@ -182,10 +182,7 @@ namespace UCI
             else if (token == "bench")
                 Bench::bench(13);
             else if (token == "tune")
-            {
-                // Astra::paramsToSpsa();
-                Astra::paramsToJSON();
-            }
+                Astra::paramsToSpsa();
             else if (token == "setoption")
             {
                 options.set(is);
