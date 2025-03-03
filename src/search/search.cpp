@@ -95,7 +95,7 @@ namespace Astra
 
                 // adjust time optimum based on stability
                 stability = bestmove == prev_bestmove ? std::min(9, stability + 1) : 0;
-                double stability_factor = (stability_base / 100.0) - stability * (stability_mult / 100.0);
+                double stability_factor = (stability_base / 100.0) - stability * (stability_mult / 1000.0);
 
                 // adjust time optimum based on last score
                 // clang-format off

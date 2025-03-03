@@ -31,17 +31,17 @@ namespace Astra
 #endif
 
     // time management
-    PARAM(node_mult, 192, 50, 200);
-    PARAM(node_base, 61, 20, 100);
+    PARAM(stability_base, 141, 100, 200);
+    PARAM(stability_mult, 50, 0, 250);
 
-    PARAM(stability_base, 169, 50, 200);
-    PARAM(stability_mult, 7, 0, 30);
-
-    PARAM(results_base, 84, 0, 150);
-    PARAM(results_mult1, 10, 0, 20);
-    PARAM(results_mult2, 26, 0, 50);
+    PARAM(results_base, 84, 0, 160);
+    PARAM(results_mult1, 10, 0, 27);
+    PARAM(results_mult2, 26, 0, 45);
     PARAM(results_min, 81, 0, 150);
-    PARAM(results_max, 146, 75, 225);
+    PARAM(results_max, 146, 50, 220);
+
+    PARAM(node_mult, 200, 120, 260);
+    PARAM(node_base, 60, 10, 90);
 
     // search parameters
     PARAM(lmr_base, 120, 40, 200);
