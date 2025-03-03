@@ -146,7 +146,7 @@ namespace UCI
     {
         if (argc > 1 && strncmp(argv[1], "bench", 5) == 0)
         {
-            Bench::bench(2);
+            Bench::bench(13);
             return;
         }
 
