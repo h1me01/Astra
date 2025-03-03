@@ -3,7 +3,7 @@ EvalFile = $(ROOT)/weights.net
 
 # Compiler and flags
 CXX := g++
-CXXFLAGS := -s \
+CXXFLAGS := -g \
             -std=c++17 \
             -Wall \
             -Wextra \
