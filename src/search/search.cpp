@@ -63,10 +63,6 @@ namespace Astra
         for (int i = 0; i < MAX_PLY + 6; i++)
         {
             stack[i].ply = i - 6;
-            stack[i].eval = VALUE_NONE;
-            stack[i].killer = NO_MOVE;
-            stack[i].moved_piece = NO_PIECE;
-            stack[i].curr_move = NO_MOVE;
             stack[i].conth = &history.conth[0][WHITE_PAWN][a1];
         }
 

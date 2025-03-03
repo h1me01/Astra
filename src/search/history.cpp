@@ -83,10 +83,14 @@ namespace Astra
 
     void History::updateContH(Move &move, Stack *ss, int bonus)
     {
+        return;
         for (int offset : {1, 2, 4, 6})
             if ((ss - offset)->curr_move != NO_MOVE && (ss - offset)->curr_move != NULL_MOVE)
             {
-                int16_t &value = (*(ss - offset)->conth)[(ss - offset)->moved_piece][move.to()];
+                Piece pc = (ss - offset)->moved_piece;
+                assert(pc >= WHITE_PAWN && pc <= BLACK_KING);
+                
+                int16_t &value = (*(ss - offset)->conth)[pc][move.to()];
                 value += getFormula(value, bonus);
             }
     }
