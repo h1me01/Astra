@@ -83,7 +83,6 @@ namespace Astra
 
     void History::updateContH(Move &move, Stack *ss, int bonus)
     {
-        return;
         for (int offset : {1, 2, 4, 6})
             if ((ss - offset)->curr_move != NO_MOVE && (ss - offset)->curr_move != NULL_MOVE)
             {

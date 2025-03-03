@@ -59,7 +59,7 @@ namespace Astra
         assert(to >= a1 && to <= h8);
         assert(from >= a1 && from <= h8);
         assert(pc >= WHITE_PAWN && pc <= BLACK_KING);
-        return 0;
+
         return hh[board.getTurn()][from][to] +
                (int)(*(ss - 1)->conth)[pc][to] +
                (int)(*(ss - 2)->conth)[pc][to] +

@@ -189,10 +189,10 @@ namespace Astra
             assert(pc >= WHITE_PAWN && pc <= BLACK_KING);
 
             ml_main[i].score = 2 * history.getHistoryHeuristic(board.getTurn(), ml_main[i]);
-            //ml_main[i].score += 2 * (int)(*(ss - 1)->conth)[pc][to];
-            //ml_main[i].score += (int)(*(ss - 2)->conth)[pc][to];
-            //ml_main[i].score += (int)(*(ss - 4)->conth)[pc][to];
-            //ml_main[i].score += (int)(*(ss - 6)->conth)[pc][to];
+            ml_main[i].score += 2 * (int)(*(ss - 1)->conth)[pc][to];
+            ml_main[i].score += (int)(*(ss - 2)->conth)[pc][to];
+            ml_main[i].score += (int)(*(ss - 4)->conth)[pc][to];
+            ml_main[i].score += (int)(*(ss - 6)->conth)[pc][to];
 
             if (pt != PAWN && pt != KING)
             {
