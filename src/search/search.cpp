@@ -59,12 +59,16 @@ namespace Astra
 
         // init stack
         Stack stack[MAX_PLY + 6]; // +6 for history
-        Stack *ss = stack + 6;
-
-        for (int i = 0; i < MAX_PLY; i++)
-            (ss + i)->ply = i;
-        for (int i = 1; i <= 6; i++)
-            (ss - i)->conth = &history.conth[0][WHITE_PAWN][a1];
+        Stack *ss = &stack[6];
+        for (int i = 0; i < MAX_PLY + 6; i++)
+        {
+            stack[i].ply = i - 6;
+            stack[i].eval = VALUE_NONE;
+            stack[i].killer = NO_MOVE;
+            stack[i].moved_piece = NO_PIECE;
+            stack[i].curr_move = NO_MOVE;
+            stack[i].conth = &history.conth[0][WHITE_PAWN][a1];
+        }
 
         int stability = 0;
         Score prev_result = VALUE_NONE;

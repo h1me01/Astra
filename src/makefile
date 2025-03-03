@@ -81,4 +81,9 @@ pgo:
 
 	$(RM) *.gcda *.o profdata
 
-.PHONY: all clean pgo
+# Run with Valgrind to detect memory issues
+valgrind:
+	$(CXX) $(CXXFLAGS) -o $(TARGET_SUFFIX) $(SRC) $(LDFLAGS)
+	valgrind --track-origins=yes --leak-check=full --error-exitcode=1 ./$(TARGET_SUFFIX) bench
+
+.PHONY: all clean pgo valgrind
