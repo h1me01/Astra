@@ -2,7 +2,7 @@
 
 int main(int argc, char **argv)
 {
-    std::cout << "Astra chess engine written by Semih Oezalp" << std::endl;
+    std::cout << "Astra Tune chess engine written by Semih Oezalp" << std::endl;
 
     initLookUpTables();
     Zobrist::init();
