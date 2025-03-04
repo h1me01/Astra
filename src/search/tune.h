@@ -52,8 +52,8 @@ namespace Astra
 
     PARAM(rzr_depth_mult, 237, 150, 350);
 
-    PARAM(nmp_depth_mult, 33, 27, 34);
-    PARAM(nmp_base, 202, 160, 220);
+    PARAM(nmp_depth_mult, 33, 0, 85);
+    PARAM(nmp_base, 202, 0, 400);
     PARAM(nmp_eval_div, 219, 100, 400);
 
     PARAM(see_cap_margin, 94, 80, 110);
