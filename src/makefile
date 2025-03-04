@@ -1,7 +1,10 @@
-ROOT := $(realpath $(dir $(abspath $(lastword $(MAKEFILE_LIST)))))
-EvalFile = $(ROOT)/weights.net
 
-# compiler and flags
+ROOT := $(realpath $(dir $(abspath $(lastword $(MAKEFILE_LIST)))))
+
+# Allow custom EVALFILE path via command line
+EVALFILE ?= $(ROOT)/weights.net
+
+# Compiler and flags
 CXX := g++
 CXXFLAGS := -s \
             -std=c++17 \
@@ -15,11 +18,10 @@ CXXFLAGS := -s \
             -fno-exceptions \
             -flto \
             -march=native \
-            -DNNUE_PATH=\"$(EvalFile)\" # nnue path
-
+            -DNNUE_PATH=\"$(EVALFILE)\" # nnue path
 LDFLAGS := -lstdc++
 
-# source files
+# Source files
 CHESS_SRC := chess/attacks.cpp \
              chess/board.cpp \
              chess/misc.cpp \
@@ -36,8 +38,8 @@ SEARCH_SRC := search/history.cpp \
               search/syzygy.cpp \
               search/threads.cpp \
               search/tt.cpp \
-              search/tune.cpp 
-              
+              search/tune.cpp
+             
 SYZYGY_SRC := fathom/tbprobe.cpp
 
 MAIN_SRC := main.cpp \
@@ -45,8 +47,7 @@ MAIN_SRC := main.cpp \
             uci.cpp
 
 SRC := $(CHESS_SRC) $(EVAL_SRC) $(SEARCH_SRC) $(SYZYGY_SRC) $(MAIN_SRC)
-
-TARGET = astra
+TARGET = $(if $(EXE),$(EXE),astra)
 
 ifeq ($(OS), Windows_NT)
     SUFFIX := .exe
@@ -76,14 +77,7 @@ clean:
 pgo:
 	$(CXX) $(CXXFLAGS) -fprofile-generate -o $(TARGET_SUFFIX) $(SRC) $(LDFLAGS)
 	./$(TARGET_SUFFIX) bench
-
 	$(CXX) $(filter-out -fprofile-generate, $(CXXFLAGS)) -fprofile-use -o $(TARGET_SUFFIX) $(SRC) $(LDFLAGS)
-
 	$(RM) *.gcda *.o profdata
 
-# run with valgrind to detect memory issues
-valgrind:
-	$(CXX) $(CXXFLAGS) -o $(TARGET_SUFFIX) $(SRC) $(LDFLAGS)
-	valgrind --track-origins=yes --leak-check=full --error-exitcode=1 ./$(TARGET_SUFFIX) bench
-
-.PHONY: all clean pgo valgrind
+.PHONY: all clean pgo

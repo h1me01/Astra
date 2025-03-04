@@ -647,6 +647,7 @@ namespace Astra
 
     Score Search::qSearch(int depth, Score alpha, Score beta, Stack *ss)
     {
+        assert(ss->ply >= 0);
         assert(alpha < beta);
 
         if (isLimitReached(1))
