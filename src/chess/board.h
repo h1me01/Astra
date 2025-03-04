@@ -1,7 +1,6 @@
 #pragma once
 
 #include <memory>
-
 #include "misc.h"
 #include "zobrist.h"
 #include "attacks.h"
@@ -261,8 +260,8 @@ namespace Chess
 
             if (typeOf(pc) == KING)
             {
-                Square rel_from = relativeSquare(stm, from);
-                Square rel_to = relativeSquare(stm, to);
+                Square rel_from = relSquare(stm, from);
+                Square rel_to = relSquare(stm, to);
 
                 // refresh if different bucket index or king crossing the other half
                 if (NNUE::KING_BUCKET[rel_from] != NNUE::KING_BUCKET[rel_to] || fileOf(from) + fileOf(to) == 7)

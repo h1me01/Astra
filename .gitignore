@@ -2,8 +2,6 @@
 
 build/
 
-python/
-
-src/astra.exe
+src/*.exe
 
 CMakeLists.txt

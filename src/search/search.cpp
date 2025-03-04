@@ -1,5 +1,4 @@
 #include <cmath>
-
 #include "search.h"
 #include "tune.h"
 #include "syzygy.h"

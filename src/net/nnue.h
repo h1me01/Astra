@@ -4,7 +4,6 @@
 #include <cassert>
 #include <immintrin.h>
 #include <cstring>
-
 #include "../chess/types.h"
 
 #if defined(__AVX512F__)

@@ -2,7 +2,6 @@
 
 #include <array>
 #include <cassert>
-
 #include "nnue.h"
 #include "../chess/types.h"
 

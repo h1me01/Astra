@@ -1,7 +1,6 @@
 #pragma once
 
 #include <chrono>
-
 #include "../chess/types.h"
 
 using namespace Chess;

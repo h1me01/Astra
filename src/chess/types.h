@@ -17,12 +17,12 @@ namespace Chess
     constexpr int PIECE_VALUES[] = {100, 325, 325, 500, 1000, 30000, 0};
 
     // clang-format off
+    constexpr int NUM_COLORS = 2;   
     enum Color
     {
         WHITE,
         BLACK,
         BOTH_COLORS = 2,
-        NUM_COLORS = 2
     };
 
     enum Direction
@@ -153,7 +153,7 @@ namespace Chess
         bool operator!=(const Move &m) const { return move != m.move; }
         bool operator!() const { return move == 0; }
 
-        int score = 0;
+        int score = 0; // used for move ordering
 
     private:
         // first 4 bits represent the move flag

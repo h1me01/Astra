@@ -1,5 +1,4 @@
 #include <cassert>
-
 #include "board.h"
 
 namespace Chess
@@ -17,19 +16,19 @@ namespace Chess
     std::pair<Square, Square> getCastleRookSquares(Color c, Square to)
     {
         assert(c == WHITE || c == BLACK);
-        assert(to == relativeSquare(c, g1) || to == relativeSquare(c, c1));
+        assert(to == relSquare(c, g1) || to == relSquare(c, c1));
 
         Square rook_from, rook_to;
 
-        if (to == relativeSquare(c, g1)) // kingside
+        if (to == relSquare(c, g1)) // kingside
         {
-            rook_from = relativeSquare(c, h1);
-            rook_to = relativeSquare(c, f1);
+            rook_from = relSquare(c, h1);
+            rook_to = relSquare(c, f1);
         }
         else // queenside
         {
-            rook_from = relativeSquare(c, a1);
-            rook_to = relativeSquare(c, d1);
+            rook_from = relSquare(c, a1);
+            rook_to = relSquare(c, d1);
         }
 
         return {rook_from, rook_to};
@@ -312,11 +311,11 @@ namespace Chess
                 return false;
             // short castling
             U64 not_free = (occ | info.danger) & OO_BLOCKERS_MASK[stm];
-            if (!not_free && info.castle_rights.kingSide(stm) && to == relativeSquare(stm, g1))
+            if (!not_free && info.castle_rights.kingSide(stm) && to == relSquare(stm, g1))
                 return true;
             // long castling
-            not_free = (occ | (info.danger & ~SQUARE_BB[relativeSquare(stm, b1)])) & OOO_BLOCKERS_MASK[stm];
-            if (!not_free && info.castle_rights.queenSide(stm) && to == relativeSquare(stm, c1))
+            not_free = (occ | (info.danger & ~SQUARE_BB[relSquare(stm, b1)])) & OOO_BLOCKERS_MASK[stm];
+            if (!not_free && info.castle_rights.queenSide(stm) && to == relSquare(stm, c1))
                 return true;
             // if short/long castling condition is not met, then it's not pseudo legal
             return false;

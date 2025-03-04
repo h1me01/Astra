@@ -1,5 +1,5 @@
 #include <cstring> // strncmp
-
+#include <cctype>  // std::isdigit
 #include "uci.h"
 #include "bench.h"
 #include "chess/perft.h"
@@ -9,97 +9,15 @@
 
 namespace UCI
 {
+    // helper
+    bool isInteger(const std::string &s)
+    {
+        return !s.empty() && std::all_of(s.begin(), s.end(), ::isdigit);
+    }
+
     const std::string version = "5.0";
 
     // options class
-    void Options::add(std::string name, const Option &option)
-    {
-        options[name] = option;
-    }
-
-    void Options::apply()
-    {
-        auto path = get("SyzygyPath");
-        if (!path.empty() && path != "<empty>")
-        {
-            bool success = tb_init(path.c_str());
-
-            if (success && TB_LARGEST > 0)
-            {
-                use_tb = true;
-                std::cout << "info string successfully loaded syzygy path" << std::endl;
-            }
-            else
-                std::cout << "info string failed to load syzygy path " << path << std::endl;
-        }
-
-        Astra::tt.init(std::stoi(get("Hash")));
-        num_workers = std::stoi(get("Threads"));
-        Astra::tt.num_workers = num_workers;
-    }
-
-    void Options::set(std::istringstream &is)
-    {
-        std::vector<std::string> tokens = split(is.str(), ' ');
-        const std::string &name = tokens[2];
-        const std::string &value = tokens[4];
-
-        if (tokens.size() < 5)
-        {
-            std::cout << "Invalid option command" << std::endl;
-            return;
-        }
-
-        if (tokens[1] != "name")
-        {
-            std::cout << "Invalid option command";
-            return;
-        }
-
-        if (tokens[3] != "value")
-        {
-            std::cout << "Invalid option command";
-            return;
-        }
-
-        if (value == "<empty>" || value.empty())
-            return;
-
-#ifdef TUNE
-        Astra::setParam(name, std::stoi(value));
-        Astra::initReductions();
-#endif
-
-        if (options.count(name))
-        {
-            if (options[name].type == "spin")
-            {
-                int n_value = std::stoi(value);
-
-                if (n_value >= options[name].min && n_value <= options[name].max)
-                    options[name] = value;
-                else
-                    std::cout << "Invalid value for option: " << name << std::endl;
-            }
-            else
-                options[name] = value;
-        }
-        else
-        {
-#ifndef TUNE
-            std::cout << "Unknown option: " << name << std::endl;
-#endif
-        }
-    }
-
-    std::string Options::get(std::string str) const
-    {
-        auto it = options.find(str);
-        if (it != options.end())
-            return it->second.val;
-        return "";
-    }
-
     void Options::print() const
     {
         for (const auto &elem : options)
@@ -118,8 +36,91 @@ namespace UCI
         }
 
 #ifdef TUNE
-        Astra::paramsToUCI();
+        for (auto param : Astra::params)
+            std::cout << "option name " << param->name
+                      << " type spin default " << param->value
+                      << " min " << param->min
+                      << " max " << param->max << std::endl;
 #endif
+    }
+
+    void Options::apply()
+    {
+        auto path = get("SyzygyPath");
+        if (!path.empty() && path != "<empty>")
+        {
+            bool success = tb_init(path.c_str());
+
+            if (success && TB_LARGEST > 0)
+            {
+                use_tb = true;
+                std::cout << "info string Successfully loaded syzygy path" << std::endl;
+            }
+            else
+                std::cout << "info string Failed to load syzygy path " << path << std::endl;
+        }
+
+        Astra::tt.init(std::stoi(get("Hash")));
+        num_workers = std::stoi(get("Threads"));
+        Astra::tt.num_workers = num_workers;
+    }
+
+    void Options::set(std::istringstream &is)
+    {
+        std::vector<std::string> tokens = split(is.str(), ' ');
+        const std::string &name = tokens[2];
+        const std::string &value = tokens[4];
+
+        if (tokens.size() < 5)
+        {
+            std::cout << "info string Invalid option command" << std::endl;
+            return;
+        }
+
+        if (tokens[1] != "name")
+        {
+            std::cout << "info string Invalid option command";
+            return;
+        }
+
+        if (tokens[3] != "value")
+        {
+            std::cout << "info string Invalid option command";
+            return;
+        }
+
+        if (value == "<empty>" || value.empty())
+            return;
+
+#ifdef TUNE
+        Astra::setParam(name, std::stoi(value));
+        Astra::initReductions();
+#endif
+
+        if (options.count(name))
+        {
+            if (options[name].type == "spin")
+            {
+                if (isInteger(value))
+                {
+                    int n = std::stoi(value);
+                    if (n >= options[name].min && n <= options[name].max)
+                        options[name] = value;
+                    else
+                        std::cout << "info string Invalid range of value for option " << name << std::endl;
+                }
+                else
+                    std::cout << "info string Invalid value for option " << name << std::endl;
+            }
+            else
+                options[name] = value;
+        }
+        else
+        {
+#ifndef TUNE
+            std::cout << "Unknown option: " << name << std::endl;
+#endif
+        }
     }
 
     // uci class
@@ -139,23 +140,21 @@ namespace UCI
 
     Uci::~Uci()
     {
-        // closeLog();
+        closeLog();
     }
 
     void Uci::loop(int argc, char **argv)
     {
         if (argc > 1 && strncmp(argv[1], "bench", 5) == 0)
         {
-            Bench::bench(13);
+            Bench::bench(9);
             return;
         }
 
-        std::string line;
-        std::string token;
-
+        std::string line, token;
         while (std::getline(std::cin, line))
         {
-            // writeLog(line);
+            writeLog(line);
 
             std::istringstream is(line);
             token.clear();
@@ -225,7 +224,7 @@ namespace UCI
             {
                 board.makeMove(getMove(token));
 
-                // if half move clock got reseted, then we can reset the history
+                // if half move clock gets reseted, then we can reset the history
                 // since the last positions should not be considered in the repetition
                 if (board.halfMoveClock() == 0)
                 {
@@ -239,6 +238,7 @@ namespace UCI
 
     void Uci::go(std::istringstream &is)
     {
+        Astra::threads.stopAll();
         Astra::Limits limit;
 
         int64_t w_time = 0, b_time = 0, move_time = 0;
@@ -251,7 +251,7 @@ namespace UCI
             {
                 int depth;
                 if (!(is >> depth))
-                    std::cout << "No depth value provided.\n";
+                    std::cout << "info string No depth value provided for perft\n";
                 else
                     testPerft(board, depth);
 
@@ -282,8 +282,6 @@ namespace UCI
             }
         }
 
-        Astra::threads.stopAll();
-
         Color stm = board.getTurn();
         const int64_t time_left = stm == WHITE ? w_time : b_time;
         const int inc = stm == WHITE ? w_inc : b_inc;
@@ -297,6 +295,7 @@ namespace UCI
             limit.time = Astra::TimeMan::getOptimum(time_left, inc, moves_to_go, std::stoi(options.get("MoveOverhead")));
 
         limit.multipv = std::stoi(options.get("MultiPV"));
+
         // start search
         Astra::threads.launchWorkers(board, limit, options.num_workers, options.use_tb);
     }
@@ -305,14 +304,14 @@ namespace UCI
     {
         Square from = squareFromString(str_move.substr(0, 2));
         Square to = squareFromString(str_move.substr(2, 2));
-        Piece p = board.pieceAt(from);
+        Piece pc = board.pieceAt(from);
         Piece captured = board.pieceAt(to);
         MoveType mt = QUIET;
 
         if (captured != NO_PIECE)
             mt = CAPTURE;
 
-        if (typeOf(p) == PAWN)
+        if (typeOf(pc) == PAWN)
         {
             if (board.history[board.getPly()].ep_sq == to)
                 mt = EN_PASSANT;
@@ -329,40 +328,14 @@ namespace UCI
                     mt = MoveType(mt - 3);
             }
         }
-        else if (typeOf(p) == KING)
+        else if (typeOf(pc) == KING)
         {
-            if ((from == e1 && to == g1) || (from == e8 && to == g8))
-                mt = CASTLING;
-            else if ((from == e1 && to == c1) || (from == e8 && to == c8))
+            Color stm = board.getTurn();
+            if (from == relSquare(stm, e1) || (to == relSquare(stm, g1) && from == relSquare(stm, e1)))
                 mt = CASTLING;
         }
 
         return Move(from, to, mt);
-    }
-
-    void Uci::openLog(const std::string &filename)
-    {
-        logFile.open(filename, std::ios::app);
-        writeLog("=== New Session Started ===");
-    }
-
-    void Uci::closeLog()
-    {
-        if (logFile.is_open())
-        {
-            writeLog("=== Session Ended ===");
-            logFile.close();
-        }
-    }
-
-    void Uci::writeLog(const std::string &message)
-    {
-        if (logFile.is_open())
-        {
-            auto now = std::chrono::system_clock::now();
-            auto time = std::chrono::system_clock::to_time_t(now);
-            logFile << std::ctime(&time) << ": " << message << std::endl;
-        }
     }
 
 } // namespace UCI

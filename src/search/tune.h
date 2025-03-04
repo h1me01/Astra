@@ -6,9 +6,6 @@
 
 namespace Astra
 {
-    struct Param;
-
-    inline std::vector<Param *> params;
 
     struct Param
     {
@@ -17,12 +14,13 @@ namespace Astra
 
         Param(std::string name, int value, int min, int max);
 
-        operator int() const;
+        operator int() const { return value; }
     };
 
-    void paramsToUCI();
-    void paramsToSpsa();
+    inline std::vector<Param *> params;
+
     void setParam(const std::string &name, int value);
+    void paramsToSpsa();
 
 #ifdef TUNE
 #define PARAM(name, value, min, max) inline Param name(#name, value, min, max)

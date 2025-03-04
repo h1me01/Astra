@@ -1,6 +1,5 @@
 #include <cstring> // std::memcpy
 #include <algorithm>
-
 #include "nnue.h"
 #include "accumulator.h"
 #include "../chess/misc.h"
@@ -67,8 +66,8 @@ namespace NNUE
         if (fileOf(ksq) > 3)
             psq = Square(psq ^ 7);
 
-        psq = relativeSquare(view, psq);
-        ksq = relativeSquare(view, ksq);
+        psq = relSquare(view, psq);
+        ksq = relSquare(view, ksq);
 
         return psq + typeOf(pc) * 64 + (colorOf(pc) != view) * 64 * 6 + KING_BUCKET[ksq] * FEATURE_SIZE;
     }

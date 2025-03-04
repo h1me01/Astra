@@ -7,13 +7,11 @@
 
 namespace Chess
 {
-    // helper to print bitboards for debugging
+
     void printBitboard(U64 b);
 
-    // helper to get square from string
     Square squareFromString(std::string_view square_str);
 
-    // helper to split the fen
     std::vector<std::string> split(const std::string &str, char del);
 
     inline PieceType typeOfPromotion(const MoveType mt)
@@ -110,7 +108,7 @@ namespace Chess
     inline Square &operator+=(Square &s, Direction d) { return s = s + d; }
     inline Square &operator-=(Square &s, Direction d) { return s = s - d; }
 
-    constexpr Square relativeSquare(Color c, Square sq)
+    constexpr Square relSquare(Color c, Square sq)
     {
         assert(sq >= a1 && sq <= h8);
         return c == WHITE ? sq : Square(sq ^ 56);

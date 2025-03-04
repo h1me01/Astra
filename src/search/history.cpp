@@ -1,7 +1,6 @@
 #include "history.h"
 #include "search.h"
 #include "tune.h"
-
 #include <algorithm>
 #include <cstring>
 
@@ -88,7 +87,7 @@ namespace Astra
             {
                 Piece pc = (ss - offset)->moved_piece;
                 assert(pc >= WHITE_PAWN && pc <= BLACK_KING);
-                
+
                 int16_t &value = (*(ss - offset)->conth)[pc][move.to()];
                 value += getFormula(value, bonus);
             }

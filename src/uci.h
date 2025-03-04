@@ -34,13 +34,23 @@ namespace UCI
         int num_workers = 1; // default number of threads
         bool use_tb = false;
 
-        void add(std::string name, const Option &option);
-
         void print() const;
         void apply();
 
+        void add(std::string name, const Option &option)
+        {
+            options[name] = option;
+        }
+
         void set(std::istringstream &is);
-        std::string get(std::string str) const;
+
+        std::string get(std::string str) const
+        {
+            auto it = options.find(str);
+            if (it != options.end())
+                return it->second.val;
+            return "";
+        }
 
     private:
         std::unordered_map<std::string, Option> options;
@@ -64,9 +74,26 @@ namespace UCI
 
         Move getMove(const std::string &str_move) const;
 
-        void openLog(const std::string &filename = "astra_log.txt");
-        void closeLog();
-        void writeLog(const std::string &message);
+        void openLog(const std::string &filename = "astra_log.txt")
+        {
+            logFile.open(filename, std::ios::app);
+            writeLog("=== New Session Started ===");
+        }
+
+        void closeLog()
+        {
+            if (!logFile.is_open())
+                return;
+
+            writeLog("=== Session Ended ===");
+            logFile.close();
+        }
+
+        void writeLog(const std::string &message)
+        {
+            if (logFile.is_open())
+                logFile << message << std::endl;
+        }
     };
 
 } // namespace UCI

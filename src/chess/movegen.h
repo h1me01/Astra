@@ -1,7 +1,6 @@
 #pragma once
 
 #include <type_traits> // std::is_same
-
 #include "board.h"
 
 namespace Chess
@@ -187,7 +186,7 @@ namespace Chess
                 *ml++ = us == WHITE ? Move(e1, g1, CASTLING) : Move(e8, g8, CASTLING);
 
             // ignore the square b1/b8 since the king does move there
-            not_free = (occ | (danger & ~SQUARE_BB[relativeSquare(us, b1)])) & OOO_BLOCKERS_MASK[us];
+            not_free = (occ | (danger & ~SQUARE_BB[relSquare(us, b1)])) & OOO_BLOCKERS_MASK[us];
             if (!not_free && info.castle_rights.queenSide(us))
                 *ml++ = us == WHITE ? Move(e1, c1, CASTLING) : Move(e8, c8, CASTLING);
         }

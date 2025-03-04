@@ -1,5 +1,4 @@
 #include <cstring> // memcpy
-
 #include "misc.h"
 #include "attacks.h"
 
