@@ -27,7 +27,7 @@ jobs:
         if: github.event_name == 'push'
         run: |
           cd src
-          valgrind --track-origins=yes --leak-check=full --error-exitcode=1 ./astra bench || exit $?
+          valgrind --track-origins=yes --leak-check=full --show-reachable=yes --num-callers=50 --error-exitcode=1 ./astra bench || exit $?
 
   Windows:
     runs-on: windows-2022
