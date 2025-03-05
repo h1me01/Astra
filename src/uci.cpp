@@ -129,7 +129,7 @@ namespace UCI
         options.add("Hash", Option("spin", "16", "16", 1, 8192));
         options.add("Threads", Option("spin", "1", "1", 1, 128));
         options.add("MultiPV", Option("spin", "1", "1", 1, 256));
-        options.add("MoveOverhead", Option("spin", "10", "10", 1, 1000));
+        options.add("MoveOverhead", Option("spin", "50", "50", 1, 1000));
 #ifndef TUNE
         options.add("SyzygyPath", Option("string", "", "", 0, 0));
 #endif
@@ -331,7 +331,7 @@ namespace UCI
         else if (typeOf(pc) == KING)
         {
             Color stm = board.getTurn();
-            if (from == relSquare(stm, e1) || (to == relSquare(stm, g1) && from == relSquare(stm, e1)))
+            if (from == relSquare(stm, e1) && (to == relSquare(stm, g1) || to == relSquare(stm, c1)))
                 mt = CASTLING;
         }
 
