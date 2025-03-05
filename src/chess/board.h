@@ -83,21 +83,24 @@ namespace Chess
 
         U64 getPieceBB(Color c, PieceType pt) const;
         Piece pieceAt(Square sq) const;
-        Color getTurn() const;
-        int getPly() const;
-        int halfMoveClock() const;
-        U64 getHash() const;
-        U64 getPawnHash() const;
+        Color getTurn() const { return stm; }
+        int getPly() const { return curr_ply; }
+        int halfMoveClock() const { return history[curr_ply].half_move_clock; }
+        U64 getHash() const { return history[curr_ply].hash; }
+        U64 getPawnHash() const { return history[curr_ply].pawn_hash; }
+
         U64 getNonPawnHash(Color c) const;
         U64 getThreats(PieceType pt) const;
-        Square kingSq(Color c) const;
-        NNUE::Accum &getAccumulator();
+
+        Square kingSq(Color c) const { return lsb(getPieceBB(c, KING)); }
+        NNUE::Accum &getAccumulator() { return accumulators.back(); }
 
         void resetAccumulator();
-        void resetPly();
+        void resetPly() { curr_ply = 0; }
 
         U64 diagSliders(Color c) const;
         U64 orthSliders(Color c) const;
+
         U64 occupancy(Color c) const;
         U64 attackersTo(Color c, Square sq, U64 occ) const;
         U64 keyAfter(Move m) const;
@@ -110,11 +113,13 @@ namespace Chess
 
         bool inCheck() const;
         bool nonPawnMat(Color c) const;
+
         bool isLegal(const Move &m) const;
         bool isPseudoLegal(const Move &m) const;
 
         bool isRepetition(int ply) const;
         bool isDraw(int ply) const;
+
         bool see(Move &m, int threshold) const;
         bool hasUpcomingRepetition(int ply);
 
@@ -149,25 +154,35 @@ namespace Chess
         return board[sq];
     }
 
-    inline Color Board::getTurn() const { return stm; }
-    inline int Board::getPly() const { return curr_ply; }
-
-    inline int Board::halfMoveClock() const { return history[curr_ply].half_move_clock; }
-
-    inline U64 Board::getHash() const { return history[curr_ply].hash; }
-    inline U64 Board::getPawnHash() const { return history[curr_ply].pawn_hash; }
-
     inline U64 Board::getNonPawnHash(Color c) const
     {
         assert(c == WHITE || c == BLACK);
         return history[curr_ply].non_pawn_hash[c];
     }
 
-    inline Square Board::kingSq(Color c) const { return lsb(getPieceBB(c, KING)); }
+    inline U64 Board::getThreats(PieceType pt) const
+    {
+        assert(pt >= PAWN && pt <= KING);
+        return history[curr_ply].threats[pt];
+    }
 
-    inline NNUE::Accum &Board::getAccumulator() { return accumulators.back(); }
+    inline void Board::resetAccumulator()
+    {
+        accumulators.clear();
+        accumulator_table->reset();
+        accumulator_table->refresh(WHITE, *this);
+        accumulator_table->refresh(BLACK, *this);
+    }
 
-    inline void Board::resetPly() { curr_ply = 0; }
+    inline U64 Board::diagSliders(Color c) const
+    {
+        return getPieceBB(c, BISHOP) | getPieceBB(c, QUEEN);
+    }
+
+    inline U64 Board::orthSliders(Color c) const
+    {
+        return getPieceBB(c, ROOK) | getPieceBB(c, QUEEN);
+    }
 
     inline U64 Board::occupancy(Color c = BOTH_COLORS) const
     {
@@ -180,16 +195,15 @@ namespace Chess
         return occ;
     }
 
-    inline U64 Board::getThreats(PieceType pt) const
+    inline U64 Board::attackersTo(Color c, Square sq, const U64 occ) const
     {
-        assert(pt >= PAWN && pt <= KING);
-        return history[curr_ply].threats[pt];
+        U64 attacks = getPawnAttacks(~c, sq) & getPieceBB(c, PAWN);
+        attacks |= getKnightAttacks(sq) & getPieceBB(c, KNIGHT);
+        attacks |= getBishopAttacks(sq, occ) & diagSliders(c);
+        attacks |= getRookAttacks(sq, occ) & orthSliders(c);
+        attacks |= getKingAttacks(sq) & getPieceBB(c, KING);
+        return attacks;
     }
-
-    inline U64 Board::diagSliders(Color c) const { return getPieceBB(c, BISHOP) | getPieceBB(c, QUEEN); }
-    inline U64 Board::orthSliders(Color c) const { return getPieceBB(c, ROOK) | getPieceBB(c, QUEEN); }
-
-    inline bool Board::inCheck() const { return history[curr_ply].checkers; }
 
     inline int Board::getPhase() const
     {
@@ -198,6 +212,22 @@ namespace Chess
         phase += 5 * popCount(piece_bb[WHITE_ROOK] | piece_bb[BLACK_ROOK]);
         phase += 10 * popCount(piece_bb[WHITE_QUEEN] | piece_bb[BLACK_QUEEN]);
         return phase;
+    }
+
+    inline bool Board::inCheck() const
+    {
+        return history[curr_ply].checkers;
+    }
+
+    inline bool Board::nonPawnMat(Color c) const
+    {
+        return getPieceBB(c, KNIGHT) | getPieceBB(c, BISHOP) | getPieceBB(c, ROOK) | getPieceBB(c, QUEEN);
+    }
+
+    // doesn't include stalemate, threefold and Insufficient material
+    inline bool Board::isDraw(int ply) const
+    {
+        return history[curr_ply].half_move_clock > 99 || isRepetition(ply);
     }
 
     inline void Board::putPiece(Piece pc, Square sq, bool update_nnue)

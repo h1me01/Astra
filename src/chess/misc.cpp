@@ -49,6 +49,27 @@ namespace Chess
         return parts;
     }
 
+    PieceType typeOfPromotion(const MoveType mt)
+    {
+        switch (mt)
+        {
+        case PQ_KNIGHT:
+        case PC_KNIGHT:
+            return KNIGHT;
+        case PQ_BISHOP:
+        case PC_BISHOP:
+            return BISHOP;
+        case PQ_ROOK:
+        case PC_ROOK:
+            return ROOK;
+        case PQ_QUEEN:
+        case PC_QUEEN:
+            return QUEEN;
+        default:
+            return NO_PIECE_TYPE;
+        }
+    }
+
     std::ostream &operator<<(std::ostream &os, const Move &m)
     {
         if (!m)

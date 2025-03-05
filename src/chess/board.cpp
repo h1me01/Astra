@@ -188,24 +188,6 @@ namespace Chess
         return fen.str();
     }
 
-    void Board::resetAccumulator()
-    {
-        accumulators.clear();
-        accumulator_table->reset();
-        accumulator_table->refresh(WHITE, *this);
-        accumulator_table->refresh(BLACK, *this);
-    }
-
-    U64 Board::attackersTo(Color c, Square sq, const U64 occ) const
-    {
-        U64 attacks = getPawnAttacks(~c, sq) & getPieceBB(c, PAWN);
-        attacks |= getKnightAttacks(sq) & getPieceBB(c, KNIGHT);
-        attacks |= getBishopAttacks(sq, occ) & diagSliders(c);
-        attacks |= getRookAttacks(sq, occ) & orthSliders(c);
-        attacks |= getKingAttacks(sq) & getPieceBB(c, KING);
-        return attacks;
-    }
-
     U64 Board::keyAfter(Move m) const
     {
         U64 new_hash = history[curr_ply].hash;
@@ -216,21 +198,16 @@ namespace Chess
         Square from = m.from();
         Square to = m.to();
 
-        Piece p = pieceAt(from);
+        Piece pc = pieceAt(from);
         Piece captured = pieceAt(to);
 
         if (captured != NO_PIECE)
             new_hash ^= Zobrist::getPsq(captured, to);
 
-        new_hash ^= Zobrist::getPsq(p, from) ^ Zobrist::getPsq(p, to);
+        new_hash ^= Zobrist::getPsq(pc, from) ^ Zobrist::getPsq(pc, to);
         new_hash ^= Zobrist::side;
 
         return new_hash;
-    }
-
-    bool Board::nonPawnMat(Color c) const
-    {
-        return getPieceBB(c, KNIGHT) | getPieceBB(c, BISHOP) | getPieceBB(c, ROOK) | getPieceBB(c, QUEEN);
     }
 
     // only checks ep and pinned piece moves
@@ -270,9 +247,9 @@ namespace Chess
         const Square to = m.to();
         const Square ksq = kingSq(stm);
 
-        const Piece from_p = pieceAt(from);
-        const Piece to_p = pieceAt(to);
-        const PieceType pt = typeOf(from_p);
+        const Piece from_pc = pieceAt(from);
+        const Piece to_pc = pieceAt(to);
+        const PieceType pt = typeOf(from_pc);
 
         const MoveType mt = m.type();
 
@@ -283,16 +260,16 @@ namespace Chess
         const Direction up = stm == WHITE ? NORTH : SOUTH;
 
         // move must exist, piece must exist, piece must match the current stm
-        if (!m || from_p == NO_PIECE || colorOf(from_p) != stm)
+        if (!m || from_pc == NO_PIECE || colorOf(from_pc) != stm)
             return false;
         // if double check, then only king can move
         if (popCount(info.checkers) > 1 && pt != KING)
             return false;
         // if capture move, then target square must be occupied by enemy piece
-        if (mt != EN_PASSANT && isCap(m) && to_p == NO_PIECE)
+        if (mt != EN_PASSANT && isCap(m) && to_pc == NO_PIECE)
             return false;
         // if quiet move, then target square must be empty
-        if (!isCap(m) && to_p != NO_PIECE)
+        if (!isCap(m) && to_pc != NO_PIECE)
             return false;
         // we must not capture our own piece
         if (SQUARE_BB[to] & us_bb)
@@ -327,7 +304,7 @@ namespace Chess
             if (pt != PAWN)
                 return false;
             // to-square must not be occupied
-            if (to_p != NO_PIECE)
+            if (to_pc != NO_PIECE)
                 return false;
             // ep square must be same
             if (info.ep_sq != to)
@@ -361,9 +338,9 @@ namespace Chess
                 // is capture?
                 bool capture = getPawnAttacks(stm, from) & them_bb & SQUARE_BB[to];
                 // is single push?
-                bool singe_push = (Square(from + up) == to) && to_p == NO_PIECE;
+                bool singe_push = (Square(from + up) == to) && to_pc == NO_PIECE;
                 // is double push?
-                bool double_push = relativeRank(stm, RANK_2) == rankOf(from) && (Square(from + 2 * up) == to) && (to_p + pieceAt(to - up)) == 2 * NO_PIECE;
+                bool double_push = relativeRank(stm, RANK_2) == rankOf(from) && (Square(from + 2 * up) == to) && (to_pc + pieceAt(to - up)) == 2 * NO_PIECE;
 
                 // if none of the conditions above are met, then it's not pseudo legal
                 if (!capture && !singe_push && !double_push)
@@ -491,18 +468,18 @@ namespace Chess
             else if (isProm(m))
             {
                 PieceType prom_type = typeOfPromotion(mt);
-                Piece prom_p = makePiece(stm, prom_type);
+                Piece prom_pc = makePiece(stm, prom_type);
 
                 assert(prom_type != PAWN);
-                assert(prom_p != NO_PIECE);
+                assert(prom_pc != NO_PIECE);
 
                 // update hash of promoting piece
-                info.hash ^= Zobrist::getPsq(pc, to) ^ Zobrist::getPsq(prom_p, to);
+                info.hash ^= Zobrist::getPsq(pc, to) ^ Zobrist::getPsq(prom_pc, to);
                 info.pawn_hash ^= Zobrist::getPsq(pc, to);
 
                 // add promoted piece and remove pawn
                 removePiece(to, update_nnue);
-                putPiece(prom_p, to, update_nnue);
+                putPiece(prom_pc, to, update_nnue);
             }
         }
 
@@ -590,9 +567,9 @@ namespace Chess
     bool Board::isRepetition(int ply) const
     {
         const StateInfo &info = history[curr_ply];
+        const int distance = std::min(info.plies_from_null, info.half_move_clock);
+        
         int rep = 0;
-        int distance = std::min(info.plies_from_null, info.half_move_clock);
-
         for (int i = curr_ply - 4; i >= 0 && i >= curr_ply - distance; i -= 2)
         {
             if (history[i].hash == info.hash)
@@ -606,12 +583,6 @@ namespace Chess
         }
 
         return false;
-    }
-
-    // doesn't include stalemate, threefold and Insufficient material
-    bool Board::isDraw(int ply) const
-    {
-        return history[curr_ply].half_move_clock > 99 || isRepetition(ply);
     }
 
     bool Board::see(Move &m, int threshold) const
@@ -731,8 +702,8 @@ namespace Chess
             if (ply > i)
                 return true;
 
-            Piece p = pieceAt(from) != NO_PIECE ? pieceAt(from) : pieceAt(to);
-            if (colorOf(p) != stm)
+            Piece pc = pieceAt(from) != NO_PIECE ? pieceAt(from) : pieceAt(to);
+            if (colorOf(pc) != stm)
                 continue;
 
             StateInfo *prev2 = prev - 2;
@@ -764,42 +735,15 @@ namespace Chess
         danger = threat;
         info.threats[PAWN] = threat;
 
-        // knight attacks
-        threat = 0;
-        U64 knights = getPieceBB(them, KNIGHT);
-        while (knights)
-            threat |= getKnightAttacks(popLsb(knights));
-        danger |= threat;
-        info.threats[KNIGHT] = threat;
-
-        // bishop attacks
-        threat = 0;
-        U64 bishops = getPieceBB(them, BISHOP);
-        while (bishops)
-            threat |= getBishopAttacks(popLsb(bishops), occ);
-        danger |= threat;
-        info.threats[BISHOP] = threat;
-
-        // rook attacks
-        threat = 0;
-        U64 rooks = getPieceBB(them, ROOK);
-        while (rooks)
-            threat |= getRookAttacks(popLsb(rooks), occ);
-        danger |= threat;
-        info.threats[ROOK] = threat;
-
-        // queen attacks
-        threat = 0;
-        U64 queens = getPieceBB(them, QUEEN);
-        while (queens)
-            threat |= getAttacks(QUEEN, popLsb(queens), occ);
-        danger |= threat;
-        info.threats[QUEEN] = threat;
-
-        // king attacks
-        threat = getKingAttacks(kingSq(them));
-        danger |= threat;
-        info.threats[KING] = threat;
+        for (PieceType pt : {KNIGHT, BISHOP, ROOK, QUEEN, KING})
+        {
+            U64 threat = 0;
+            U64 pc_bb = getPieceBB(them, pt);
+            while (pc_bb)
+                threat |= getAttacks(pt, popLsb(pc_bb), occ);
+            danger |= threat;
+            info.threats[pt] = threat;
+        }
 
         info.danger = danger;
     }

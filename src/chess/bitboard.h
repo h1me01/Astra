@@ -113,16 +113,18 @@ namespace Chess
 
     constexpr U64 shift(Direction d, const U64 b)
     {
-        return d == NORTH ? b << 8 : d == SOUTH     ? b >> 8
-                                 : d == EAST        ? (b & ~MASK_FILE[FILE_H]) << 1
-                                 : d == WEST        ? (b & ~MASK_FILE[FILE_A]) >> 1
-                                 : d == NORTH_EAST  ? (b & ~MASK_FILE[FILE_H]) << 9
-                                 : d == NORTH_WEST  ? (b & ~MASK_FILE[FILE_A]) << 7
-                                 : d == SOUTH_EAST  ? (b & ~MASK_FILE[FILE_H]) >> 7
-                                 : d == SOUTH_WEST  ? (b & ~MASK_FILE[FILE_A]) >> 9
-                                 : d == NORTH_NORTH ? b << 16
-                                 : d == SOUTH_SOUTH ? b >> 16
-                                                    : 0;
+        // clang-format off
+        return d == NORTH ? b << 8 : d == SOUTH     
+                          ? b >> 8 : d == EAST        
+                          ? (b & ~MASK_FILE[FILE_H]) << 1 : d == WEST        
+                          ? (b & ~MASK_FILE[FILE_A]) >> 1 : d == NORTH_EAST  
+                          ? (b & ~MASK_FILE[FILE_H]) << 9 : d == NORTH_WEST  
+                          ? (b & ~MASK_FILE[FILE_A]) << 7 : d == SOUTH_EAST  
+                          ? (b & ~MASK_FILE[FILE_H]) >> 7 : d == SOUTH_WEST  
+                          ? (b & ~MASK_FILE[FILE_A]) >> 9 : d == NORTH_NORTH 
+                          ? b << 16 : d == SOUTH_SOUTH 
+                          ? b >> 16 : 0;
+        // clang-format on
     }
 
 } // namespace Chess

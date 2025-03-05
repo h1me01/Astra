@@ -14,26 +14,7 @@ namespace Chess
 
     std::vector<std::string> split(const std::string &str, char del);
 
-    inline PieceType typeOfPromotion(const MoveType mt)
-    {
-        switch (mt)
-        {
-        case PQ_KNIGHT:
-        case PC_KNIGHT:
-            return KNIGHT;
-        case PQ_BISHOP:
-        case PC_BISHOP:
-            return BISHOP;
-        case PQ_ROOK:
-        case PC_ROOK:
-            return ROOK;
-        case PQ_QUEEN:
-        case PC_QUEEN:
-            return QUEEN;
-        default:
-            return NO_PIECE_TYPE;
-        }
-    }
+    PieceType typeOfPromotion(const MoveType mt);
 
     inline bool isProm(const Move &m)
     {

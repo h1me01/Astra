@@ -36,6 +36,7 @@ using avx_type = __m256i;
 
 namespace NNUE
 {
+
 #if defined(__AVX512F__) || defined(__AVX2__) || defined(__AVX__)
     int32_t horizontalSum(avx_type &reg)
     {

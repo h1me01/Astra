@@ -32,7 +32,7 @@ namespace Astra
 
         if (!isCap(best))
         {
-            // don't set quiet promotion queen as a count/killer,
+            // don't set quiet queen promotions as a counter/killer,
             // so we don't actually return it twice in the movepicker
             if (best.type() != PQ_QUEEN)
             {
@@ -97,12 +97,12 @@ namespace Astra
     {
         Square to = move.to();
         PieceType captured = move.type() == EN_PASSANT ? PAWN : typeOf(board.pieceAt(to));
-        Piece p = board.pieceAt(move.from());
+        Piece pc = board.pieceAt(move.from());
 
         assert(captured != NO_PIECE_TYPE);
-        assert(p != NO_PIECE);
+        assert(pc != NO_PIECE);
 
-        int16_t &value = ch[p][to][captured];
+        int16_t &value = ch[pc][to][captured];
         value += getFormula(value, bonus);
     }
 
@@ -120,13 +120,13 @@ namespace Astra
         const Move prev_move = (ss - 1)->curr_move;
         const Move pprev_move = (ss - 2)->curr_move;
 
-        Piece prev_p = (ss - 1)->moved_piece;
-        Piece pprev_p = (ss - 2)->moved_piece;
+        Piece prev_pc = (ss - 1)->moved_piece;
+        Piece pprev_pc = (ss - 2)->moved_piece;
 
         if (!prev_move || !pprev_move)
             return;
 
-        updateCorrection(cont_corr[prev_p][prev_move.to()][pprev_p][pprev_move.to()], real_score - raw_eval, depth);
+        updateCorrection(cont_corr[prev_pc][prev_move.to()][pprev_pc][pprev_move.to()], real_score - raw_eval, depth);
     }
 
 } // namespace Astra
