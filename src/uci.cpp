@@ -73,19 +73,19 @@ namespace UCI
 
         if (tokens.size() < 5)
         {
-            std::cout << "info string Invalid option command" << std::endl;
+            std::cout << "Invalid option command" << std::endl;
             return;
         }
 
         if (tokens[1] != "name")
         {
-            std::cout << "info string Invalid option command";
+            std::cout << "Invalid option command";
             return;
         }
 
         if (tokens[3] != "value")
         {
-            std::cout << "info string Invalid option command";
+            std::cout << "Invalid option command";
             return;
         }
 
@@ -107,10 +107,10 @@ namespace UCI
                     if (n >= options[name].min && n <= options[name].max)
                         options[name] = value;
                     else
-                        std::cout << "info string Invalid range of value for option " << name << std::endl;
+                        std::cout << "Invalid range of value for option " << name << std::endl;
                 }
                 else
-                    std::cout << "info string Invalid value for option " << name << std::endl;
+                    std::cout << "Invalid value for option " << name << std::endl;
             }
             else
                 options[name] = value;
@@ -251,7 +251,7 @@ namespace UCI
             {
                 int depth;
                 if (!(is >> depth))
-                    std::cout << "info string No depth value provided for perft\n";
+                    std::cout << "No depth value provided for perft\n";
                 else
                     testPerft(board, depth);
 
