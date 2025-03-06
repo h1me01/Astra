@@ -217,7 +217,7 @@ namespace Chess
         const Square to = m.to();
         const Square ksq = kingSq(stm);
 
-        assert(m != NO_MOVE);
+        assert(isValidMove(m));
         assert(pieceAt(from) != NO_PIECE);
         assert(pieceAt(ksq) == makePiece(stm, KING));
 
@@ -376,7 +376,7 @@ namespace Chess
 
         assert(pc != NO_PIECE);
         assert(typeOf(captured) != KING);
-        assert(m != NO_MOVE && m != NULL_MOVE);
+        assert(isValidMove(m));
 
         curr_ply++;
         history[curr_ply] = StateInfo(history[curr_ply - 1]);
@@ -499,7 +499,7 @@ namespace Chess
         const Square to = m.to();
         const Piece captured = history[curr_ply].captured;
 
-        assert(m != NO_MOVE && m != NULL_MOVE);
+        assert(isValidMove(m));
         assert(pieceAt(to) != NO_PIECE);
         assert(pieceAt(from) == NO_PIECE);
 
@@ -568,7 +568,7 @@ namespace Chess
     {
         const StateInfo &info = history[curr_ply];
         const int distance = std::min(info.plies_from_null, info.half_move_clock);
-        
+
         int rep = 0;
         for (int i = curr_ply - 4; i >= 0 && i >= curr_ply - distance; i -= 2)
         {
@@ -587,7 +587,7 @@ namespace Chess
 
     bool Board::see(Move &m, int threshold) const
     {
-        assert(m != NO_MOVE && m != NULL_MOVE);
+        assert(isValidMove(m));
 
         if (isProm(m) || m.type() == EN_PASSANT || m.type() == CASTLING)
             return true;

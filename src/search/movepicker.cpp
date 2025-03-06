@@ -38,7 +38,7 @@ namespace Astra
             this->tt_move = tt_move;
 
             Move prev_move = (ss - 1)->curr_move;
-            if (prev_move != NO_MOVE)
+            if (isValidMove(prev_move))
                 counter = history.getCounterMove(prev_move);
             else
                 counter = NO_MOVE;

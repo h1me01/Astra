@@ -37,7 +37,7 @@ namespace Astra
             if (best.type() != PQ_QUEEN)
             {
                 Move prev_move = (ss - 1)->curr_move;
-                if (prev_move != NO_MOVE)
+                if (isValidMove(prev_move))
                     counters[prev_move.from()][prev_move.to()] = best;
 
                 ss->killer = best;
@@ -83,7 +83,7 @@ namespace Astra
     void History::updateContH(Move &move, Stack *ss, int bonus)
     {
         for (int offset : {1, 2, 4, 6})
-            if ((ss - offset)->curr_move != NO_MOVE && (ss - offset)->curr_move != NULL_MOVE)
+            if (isValidMove((ss - offset)->curr_move))
             {
                 Piece pc = (ss - offset)->moved_piece;
                 assert(pc >= WHITE_PAWN && pc <= BLACK_KING);

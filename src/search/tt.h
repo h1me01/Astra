@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../chess/types.h"
+#include "../chess/misc.h"
 
 using namespace Chess;
 

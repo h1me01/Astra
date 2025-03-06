@@ -322,7 +322,7 @@ namespace Astra
 
         // update quiet history
         Move prev_move = (ss - 1)->curr_move;
-        if (!skipped && prev_move != NO_MOVE && !isCap(prev_move) && (ss - 1)->eval != VALUE_NONE)
+        if (!skipped && isValidMove(prev_move) && !isCap(prev_move) && (ss - 1)->eval != VALUE_NONE)
         {
             int bonus = std::clamp(-5 * (ss->eval + (ss - 1)->eval), -80, 150);
             history.updateQuietHistory(~stm, prev_move, bonus);

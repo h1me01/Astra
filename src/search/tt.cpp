@@ -39,7 +39,7 @@ namespace Astra
     {
         uint16_t hash16 = (uint16_t)hash;
 
-        if (move != NO_MOVE || this->hash != hash16)
+        if (isValidMove(move) || this->hash != hash16)
             this->move = move.raw();
 
         if (score != VALUE_NONE)

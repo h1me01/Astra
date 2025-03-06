@@ -16,15 +16,20 @@ namespace Chess
 
     PieceType typeOfPromotion(const MoveType mt);
 
+    inline bool isValidMove(const Move &m)
+    {
+        return m != NO_MOVE && m != NULL_MOVE;
+    }
+
     inline bool isProm(const Move &m)
     {
-        assert(m != NO_MOVE);
+        assert(isValidMove(m));
         return m.type() >= PQ_KNIGHT;
     }
 
     inline bool isCap(const Move &m)
     {
-        assert(m != NO_MOVE);
+        assert(isValidMove(m));
         return m.type() == CAPTURE || m.type() == EN_PASSANT || m.type() >= PC_KNIGHT;
     }
 
