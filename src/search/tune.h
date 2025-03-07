@@ -44,6 +44,10 @@ namespace Astra
     PARAM(lmr_base, 101, 40, 200);
     PARAM(lmr_div, 217, 150, 500);
 
+    PARAM(static_h_mult, -60, -500, -1);
+    PARAM(static_h_min, 55, 1, 1000);
+    PARAM(static_h_max, 155, 1, 1000);
+
     PARAM(rfp_depth_mult, 107, 40, 200);
     PARAM(rfp_improving_mult, 94, 40, 200);
 
