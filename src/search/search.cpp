@@ -529,6 +529,8 @@ namespace Astra
                 r -= (move == mp.killer || move == mp.counter);
                 // decrease when move gives check
                 r -= board.inCheck();
+                // decrease when tt depth is at least current depth
+                r -= (tt_depth >= depth);
                 // decrease/increase based on history score
                 r -= history_score / (isCap(move) ? hp_cdiv : hp_qdiv);
 
