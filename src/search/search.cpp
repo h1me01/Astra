@@ -531,8 +531,6 @@ namespace Astra
                 r -= board.inCheck();
                 // decrease/increase based on history score
                 r -= history_score / (isCap(move) ? hp_cdiv : hp_qdiv);
-                // decrease when tt depth is at least current depth
-                r -= (tt_depth >= depth);
 
                 int lmr_depth = std::clamp(new_depth - r, 1, new_depth + 1);
 
