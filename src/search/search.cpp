@@ -200,8 +200,10 @@ namespace Astra
         const Color stm = board.getTurn();
 
         const Score old_alpha = alpha;
-        Score eval = ss->eval, raw_eval = eval;
-        Score max_score = VALUE_MATE, best_score = -VALUE_MATE;
+        Score eval = ss->eval;
+        Score raw_eval = eval;
+        Score max_score = VALUE_MATE;
+        Score best_score = -VALUE_MATE;
 
         if (pv_node)
             pv_table[ss->ply].length = ss->ply;
@@ -457,8 +459,7 @@ namespace Astra
 
                 // see pruning
                 int see_margin = isCap(move) ? -see_cap_margin : -see_quiet_margin;
-                int see_depth = isCap(move) ? 6 : 8;
-                if (depth <= see_depth && !board.see(move, depth * see_margin))
+                if (depth <= (isCap(move) ? 6 : 8) && !board.see(move, depth * see_margin))
                     continue;
             }
 
@@ -471,7 +472,7 @@ namespace Astra
             if (id == 0 && root_node && limit.multipv == 1 && tm.elapsedTime() > 5000 && !threads.isStopped())
                 std::cout << "info depth " << depth << " currmove " << move << " currmovenumber " << made_moves << std::endl;
 
-            int extension = 0;
+            int extensions = 0;
 
             // singular extensions
             // clang-format off
@@ -488,21 +489,21 @@ namespace Astra
                 {
                     // if we didn't find a better move, then extend
                     if (!pv_node && score < sbeta - 14)
-                        extension = 2 + (!isCap(move) && !isProm(move) && score < sbeta - ext_margin);
+                        extensions = 2 + (!isCap(move) && !isProm(move) && score < sbeta - ext_margin);
                     else
-                        extension = 1;
+                        extensions = 1;
                 }
                 else if (sbeta >= beta)
                     return sbeta;
                 else if (tt_score >= beta)
-                    extension = -2 + pv_node;
+                    extensions = -2 + pv_node;
                 else if (cut_node)
-                    extension = -2;
+                    extensions = -2;
                 else if (tt_score <= alpha)
-                    extension = -1;
+                    extensions = -1;
             }
 
-            int new_depth = depth - 1 + extension;
+            int new_depth = depth - 1 + extensions;
 
             nodes++;
 
@@ -637,8 +638,8 @@ namespace Astra
         // update correction histories
         if (!in_check && (!best_move || !isCap(best_move)) && (bound & (best_score >= raw_eval ? LOWER_BOUND : UPPER_BOUND)))
         {
-            history.updateMaterialCorr(board, raw_eval, best_score, depth);
             history.updateContCorr(raw_eval, best_score, depth, ss);
+            history.updateMaterialCorr(board, raw_eval, best_score, depth);
         }
 
         return best_score;
@@ -676,6 +677,7 @@ namespace Astra
         Score futility = -VALUE_MATE;
 
         Move best_move = NO_MOVE;
+        Move move;
 
         // look up in transposition table
         bool tt_hit = false;
@@ -723,8 +725,6 @@ namespace Astra
         (ss + 1)->killer = NO_MOVE;
 
         MovePicker mp(Q_SEARCH, board, history, ss, tt_move, depth >= -1);
-
-        Move move;
 
         int made_moves = 0;
         while ((move = mp.nextMove()) != NO_MOVE)

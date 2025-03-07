@@ -260,7 +260,7 @@ namespace Chess
         const Direction up = stm == WHITE ? NORTH : SOUTH;
 
         // move must exist, piece must exist, piece must match the current stm
-        if (!m || from_pc == NO_PIECE || colorOf(from_pc) != stm)
+        if (!isValidMove(m) || from_pc == NO_PIECE || colorOf(from_pc) != stm)
             return false;
         // if double check, then only king can move
         if (popCount(info.checkers) > 1 && pt != KING)

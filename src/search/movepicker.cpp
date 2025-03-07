@@ -207,7 +207,7 @@ namespace Astra
                 if (danger & SQUARE_BB[from])
                     ml_main[i].score += 16384 + 16384 * (pt == QUEEN);
                 else if (danger & SQUARE_BB[to])
-                    ml_main[i].score -= 16384 + 16384 * (pt == QUEEN);
+                    ml_main[i].score -= (16384 + 16384 * (pt == QUEEN));
             }
         }
     }
