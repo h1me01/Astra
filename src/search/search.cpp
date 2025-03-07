@@ -498,8 +498,8 @@ namespace Astra
                     extensions = -2 + pv_node;
                 else if (cut_node)
                     extensions = -2;
-                else if (tt_score <= alpha)
-                    extensions = -1;
+                //else if (tt_score <= alpha)
+                //    extensions = -1;
             }
 
             int new_depth = depth - 1 + extensions;
