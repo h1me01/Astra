@@ -786,7 +786,7 @@ namespace Astra
         if (in_check && made_moves == 0)
             return -VALUE_MATE + ss->ply;
 
-        if (best_score >= beta && abs(best_score) < VALUE_TB_WIN_IN_MAX_PLY)
+        if (best_score >= beta && std::abs(best_score) < VALUE_TB_WIN_IN_MAX_PLY)
             best_score = (best_score + beta) / 2;
 
         // store in transposition table
@@ -875,8 +875,8 @@ namespace Astra
                   << " multipv " << multipv_idx + 1
                   << " score ";
 
-        if (abs(result) >= VALUE_MATE - MAX_PLY)
-            std::cout << "mate " << (VALUE_MATE - abs(result) + 1) / 2 * (result > 0 ? 1 : -1);
+        if (std::abs(result) >= VALUE_MATE - MAX_PLY)
+            std::cout << "mate " << (VALUE_MATE - std::abs(result) + 1) / 2 * (result > 0 ? 1 : -1);
         else
             std::cout << "cp " << Score(result / 1.8); // normalize
 

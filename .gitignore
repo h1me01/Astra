@@ -2,6 +2,8 @@
 
 build/
 
+misc/
+
 src/*.exe
 
 CMakeLists.txt
