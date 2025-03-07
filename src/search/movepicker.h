@@ -38,6 +38,8 @@ namespace Astra
 
         Move nextMove();
 
+        Move tt_move, killer, counter;
+
     private:
         int idx;
         Stage stage;
@@ -51,7 +53,6 @@ namespace Astra
 
         MoveList<> ml_main;
         MoveList<> ml_bad_noisy;
-        Move tt_move, killer, counter;
 
         void scoreQuietMoves();
         void scoreNoisyMoves();
