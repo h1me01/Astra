@@ -524,7 +524,7 @@ namespace Astra
                 // increase when expected to fail high
                 r += 2 * cut_node;
                 // decrease when in pv node
-                r -= (pv_node + tt_pv);
+                r -= tt_pv;
                 // decrease if move is a killer or counter
                 r -= (move == mp.killer || move == mp.counter);
                 // decrease when move gives check
