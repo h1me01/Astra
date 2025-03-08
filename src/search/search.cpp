@@ -383,7 +383,7 @@ namespace Astra
             {
                 // clang-format on
                 MovePicker mp(PC_SEARCH, board, history, ss, tt_move);
-                mp.see_cutoff = beta_cut > eval;
+                mp.see_cutoff = beta_cut > ss->eval;
 
                 Move move = NO_MOVE;
                 while ((move = mp.nextMove()) != NO_MOVE)
@@ -409,7 +409,7 @@ namespace Astra
 
                     if (score >= beta_cut)
                     {
-                        ent->store(hash, move, score, ss->eval, LOWER_BOUND, depth - 3, ss->ply, tt_pv);
+                        ent->store(hash, move, score, raw_eval, LOWER_BOUND, depth - 3, ss->ply, tt_pv);
                         return score;
                     }
                 }
@@ -453,7 +453,7 @@ namespace Astra
                         continue;
 
                     // futility pruning
-                    if (!in_check && depth < 11 && eval + fp_base + depth * fp_mult <= alpha)
+                    if (!in_check && depth < 11 && ss->eval + fp_base + depth * fp_mult <= alpha)
                         mp.skip_quiets = true;
                 }
 
@@ -498,8 +498,6 @@ namespace Astra
                     extensions = -2 + pv_node;
                 else if (cut_node)
                     extensions = -2;
-                // else if (tt_score <= alpha)
-                //     extensions = -1;
             }
 
             int new_depth = depth - 1 + extensions;
@@ -637,7 +635,7 @@ namespace Astra
             ent->store(hash, best_move, best_score, raw_eval, bound, depth, ss->ply, tt_pv);
 
         // update correction histories
-        if (!in_check && (!best_move || !isCap(best_move)) && (bound & (best_score >= raw_eval ? LOWER_BOUND : UPPER_BOUND)))
+        if (!in_check && (!best_move || !isCap(best_move)) && (bound & (best_score >= ss->eval ? LOWER_BOUND : UPPER_BOUND)))
         {
             history.updateContCorr(raw_eval, best_score, depth, ss);
             history.updateMaterialCorr(board, raw_eval, best_score, depth);
