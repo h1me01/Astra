@@ -377,7 +377,7 @@ namespace Astra
             // probcut
             // clang-format off
             int beta_cut = beta + 174;
-            if (depth > 4 && std::abs(beta) < VALUE_TB_WIN_IN_MAX_PLY 
+            if (depth > 5 && std::abs(beta) < VALUE_TB_WIN_IN_MAX_PLY 
                 && !(tt_depth >= depth - 3 && tt_score != VALUE_NONE && tt_score < beta_cut))
             {
                 // clang-format on
