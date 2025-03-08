@@ -442,7 +442,7 @@ namespace Astra
 
             if (!root_node && best_score > -VALUE_TB_WIN_IN_MAX_PLY)
             {
-                int lmr_depth = made_moves > 2 ? std::max(0, depth - REDUCTIONS[depth][made_moves] + history_score / 8192) : depth;
+                int lmr_depth = made_moves > 2 ? std::max(0, depth - REDUCTIONS[depth][made_moves] + history_score / hp_div) : depth;
 
                 // late move pruning
                 if (!pv_node && q_count > (3 + depth * depth) / (2 - improving))

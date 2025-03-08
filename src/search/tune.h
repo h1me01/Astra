@@ -57,11 +57,13 @@ namespace Astra
     PARAM(nmp_base, 183, 160, 220);
     PARAM(nmp_eval_div, 222, 100, 400);
 
-    PARAM(see_cap_margin, 96, 80, 110);
-    PARAM(see_quiet_margin, 50, 30, 60);
+    PARAM(hp_div, 8192, 1, 16384);
 
     PARAM(fp_base, 158, 40, 300);
     PARAM(fp_mult, 98, 40, 200);
+
+    PARAM(see_cap_margin, 96, 80, 110);
+    PARAM(see_quiet_margin, 50, 30, 60);
 
     PARAM(ext_margin, 96, 10, 250);
     PARAM(zws_margin, 59, 10, 160);
