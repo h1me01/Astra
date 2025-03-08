@@ -197,7 +197,6 @@ namespace Astra
         bool improving = false;
 
         const U64 hash = board.getHash();
-        const Color stm = board.getTurn();
 
         const Score old_alpha = alpha;
         Score eval = ss->eval;
@@ -327,7 +326,7 @@ namespace Astra
         if (!skipped && isValidMove(prev_move) && !isCap(prev_move) && (ss - 1)->eval != VALUE_NONE)
         {
             int bonus = std::clamp(static_h_mult * (ss->eval + (ss - 1)->eval) / 16, -static_h_min, static_h_max);
-            history.updateQuietHistory(~stm, prev_move, bonus);
+            history.updateQuietHistory(~board.getTurn(), prev_move, bonus);
         }
 
         // internal iterative reduction
@@ -353,7 +352,7 @@ namespace Astra
             // null move pruning
             // clang-format off
             if (depth >= 4 && eval >= beta && ss->eval + nmp_depth_mult * depth - nmp_base >= beta
-                && board.nonPawnMat(stm) && (ss - 1)->curr_move != NULL_MOVE && beta > -VALUE_TB_WIN_IN_MAX_PLY)
+                && board.nonPawnMat() && (ss - 1)->curr_move != NULL_MOVE && beta > -VALUE_TB_WIN_IN_MAX_PLY)
             {
                 // clang-format on
                 int R = 4 + depth / 3 + std::min(4, (eval - beta) / nmp_eval_div);

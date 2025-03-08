@@ -112,7 +112,7 @@ namespace Chess
         void unmakeNullMove();
 
         bool inCheck() const;
-        bool nonPawnMat(Color c) const;
+        bool nonPawnMat() const;
 
         bool isLegal(const Move &m) const;
         bool isPseudoLegal(const Move &m) const;
@@ -219,9 +219,10 @@ namespace Chess
         return history[curr_ply].checkers;
     }
 
-    inline bool Board::nonPawnMat(Color c) const
+    // checks if there is any non-pawn material on the board of the current side to move
+    inline bool Board::nonPawnMat() const
     {
-        return getPieceBB(c, KNIGHT) | getPieceBB(c, BISHOP) | getPieceBB(c, ROOK) | getPieceBB(c, QUEEN);
+        return getPieceBB(stm, KNIGHT) | getPieceBB(stm, BISHOP) | getPieceBB(stm, ROOK) | getPieceBB(stm, QUEEN);
     }
 
     // doesn't include stalemate, threefold and Insufficient material
