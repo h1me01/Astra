@@ -442,6 +442,8 @@ namespace Astra
 
             if (!root_node && best_score > -VALUE_TB_WIN_IN_MAX_PLY)
             {
+                int lmr_depth = made_moves > 2 ? std::max(0, depth - REDUCTIONS[depth][made_moves] + history_score / 8192) : depth;
+
                 // late move pruning
                 if (!pv_node && q_count > (3 + depth * depth) / (2 - improving))
                     mp.skip_quiets = true;
@@ -449,19 +451,20 @@ namespace Astra
                 if (!isCap(move) && move.type() != PQ_QUEEN)
                 {
                     // history pruning
-                    if (history_score < -hp_depth_mult * depth && depth < 7)
+                    if (history_score < -hp_depth_mult * depth && lmr_depth < 5)
                     {
                         mp.skip_quiets = true;
                         continue;
                     }
 
                     // futility pruning
-                    if (!in_check && depth < 11 && ss->eval + fp_base + depth * fp_mult <= alpha)
+                    if (!in_check && lmr_depth < 11 && ss->eval + fp_base + lmr_depth * fp_mult <= alpha)
                         mp.skip_quiets = true;
                 }
 
                 // see pruning
-                if (!board.see(move, depth * (isCap(move) ? -see_cap_margin : -see_quiet_margin)))
+                int see_margin = isCap(move) ? -see_cap_margin : -see_quiet_margin;
+                if (!board.see(move, (isCap(move) ? depth : lmr_depth) * see_margin))
                     continue;
             }
 
