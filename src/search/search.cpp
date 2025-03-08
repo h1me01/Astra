@@ -498,8 +498,8 @@ namespace Astra
                     extensions = -2 + pv_node;
                 else if (cut_node)
                     extensions = -2;
-                //else if (tt_score <= alpha)
-                //    extensions = -1;
+                // else if (tt_score <= alpha)
+                //     extensions = -1;
             }
 
             int new_depth = depth - 1 + extensions;
@@ -884,14 +884,11 @@ namespace Astra
                   << " tbhits " << Astra::threads.getTotalTbHits()
                   << " hashfull " << Astra::tt.hashfull()
                   << " time " << elapsed_time
-                  << " pv";
+                  << " pv " << root_moves[multipv_idx].move;
 
-        // print the pv
-        if (!pv_line.length)
-            std::cout << " " << pv_line[0];
-        else
-            for (int i = 0; i < pv_line.length; i++)
-                std::cout << " " << pv_line[i];
+        // print rest of the pv
+        for (int i = 1; i < pv_line.length; i++)
+            std::cout << " " << pv_line[i];
 
         std::cout << std::endl;
     }
