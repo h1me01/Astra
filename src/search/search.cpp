@@ -329,10 +329,6 @@ namespace Astra
             history.updateQuietHistory(~board.getTurn(), prev_move, bonus);
         }
 
-        // internal iterative reduction
-        if (!in_check && !tt_move && depth >= 4 && (pv_node || cut_node))
-            depth--;
-
         // only use pruning when not in check and pv node
         if (!in_check && !pv_node && !skipped)
         {
@@ -373,6 +369,10 @@ namespace Astra
                     return score;
                 }
             }
+
+            // internal iterative reduction
+            if (!in_check && !tt_move && depth >= 4 && (pv_node || cut_node))
+                depth--;
 
             // probcut
             // clang-format off
