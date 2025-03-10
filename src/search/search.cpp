@@ -325,7 +325,7 @@ namespace Astra
         Move prev_move = (ss - 1)->curr_move;
         if (!skipped && isValidMove(prev_move) && !isCap(prev_move) && (ss - 1)->eval != VALUE_NONE)
         {
-            int bonus = std::clamp(static_h_mult * (ss->eval + (ss - 1)->eval) / 16, -static_h_min, static_h_max);
+            int bonus = std::clamp(static_h_mult * (ss->eval + (ss - 1)->eval) / 16, -int(static_h_min), int(static_h_max));
             history.updateQuietHistory(~board.getTurn(), prev_move, bonus);
         }
 
