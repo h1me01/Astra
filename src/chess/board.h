@@ -225,9 +225,27 @@ namespace Chess
         return getPieceBB(stm, KNIGHT) | getPieceBB(stm, BISHOP) | getPieceBB(stm, ROOK) | getPieceBB(stm, QUEEN);
     }
 
-    // doesn't include stalemate, threefold and Insufficient material
+    // doesn't include stalemate
     inline bool Board::isDraw(int ply) const
     {
+        int num_pieces = popCount(occupancy());
+        int num_knights = popCount(getPieceBB(WHITE, KNIGHT) | getPieceBB(BLACK, KNIGHT));
+        int num_bishops = popCount(getPieceBB(WHITE, BISHOP) | getPieceBB(BLACK, BISHOP));
+
+        if (num_pieces == 2)
+            return true;
+
+        if (num_pieces == 3 && (num_knights == 1 || num_bishops == 1))
+            return true;
+
+        if (num_pieces == 4)
+        {
+            if (num_knights == 2)
+                return true;
+            if (num_bishops == 2 && popCount(getPieceBB(WHITE, BISHOP)) == 1)
+                return true;
+        }
+
         return history[curr_ply].half_move_clock > 99 || isRepetition(ply);
     }
 
