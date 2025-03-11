@@ -11,7 +11,7 @@ namespace Astra
     struct Stack
     {
         int ply;
-        Score eval = VALUE_NONE;
+        Score static_eval = VALUE_NONE;
 
         Piece moved_piece = NO_PIECE;
 

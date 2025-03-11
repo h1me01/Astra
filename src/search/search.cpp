@@ -37,6 +37,12 @@ namespace Astra
         MoveList<> legals;
         legals.gen<LEGALS>(board);
 
+        if (legals.size() == 0)
+        {
+            std::cout << "Position has no legal moves" << std::endl;
+            return NO_MOVE;
+        }
+
         for (int i = 0; i < legals.size(); i++)
             root_moves.add({legals[i], 0, 0, 0, 0, {}});
 
@@ -199,7 +205,7 @@ namespace Astra
         const U64 hash = board.getHash();
 
         const Score old_alpha = alpha;
-        Score eval = ss->eval;
+        Score eval = ss->static_eval;
         Score raw_eval = eval;
         Score max_score = VALUE_MATE;
         Score best_score = -VALUE_MATE;
@@ -292,14 +298,14 @@ namespace Astra
 
         // set eval and static eval
         if (in_check)
-            raw_eval = eval = ss->eval = VALUE_NONE;
+            raw_eval = eval = ss->static_eval = VALUE_NONE;
         else
         {
             // use tt score for better evaluation
             if (tt_hit)
             {
                 raw_eval = tt_eval == VALUE_NONE ? evaluate() : tt_eval;
-                eval = ss->eval = adjustEval(ss, raw_eval);
+                eval = ss->static_eval = adjustEval(ss, raw_eval);
 
                 if (tt_score != VALUE_NONE && (tt_bound & (tt_score > eval ? LOWER_BOUND : UPPER_BOUND)))
                     eval = tt_score;
@@ -307,15 +313,15 @@ namespace Astra
             else if (!skipped)
             {
                 raw_eval = evaluate();
-                eval = ss->eval = adjustEval(ss, raw_eval);
+                eval = ss->static_eval = adjustEval(ss, raw_eval);
                 ent->store(hash, NO_MOVE, VALUE_NONE, raw_eval, NO_BOUND, 0, ss->ply, tt_pv);
             }
 
             // check for improvement
-            if ((ss - 2)->eval != VALUE_NONE)
-                improving = ss->eval > (ss - 2)->eval;
-            else if ((ss - 4)->eval != VALUE_NONE)
-                improving = ss->eval > (ss - 4)->eval;
+            if ((ss - 2)->static_eval != VALUE_NONE)
+                improving = ss->static_eval > (ss - 2)->static_eval;
+            else if ((ss - 4)->static_eval != VALUE_NONE)
+                improving = ss->static_eval > (ss - 4)->static_eval;
         }
 
         // reset killer
@@ -323,9 +329,9 @@ namespace Astra
 
         // update quiet history
         Move prev_move = (ss - 1)->curr_move;
-        if (!skipped && isValidMove(prev_move) && !isCap(prev_move) && (ss - 1)->eval != VALUE_NONE)
+        if (!skipped && isValidMove(prev_move) && !isCap(prev_move) && (ss - 1)->static_eval != VALUE_NONE)
         {
-            int bonus = std::clamp(static_h_mult * (ss->eval + (ss - 1)->eval) / 16, -int(static_h_min), int(static_h_max));
+            int bonus = std::clamp(static_h_mult * (ss->static_eval + (ss - 1)->static_eval) / 16, -int(static_h_min), int(static_h_max));
             history.updateQuietHistory(~board.getTurn(), prev_move, bonus);
         }
 
@@ -347,7 +353,7 @@ namespace Astra
 
             // null move pruning
             // clang-format off
-            if (depth >= 4 && eval >= beta && ss->eval + nmp_depth_mult * depth - nmp_base >= beta
+            if (depth >= 4 && eval >= beta && ss->static_eval + nmp_depth_mult * depth - nmp_base >= beta
                 && board.nonPawnMat() && (ss - 1)->curr_move != NULL_MOVE && beta > -VALUE_TB_WIN_IN_MAX_PLY)
             {
                 // clang-format on
@@ -382,7 +388,7 @@ namespace Astra
             {
                 // clang-format on
                 MovePicker mp(PC_SEARCH, board, history, ss, tt_move);
-                mp.see_cutoff = beta_cut > ss->eval;
+                mp.see_cutoff = beta_cut > ss->static_eval;
 
                 Move move = NO_MOVE;
                 while ((move = mp.nextMove()) != NO_MOVE)
@@ -457,7 +463,7 @@ namespace Astra
                     }
 
                     // futility pruning
-                    if (!in_check && lmr_depth < 11 && ss->eval + fp_base + lmr_depth * fp_mult <= alpha)
+                    if (!in_check && lmr_depth < 11 && ss->static_eval + fp_base + lmr_depth * fp_mult <= alpha)
                         mp.skip_quiets = true;
                 }
 
@@ -640,7 +646,7 @@ namespace Astra
             ent->store(hash, best_move, best_score, raw_eval, bound, depth, ss->ply, tt_pv);
 
         // update correction histories
-        if (!in_check && (!best_move || !isCap(best_move)) && (bound & (best_score >= ss->eval ? LOWER_BOUND : UPPER_BOUND)))
+        if (!in_check && (!best_move || !isCap(best_move)) && (bound & (best_score >= ss->static_eval ? LOWER_BOUND : UPPER_BOUND)))
         {
             history.updateContCorr(raw_eval, best_score, depth, ss);
             history.updateMaterialCorr(board, raw_eval, best_score, depth);
@@ -676,7 +682,7 @@ namespace Astra
         const U64 hash = board.getHash();
 
         Score best_score = -VALUE_MATE + ss->ply;
-        Score eval = ss->eval;
+        Score eval = ss->static_eval;
         Score raw_eval = eval;
         Score futility = -VALUE_MATE;
 
@@ -697,14 +703,14 @@ namespace Astra
 
         // set eval and static eval
         if (in_check)
-            raw_eval = eval = ss->eval = VALUE_NONE;
+            raw_eval = eval = ss->static_eval = VALUE_NONE;
         else
         {
             // use tt score for better evaluation
             if (tt_hit)
             {
                 raw_eval = tt_eval == VALUE_NONE ? evaluate() : tt_eval;
-                eval = ss->eval = adjustEval(ss, raw_eval);
+                eval = ss->static_eval = adjustEval(ss, raw_eval);
 
                 if (tt_score != VALUE_NONE && (tt_bound & (tt_score > eval ? LOWER_BOUND : UPPER_BOUND)))
                     eval = tt_score;
@@ -712,7 +718,7 @@ namespace Astra
             else
             {
                 raw_eval = evaluate();
-                eval = ss->eval = adjustEval(ss, raw_eval);
+                eval = ss->static_eval = adjustEval(ss, raw_eval);
                 ent->store(hash, NO_MOVE, VALUE_NONE, raw_eval, NO_BOUND, 0, ss->ply, tt_pv);
             }
 
@@ -880,7 +886,7 @@ namespace Astra
         if (std::abs(result) >= VALUE_MATE - MAX_PLY)
             std::cout << "mate " << (VALUE_MATE - std::abs(result) + 1) / 2 * (result > 0 ? 1 : -1);
         else
-            std::cout << "cp " << Score(result / 1.8); // normalize
+            std::cout << "cp " << Score(result / 2.5); // normalize
 
         std::cout << " nodes " << total_nodes
                   << " nps " << total_nodes * 1000 / (elapsed_time + 1)

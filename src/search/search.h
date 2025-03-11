@@ -62,7 +62,6 @@ namespace Astra
         Score qSearch(int depth, Score alpha, Score beta, Stack *ss);
 
         Score evaluate();
-
         Score adjustEval(const Stack *ss, Score eval) const;
 
         bool isLimitReached(int depth) const;
