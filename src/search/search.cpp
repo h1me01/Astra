@@ -491,9 +491,7 @@ namespace Astra
             {
                 // clang-format on
                 Score sbeta = tt_score - 3 * depth;
-                int sdepth = (depth - 1) / 2;
-
-                Score score = negamax(sdepth, sbeta - 1, sbeta, ss, cut_node, move);
+                Score score = negamax((depth - 1) / 2, sbeta - 1, sbeta, ss, cut_node, move);
 
                 if (score < sbeta)
                 {
