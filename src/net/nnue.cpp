@@ -11,7 +11,9 @@
 INCBIN(Weights, NNUE_PATH);
 
 #if defined(__AVX512F__)
+
 using avx_type = __m512i;
+
 #define div (32)
 #define avx_madd_epi16 _mm512_madd_epi16
 #define avx_add_epi32 _mm512_add_epi32
@@ -22,7 +24,9 @@ using avx_type = __m512i;
 #define avx_set1_epi16 _mm512_set1_epi16
 
 #elif defined(__AVX2__) || defined(__AVX__)
+
 using avx_type = __m256i;
+
 #define div (16)
 #define avx_madd_epi16 _mm256_madd_epi16
 #define avx_add_epi32 _mm256_add_epi32

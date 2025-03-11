@@ -457,10 +457,7 @@ namespace Astra
                 {
                     // history pruning
                     if (history_score < -hp_depth_mult * depth && lmr_depth < 5)
-                    {
-                        mp.skip_quiets = true;
                         continue;
-                    }
 
                     // futility pruning
                     if (!in_check && lmr_depth < 11 && ss->static_eval + fp_base + lmr_depth * fp_mult <= alpha)
