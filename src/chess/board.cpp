@@ -78,7 +78,7 @@ namespace Chess
             else if (c == '/')
                 sqr -= 16;
             else
-                putPiece(Piece(PIECE_STR.find(c)), Square(sqr++), false);
+                putPiece(Piece(PIECE_STR.find(c)), Square(sqr++));
         }
 
         initThreats();
@@ -321,7 +321,7 @@ namespace Chess
                 return false;
 
             U64 targets = info.checkers ? SQUARES_BETWEEN[ksq][lsb(info.checkers)] | info.checkers : -1ULL;
-            U64 rank = MASK_RANK[relativeRank(stm, RANK_8)];
+            U64 rank = MASK_RANK[relRank(stm, RANK_8)];
             U64 attacks = (shift(up, SQUARE_BB[from]) & ~occ) | (getPawnAttacks(stm, from) & them_bb);
             // only pseudo legal, if target range is reachable
             return (rank & attacks & targets) & SQUARE_BB[to];
@@ -340,7 +340,7 @@ namespace Chess
                 // is single push?
                 bool singe_push = (Square(from + up) == to) && to_pc == NO_PIECE;
                 // is double push?
-                bool double_push = relativeRank(stm, RANK_2) == rankOf(from) && (Square(from + 2 * up) == to) && (to_pc + pieceAt(to - up)) == 2 * NO_PIECE;
+                bool double_push = relRank(stm, RANK_2) == rankOf(from) && (Square(from + 2 * up) == to) && (to_pc + pieceAt(to - up)) == 2 * NO_PIECE;
 
                 // if none of the conditions above are met, then it's not pseudo legal
                 if (!capture && !singe_push && !double_push)

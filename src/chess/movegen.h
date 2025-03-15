@@ -36,7 +36,7 @@ namespace Chess
     Move *genPawnMoves(const Board &board, Move *ml, const U64 targets)
     {
         constexpr Color them = ~us;
-        constexpr U64 rank7_bb = MASK_RANK[relativeRank(us, RANK_7)];
+        constexpr U64 rank7_bb = MASK_RANK[relRank(us, RANK_7)];
         constexpr Direction up = us == WHITE ? NORTH : SOUTH;
         constexpr Direction up_right = (us == WHITE ? NORTH_EAST : SOUTH_WEST);
         constexpr Direction up_left = (us == WHITE ? NORTH_WEST : SOUTH_EAST);
@@ -52,7 +52,7 @@ namespace Chess
         if constexpr (gt != NOISY)
         {
             U64 b1 = shift(up, pawns_non7) & empty_sqs;
-            U64 b2 = shift(up, b1 & MASK_RANK[relativeRank(us, RANK_3)]) & empty_sqs;
+            U64 b2 = shift(up, b1 & MASK_RANK[relRank(us, RANK_3)]) & empty_sqs;
 
             b1 &= targets;
             b2 &= targets;
@@ -93,7 +93,7 @@ namespace Chess
 
             if (ep_sq != NO_SQUARE)
             {
-                assert(rankOf(ep_sq) == relativeRank(us, RANK_6));
+                assert(rankOf(ep_sq) == relRank(us, RANK_6));
 
                 b1 = pawns_non7 & getPawnAttacks(them, ep_sq);
                 while (b1)

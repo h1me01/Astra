@@ -100,7 +100,7 @@ namespace Chess
         return c == WHITE ? sq : Square(sq ^ 56);
     }
 
-    constexpr Rank relativeRank(Color c, Rank r)
+    constexpr Rank relRank(Color c, Rank r)
     {
         assert(r >= RANK_1 && r <= RANK_8);
         return c == WHITE ? r : Rank(RANK_8 - r);
