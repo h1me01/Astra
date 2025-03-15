@@ -1,5 +1,8 @@
+
 ROOT := $(realpath $(dir $(abspath $(lastword $(MAKEFILE_LIST)))))
-EvalFile = $(ROOT)/weights.net
+
+# Allow custom EVALFILE path via command line
+EVALFILE ?= $(ROOT)/weights.net
 
 # Compiler and flags
 CXX := g++
@@ -15,8 +18,7 @@ CXXFLAGS := -s \
             -fno-exceptions \
             -flto \
             -march=native \
-            -DNNUE_PATH=\"$(EvalFile)\" # nnue path
-
+            -DNNUE_PATH=\"$(EVALFILE)\" # nnue path
 LDFLAGS := -lstdc++
 
 # Source files
@@ -27,8 +29,8 @@ CHESS_SRC := chess/attacks.cpp \
              chess/zobrist.cpp \
              chess/cuckoo.cpp
 
-EVAL_SRC := eval/eval.cpp \
-            eval/nnue.cpp \
+EVAL_SRC := eval/nnue.cpp \
+            eval/eval.cpp \
             eval/accumulator.cpp
 
 SEARCH_SRC := search/history.cpp \
@@ -37,8 +39,8 @@ SEARCH_SRC := search/history.cpp \
               search/syzygy.cpp \
               search/threads.cpp \
               search/tt.cpp \
-              search/tune.cpp 
-              
+              search/tune.cpp
+             
 SYZYGY_SRC := fathom/tbprobe.cpp
 
 MAIN_SRC := main.cpp \
@@ -46,11 +48,8 @@ MAIN_SRC := main.cpp \
             uci.cpp
 
 SRC := $(CHESS_SRC) $(EVAL_SRC) $(SEARCH_SRC) $(SYZYGY_SRC) $(MAIN_SRC)
+TARGET = $(if $(EXE),$(EXE),astra)
 
-# Default target executable
-TARGET = astra
-
-# Detect Operating System
 ifeq ($(OS), Windows_NT)
     SUFFIX := .exe
     LDFLAGS := -lstdc++ -static
@@ -59,7 +58,6 @@ else
     LDFLAGS := -lpthread -lstdc++
 endif
 
-# Detect Platform-specific Cleanup Command
 ifeq ($(OS), Windows_NT)
     RM = del /Q
 else
@@ -68,13 +66,11 @@ endif
 
 TARGET_SUFFIX := $(TARGET)$(SUFFIX)
 
-# Default rule to build executable
 all: $(TARGET_SUFFIX)
 
 $(TARGET_SUFFIX): $(SRC)
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
 
-# Clean target
 clean:
 	$(RM) $(TARGET_SUFFIX)
 
@@ -82,9 +78,7 @@ clean:
 pgo:
 	$(CXX) $(CXXFLAGS) -fprofile-generate -o $(TARGET_SUFFIX) $(SRC) $(LDFLAGS)
 	./$(TARGET_SUFFIX) bench
-
 	$(CXX) $(filter-out -fprofile-generate, $(CXXFLAGS)) -fprofile-use -o $(TARGET_SUFFIX) $(SRC) $(LDFLAGS)
-
 	$(RM) *.gcda *.o profdata
 
 .PHONY: all clean pgo
