@@ -883,7 +883,7 @@ namespace Astra
         if (std::abs(result) >= VALUE_MATE - MAX_PLY)
             std::cout << "mate " << (VALUE_MATE - std::abs(result) + 1) / 2 * (result > 0 ? 1 : -1);
         else
-            std::cout << "cp " << Score(result / 2.5); // normalize
+            std::cout << "cp " << Score(result / 1.9); // normalize
 
         std::cout << " nodes " << total_nodes
                   << " nps " << total_nodes * 1000 / (elapsed_time + 1)
