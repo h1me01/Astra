@@ -527,7 +527,7 @@ namespace Astra
                 // increase when expected to fail high
                 r += 2 * cut_node;
                 // increase when tt_move is a capture
-                r += isValidMove(tt_move) ? isCap(tt_move) : 0;
+                r += (isValidMove(tt_move) ? isCap(tt_move) : 0);
                 // decrease when in pv node
                 r -= tt_pv;
                 // decrease if move is a killer or counter
