@@ -215,7 +215,7 @@ namespace Astra
 
         if (!root_node && alpha < VALUE_DRAW && board.hasUpcomingRepetition(ss->ply))
         {
-            alpha = VALUE_DRAW;
+            alpha = drawScore();
             if (alpha >= beta)
                 return alpha;
         }
@@ -243,7 +243,7 @@ namespace Astra
                 return alpha;
 
             if (board.isDraw(ss->ply))
-                return VALUE_DRAW;
+                return drawScore();
         }
 
         // look up in transposition table
@@ -662,13 +662,13 @@ namespace Astra
 
         if (alpha < VALUE_DRAW && board.hasUpcomingRepetition(ss->ply))
         {
-            alpha = VALUE_DRAW;
+            alpha = drawScore();
             if (alpha >= beta)
                 return alpha;
         }
 
         if (board.isDraw(ss->ply))
-            return VALUE_DRAW;
+            return drawScore();
         if (ss->ply >= MAX_PLY - 1)
             return evaluate();
 
@@ -802,6 +802,7 @@ namespace Astra
     }
 
     // search eval
+    Score Search::drawScore() { return 2 - (nodes & 3); }
 
     Score Search::evaluate()
     {

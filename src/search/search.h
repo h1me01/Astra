@@ -61,6 +61,7 @@ namespace Astra
         Score negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_node, const Move skipped = NO_MOVE);
         Score qSearch(int depth, Score alpha, Score beta, Stack *ss);
 
+        Score drawScore();
         Score evaluate();
         Score adjustEval(const Stack *ss, Score eval) const;
 
