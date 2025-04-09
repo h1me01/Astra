@@ -50,8 +50,6 @@ namespace Bench
 
     void bench(int depth)
     {
-        Astra::threads.stop_flag = false;
-
         U64 nodes = 0;
         Astra::Limits limits;
         limits.depth = depth;
@@ -62,6 +60,7 @@ namespace Bench
         {
             std::cout << "\nPosition: " << fen << std::endl;
 
+            Astra::threads.stop_flag = false;
             std::unique_ptr<Astra::Search> search(new Astra::Search(fen));
             search->limit = limits;
             search->bestMove();
