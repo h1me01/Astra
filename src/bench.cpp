@@ -50,7 +50,7 @@ namespace Bench
 
     void bench(int depth)
     {
-        Astra::threads.stop = false;
+        Astra::threads.stop_flag = false;
 
         U64 nodes = 0;
         Astra::Limits limits;

@@ -171,7 +171,7 @@ namespace UCI
                 std::cout << "readyok" << std::endl;
             else if (token == "ucinewgame")
             {
-                Astra::threads.stopAll();
+                Astra::threads.forceStop();
                 Astra::tt.clear();
             }
             else if (token == "position")
@@ -190,10 +190,10 @@ namespace UCI
             else if (token == "d")
                 board.print();
             else if (token == "stop")
-                Astra::threads.stopAll();
+                Astra::threads.forceStop();
             else if (token == "quit")
             {
-                Astra::threads.stopAll();
+                Astra::threads.forceStop();
                 tb_free();
                 break;
             }
@@ -238,7 +238,7 @@ namespace UCI
 
     void Uci::go(std::istringstream &is)
     {
-        Astra::threads.stopAll();
+        Astra::threads.forceStop();
         Astra::Limits limit;
 
         int64_t w_time = 0, b_time = 0, move_time = 0;

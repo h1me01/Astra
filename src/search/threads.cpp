@@ -2,14 +2,14 @@
 
 namespace Astra
 {
-    bool ThreadPool::isStopped() const
+    void ThreadPool::stop()
     {
-        return stop.load(std::memory_order_relaxed);
+        stop_flag.store(true);
     }
 
     void ThreadPool::launchWorkers(const Board &board, Limits limit, int worker_count, bool use_tb)
     {
-        stop = false;
+        stop_flag.store(false);
 
         threads.clear();
         running_threads.clear();
@@ -27,9 +27,9 @@ namespace Astra
         }
     }
 
-    void ThreadPool::stopAll()
+    void ThreadPool::forceStop()
     {
-        stop = true;
+        stop();
 
         // wait for all worker threads to finish
         for (auto &th : running_threads)
@@ -38,6 +38,11 @@ namespace Astra
 
         threads.clear();
         running_threads.clear();
+    }
+
+    bool ThreadPool::isStopped() const
+    {
+        return stop_flag.load(std::memory_order_relaxed);
     }
 
     U64 ThreadPool::getTotalNodes() const

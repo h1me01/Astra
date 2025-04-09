@@ -9,7 +9,8 @@ namespace Astra
     {
     public:
         void launchWorkers(const Board &board, Limits limit, int worker_count, bool use_tb);
-        void stopAll();
+        void forceStop();
+        void stop();
 
         bool isStopped() const;
 
@@ -18,7 +19,7 @@ namespace Astra
         int getSelDepth() const;
 
         // stop running all threads
-        std::atomic<bool> stop{false};
+        std::atomic<bool> stop_flag{false};
 
     private:
         std::vector<std::unique_ptr<Search>> threads;

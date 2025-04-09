@@ -132,6 +132,9 @@ namespace Astra
         if (id == 0)
             std::cout << "bestmove " << bestmove << std::endl;
 
+        // stop all threads
+        threads.stop();
+
         return bestmove;
     }
 
@@ -215,7 +218,7 @@ namespace Astra
 
         if (!root_node && alpha < VALUE_DRAW && board.hasUpcomingRepetition(ss->ply))
         {
-            alpha = drawScore();
+            alpha = VALUE_DRAW;
             if (alpha >= beta)
                 return alpha;
         }
@@ -243,7 +246,7 @@ namespace Astra
                 return alpha;
 
             if (board.isDraw(ss->ply))
-                return drawScore();
+                return VALUE_DRAW;
         }
 
         // look up in transposition table
@@ -662,13 +665,13 @@ namespace Astra
 
         if (alpha < VALUE_DRAW && board.hasUpcomingRepetition(ss->ply))
         {
-            alpha = drawScore();
+            alpha = VALUE_DRAW;
             if (alpha >= beta)
                 return alpha;
         }
 
         if (board.isDraw(ss->ply))
-            return drawScore();
+            return VALUE_DRAW;
         if (ss->ply >= MAX_PLY - 1)
             return evaluate();
 
@@ -802,8 +805,6 @@ namespace Astra
     }
 
     // search eval
-    Score Search::drawScore() { return 2 - (nodes & 3); }
-
     Score Search::evaluate()
     {
         int32_t eval = NNUE::nnue.forward(board.getAccumulator(), board.getTurn());
