@@ -15,7 +15,7 @@ namespace UCI
         return !s.empty() && std::all_of(s.begin(), s.end(), ::isdigit);
     }
 
-    const std::string version = "5.1";
+    const std::string version = "5.1.1";
 
     // options class
     void Options::print() const
@@ -126,6 +126,8 @@ namespace UCI
     // uci class
     Uci::Uci() : board(STARTING_FEN)
     {
+        std::cout << "Astra " << version << " by Semih Oezalp" << std::endl;
+
         options.add("Hash", Option("spin", "16", "16", 1, 8192));
         options.add("Threads", Option("spin", "1", "1", 1, 128));
         options.add("MultiPV", Option("spin", "1", "1", 1, 256));

@@ -2,8 +2,6 @@
 
 int main(int argc, char **argv)
 {
-    std::cout << "Astra 5.1 by Semih Oezalp" << std::endl;
-
     initLookUpTables();
     Zobrist::init();
     Cuckoo::init();
