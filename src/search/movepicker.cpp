@@ -7,7 +7,6 @@ namespace Astra
         assert(idx >= 0);
 
         int best_idx = idx;
-
         for (int i = 1 + idx; i < ml.size(); i++)
             if (ml[i].score > ml[best_idx].score)
                 best_idx = i;
