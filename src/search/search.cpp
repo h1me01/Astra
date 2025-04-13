@@ -335,7 +335,7 @@ namespace Astra
         if (!skipped && isValidMove(prev_move) && !isCap(prev_move) && (ss - 1)->static_eval != VALUE_NONE)
         {
             int bonus = std::clamp(static_h_mult * (ss->static_eval + (ss - 1)->static_eval) / 16, -int(static_h_min), int(static_h_max));
-            history.updateQuietHistory(~board.getTurn(), prev_move, bonus);
+            history.updateQH(~board.getTurn(), prev_move, bonus);
         }
 
         // only use pruning when not in check and pv node
@@ -446,7 +446,7 @@ namespace Astra
 
             made_moves++;
 
-            int history_score = isCap(move) ? history.getCapHistory(board, move) : history.getQuietHistory(board, ss, move);
+            int history_score = isCap(move) ? history.getCH(board, move) : history.getQH(board, ss, move);
 
             if (!root_node && best_score > -VALUE_TB_WIN_IN_MAX_PLY)
             {

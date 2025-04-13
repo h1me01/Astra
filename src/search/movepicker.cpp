@@ -188,7 +188,7 @@ namespace Astra
             assert(pt >= PAWN && pt <= KING);
             assert(pc >= WHITE_PAWN && pc <= BLACK_KING);
 
-            ml_main[i].score = 2 * history.getHistoryHeuristic(board.getTurn(), ml_main[i]);
+            ml_main[i].score = 2 * history.getHH(board.getTurn(), ml_main[i]);
             ml_main[i].score += 2 * (int)(*(ss - 1)->conth)[pc][to];
             ml_main[i].score += (int)(*(ss - 2)->conth)[pc][to];
             ml_main[i].score += (int)(*(ss - 4)->conth)[pc][to];
@@ -218,7 +218,7 @@ namespace Astra
         {
             PieceType captured = ml_main[i].type() == EN_PASSANT ? PAWN : typeOf(board.pieceAt(ml_main[i].to()));
             // quiet queen prom is not a capture
-            int cap_score = captured != NO_PIECE_TYPE ? history.getCapHistory(board, ml_main[i]) : 0;
+            int cap_score = captured != NO_PIECE_TYPE ? history.getCH(board, ml_main[i]) : history.getHH(board.getTurn(), ml_main[i]);
             ml_main[i].score = 16 * PIECE_VALUES[captured] + isProm(ml_main[i]) * 8192 + cap_score;
         }
     }

@@ -47,7 +47,7 @@ namespace Astra
             // only update quiet history if best move was important
             if (depth > 3 || qc > 1)
             {
-                updateQuietHistory(stm, best, bonus);
+                updateQH(stm, best, bonus);
                 updateContH(best, ss, bonus);
 
                 // quiet maluses
@@ -56,7 +56,7 @@ namespace Astra
                     Move quiet = q_moves[i];
                     if (quiet == best)
                         continue;
-                    updateQuietHistory(stm, quiet, -bonus);
+                    updateQH(stm, quiet, -bonus);
                     updateContH(quiet, ss, -bonus);
                 }
             }
@@ -74,7 +74,7 @@ namespace Astra
         }
     }
 
-    void History::updateQuietHistory(Color c, Move move, int bonus)
+    void History::updateQH(Color c, Move move, int bonus)
     {
         int16_t &value = hh[c][move.from()][move.to()];
         value += getFormula(value, bonus);

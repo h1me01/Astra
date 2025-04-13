@@ -18,16 +18,16 @@ namespace Astra
 
         void update(const Board &board, Move &move, Stack *ss, Move *q_moves, int qc, Move *c_moves, int cc, int depth);
 
-        void updateQuietHistory(Color c, Move move, int bonus);
+        void updateQH(Color c, Move move, int bonus);
         void updateContH(Move &move, Stack *ss, int bonus);
         void updateMaterialCorr(const Board &board, Score raw_eval, Score real_score, int depth);
         void updateContCorr(Score raw_eval, Score real_score, int depth, const Stack *ss);
 
         Move getCounterMove(Move move) const;
 
-        int getHistoryHeuristic(Color stm, Move move) const;
-        int getQuietHistory(const Board &board, const Stack *ss, Move &move) const;
-        int getCapHistory(const Board &board, Move &move) const;
+        int getHH(Color stm, Move move) const;
+        int getQH(const Board &board, const Stack *ss, Move &move) const;
+        int getCH(const Board &board, Move &move) const;
         int getMaterialCorr(const Board &board) const;
         int getContCorr(const Stack *ss) const;
 
@@ -45,12 +45,12 @@ namespace Astra
         void updateCapHistory(const Board &board, Move &move, int bonus);
     };
 
-    inline int History::getHistoryHeuristic(Color stm, Move move) const
+    inline int History::getHH(Color stm, Move move) const
     {
         return hh[stm][move.from()][move.to()];
     }
 
-    inline int History::getQuietHistory(const Board &board, const Stack *ss, Move &move) const
+    inline int History::getQH(const Board &board, const Stack *ss, Move &move) const
     {
         Square from = move.from();
         Square to = move.to();
@@ -66,7 +66,7 @@ namespace Astra
                (int)(*(ss - 4)->conth)[pc][to];
     }
 
-    inline int History::getCapHistory(const Board &board, Move &move) const
+    inline int History::getCH(const Board &board, Move &move) const
     {
         PieceType captured = move.type() == EN_PASSANT ? PAWN : typeOf(board.pieceAt(move.to()));
         Piece pc = board.pieceAt(move.from());
