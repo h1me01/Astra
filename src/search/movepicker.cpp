@@ -222,7 +222,7 @@ namespace Astra
                 score = history.getCH(board, ml_main[i]);
             else
                 // quiet queen prom is not a capture
-                score = history.getHH(board.getTurn(), ml_main[i]);
+                score = 0;
 
             ml_main[i].score = 16 * PIECE_VALUES[captured] + score;
         }
