@@ -205,9 +205,9 @@ namespace Astra
                     danger = board.getThreats(PAWN);
 
                 if (danger & SQUARE_BB[from])
-                    ml_main[i].score += 16384 + 16384 * (pt == QUEEN);
+                    ml_main[i].score += 16384;
                 else if (danger & SQUARE_BB[to])
-                    ml_main[i].score -= (16384 + 16384 * (pt == QUEEN));
+                    ml_main[i].score -= 16384;
             }
         }
     }
