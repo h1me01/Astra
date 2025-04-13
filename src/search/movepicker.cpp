@@ -216,9 +216,15 @@ namespace Astra
         for (int i = 0; i < ml_main.size(); i++)
         {
             PieceType captured = ml_main[i].type() == EN_PASSANT ? PAWN : typeOf(board.pieceAt(ml_main[i].to()));
-            // quiet queen prom is not a capture
-            int cap_score = captured != NO_PIECE_TYPE ? history.getCH(board, ml_main[i]) : 0;
-            ml_main[i].score = 16 * PIECE_VALUES[captured] + isProm(ml_main[i]) * 8192 + cap_score;
+
+            int score;
+            if (captured != NO_PIECE_TYPE)
+                score = history.getCH(board, ml_main[i]);
+            else
+                // quiet queen prom is not a capture
+                score = history.getHH(board.getTurn(), ml_main[i]);
+
+            ml_main[i].score = 16 * PIECE_VALUES[captured] + score;
         }
     }
 
