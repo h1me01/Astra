@@ -60,7 +60,7 @@ namespace NNUE
 #endif
 
     // helper
-    int index(Square psq, Square ksq, Piece pc, Color view)
+    int featureIndex(Square psq, Square ksq, Piece pc, Color view)
     {
         assert(psq >= a1 && psq <= h8);
         assert(ksq >= a1 && ksq <= h8);
@@ -138,7 +138,7 @@ namespace NNUE
 
     void NNUE::putPiece(Accum &acc, Accum &prev, Piece pc, Square psq, Square ksq, Color view) const
     {
-        const int idx = index(psq, ksq, pc, view);
+        const int idx = featureIndex(psq, ksq, pc, view);
 
 #if defined(__AVX512F__) || defined(__AVX2__) || defined(__AVX__)
         avx_type *acc_data = (avx_type *)acc.data[view];
@@ -157,7 +157,7 @@ namespace NNUE
 
     void NNUE::removePiece(Accum &acc, Accum &prev, Piece pc, Square psq, Square ksq, Color view) const
     {
-        const int idx = index(psq, ksq, pc, view);
+        const int idx = featureIndex(psq, ksq, pc, view);
 
 #if defined(__AVX512F__) || defined(__AVX2__) || defined(__AVX__)
         avx_type *acc_data = (avx_type *)acc.data[view];
@@ -176,8 +176,8 @@ namespace NNUE
 
     void NNUE::movePiece(Accum &acc, Accum &prev, Piece pc, Square from, Square to, Square ksq, Color view) const
     {
-        const int from_idx = index(from, ksq, pc, view);
-        const int to_idx = index(to, ksq, pc, view);
+        const int from_idx = featureIndex(from, ksq, pc, view);
+        const int to_idx = featureIndex(to, ksq, pc, view);
 
 #if defined(__AVX512F__) || defined(__AVX2__) || defined(__AVX__)
         avx_type *acc_data = (avx_type *)acc.data[view];
