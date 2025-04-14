@@ -807,7 +807,7 @@ namespace Astra
     // search eval
     Score Search::evaluate()
     {
-        int32_t eval = NNUE::nnue.forward(board.getAccumulator(), board.getTurn());
+        int32_t eval = NNUE::nnue.forward(board);
         // scale based on phase
         eval = (128 + board.getPhase()) * eval / 128;
 
@@ -841,8 +841,8 @@ namespace Astra
     void Search::updatePv(Move move, int ply)
     {
         pv_table[ply][ply] = move;
-        for (int next_ply = ply + 1; next_ply < pv_table[ply + 1].length; next_ply++)
-            pv_table[ply][next_ply] = pv_table[ply + 1][next_ply];
+        for (int nply = ply + 1; nply < pv_table[ply + 1].length; nply++)
+            pv_table[ply][nply] = pv_table[ply + 1][nply];
         pv_table[ply].length = pv_table[ply + 1].length;
     }
 

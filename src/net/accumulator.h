@@ -3,12 +3,6 @@
 #include <array>
 #include <cassert>
 #include "nnue.h"
-#include "../chess/types.h"
-
-namespace Chess
-{
-    class Board;
-}
 
 namespace NNUE
 {

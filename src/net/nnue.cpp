@@ -2,7 +2,7 @@
 #include <algorithm>
 #include "nnue.h"
 #include "accumulator.h"
-#include "../chess/misc.h"
+#include "../chess/board.h"
 
 #include "incbin.h"
 
@@ -94,8 +94,11 @@ namespace NNUE
         memcpy(fc2_biases, &gWeightsData[offset], OUTPUT_SIZE * sizeof(int32_t));
     }
 
-    int32_t NNUE::forward(const Accum &acc, Color stm) const
+    int32_t NNUE::forward(Board &board) const
     {
+        Color stm = board.getTurn();
+        Accum &acc = board.getAccumulator();
+
         assert(stm == WHITE || stm == BLACK);
 
 #if defined(__AVX512F__) || defined(__AVX2__) || defined(__AVX__)
