@@ -27,6 +27,9 @@ namespace Astra
 
     class TimeMan
     {
+    private:
+        TimePoint start_time;
+
     public:
         TimeMan() : start_time(Clock::now()) {}
 
@@ -53,9 +56,6 @@ namespace Astra
 
             return time;
         }
-
-    private:
-        TimePoint start_time;
     };
 
 } // namespace Astra

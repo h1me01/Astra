@@ -10,6 +10,7 @@ namespace Chess
     // psuedorandom number generator from stockfish
     class PRNG
     {
+    private:
         U64 s;
 
         U64 rand64()

@@ -4,7 +4,7 @@
 #include <cassert>
 #include <immintrin.h>
 #include <cstring>
-#include "../chess/types.h"
+#include "../chess/misc.h"
 
 #if defined(__AVX512F__)
 #define ALIGNMENT 64
@@ -48,14 +48,26 @@ namespace NNUE
     };
     // clang-format on
 
-    struct NNUE
+    inline bool needsRefresh(Piece pc, Square from, Square to)
     {
-        alignas(ALIGNMENT) int16_t fc1_weights[INPUT_SIZE * HIDDEN_SIZE];
-        alignas(ALIGNMENT) int16_t fc1_biases[HIDDEN_SIZE];
-        alignas(ALIGNMENT) int16_t fc2_weights[2 * HIDDEN_SIZE];
-        alignas(ALIGNMENT) int32_t fc2_biases[OUTPUT_SIZE];
+        if (typeOf(pc) != KING)
+            return false;
 
+        Color view = colorOf(pc);
+        return KING_BUCKET[relSquare(view, from)] != KING_BUCKET[relSquare(view, to)] || fileOf(from) + fileOf(to) == 7;
+    }
+
+    class NNUE
+    {
+    private:
+        alignas(ALIGNMENT) int16_t ft_weights[INPUT_SIZE * HIDDEN_SIZE];
+        alignas(ALIGNMENT) int16_t ft_biases[HIDDEN_SIZE];
+        alignas(ALIGNMENT) int16_t l1_weights[2 * HIDDEN_SIZE];
+        alignas(ALIGNMENT) int32_t l1_biases[OUTPUT_SIZE];
+
+    public:
         void init();
+        void initAccum(Accum &acc) const;
 
         int32_t forward(Board &board) const;
 

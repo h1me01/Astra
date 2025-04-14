@@ -32,22 +32,6 @@ namespace Astra
 
     class Search
     {
-    public:
-        int id = 0; // main thread
-
-        bool use_tb = false;
-
-        U64 nodes = 0;
-        U64 tb_hits = 0;
-        int seldepth = 0;
-
-        Limits limit;
-        Board board;
-
-        Search(const std::string &fen);
-
-        Move bestMove();
-
     private:
         int multipv_idx, root_depth;
 
@@ -71,6 +55,22 @@ namespace Astra
         bool foundRootMove(const Move &move);
 
         void printUciInfo();
+
+    public:
+        int id = 0; // main thread
+
+        bool use_tb = false;
+
+        U64 nodes = 0;
+        U64 tb_hits = 0;
+        int seldepth = 0;
+
+        Limits limit;
+        Board board;
+
+        Search(const std::string &fen);
+
+        Move bestMove();
     };
 
 } // namespace Astra

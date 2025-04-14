@@ -7,58 +7,91 @@
 namespace NNUE
 {
 
-    struct Accum
+    class Accum
     {
-        bool init[NUM_COLORS] = {false, false};
+    private:
+        bool initialized[NUM_COLORS] = {false, false};
         alignas(ALIGNMENT) int16_t data[NUM_COLORS][HIDDEN_SIZE];
+
+    public:
+        // sets initialized to false for both colors
+        void reset()
+        {
+            initialized[WHITE] = false;
+            initialized[BLACK] = false;
+        }
+
+        // sets view as initialized
+        void markAsInitialized(Color view)
+        {
+            this->initialized[view] = true;
+        }
+
+        bool isInitialized(Color view) const { return initialized[view]; }
+
+        int16_t *getData(Color view) { return data[view]; }
     };
 
     class Accumulators
     {
     public:
-        Accumulators() : index(0) {}
+        Accumulators() : counter(0) {}
 
-        int getIndex() const { return index; }
+        int size() const { return counter + 1; }
 
-        void clear() { index = 0; }
+        void clear() { counter = 0; }
 
         void increment()
         {
-            index++;
-            assert(index < MAX_PLY + 1);
+            counter++;
+            assert(counter < MAX_PLY + 1);
 
-            accumulators[index].init[WHITE] = false;
-            accumulators[index].init[BLACK] = false;
+            accumulators[counter].reset();
         }
 
         void decrement()
         {
-            assert(index > 0);
-            index--;
-
-            accumulators[index].init[WHITE] = false;
-            accumulators[index].init[BLACK] = false;
+            assert(counter > 0);
+            counter--;
         }
 
-        Accum &back() { return accumulators[index]; }
+        Accum &back() { return accumulators[counter]; }
         Accum &operator[](int idx) { return accumulators[idx]; }
 
     private:
-        int index;
+        int counter;
         std::array<Accum, MAX_PLY + 1> accumulators{};
     };
 
     // idea from koivisto
-    struct AccumEntry
+    class AccumEntry
     {
+    private:
         U64 piece_bb[NUM_COLORS][NUM_PIECE_TYPES]{};
         Accum acc{};
+
+    public:
+        void reset()
+        {
+            memset(piece_bb, 0, sizeof(piece_bb));
+            nnue.initAccum(acc);
+        }
+
+        void setPieceBB(Color c, PieceType pt, U64 bb)
+        {
+            piece_bb[c][pt] = bb;
+        }
+
+        U64 getPieceBB(Color c, PieceType pt) const { return piece_bb[c][pt]; }
+        Accum &getAccum() { return acc; }
     };
 
-    struct AccumTable
+    class AccumTable
     {
+    private:
         AccumEntry entries[NUM_COLORS][2 * BUCKET_SIZE]{};
 
+    public:
         void refresh(Color view, Board &board);
         void reset();
     };

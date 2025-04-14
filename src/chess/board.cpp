@@ -57,10 +57,10 @@ namespace Chess
             // clang-format off
             switch (c)
             {
-            case 'K': info.castle_rights.mask |= OO_MASK[WHITE]; break;
-            case 'Q': info.castle_rights.mask |= OOO_MASK[WHITE]; break;
-            case 'k': info.castle_rights.mask |= OO_MASK[BLACK]; break;
-            case 'q': info.castle_rights.mask |= OOO_MASK[BLACK]; break;
+            case 'K': info.castle_rights.addKingSide(WHITE); break;
+            case 'Q': info.castle_rights.addQueenSide(WHITE); break;
+            case 'k': info.castle_rights.addKingSide(BLACK); break;
+            case 'q': info.castle_rights.addQueenSide(BLACK); break;
             default: break;
             }
             // clang-format on
@@ -259,59 +259,50 @@ namespace Chess
 
         const Direction up = stm == WHITE ? NORTH : SOUTH;
 
-        // move must exist, piece must exist, piece must match the current stm
-        if (!isValidMove(m) || from_pc == NO_PIECE || colorOf(from_pc) != stm)
+        if (!isValidMove(m) ||                                   // move must exist
+            from_pc == NO_PIECE ||                               // piece must exist
+            colorOf(from_pc) != stm ||                           // piece must match the current stm
+            (SQUARE_BB[to] & us_bb) ||                           // we must not capture our own piece
+            (!isCap(m) && to_pc != NO_PIECE) ||                  // if quiet move, then target square must be empty
+            (popCount(info.checkers) > 1 && pt != KING) ||       // if double check, then only king can move
+            (pt == KING && (SQUARE_BB[to] & info.danger)) ||     // king can't move to danger squares
+            (mt != EN_PASSANT && isCap(m) && to_pc == NO_PIECE)) // if capture move, then target square must be occupied by enemy piece
+        {
             return false;
-        // if double check, then only king can move
-        if (popCount(info.checkers) > 1 && pt != KING)
-            return false;
-        // if capture move, then target square must be occupied by enemy piece
-        if (mt != EN_PASSANT && isCap(m) && to_pc == NO_PIECE)
-            return false;
-        // if quiet move, then target square must be empty
-        if (!isCap(m) && to_pc != NO_PIECE)
-            return false;
-        // we must not capture our own piece
-        if (SQUARE_BB[to] & us_bb)
-            return false;
-        // king can't move to danger squares
-        if (pt == KING && (SQUARE_BB[to] & info.danger))
-            return false;
+        }
 
         if (mt == CASTLING)
         {
-            // make sure we move a king
-            if (pt != KING)
+            if (pt != KING ||                 // make sure we move a king
+                info.checkers ||              // can't castle when in check
+                !info.castle_rights.any(stm)) // or when no castling rights are present
+            {
                 return false;
-            // can't castle when in check or when no castling rights are present
-            if (info.checkers || !info.castle_rights.any(stm))
-                return false;
+            }
+
             // short castling
             U64 not_free = (occ | info.danger) & OO_BLOCKERS_MASK[stm];
             if (!not_free && info.castle_rights.kingSide(stm) && to == relSquare(stm, g1))
                 return true;
+
             // long castling
             not_free = (occ | (info.danger & ~SQUARE_BB[relSquare(stm, b1)])) & OOO_BLOCKERS_MASK[stm];
             if (!not_free && info.castle_rights.queenSide(stm) && to == relSquare(stm, c1))
                 return true;
+
             // if short/long castling condition is not met, then it's not pseudo legal
             return false;
         }
 
         if (mt == EN_PASSANT)
         {
-            // make sure we move a pawn
-            if (pt != PAWN)
+            if (pt != PAWN ||                                             // make sure we move a pawn
+                to_pc != NO_PIECE ||                                      // to-square must not be occupied
+                info.ep_sq != to ||                                       // ep square must be same
+                pieceAt(Square(info.ep_sq ^ 8)) != makePiece(~stm, PAWN)) // pawn on ep square must be a enemy pawn
+            {
                 return false;
-            // to-square must not be occupied
-            if (to_pc != NO_PIECE)
-                return false;
-            // ep square must be same
-            if (info.ep_sq != to)
-                return false;
-            // pawn on ep square must be a enemy pawn
-            if (pieceAt(Square(info.ep_sq ^ 8)) != makePiece(~stm, PAWN))
-                return false;
+            }
         }
 
         if (isProm(m))
@@ -338,9 +329,11 @@ namespace Chess
                 // is capture?
                 bool capture = getPawnAttacks(stm, from) & them_bb & SQUARE_BB[to];
                 // is single push?
-                bool singe_push = (Square(from + up) == to) && to_pc == NO_PIECE;
+                bool singe_push = Square(from + up) == to && to_pc == NO_PIECE;
                 // is double push?
-                bool double_push = relRank(stm, RANK_2) == rankOf(from) && (Square(from + 2 * up) == to) && (to_pc + pieceAt(to - up)) == 2 * NO_PIECE;
+                bool double_push = Square(from + 2 * up) == to &&
+                                   relRank(stm, RANK_2) == rankOf(from) &&
+                                   (to_pc + pieceAt(to - up)) == 2 * NO_PIECE;
 
                 // if none of the conditions above are met, then it's not pseudo legal
                 if (!capture && !singe_push && !double_push)
@@ -447,7 +440,7 @@ namespace Chess
         {
             // remove old castling rights from hash
             info.hash ^= Zobrist::getCastle(info.castle_rights.getHashIndex());
-            info.castle_rights.mask &= ~(SQUARE_BB[from] | SQUARE_BB[to]);
+            info.castle_rights.update(SQUARE_BB[from], SQUARE_BB[to]);
             // add new castling rights to hash
             info.hash ^= Zobrist::getCastle(info.castle_rights.getHashIndex());
         }
@@ -503,7 +496,7 @@ namespace Chess
         assert(pieceAt(to) != NO_PIECE);
         assert(pieceAt(from) == NO_PIECE);
 
-        if (accumulators.getIndex())
+        if (accumulators.size())
             accumulators.decrement();
 
         if (isProm(m))

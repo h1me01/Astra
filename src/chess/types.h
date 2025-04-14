@@ -124,13 +124,20 @@ namespace Chess
 
     class Move
     {
+    private:
+        // first 4 bits represent the move flag
+        // next 6 bits represent the to square
+        // last 6 bits represent the from square
+        uint16_t move;
+        int score = 0; // used for move ordering
+
     public:
         // default move (a1a1)
         Move() : move(0) {}
 
         constexpr explicit Move(uint16_t m) : move(m) {}
 
-        constexpr Move(const Move &other) : score(other.score), move(other.move) {}
+        constexpr Move(const Move &other) : move(other.move), score(other.score) {}
         constexpr Move(Square from, Square to, MoveType mt) : move(mt << 12 | from << 6 | to) {}
 
         Square to() const { return Square(move & 0x3f); }
@@ -149,17 +156,12 @@ namespace Chess
 
         uint16_t raw() const { return move; }
 
+        void setScore(int s) { score = s; }
+        int getScore() const { return score; }
+
         bool operator==(const Move &m) const { return move == m.move; }
         bool operator!=(const Move &m) const { return move != m.move; }
         bool operator!() const { return move == 0; }
-
-        int score = 0; // used for move ordering
-
-    private:
-        // first 4 bits represent the move flag
-        // next 6 bits represent the to square
-        // last 6 bits represent the from square
-        uint16_t move;
     };
 
     const auto NULL_MOVE = Move(65);

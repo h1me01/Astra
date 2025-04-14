@@ -232,6 +232,10 @@ namespace Chess
     template <typename Type = Move>
     class MoveList
     {
+    private:
+        Type list[MAX_MOVES];
+        Type *last;
+
     public:
         MoveList() : last(list) {}
 
@@ -263,10 +267,6 @@ namespace Chess
         const Type *begin() const { return list; }
         const Type *end() const { return last; }
         int size() const { return last - list; }
-
-    private:
-        Type list[MAX_MOVES];
-        Type *last;
     };
 
 } // namespace Chess

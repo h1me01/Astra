@@ -2,14 +2,10 @@
 
 namespace Astra
 {
-    void ThreadPool::stop()
-    {
-        stop_flag.store(true);
-    }
 
     void ThreadPool::launchWorkers(const Board &board, Limits limit, int worker_count, bool use_tb)
     {
-        stop_flag.store(false);
+        start();
 
         threads.clear();
         running_threads.clear();

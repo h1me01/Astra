@@ -7,12 +7,25 @@
 
 namespace Astra
 {
-    static constexpr size_t CORR_SIZE = 16384;
+    constexpr size_t CORR_SIZE = 16384;
 
     int historyBonus(int depth);
 
     class History
     {
+    private:
+        Move counters[NUM_SQUARES][NUM_SQUARES];
+
+        int16_t hh[NUM_COLORS][NUM_SQUARES][NUM_SQUARES]{};
+        int16_t ch[NUM_PIECES][NUM_SQUARES][NUM_PIECE_TYPES]{};
+
+        int16_t cont_corr[NUM_PIECES][NUM_SQUARES][NUM_PIECES][NUM_SQUARES]{};
+        int16_t pawn_corr[NUM_COLORS][CORR_SIZE]{};
+        int16_t w_non_pawn_corr[NUM_COLORS][CORR_SIZE]{};
+        int16_t b_non_pawn_corr[NUM_COLORS][CORR_SIZE]{};
+
+        void updateCapHistory(const Board &board, Move &move, int bonus);
+
     public:
         int16_t conth[2][NUM_PIECES][NUM_SQUARES][NUM_PIECES][NUM_SQUARES]{};
 
@@ -30,19 +43,6 @@ namespace Astra
         int getCH(const Board &board, Move &move) const;
         int getMaterialCorr(const Board &board) const;
         int getContCorr(const Stack *ss) const;
-
-    private:
-        Move counters[NUM_SQUARES][NUM_SQUARES];
-
-        int16_t hh[NUM_COLORS][NUM_SQUARES][NUM_SQUARES]{};
-        int16_t ch[NUM_PIECES][NUM_SQUARES][NUM_PIECE_TYPES]{};
-
-        int16_t cont_corr[NUM_PIECES][NUM_SQUARES][NUM_PIECES][NUM_SQUARES]{};
-        int16_t pawn_corr[NUM_COLORS][CORR_SIZE]{};
-        int16_t w_non_pawn_corr[NUM_COLORS][CORR_SIZE]{};
-        int16_t b_non_pawn_corr[NUM_COLORS][CORR_SIZE]{};
-
-        void updateCapHistory(const Board &board, Move &move, int bonus);
     };
 
     inline int History::getHH(Color stm, Move move) const

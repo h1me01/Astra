@@ -8,7 +8,7 @@ namespace Astra
 
         int best_idx = idx;
         for (int i = 1 + idx; i < ml.size(); i++)
-            if (ml[i].score > ml[best_idx].score)
+            if (ml[i].getScore() > ml[best_idx].getScore())
                 best_idx = i;
 
         std::swap(ml[idx], ml[best_idx]);
@@ -75,7 +75,7 @@ namespace Astra
                     continue;
 
                 // we want to play captures first in qsearch, doesn't matter if its see is fails
-                if (st != Q_SEARCH && !board.see(move, st == N_SEARCH ? -move.score / 32 : see_cutoff))
+                if (st != Q_SEARCH && !board.see(move, st == N_SEARCH ? -move.getScore() / 32 : see_cutoff))
                 {
                     ml_bad_noisy.add(move); // add to bad noisy
                     continue;
@@ -187,11 +187,11 @@ namespace Astra
             assert(pt >= PAWN && pt <= KING);
             assert(pc >= WHITE_PAWN && pc <= BLACK_KING);
 
-            ml_main[i].score = 2 * history.getHH(board.getTurn(), ml_main[i]);
-            ml_main[i].score += 2 * (int)(*(ss - 1)->conth)[pc][to];
-            ml_main[i].score += (int)(*(ss - 2)->conth)[pc][to];
-            ml_main[i].score += (int)(*(ss - 4)->conth)[pc][to];
-            ml_main[i].score += (int)(*(ss - 6)->conth)[pc][to];
+            int score = 2 * history.getHH(board.getTurn(), ml_main[i]);
+            score += 2 * (int)(*(ss - 1)->conth)[pc][to];
+            score += (int)(*(ss - 2)->conth)[pc][to];
+            score += (int)(*(ss - 4)->conth)[pc][to];
+            score += (int)(*(ss - 6)->conth)[pc][to];
 
             if (pt != PAWN && pt != KING)
             {
@@ -204,10 +204,12 @@ namespace Astra
                     danger = board.getThreats(PAWN);
 
                 if (danger & SQUARE_BB[from])
-                    ml_main[i].score += 16384 + 16384 * (pt == QUEEN);
+                    score += 16384 + 16384 * (pt == QUEEN);
                 else if (danger & SQUARE_BB[to])
-                    ml_main[i].score -= (16384 + 16384 * (pt == QUEEN));
+                    score -= (16384 + 16384 * (pt == QUEEN));
             }
+
+            ml_main[i].setScore(score);
         }
     }
 
@@ -224,7 +226,7 @@ namespace Astra
                 // quiet queen prom is not a capture
                 score = history.getHH(board.getTurn(), ml_main[i]);
 
-            ml_main[i].score = 16 * PIECE_VALUES[captured] + score;
+            ml_main[i].setScore(16 * PIECE_VALUES[captured] + score);
         }
     }
 

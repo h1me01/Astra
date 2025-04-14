@@ -4,6 +4,8 @@
 namespace NNUE
 {
 
+    // AccumTable
+
     void AccumTable::refresh(Color view, Board &board)
     {
         assert(view == WHITE || view == BLACK);
@@ -12,6 +14,8 @@ namespace NNUE
         const int ksq_idx = KING_BUCKET[relSquare(view, ksq)];
         AccumEntry &entry = entries[view][(fileOf(ksq) > 3) * BUCKET_SIZE + ksq_idx];
 
+        Accum &entry_acc = entry.getAccum();
+
         for (Color c : {WHITE, BLACK})
             for (int i = PAWN; i <= KING; i++)
             {
@@ -19,34 +23,30 @@ namespace NNUE
                 Piece pc = makePiece(c, pt);
 
                 const U64 pc_bb = board.getPieceBB(c, pt);
-                const U64 entry_bb = entry.piece_bb[c][pt];
+                const U64 entry_bb = entry.getPieceBB(c, pt);
 
                 U64 to_set = pc_bb & ~entry_bb;
                 while (to_set)
-                    nnue.putPiece(entry.acc, entry.acc, pc, popLsb(to_set), ksq, view);
+                    nnue.putPiece(entry_acc, entry_acc, pc, popLsb(to_set), ksq, view);
 
                 U64 to_clear = entry_bb & ~pc_bb;
                 while (to_clear)
-                    nnue.removePiece(entry.acc, entry.acc, pc, popLsb(to_clear), ksq, view);
+                    nnue.removePiece(entry_acc, entry_acc, pc, popLsb(to_clear), ksq, view);
 
-                entry.piece_bb[c][pt] = pc_bb;
+                entry.setPieceBB(c, pt, pc_bb);
             }
 
         Accum &acc = board.getAccumulator();
-        acc.init[view] = true;
+        acc.markAsInitialized(view);
 
-        memcpy(acc.data[view], entry.acc.data[view], sizeof(int16_t) * HIDDEN_SIZE);
+        memcpy(acc.getData(view), entry_acc.getData(view), sizeof(int16_t) * HIDDEN_SIZE);
     }
 
     void AccumTable::reset()
     {
         for (Color c : {WHITE, BLACK})
             for (int i = 0; i < 2 * BUCKET_SIZE; i++)
-            {
-                memset(entries[c][i].piece_bb, 0, sizeof(entries[c][i].piece_bb));
-                memcpy(entries[c][i].acc.data[WHITE], nnue.fc1_biases, sizeof(int16_t) * HIDDEN_SIZE);
-                memcpy(entries[c][i].acc.data[BLACK], nnue.fc1_biases, sizeof(int16_t) * HIDDEN_SIZE);
-            }
+                entries[c][i].reset();
     }
 
 } // namespace NNUE
