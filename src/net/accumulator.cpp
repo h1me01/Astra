@@ -44,8 +44,8 @@ namespace NNUE
             for (int i = 0; i < 2 * BUCKET_SIZE; i++)
             {
                 memset(entries[c][i].piece_bb, 0, sizeof(entries[c][i].piece_bb));
-                memcpy(entries[c][i].acc.data[WHITE], nnue.fc1_biases, sizeof(int16_t) * HIDDEN_SIZE);
-                memcpy(entries[c][i].acc.data[BLACK], nnue.fc1_biases, sizeof(int16_t) * HIDDEN_SIZE);
+                memcpy(entries[c][i].acc.data[WHITE], nnue.ft_biases, sizeof(int16_t) * HIDDEN_SIZE);
+                memcpy(entries[c][i].acc.data[BLACK], nnue.ft_biases, sizeof(int16_t) * HIDDEN_SIZE);
             }
     }
 
