@@ -21,7 +21,7 @@ namespace Astra
 
     int historyBonus(int depth)
     {
-        return std::min(int(max_history_bonus), history_mult * depth - history_minus);
+        return std::min(int(max_history_bonus), history_mult * depth + history_minus);
     }
 
     // history

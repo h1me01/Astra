@@ -75,7 +75,7 @@ namespace Astra
                     continue;
 
                 // we want to play captures first in qsearch, doesn't matter if its see is fails
-                if (st != Q_SEARCH && !board.see(move, st == N_SEARCH ? -move.score / 24 : see_cutoff))
+                if (st != Q_SEARCH && !board.see(move, st == N_SEARCH ? -move.score / 32 : see_cutoff))
                 {
                     ml_bad_noisy.add(move); // add to bad noisy
                     continue;

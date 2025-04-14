@@ -77,7 +77,7 @@ namespace Astra
 
     // history parameters
     PARAM(history_mult, 364, 1, 1536);
-    PARAM(history_minus, -66, -500, 500);
+    PARAM(history_minus, -25, -500, 500);
     PARAM(max_history_bonus, 1882, 1, 4096);
 
 } // namespace Astra
