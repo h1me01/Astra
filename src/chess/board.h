@@ -183,7 +183,7 @@ namespace Chess
             if (accumulators.back().init[view])
                 continue;
 
-            for (int i = accumulators.getIndex() - 1; i >= 0; i--)
+            for (int i = accumulators.size() - 2; i >= 0; i--)
             {
                 if (accumulators[i].needs_refresh[view])
                 {
@@ -194,7 +194,7 @@ namespace Chess
                 // apply lazy update
                 if (accumulators[i].init[view])
                 {
-                    for (int j = i + 1; j <= accumulators.getIndex(); j++)
+                    for (int j = i + 1; j < accumulators.size(); j++)
                         accumulators[j].update(accumulators[j - 1], view);
                     break;
                 }
@@ -323,6 +323,7 @@ namespace Chess
             NNUE::Accum &acc = getAccumulator();
             acc.movePiece(pc, from, to, kingSq(WHITE), kingSq(BLACK));
 
+            return;
             if (typeOf(pc) == KING)
             {
                 Square rel_from = relSquare(stm, from);

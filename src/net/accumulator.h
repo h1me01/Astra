@@ -24,86 +24,88 @@ namespace NNUE
 
         alignas(ALIGNMENT) int16_t data[NUM_COLORS][HIDDEN_SIZE];
 
-        int num_dps = 0;
+        int num_dpcs = 0;
         // an accumulator can update at max only 4 pieces per move:
         // such case might be pawn captures piece on promotion rank:
         //  1. remove captured piece
         //  2. move pawn to target square
         //  3. add promotion piece to target square
         //  4. remove pawn from target square
-        DirtyPiece dirty_pieces[4]{};
+        DirtyPiece dpcs[4]{};
 
         void reset()
         {
             init[WHITE] = needs_refresh[WHITE] = false;
             init[BLACK] = needs_refresh[BLACK] = false;
 
-            num_dps = 0;
+            num_dpcs = 0;
         }
 
         void putPiece(Piece pc, Square to, Square wksq, Square bksq)
         {
-            assert(num_dps < 4);
-            dirty_pieces[num_dps++] = DirtyPiece(pc, NO_SQUARE, to, wksq, bksq);
+            assert(num_dpcs < 4);
+            dpcs[num_dpcs++] = DirtyPiece(pc, NO_SQUARE, to, wksq, bksq);
         }
 
         void removePiece(Piece pc, Square from, Square wksq, Square bksq)
         {
-            assert(num_dps < 4);
-            dirty_pieces[num_dps++] = DirtyPiece(pc, from, NO_SQUARE, wksq, bksq);
+            assert(num_dpcs < 4);
+            dpcs[num_dpcs++] = DirtyPiece(pc, from, NO_SQUARE, wksq, bksq);
         }
 
         void movePiece(Piece pc, Square from, Square to, Square wksq, Square bksq)
         {
-            assert(num_dps < 4);
-            dirty_pieces[num_dps++] = DirtyPiece(pc, from, to, wksq, bksq);
+            assert(num_dpcs < 4);
+            dpcs[num_dpcs++] = DirtyPiece(pc, from, to, wksq, bksq);
         }
 
         void update(Accum &prev, Color view)
         {
-            for (int i = 0; i < num_dps; i++)
+            for (int i = 0; i < num_dpcs; i++)
             {
-                DirtyPiece dp = dirty_pieces[i];
-                Square ksq = (view == WHITE) ? dp.wksq : dp.bksq;
+                DirtyPiece dpc = dpcs[i];
+                Square ksq = (view == WHITE) ? dpc.wksq : dpc.bksq;
 
-                if (dp.from == NO_SQUARE)
-                    nnue.putPiece(*this, prev, dp.pc, dp.to, ksq, view);
-                else if (dp.to == NO_SQUARE)
-                    nnue.removePiece(*this, prev, dp.pc, dp.from, ksq, view);
+                if (dpc.from == NO_SQUARE)
+                    nnue.putPiece(*this, prev, dpc.pc, dpc.to, ksq, view);
+                else if (dpc.to == NO_SQUARE)
+                    nnue.removePiece(*this, prev, dpc.pc, dpc.from, ksq, view);
                 else
-                    nnue.movePiece(*this, prev, dp.pc, dp.from, dp.to, ksq, view);
+                    nnue.movePiece(*this, prev, dpc.pc, dpc.from, dpc.to, ksq, view);
             }            
+
+            assert(init[view] == true);
         }
     };
 
     class Accumulators
     {
     public:
-        Accumulators() : index(0) {}
+        Accumulators() : counter(0) {}
 
-        int getIndex() const { return index; }
+        int size() const { return counter + 1; }
 
-        void clear() { index = 0; }
+        void clear() { counter = 0; }
 
         void increment()
         {
-            index++;
-            assert(index < MAX_PLY + 1);
+            counter++;
+            assert(counter < MAX_PLY + 1);
 
-            accumulators[index].reset();
+            accumulators[counter].reset();
         }
 
         void decrement()
         {
-            assert(index > 0);
-            index--;
+            assert(counter > 0);
+            counter--;
         }
 
-        Accum &back() { return accumulators[index]; }
+        Accum &back() { return accumulators[counter]; }
         Accum &operator[](int idx) { return accumulators[idx]; }
 
     private:
-        int index;
+        int counter;
         std::array<Accum, MAX_PLY + 1> accumulators{};
     };
 
