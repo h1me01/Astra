@@ -183,6 +183,8 @@ namespace Chess
             if (accumulators.back().init[view])
                 continue;
 
+            assert(accumulators.size() > 1);
+
             for (int i = accumulators.size() - 1; i >= 0; i--)
             {
                 if (accumulators[i].needs_refresh[view])
