@@ -816,7 +816,7 @@ namespace Astra
 
     Score Search::adjustEval(const Stack *ss, Score eval) const
     {
-        eval += history.getMaterialCorr(board) + history.getContCorr(ss);
+        eval += (history.getMaterialCorr(board) + history.getContCorr(ss)) / 256;
         return std::clamp(eval, Score(-VALUE_TB_WIN_IN_MAX_PLY + 1), Score(VALUE_TB_WIN_IN_MAX_PLY - 1));
     }
 
