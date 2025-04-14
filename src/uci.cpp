@@ -126,7 +126,7 @@ namespace UCI
     // uci class
     Uci::Uci() : board(STARTING_FEN)
     {
-        std::cout << "Astra Dev " << version << " by Semih Oezalp" << std::endl;
+        std::cout << "Astra " << version << " by Semih Oezalp" << std::endl;
 
         options.add("Hash", Option("spin", "16", "16", 1, 8192));
         options.add("Threads", Option("spin", "1", "1", 1, 128));
