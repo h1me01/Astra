@@ -21,7 +21,12 @@ namespace Astra
 
     int historyBonus(int depth)
     {
-        return std::min(int(max_history_bonus), history_mult * depth + history_minus);
+        return std::min(int(max_history_bonus), history_bonus_mult * depth + history_bonus_minus);
+    }
+
+    int historyMalus(int depth)
+    {
+        return std::min(int(max_history_malus), history_malus_mult * depth + history_malus_minus);
     }
 
     // history
@@ -29,6 +34,7 @@ namespace Astra
     {
         Color stm = board.getTurn();
         int bonus = historyBonus(depth);
+        int malus = historyMalus(depth);
 
         if (!isCap(best))
         {
@@ -56,8 +62,8 @@ namespace Astra
                     Move quiet = q_moves[i];
                     if (quiet == best)
                         continue;
-                    updateQH(stm, quiet, -bonus);
-                    updateContH(quiet, ss, -bonus);
+                    updateQH(stm, quiet, -malus);
+                    updateContH(quiet, ss, -malus);
                 }
             }
         }
@@ -70,7 +76,7 @@ namespace Astra
             Move cap = c_moves[i];
             if (cap == best)
                 continue;
-            updateCapHistory(board, cap, -bonus);
+            updateCapHistory(board, cap, -malus);
         }
     }
 
