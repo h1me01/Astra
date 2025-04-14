@@ -76,8 +76,12 @@ namespace Astra
     PARAM(qfp_margin, 100, 40, 280);
 
     // history parameters
-    PARAM(history_mult, 364, 1, 1536);
-    PARAM(history_minus, -25, -500, 500);
+    PARAM(history_bonus_mult, 364, 1, 1536);
+    PARAM(history_bonus_minus, -25, -500, 500);
     PARAM(max_history_bonus, 1882, 1, 4096);
+
+    PARAM(history_malus_mult, 364, 1, 1536);
+    PARAM(history_malus_minus, -25, -500, 500);
+    PARAM(max_history_malus, 1882, 1, 4096);
 
 } // namespace Astra

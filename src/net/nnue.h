@@ -14,6 +14,11 @@
 
 using namespace Chess;
 
+namespace Chess
+{
+    class Board;
+}
+
 namespace NNUE
 {
     class Accum;
@@ -52,7 +57,7 @@ namespace NNUE
 
         void init();
 
-        int32_t forward(const Accum &acc, Color stm) const;
+        int32_t forward(Board &board) const;
 
         void putPiece(Accum &acc, Accum &prev, Piece pc, Square psq, Square ksq, Color view) const;
         void removePiece(Accum &acc, Accum &prev, Piece pc, Square psq, Square ksq, Color view) const;

@@ -90,9 +90,11 @@ namespace Astra
 
     inline int History::getMaterialCorr(const Board &board) const
     {
-        return pawn_corr[board.getTurn()][CORR_IDX(board.getPawnHash())] / 512 +
-               w_non_pawn_corr[board.getTurn()][CORR_IDX(board.getNonPawnHash(WHITE))] / 512 +
-               b_non_pawn_corr[board.getTurn()][CORR_IDX(board.getNonPawnHash(BLACK))] / 512;
+        Color stm = board.getTurn();
+
+        return pawn_corr[stm][CORR_IDX(board.getPawnHash())] +
+               w_non_pawn_corr[stm][CORR_IDX(board.getNonPawnHash(WHITE))] +
+               b_non_pawn_corr[stm][CORR_IDX(board.getNonPawnHash(BLACK))];
     }
 
     inline int History::getContCorr(const Stack *ss) const
@@ -106,7 +108,7 @@ namespace Astra
         if (!prev_move || !pprev_move)
             return 0;
 
-        return cont_corr[prev_p][prev_move.to()][pprev_p][pprev_move.to()] / 512;
+        return cont_corr[prev_p][prev_move.to()][pprev_p][pprev_move.to()];
     }
 
 } // namespace Astra
