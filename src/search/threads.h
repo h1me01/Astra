@@ -17,7 +17,7 @@ namespace Astra
     public:
         void launchWorkers(const Board &board, Limits limit, int worker_count, bool use_tb);
         void forceStop();
-        
+
         void stop() { stop_flag.store(true); }
         void start() { stop_flag.store(false); }
 
