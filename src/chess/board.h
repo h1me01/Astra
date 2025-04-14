@@ -7,8 +7,6 @@
 #include "cuckoo.h"
 #include "../net/accumulator.h"
 
-inline int counter = 0;
-
 namespace Chess
 {
     struct CastlingRights
@@ -185,7 +183,7 @@ namespace Chess
             if (accumulators.back().init[view])
                 continue;
 
-            for (int i = accumulators.size() - 2; i >= 0; i--)
+            for (int i = accumulators.size() - 1; i >= 0; i--)
             {
                 if (accumulators[i].needs_refresh[view])
                 {
@@ -202,6 +200,9 @@ namespace Chess
                 }
             }
         }
+
+        assert(accumulators.back().init[WHITE]);
+        assert(accumulators.back().init[BLACK]);
     }
 
     inline U64 Board::diagSliders(Color c) const
@@ -329,10 +330,7 @@ namespace Chess
 
             // refresh only if different bucket index or king crossing the other half
             if (NNUE::KING_BUCKET[relSquare(stm, from)] != NNUE::KING_BUCKET[relSquare(stm, to)] || fileOf(from) + fileOf(to) == 7)
-            {
-                counter++;
-                //acc.needs_refresh[stm] = true; // other side doesn't need refresh
-            }
+                acc.needs_refresh[stm] = true; // other side doesn't need refresh
         }
     }
 
