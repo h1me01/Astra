@@ -48,14 +48,17 @@ namespace NNUE
     };
     // clang-format on
 
-    struct NNUE
+    class NNUE
     {
+    private:
         alignas(ALIGNMENT) int16_t ft_weights[INPUT_SIZE * HIDDEN_SIZE];
         alignas(ALIGNMENT) int16_t ft_biases[HIDDEN_SIZE];
         alignas(ALIGNMENT) int16_t l1_weights[2 * HIDDEN_SIZE];
         alignas(ALIGNMENT) int32_t l1_biases[OUTPUT_SIZE];
 
+    public:
         void init();
+        void initAccum(Accum &acc) const;
 
         int32_t forward(Board &board) const;
 

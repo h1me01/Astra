@@ -6,20 +6,25 @@
 
 namespace NNUE
 {
-
+    // idea from stockfish
     struct DirtyPiece
     {
-        Piece pc;
-        Square from, to, wksq, bksq;
+        Piece pc = NO_PIECE;
+        Square from = NO_SQUARE;
+        Square to = NO_SQUARE;
 
         DirtyPiece() {}
-        DirtyPiece(Piece pc, Square from, Square to, Square wksq, Square bksq)
-            : pc(pc), from(from), to(to), wksq(wksq), bksq(bksq) {}
+
+        DirtyPiece(Piece pc, Square from, Square to)
+            : pc(pc), from(from), to(to) {}
     };
 
-    struct Accum
+    class Accum
     {
-        bool init[NUM_COLORS] = {false, false};
+    private:
+        Square wksq, bksq;
+
+        bool initialized[NUM_COLORS] = {false, false};
         bool needs_refresh[NUM_COLORS] = {false, false};
 
         alignas(ALIGNMENT) int16_t data[NUM_COLORS][HIDDEN_SIZE];
@@ -33,49 +38,37 @@ namespace NNUE
         //  4. remove pawn from target square
         DirtyPiece dpcs[4]{};
 
-        void reset()
-        {
-            init[WHITE] = needs_refresh[WHITE] = false;
-            init[BLACK] = needs_refresh[BLACK] = false;
+    public:
+        void reset();
 
-            num_dpcs = 0;
+        void putPiece(Piece pc, Square to);
+        void removePiece(Piece pc, Square from);
+        void movePiece(Piece pc, Square from, Square to);
+
+        void update(Accum &prev, Color view);
+
+        void setKingSquares(Square wksq, Square bksq)
+        {
+            this->wksq = wksq;
+            this->bksq = bksq;
         }
 
-        void putPiece(Piece pc, Square to, Square wksq, Square bksq)
+        // sets view as initialized
+        void markAsInitialized(Color view)
         {
-            assert(num_dpcs < 4);
-            dpcs[num_dpcs++] = DirtyPiece(pc, NO_SQUARE, to, wksq, bksq);
+            this->initialized[view] = true;
         }
 
-        void removePiece(Piece pc, Square from, Square wksq, Square bksq)
+        // sets view as needing refresh
+        void setRefresh(Color view)
         {
-            assert(num_dpcs < 4);
-            dpcs[num_dpcs++] = DirtyPiece(pc, from, NO_SQUARE, wksq, bksq);
+            this->needs_refresh[view] = true;
         }
 
-        void movePiece(Piece pc, Square from, Square to, Square wksq, Square bksq)
-        {
-            assert(num_dpcs < 4);
-            dpcs[num_dpcs++] = DirtyPiece(pc, from, to, wksq, bksq);
-        }
+        bool isInitialized(Color view) const { return initialized[view]; }
+        bool needsRefresh(Color view) const { return needs_refresh[view]; }
 
-        void update(Accum &prev, Color view)
-        {
-            for (int i = 0; i < num_dpcs; i++)
-            {
-                DirtyPiece dpc = dpcs[i];
-                Square ksq = (view == WHITE) ? dpc.wksq : dpc.bksq;
-
-                if (dpc.from == NO_SQUARE)
-                    nnue.putPiece(*this, prev, dpc.pc, dpc.to, ksq, view);
-                else if (dpc.to == NO_SQUARE)
-                    nnue.removePiece(*this, prev, dpc.pc, dpc.from, ksq, view);
-                else
-                    nnue.movePiece(*this, prev, dpc.pc, dpc.from, dpc.to, ksq, view);
-            }            
-
-            assert(init[view] == true);
-        }
+        int16_t *getData(Color view) { return data[view]; }
     };
 
     class Accumulators
@@ -110,16 +103,34 @@ namespace NNUE
     };
 
     // idea from koivisto
-    struct AccumEntry
+    class AccumEntry
     {
+    private:
         U64 piece_bb[NUM_COLORS][NUM_PIECE_TYPES]{};
         Accum acc{};
+
+    public:
+        void reset()
+        {
+            memset(piece_bb, 0, sizeof(piece_bb));
+            nnue.initAccum(acc);
+        }
+
+        void setPieceBB(Color c, PieceType pt, U64 bb)
+        {
+            piece_bb[c][pt] = bb;
+        }
+
+        U64 getPieceBB(Color c, PieceType pt) const { return piece_bb[c][pt]; }
+        Accum &getAccum() { return acc; }
     };
 
-    struct AccumTable
+    class AccumTable
     {
+    private:
         AccumEntry entries[NUM_COLORS][2 * BUCKET_SIZE]{};
 
+    public:
         void refresh(Color view, Board &board);
         void reset();
     };

@@ -255,8 +255,8 @@ namespace Astra
         Move tt_move = tt_hit ? root_node ? root_moves[multipv_idx].move : ent->getMove() : NO_MOVE;
         Bound tt_bound = tt_hit ? ent->getBound() : NO_BOUND;
         Score tt_score = tt_hit ? ent->getScore(ss->ply) : VALUE_NONE;
-        Score tt_eval = tt_hit ? ent->eval : VALUE_NONE;
-        int tt_depth = tt_hit ? ent->depth : 0;
+        Score tt_eval = tt_hit ? ent->getEval() : VALUE_NONE;
+        int tt_depth = tt_hit ? ent->getDepth() : 0;
         bool tt_pv = pv_node || (tt_hit ? ent->getTTPv() : false);
 
         // clang-format off
@@ -695,7 +695,7 @@ namespace Astra
         Move tt_move = tt_hit ? ent->getMove() : NO_MOVE;
         Bound tt_bound = tt_hit ? ent->getBound() : NO_BOUND;
         Score tt_score = tt_hit ? ent->getScore(ss->ply) : VALUE_NONE;
-        Score tt_eval = tt_hit ? ent->eval : VALUE_NONE;
+        Score tt_eval = tt_hit ? ent->getEval() : VALUE_NONE;
         bool tt_pv = pv_node || (tt_hit ? ent->getTTPv() : false);
 
         if (!pv_node && tt_score != VALUE_NONE && (tt_bound & (tt_score >= beta ? LOWER_BOUND : UPPER_BOUND)))

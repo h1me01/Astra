@@ -19,14 +19,24 @@ namespace Astra
     constexpr int AGE_MASK = 0xF8;
 
 #pragma pack(push, 1)
-    struct TTEntry
+    class TTEntry
     {
+    private:
         uint16_t hash = 0;
         uint8_t depth = 0;
         uint16_t move = 0;
         Score score = VALUE_NONE;
         Score eval = VALUE_NONE;
         uint8_t age_pv_bound = NO_BOUND;
+
+    public:
+        void setAgePvBound(uint8_t age_pv_bound) { this->age_pv_bound = age_pv_bound; }
+
+        U64 getHash() const { return hash; }
+
+        uint8_t getDepth() const { return depth; }
+
+        Move getMove() const { return Move(move); }
 
         Score getScore(int ply) const
         {
@@ -39,9 +49,14 @@ namespace Astra
             return score;
         }
 
-        Move getMove() const { return Move(move); }
+        Score getEval() const { return eval; }
+
+        uint8_t getAgePvBound() const { return age_pv_bound; }
+
         Bound getBound() const { return Bound(age_pv_bound & 0x3); }
+
         uint8_t getAge() const { return age_pv_bound & AGE_MASK; }
+
         bool getTTPv() { return age_pv_bound & 0x4; }
 
         void store(U64 hash, Move move, Score score, Score eval, Bound bound, int depth, int ply, bool pv);
@@ -60,6 +75,11 @@ namespace Astra
 
     class TTable
     {
+    private:
+        uint8_t age;
+        U64 bucket_size{};
+        TTBucket *buckets;
+
     public:
         int num_workers = 1;
 
@@ -88,7 +108,7 @@ namespace Astra
                 for (int j = 0; j < BUCKET_SIZE; j++)
                 {
                     TTEntry *entry = &buckets[i].entries[j];
-                    if (entry->getAge() == age && entry->depth)
+                    if (entry->getAge() == age && entry->getDepth())
                         used++;
                 }
 
@@ -98,11 +118,6 @@ namespace Astra
         void incrementAge() { age += AGE_STEP; }
 
         int getAge() const { return age; }
-
-    private:
-        uint8_t age;
-        U64 bucket_size{};
-        TTBucket *buckets;
     };
 
     extern TTable tt;

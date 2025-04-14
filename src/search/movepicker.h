@@ -30,16 +30,6 @@ namespace Astra
 
     class MovePicker
     {
-    public:
-        bool skip_quiets = false;
-        int see_cutoff = 0;
-
-        MovePicker(SearchType st, const Board &board, const History &history, const Stack *ss, const Move &tt_move, bool gen_checks = false);
-
-        Move nextMove();
-
-        Move tt_move, killer, counter;
-
     private:
         int idx;
         Stage stage;
@@ -56,6 +46,16 @@ namespace Astra
 
         void scoreQuietMoves();
         void scoreNoisyMoves();
+
+    public:
+        bool skip_quiets = false;
+        int see_cutoff = 0;
+
+        MovePicker(SearchType st, const Board &board, const History &history, const Stack *ss, const Move &tt_move, bool gen_checks = false);
+
+        Move nextMove();
+
+        Move tt_move, killer, counter;
     };
 
 } // namespace Astra

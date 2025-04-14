@@ -111,10 +111,12 @@ namespace Astra
         TTEntry *entries = buckets[index(hash)].entries;
 
         for (int i = 0; i < BUCKET_SIZE; i++)
-            if (entries[i].hash == hash16 || !entries[i].depth)
+            if (entries[i].getHash() == hash16 || !entries[i].getDepth())
             {
-                entries[i].age_pv_bound = (uint8_t)(tt.getAge() | (entries[i].age_pv_bound & (AGE_STEP - 1)));
-                *hit = entries[i].depth;
+                uint8_t age_pv_bound = (uint8_t)(tt.getAge() | (entries[i].getAgePvBound() & (AGE_STEP - 1)));
+                entries[i].setAgePvBound(age_pv_bound);
+
+                *hit = entries[i].getDepth();
                 return &entries[i];
             }
 
@@ -122,8 +124,8 @@ namespace Astra
 
         for (int i = 1; i < BUCKET_SIZE; i++)
         {
-            int worst_value = worst_entry->depth - ((AGE_CYCLE + tt.getAge() - worst_entry->age_pv_bound) & AGE_MASK) / 2;
-            int entry_value = entries[i].depth - ((AGE_CYCLE + tt.getAge() - entries[i].age_pv_bound) & AGE_MASK) / 2;
+            int worst_value = worst_entry->getDepth() - ((AGE_CYCLE + tt.getAge() - worst_entry->getAgePvBound()) & AGE_MASK) / 2;
+            int entry_value = entries[i].getDepth() - ((AGE_CYCLE + tt.getAge() - entries[i].getAgePvBound()) & AGE_MASK) / 2;
 
             if (entry_value < worst_value)
                 worst_entry = &entries[i];

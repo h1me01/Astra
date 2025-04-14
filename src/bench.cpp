@@ -60,7 +60,8 @@ namespace Bench
         {
             std::cout << "\nPosition: " << fen << std::endl;
 
-            Astra::threads.stop_flag = false;
+            Astra::threads.start();
+
             std::unique_ptr<Astra::Search> search(new Astra::Search(fen));
             search->limit = limits;
             search->bestMove();

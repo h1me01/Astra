@@ -57,10 +57,10 @@ namespace Chess
             // clang-format off
             switch (c)
             {
-            case 'K': info.castle_rights.mask |= OO_MASK[WHITE]; break;
-            case 'Q': info.castle_rights.mask |= OOO_MASK[WHITE]; break;
-            case 'k': info.castle_rights.mask |= OO_MASK[BLACK]; break;
-            case 'q': info.castle_rights.mask |= OOO_MASK[BLACK]; break;
+            case 'K': info.castle_rights.addKingSide(WHITE); break;
+            case 'Q': info.castle_rights.addQueenSide(WHITE); break;
+            case 'k': info.castle_rights.addKingSide(BLACK); break;
+            case 'q': info.castle_rights.addQueenSide(BLACK); break;
             default: break;
             }
             // clang-format on
@@ -447,7 +447,7 @@ namespace Chess
         {
             // remove old castling rights from hash
             info.hash ^= Zobrist::getCastle(info.castle_rights.getHashIndex());
-            info.castle_rights.mask &= ~(SQUARE_BB[from] | SQUARE_BB[to]);
+            info.castle_rights.update(SQUARE_BB[from], SQUARE_BB[to]);
             // add new castling rights to hash
             info.hash ^= Zobrist::getCastle(info.castle_rights.getHashIndex());
         }
