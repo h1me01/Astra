@@ -121,8 +121,6 @@ namespace Chess
         NNUE::Accum &getAccumulator() { return accumulators.back(); }
 
         void resetAccumulator();
-        void updateAccumulators();
-
         void resetPly() { curr_ply = 0; }
 
         U64 diagSliders(Color c) const;
@@ -184,39 +182,6 @@ namespace Chess
         accumulator_table->reset();
         accumulator_table->refresh(WHITE, *this);
         accumulator_table->refresh(BLACK, *this);
-    }
-
-    inline void Board::updateAccumulators()
-    {
-        NNUE::Accum &acc = getAccumulator();
-
-        for (Color view : {WHITE, BLACK})
-        {
-            if (acc.isInitialized(view))
-                continue;
-
-            assert(accumulators.size() > 1);
-
-            for (int i = accumulators.size() - 1; i >= 0; i--)
-            {
-                if (accumulators[i].needsRefresh(view))
-                {
-                    accumulator_table->refresh(view, *this);
-                    break;
-                }
-
-                // apply lazy update
-                if (accumulators[i].isInitialized(view))
-                {
-                    for (int j = i + 1; j < accumulators.size(); j++)
-                        accumulators[j].update(accumulators[j - 1], view);
-                    break;
-                }
-            }
-        }
-
-        assert(acc.isInitialized(WHITE));
-        assert(acc.isInitialized(BLACK));
     }
 
     inline U64 Board::diagSliders(Color c) const
@@ -293,42 +258,44 @@ namespace Chess
         return history[curr_ply].half_move_clock > 99 || isRepetition(ply);
     }
 
-    inline void Board::putPiece(Piece pc, Square to, bool update_nnue)
+    inline void Board::putPiece(Piece pc, Square sq, bool update_nnue)
     {
-        assert(to >= a1 && to <= h8);
+        assert(sq >= a1 && sq <= h8);
         assert(pc >= WHITE_PAWN && pc <= BLACK_KING);
 
-        board[to] = pc;
-        piece_bb[pc] |= SQUARE_BB[to];
-        history[curr_ply].occ[colorOf(pc)] ^= SQUARE_BB[to];
+        board[sq] = pc;
+        piece_bb[pc] |= SQUARE_BB[sq];
+        history[curr_ply].occ[colorOf(pc)] ^= SQUARE_BB[sq];
 
-        if (update_nnue)
-        {
-            NNUE::Accum &acc = getAccumulator();
+        if (!update_nnue)
+            return;
 
-            acc.setKingSquares(kingSq(WHITE), kingSq(BLACK));
-            acc.putPiece(pc, to);
-        }
+        NNUE::Accum &acc = getAccumulator();
+        NNUE::Accum &input = accumulators[accumulators.size() - 2];
+
+        NNUE::nnue.putPiece(acc, input, pc, sq, kingSq(WHITE), WHITE);
+        NNUE::nnue.putPiece(acc, input, pc, sq, kingSq(BLACK), BLACK);
     }
 
-    inline void Board::removePiece(Square from, bool update_nnue)
+    inline void Board::removePiece(Square sq, bool update_nnue)
     {
-        assert(from >= a1 && from <= h8);
+        assert(sq >= a1 && sq <= h8);
 
-        Piece pc = board[from];
+        Piece pc = board[sq];
         assert(pc != NO_PIECE);
 
-        piece_bb[pc] ^= SQUARE_BB[from];
-        board[from] = NO_PIECE;
-        history[curr_ply].occ[colorOf(pc)] ^= SQUARE_BB[from];
+        piece_bb[pc] ^= SQUARE_BB[sq];
+        board[sq] = NO_PIECE;
+        history[curr_ply].occ[colorOf(pc)] ^= SQUARE_BB[sq];
 
-        if (update_nnue)
-        {
-            NNUE::Accum &acc = getAccumulator();
+        if (!update_nnue)
+            return;
 
-            acc.setKingSquares(kingSq(WHITE), kingSq(BLACK));
-            acc.removePiece(pc, from);
-        }
+        NNUE::Accum &acc = getAccumulator();
+        NNUE::Accum &input = accumulators[accumulators.size() - 2];
+
+        NNUE::nnue.removePiece(acc, input, pc, sq, kingSq(WHITE), WHITE);
+        NNUE::nnue.removePiece(acc, input, pc, sq, kingSq(BLACK), BLACK);
     }
 
     inline void Board::movePiece(Square from, Square to, bool update_nnue)
@@ -344,20 +311,19 @@ namespace Chess
         board[from] = NO_PIECE;
         history[curr_ply].occ[colorOf(pc)] ^= SQUARE_BB[from] | SQUARE_BB[to];
 
-        if (update_nnue)
-        {
-            NNUE::Accum &acc = getAccumulator();
+        if (!update_nnue)
+            return;
 
-            acc.setKingSquares(kingSq(WHITE), kingSq(BLACK));
-            acc.movePiece(pc, from, to);
+        NNUE::Accum &acc = getAccumulator();
+        NNUE::Accum &input = accumulators[accumulators.size() - 2];
 
-            if (typeOf(pc) != KING)
-                return; // no need to refresh
+        // update other side
+        NNUE::nnue.movePiece(acc, input, pc, from, to, kingSq(~stm), ~stm);
 
-            // refresh only if different bucket index or king crossing the other half
-            if (NNUE::KING_BUCKET[relSquare(stm, from)] != NNUE::KING_BUCKET[relSquare(stm, to)] || fileOf(from) + fileOf(to) == 7)
-                acc.setRefresh(stm); // other side doesn't need refresh
-        }
+        if (!NNUE::needsRefresh(pc, from, to))
+            NNUE::nnue.movePiece(acc, input, pc, from, to, kingSq(stm), stm);
+        else
+            accumulator_table->refresh(stm, *this);
     }
 
 } // namespace Chess

@@ -4,7 +4,7 @@
 #include <cassert>
 #include <immintrin.h>
 #include <cstring>
-#include "../chess/types.h"
+#include "../chess/misc.h"
 
 #if defined(__AVX512F__)
 #define ALIGNMENT 64
@@ -47,6 +47,15 @@ namespace NNUE
         9, 9, 9, 9, 9, 9, 9, 9,
     };
     // clang-format on
+
+    inline bool needsRefresh(Piece pc, Square from, Square to)
+    {
+        if (typeOf(pc) != KING)
+            return false;
+
+        Color view = colorOf(pc);
+        return KING_BUCKET[relSquare(view, from)] != KING_BUCKET[relSquare(view, to)] || fileOf(from) + fileOf(to) == 7;
+    }
 
     class NNUE
     {

@@ -103,8 +103,6 @@ namespace NNUE
 
     int32_t NNUE::forward(Board &board) const
     {
-        board.updateAccumulators();
-
         Color stm = board.getTurn();
         Accum &acc = board.getAccumulator();
 
