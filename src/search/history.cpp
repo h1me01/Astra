@@ -49,20 +49,20 @@ namespace Astra
             {
                 updateQH(stm, best, bonus);
                 updateContH(best, ss, bonus);
+
+                // quiet maluses
+                for (int i = 0; i < qc; i++)
+                {
+                    Move quiet = q_moves[i];
+                    if (quiet == best)
+                        continue;
+                    updateQH(stm, quiet, -bonus);
+                    updateContH(quiet, ss, -bonus);
+                }
             }
         }
         else
             updateCapHistory(board, best, bonus);
-
-        // quiet maluses
-        for (int i = 0; i < qc; i++)
-        {
-            Move quiet = q_moves[i];
-            if (quiet == best)
-                continue;
-            updateQH(stm, quiet, -bonus);
-            updateContH(quiet, ss, -bonus);
-        }
 
         // capture maluses
         for (int i = 0; i < cc; i++)
