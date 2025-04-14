@@ -872,6 +872,8 @@ namespace Astra
 
     void Search::printUciInfo()
     {
+        std::cout << counter << std::endl;
+
         const int64_t elapsed_time = tm.elapsedTime();
         const U64 total_nodes = Astra::threads.getTotalNodes();
         const Score result = root_moves[multipv_idx].score;

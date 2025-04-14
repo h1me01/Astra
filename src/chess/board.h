@@ -7,6 +7,8 @@
 #include "cuckoo.h"
 #include "../net/accumulator.h"
 
+inline int counter = 0;
+
 namespace Chess
 {
     struct CastlingRights
@@ -262,7 +264,6 @@ namespace Chess
 
         if (num_pieces == 2)
             return true;
-
         if (num_pieces == 3 && (num_knights == 1 || num_bishops == 1))
             return true;
 
@@ -323,15 +324,14 @@ namespace Chess
             NNUE::Accum &acc = getAccumulator();
             acc.movePiece(pc, from, to, kingSq(WHITE), kingSq(BLACK));
 
-            return;
-            if (typeOf(pc) == KING)
-            {
-                Square rel_from = relSquare(stm, from);
-                Square rel_to = relSquare(stm, to);
+            if (typeOf(pc) != KING)
+                return; // no need to refresh
 
-                // refresh if different bucket index or king crossing the other half
-                if (NNUE::KING_BUCKET[rel_from] != NNUE::KING_BUCKET[rel_to] || fileOf(from) + fileOf(to) == 7)
-                    acc.needs_refresh[stm] = true; // other side doesn't need refresh
+            // refresh only if different bucket index or king crossing the other half
+            if (NNUE::KING_BUCKET[relSquare(stm, from)] != NNUE::KING_BUCKET[relSquare(stm, to)] || fileOf(from) + fileOf(to) == 7)
+            {
+                counter++;
+                //acc.needs_refresh[stm] = true; // other side doesn't need refresh
             }
         }
     }
