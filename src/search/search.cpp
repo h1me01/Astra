@@ -542,7 +542,7 @@ namespace Astra
                 // decrease when in pv node
                 r -= tt_pv;
                 // decrease if move is a killer or counter
-                r -= (move == mp.killer || move == mp.counter);
+               // r -= (move == mp.killer || move == mp.counter);
                 // decrease when move gives check
                 r -= board.inCheck();
                 // decrease when tt depth is at least current depth
