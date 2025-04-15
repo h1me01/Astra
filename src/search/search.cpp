@@ -142,8 +142,8 @@ namespace Astra
         Score alpha = -VALUE_INFINITE;
         Score beta = VALUE_INFINITE;
 
-        int window = 9;
-        if (depth >= 6)
+        int window = 12;
+        if (depth >= 4)
         {
             Score avg_score = root_moves[multipv_idx].avg_score;
             alpha = std::max(avg_score - window, -int(VALUE_INFINITE));
@@ -153,8 +153,6 @@ namespace Astra
         int fail_high_count = 0;
         while (true)
         {
-          
-
             result = negamax(std::max(1, root_depth - fail_high_count), alpha, beta, ss, false);
 
             if (isLimitReached(depth))
@@ -354,11 +352,11 @@ namespace Astra
         }
 
         // only use pruning when not in check and pv node
-        if (!in_check && !pv_node && !skipped)
+        if (!in_check && !pv_node)
         {
             // reverse futility pruning
             int rfp_margin = rfp_depth_mult * depth - rfp_improving_mult * improving;
-            if (depth < 10 && eval < VALUE_TB_WIN_IN_MAX_PLY && eval - rfp_margin >= beta)
+            if (!skipped && depth < 10 && eval < VALUE_TB_WIN_IN_MAX_PLY && eval - rfp_margin >= beta)
                 return (eval + beta) / 2;
 
             // razoring
@@ -370,7 +368,8 @@ namespace Astra
             }
 
             // null move pruning
-            if (depth >= 4 && eval >= beta && ss->static_eval + nmp_depth_mult * depth - nmp_base >= beta //
+            int nmp_margin = nmp_depth_mult * depth - nmp_base;
+            if (!skipped && depth >= 4 && eval >= beta && ss->static_eval + nmp_margin >= beta //
                 && board.nonPawnMat() && (ss - 1)->curr_move != NULL_MOVE && beta > -VALUE_TB_WIN_IN_MAX_PLY)
             {
                 int R = 4 + depth / 3 + std::min(4, (eval - beta) / nmp_eval_div);
@@ -393,12 +392,12 @@ namespace Astra
             }
 
             // internal iterative reduction
-            if (!in_check && !tt_move && depth >= 4 && (pv_node || cut_node))
+            if (!skipped && !in_check && !tt_move && depth >= 4 && (pv_node || cut_node))
                 depth--;
 
             // probcut
             int beta_cut = beta + 174;
-            if (depth > 5 && std::abs(beta) < VALUE_TB_WIN_IN_MAX_PLY && //
+            if (!skipped && depth > 5 && std::abs(beta) < VALUE_TB_WIN_IN_MAX_PLY && //
                 !(tt_depth >= depth - 3 && tt_score != VALUE_NONE && tt_score < beta_cut))
             {
                 MovePicker mp(PC_SEARCH, board, history, ss, tt_move);
