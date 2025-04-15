@@ -130,9 +130,9 @@ namespace NNUE
             res = avx_add_epi32(res, avx_madd_epi16(weights[i + HIDDEN_SIZE / div], clipped_opp));
         }
 
-        return horizontalSum(res) / (32 * 128) + l1_biases[0] / 128;
+        return horizontalSum(res) / (FT_QUANT * L1_QUANT) + l1_biases[0] / L1_QUANT;
 #else
-        int32_t output = l1_biases[0];
+        int32_t output = 0;
 
         int16_t *acc_stm = acc.getData(stm);
         int16_t *acc_opp = acc.getData(~stm);
@@ -143,7 +143,7 @@ namespace NNUE
             output += l1_weights[HIDDEN_SIZE + j] * std::clamp(int32_t(acc_opp[j]), 0, CRELU_CLIP);
         }
 
-        return output / 128 / 32;
+        return output / (128 * 32) + l1_biases[0] / 128;
 #endif
     }
 
