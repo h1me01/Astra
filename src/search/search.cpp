@@ -356,7 +356,7 @@ namespace Astra
         {
             // reverse futility pruning
             int rfp_margin = rfp_depth_mult * depth - rfp_improving_mult * improving;
-            if (depth < 10 && eval < VALUE_TB_WIN_IN_MAX_PLY && eval - rfp_margin >= beta)
+            if (!skipped && depth < 10 && eval < VALUE_TB_WIN_IN_MAX_PLY && eval - rfp_margin >= beta)
                 return (eval + beta) / 2;
 
             // razoring
