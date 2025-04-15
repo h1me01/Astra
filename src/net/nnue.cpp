@@ -143,7 +143,7 @@ namespace NNUE
             output += l1_weights[HIDDEN_SIZE + j] * std::clamp(int32_t(acc_opp[j]), 0, CRELU_CLIP);
         }
 
-        return output / (128 * 32) + l1_biases[0] / 128;
+        return output / (FT_QUANT * L1_QUANT) + l1_biases[0] / L1_QUANT;
 #endif
     }
 
