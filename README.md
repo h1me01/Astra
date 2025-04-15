@@ -11,9 +11,9 @@ make pgo
 ```
 
 ## NNUE
-Starting from version 5.0, Astra features a self-implemented Neural Network for position evaluation.
-- Versions below 4.0 used [Pytorch-Neural-Network](https://github.com/h1me01/Pytorch-Neural-Network)
+- Version starting from 5.0 use a self-implemented Neural Network Trainer
 - Versions below 5.0 used [CudAD](https://github.com/Luecx/CudAD)
+- Versions below 4.0 used [Pytorch-Neural-Network](https://github.com/h1me01/Pytorch-Neural-Network)
 
 ## Credits
 - [Stockfish](https://github.com/official-stockfish/Stockfish)
