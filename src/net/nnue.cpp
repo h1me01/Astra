@@ -92,7 +92,7 @@ namespace NNUE
         memcpy(l1_weights, &gWeightsData[offset], 2 * HIDDEN_SIZE * sizeof(int16_t));
         offset += 2 * HIDDEN_SIZE * sizeof(int16_t);
 
-        memcpy(l1_biases, &gWeightsData[offset], OUTPUT_SIZE * sizeof(int32_t));
+        memcpy(l1_biases, &gWeightsData[offset], OUTPUT_SIZE * sizeof(int16_t));
     }
 
     void NNUE::initAccum(Accum &acc) const
@@ -130,9 +130,7 @@ namespace NNUE
             res = avx_add_epi32(res, avx_madd_epi16(weights[i + HIDDEN_SIZE / div], clipped_opp));
         }
 
-        const auto output = horizontalSum(res) + l1_biases[0];
-
-        return output / 128 / 32;
+        return horizontalSum(res) / (32 * 128) + l1_biases[0] / 128;
 #else
         int32_t output = l1_biases[0];
 
