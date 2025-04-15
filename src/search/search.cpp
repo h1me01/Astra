@@ -153,10 +153,7 @@ namespace Astra
         int fail_high_count = 0;
         while (true)
         {
-            if (alpha < -2000)
-                alpha = -VALUE_INFINITE;
-            if (beta > 2000)
-                beta = VALUE_INFINITE;
+          
 
             result = negamax(std::max(1, root_depth - fail_high_count), alpha, beta, ss, false);
 
