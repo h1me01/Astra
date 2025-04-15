@@ -15,7 +15,7 @@ namespace UCI
         return !s.empty() && std::all_of(s.begin(), s.end(), ::isdigit);
     }
 
-    const std::string version = "5.1.1";
+    const std::string version = "5.2";
 
     // options class
     void Options::print() const
