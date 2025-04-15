@@ -103,11 +103,9 @@ namespace Astra
                 double stability_factor = (stability_base / 100.0) - stability * (stability_mult / 1000.0);
 
                 // adjust time optimum based on last score
-                // clang-format off
-                double result_change_factor = (results_base / 100.0) 
-                                            + (results_mult1 / 1000.0) * (prev_result - result) 
-                                            + (results_mult2 / 1000.0) * (scores[root_depth - 3] - result);
-                // clang-format on
+                double result_change_factor = (results_base / 100.0)                              //
+                                              + (results_mult1 / 1000.0) * (prev_result - result) //
+                                              + (results_mult2 / 1000.0) * (scores[root_depth - 3] - result);
 
                 result_change_factor = std::clamp(result_change_factor, results_min / 100.0, results_max / 100.0);
 
@@ -252,18 +250,27 @@ namespace Astra
         // look up in transposition table
         bool tt_hit = false;
         TTEntry *ent = !skipped ? tt.lookup(hash, &tt_hit) : nullptr;
-        Move tt_move = tt_hit ? root_node ? root_moves[multipv_idx].move : ent->getMove() : NO_MOVE;
-        Bound tt_bound = tt_hit ? ent->getBound() : NO_BOUND;
-        Score tt_score = tt_hit ? ent->getScore(ss->ply) : VALUE_NONE;
-        Score tt_eval = tt_hit ? ent->getEval() : VALUE_NONE;
-        int tt_depth = tt_hit ? ent->getDepth() : 0;
-        bool tt_pv = pv_node || (tt_hit ? ent->getTTPv() : false);
 
-        // clang-format off
-        if (!pv_node && tt_depth >= depth && tt_score != VALUE_NONE && board.halfMoveClock() < 85 
-            && (tt_bound & (tt_score >= beta ? LOWER_BOUND : UPPER_BOUND)))
+        Move tt_move = NO_MOVE;
+        Bound tt_bound = NO_BOUND;
+        Score tt_score = VALUE_NONE;
+        Score tt_eval = VALUE_NONE;
+        int tt_depth = 0;
+        bool tt_pv = pv_node;
+
+        if (tt_hit)
+        {
+            tt_move = root_node ? root_moves[multipv_idx].move : ent->getMove();
+            tt_bound = ent->getBound();
+            tt_score = ent->getScore(ss->ply);
+            tt_eval = ent->getEval();
+            tt_depth = ent->getDepth();
+            tt_pv |= ent->getTTPv();
+        }
+
+        if (!pv_node && tt_depth >= depth && tt_score != VALUE_NONE && //
+            board.halfMoveClock() < 85 && (tt_bound & (tt_score >= beta ? LOWER_BOUND : UPPER_BOUND)))
             return tt_score;
-        // clang-format on
 
         // tablebase probing
         if (use_tb && !root_node)
@@ -275,10 +282,21 @@ namespace Astra
                 Bound bound = NO_BOUND;
                 tb_hits++;
 
-                // clang-format off
-                tb_score = tb_score == VALUE_TB_WIN ? VALUE_MATE - ss->ply : tb_score == -VALUE_TB_WIN ? -VALUE_MATE + ss->ply + 1 : 0;
-                bound = tb_score == VALUE_TB_WIN ? LOWER_BOUND : tb_score == -VALUE_TB_WIN ? UPPER_BOUND : EXACT_BOUND;
-                // clang-format on
+                if (tb_score == VALUE_TB_WIN)
+                {
+                    tb_score = VALUE_MATE - ss->ply;
+                    bound = LOWER_BOUND;
+                }
+                else if (tb_score == -VALUE_TB_WIN)
+                {
+                    tb_score = -VALUE_MATE + ss->ply + 1;
+                    bound = UPPER_BOUND;
+                }
+                else
+                {
+                    tb_score = 0;
+                    bound = EXACT_BOUND;
+                }
 
                 if (bound == EXACT_BOUND || (bound == LOWER_BOUND && tb_score >= beta) || (bound == UPPER_BOUND && tb_score <= alpha))
                 {
@@ -355,11 +373,9 @@ namespace Astra
             }
 
             // null move pruning
-            // clang-format off
-            if (depth >= 4 && eval >= beta && ss->static_eval + nmp_depth_mult * depth - nmp_base >= beta
+            if (depth >= 4 && eval >= beta && ss->static_eval + nmp_depth_mult * depth - nmp_base >= beta //
                 && board.nonPawnMat() && (ss - 1)->curr_move != NULL_MOVE && beta > -VALUE_TB_WIN_IN_MAX_PLY)
             {
-                // clang-format on
                 int R = 4 + depth / 3 + std::min(4, (eval - beta) / nmp_eval_div);
 
                 ss->curr_move = NULL_MOVE;
@@ -384,12 +400,10 @@ namespace Astra
                 depth--;
 
             // probcut
-            // clang-format off
             int beta_cut = beta + 174;
-            if (depth > 5 && std::abs(beta) < VALUE_TB_WIN_IN_MAX_PLY 
-                && !(tt_depth >= depth - 3 && tt_score != VALUE_NONE && tt_score < beta_cut))
+            if (depth > 5 && std::abs(beta) < VALUE_TB_WIN_IN_MAX_PLY && //
+                !(tt_depth >= depth - 3 && tt_score != VALUE_NONE && tt_score < beta_cut))
             {
-                // clang-format on
                 MovePicker mp(PC_SEARCH, board, history, ss, tt_move);
                 mp.see_cutoff = beta_cut > ss->static_eval;
 
@@ -485,11 +499,9 @@ namespace Astra
             int extensions = 0;
 
             // singular extensions
-            // clang-format off
-            if (!root_node && depth >= 6 && ss->ply < 2 * root_depth && !skipped && tt_move == move 
-                && tt_depth >= depth - 3 && (tt_bound & LOWER_BOUND) && std::abs(tt_score) < VALUE_TB_WIN_IN_MAX_PLY)
+            if (!root_node && depth >= 6 && ss->ply < 2 * root_depth && !skipped && tt_move == move && //
+                tt_depth >= depth - 3 && (tt_bound & LOWER_BOUND) && std::abs(tt_score) < VALUE_TB_WIN_IN_MAX_PLY)
             {
-                // clang-format on
                 Score sbeta = tt_score - 3 * depth;
                 Score score = negamax((depth - 1) / 2, sbeta - 1, sbeta, ss, cut_node, move);
 
@@ -558,9 +570,14 @@ namespace Astra
 
                     if (!isCap(move))
                     {
-                        // clang-format off
-                        int bonus = score <= alpha ? -historyBonus(new_depth) : score >= beta ? historyBonus(new_depth) : 0;
-                        // clang-format on
+                        int bonus;
+                        if (score <= alpha)
+                            bonus = -historyBonus(new_depth);
+                        else if (score >= beta)
+                            bonus = historyBonus(new_depth);
+                        else
+                            bonus = 0;
+
                         history.updateContH(move, ss, bonus);
                     }
                 }
@@ -630,18 +647,27 @@ namespace Astra
             }
         }
 
-        // check for mate and stalemate
+        // check for mate/stalemate
         if (made_moves == 0)
-            // clang-format off
-            return skipped != NO_MOVE ? alpha : in_check ? -VALUE_MATE + ss->ply : VALUE_DRAW;
-        // clang-format on
+        {
+            if (skipped != NO_MOVE)
+                return alpha;
+            else if (in_check)
+                return -VALUE_MATE + ss->ply;
+            else
+                return VALUE_DRAW;
+        }
 
         best_score = std::min(best_score, max_score);
 
-        // store in transposition table
-        // clang-format off
-        Bound bound = best_score >= beta ? LOWER_BOUND : best_score <= old_alpha ? UPPER_BOUND : EXACT_BOUND;
-        // clang-format on
+        Bound bound;
+        if (best_score >= beta)
+            bound = LOWER_BOUND;
+        else if (best_score <= old_alpha)
+            bound = UPPER_BOUND;
+        else
+            bound = EXACT_BOUND;
+
         if (!skipped && (!root_node || multipv_idx == 0))
             ent->store(hash, best_move, best_score, raw_eval, bound, depth, ss->ply, tt_pv);
 
@@ -692,11 +718,21 @@ namespace Astra
         // look up in transposition table
         bool tt_hit = false;
         TTEntry *ent = tt.lookup(hash, &tt_hit);
-        Move tt_move = tt_hit ? ent->getMove() : NO_MOVE;
-        Bound tt_bound = tt_hit ? ent->getBound() : NO_BOUND;
-        Score tt_score = tt_hit ? ent->getScore(ss->ply) : VALUE_NONE;
-        Score tt_eval = tt_hit ? ent->getEval() : VALUE_NONE;
-        bool tt_pv = pv_node || (tt_hit ? ent->getTTPv() : false);
+
+        Move tt_move = NO_MOVE;
+        Bound tt_bound = NO_BOUND;
+        Score tt_score = VALUE_NONE;
+        Score tt_eval = VALUE_NONE;
+        bool tt_pv = pv_node;
+
+        if (tt_hit)
+        {
+            tt_move = ent->getMove();
+            tt_bound = ent->getBound();
+            tt_score = ent->getScore(ss->ply);
+            tt_eval = ent->getEval();
+            tt_pv |= ent->getTTPv();
+        }
 
         if (!pv_node && tt_score != VALUE_NONE && (tt_bound & (tt_score >= beta ? LOWER_BOUND : UPPER_BOUND)))
             return tt_score;
