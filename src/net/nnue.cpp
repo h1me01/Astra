@@ -92,7 +92,7 @@ namespace NNUE
         memcpy(l1_weights, &gWeightsData[offset], 2 * HIDDEN_SIZE * sizeof(int16_t));
         offset += 2 * HIDDEN_SIZE * sizeof(int16_t);
 
-        memcpy(l1_biases, &gWeightsData[offset], OUTPUT_SIZE * sizeof(int32_t));
+        memcpy(l1_biases, &gWeightsData[offset], OUTPUT_SIZE * sizeof(int16_t));
     }
 
     void NNUE::initAccum(Accum &acc) const
