@@ -142,12 +142,12 @@ namespace Astra
         Score alpha = -VALUE_INFINITE;
         Score beta = VALUE_INFINITE;
 
-        int window = 12;
+        int delta = 12;
         if (depth >= 4)
         {
             Score avg_score = root_moves[multipv_idx].avg_score;
-            alpha = std::max(avg_score - window, -int(VALUE_INFINITE));
-            beta = std::min(avg_score + window, int(VALUE_INFINITE));
+            alpha = std::max(avg_score - delta, -int(VALUE_INFINITE));
+            beta = std::min(avg_score + delta, int(VALUE_INFINITE));
         }
 
         int fail_high_count = 0;
@@ -166,20 +166,20 @@ namespace Astra
             {
                 // if result is lower than alpha, than we can lower alpha for next iteration
                 beta = (alpha + beta) / 2;
-                alpha = std::max(alpha - window, -int(VALUE_INFINITE));
+                alpha = std::max(alpha - delta, -int(VALUE_INFINITE));
                 fail_high_count = 0;
             }
             else if (result >= beta)
             {
                 // if result is higher than beta, than we can raise beta for next iteration
-                beta = std::min(beta + window, int(VALUE_INFINITE));
+                beta = std::min(beta + delta, int(VALUE_INFINITE));
                 if (std::abs(result) < VALUE_TB_WIN_IN_MAX_PLY)
                     fail_high_count++;
             }
             else
                 break;
 
-            window += window / 3;
+            delta += delta / 3;
         }
 
         sortRootMoves(0);
@@ -356,7 +356,7 @@ namespace Astra
         {
             // reverse futility pruning
             int rfp_margin = rfp_depth_mult * depth - rfp_improving_mult * improving;
-            if (!skipped && depth < 10 && eval < VALUE_TB_WIN_IN_MAX_PLY && eval - rfp_margin >= beta)
+            if (depth < 10 && eval < VALUE_TB_WIN_IN_MAX_PLY && eval - rfp_margin >= beta)
                 return (eval + beta) / 2;
 
             // razoring
