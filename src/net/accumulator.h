@@ -14,14 +14,12 @@ namespace NNUE
         alignas(ALIGNMENT) int16_t data[NUM_COLORS][HIDDEN_SIZE];
 
     public:
-        // sets initialized to false for both colors
         void reset()
         {
             initialized[WHITE] = false;
             initialized[BLACK] = false;
         }
 
-        // sets view as initialized
         void markAsInitialized(Color view)
         {
             this->initialized[view] = true;

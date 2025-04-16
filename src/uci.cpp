@@ -71,21 +71,9 @@ namespace UCI
         const std::string &name = tokens[2];
         const std::string &value = tokens[4];
 
-        if (tokens.size() < 5)
+        if (tokens.size() < 5 || tokens[1] != "name" || tokens[3] != "value")
         {
             std::cout << "Invalid option command" << std::endl;
-            return;
-        }
-
-        if (tokens[1] != "name")
-        {
-            std::cout << "Invalid option command";
-            return;
-        }
-
-        if (tokens[3] != "value")
-        {
-            std::cout << "Invalid option command";
             return;
         }
 
@@ -97,30 +85,31 @@ namespace UCI
         Astra::initReductions();
 #endif
 
-        if (options.count(name))
-        {
-            if (options[name].type == "spin")
-            {
-                if (isInteger(value))
-                {
-                    int n = std::stoi(value);
-                    if (n >= options[name].min && n <= options[name].max)
-                        options[name] = value;
-                    else
-                        std::cout << "Invalid range of value for option " << name << std::endl;
-                }
-                else
-                    std::cout << "Invalid value for option " << name << std::endl;
-            }
-            else
-                options[name] = value;
-        }
-        else
+        if (!options.count(name))
         {
 #ifndef TUNE
             std::cout << "Unknown option: " << name << std::endl;
 #endif
+            return;
         }
+
+        if (options[name].type != "spin")
+        {
+            options[name] = value;
+            return;
+        }
+
+        if (!isInteger(value))
+        {
+            std::cout << "Invalid value for option " << name << std::endl;
+            return;
+        }
+
+        int n = std::stoi(value);
+        if (n >= options[name].min && n <= options[name].max)
+            options[name] = value;
+        else
+            std::cout << "Invalid range of value for option " << name << std::endl;
     }
 
     // uci class
