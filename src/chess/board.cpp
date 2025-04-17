@@ -45,14 +45,15 @@ namespace Chess
     {
         if (this != &other)
         {
-            curr_ply = other.curr_ply;
             stm = other.stm;
+            curr_ply = other.curr_ply;
+            accumulators_idx = other.accumulators_idx;
 
             std::copy(std::begin(other.piece_bb), std::end(other.piece_bb), std::begin(piece_bb));
             std::copy(std::begin(other.board), std::end(other.board), std::begin(board));
-            std::copy(std::begin(other.history), std::end(other.history), std::begin(history));
-            std::copy(std::begin(other.accumulators), std::end(other.accumulators), std::begin(accumulators));
-            accumulators_idx = other.accumulators_idx;
+
+            history = other.history;
+            accumulators = other.accumulators;
         }
 
         return *this;

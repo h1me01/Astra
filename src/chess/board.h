@@ -86,7 +86,7 @@ namespace Chess
         int curr_ply;
 
         int accumulators_idx;
-        NNUE::Accum accumulators[MAX_PLY + 1];
+        std::array<NNUE::Accum, MAX_PLY + 1> accumulators;
 
         std::unique_ptr<NNUE::AccumTable> accumulator_table = std::make_unique<NNUE::AccumTable>(NNUE::AccumTable());
 
@@ -98,7 +98,7 @@ namespace Chess
         void initCheckersAndPinned();
 
     public:
-        StateInfo history[512];
+        std::array<StateInfo, 512> history;
 
         Board(const std::string &fen, bool update_nnue = true);
 
