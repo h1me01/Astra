@@ -36,8 +36,34 @@ namespace Chess
 
     // board
 
-    Board::Board(const std::string &fen, bool update_nnue) : piece_bb{}, board{}, stm(WHITE), curr_ply(0)
+    Board::Board(const std::string &fen, bool update_nnue)
     {
+        setFen(fen, update_nnue);
+    }
+
+    Board &Board::operator=(const Board &other)
+    {
+        if (this != &other)
+        {
+            curr_ply = other.curr_ply;
+            stm = other.stm;
+
+            std::copy(std::begin(other.piece_bb), std::end(other.piece_bb), std::begin(piece_bb));
+            std::copy(std::begin(other.board), std::end(other.board), std::begin(board));
+            std::copy(std::begin(other.history), std::end(other.history), std::begin(history));
+            std::copy(std::begin(other.accumulators), std::end(other.accumulators), std::begin(accumulators));
+            accumulators_idx = other.accumulators_idx;
+        }
+
+        return *this;
+    }
+
+    void Board::setFen(const std::string &fen, bool update_nnue)
+    {
+        curr_ply = 0;
+        accumulators_idx = 0;
+        std::memset(piece_bb, 0, sizeof(piece_bb));
+
         for (auto &i : board)
             i = NO_PIECE;
         history[0] = StateInfo();
@@ -78,7 +104,7 @@ namespace Chess
             else if (c == '/')
                 sqr -= 16;
             else
-                putPiece(Piece(PIECE_STR.find(c)), Square(sqr++));
+                putPiece(Piece(PIECE_STR.find(c)), Square(sqr++), false);
         }
 
         initThreats();
@@ -97,35 +123,6 @@ namespace Chess
 
         if (update_nnue)
             resetAccumulator();
-    }
-
-    Board &Board::operator=(const Board &other)
-    {
-        if (this != &other)
-        {
-            curr_ply = other.curr_ply;
-            stm = other.stm;
-
-            std::copy(std::begin(other.piece_bb), std::end(other.piece_bb), std::begin(piece_bb));
-            std::copy(std::begin(other.board), std::end(other.board), std::begin(board));
-            std::copy(std::begin(other.history), std::end(other.history), std::begin(history));
-            std::copy(std::begin(other.accumulators), std::end(other.accumulators), std::begin(accumulators));
-            accumulators_idx = other.accumulators_idx;
-        }
-
-        return *this;
-    }
-
-    Board::Board(const Board &other)
-    {
-        curr_ply = other.curr_ply;
-        stm = other.stm;
-
-        std::copy(std::begin(other.piece_bb), std::end(other.piece_bb), std::begin(piece_bb));
-        std::copy(std::begin(other.board), std::end(other.board), std::begin(board));
-        std::copy(std::begin(other.history), std::end(other.history), std::begin(history));
-        std::copy(std::begin(other.accumulators), std::end(other.accumulators), std::begin(accumulators));
-        accumulators_idx = other.accumulators_idx;
     }
 
     void Board::print() const
@@ -507,25 +504,25 @@ namespace Chess
 
         if (isProm(m))
         {
-            removePiece(to);
-            putPiece(makePiece(stm, PAWN), to);
+            removePiece(to, false);
+            putPiece(makePiece(stm, PAWN), to, false);
         }
 
         if (mt == CASTLING)
         {
             auto [rook_to, rook_from] = getCastleRookSquares(stm, to);
 
-            movePiece(to, from); // move king
-            movePiece(rook_from, rook_to);
+            movePiece(to, from, false); // move king
+            movePiece(rook_from, rook_to, false);
         }
         else
         {
-            movePiece(to, from);
+            movePiece(to, from, false);
 
             if (captured != NO_PIECE)
             {
                 Square cap_sqr = mt == EN_PASSANT ? Square(to ^ 8) : to;
-                putPiece(captured, cap_sqr);
+                putPiece(captured, cap_sqr, false);
             }
         }
 

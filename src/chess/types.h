@@ -12,7 +12,7 @@ namespace Chess
     const std::string PIECE_STR = "PNBRQKpnbrqk.";
     const std::string STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
-    constexpr int MAX_PLY = 129;
+    constexpr int MAX_PLY = 246;
 
     constexpr int PIECE_VALUES[] = {100, 325, 325, 500, 1000, 30000, 0};
 

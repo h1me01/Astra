@@ -20,7 +20,7 @@ namespace Chess
         U64 nodes = 0;
         for (const Move &move : ml)
         {
-            board.makeMove(move);
+            board.makeMove(move, false);
             nodes += perft(board, depth - 1);
             board.unmakeMove(move);
         }
@@ -45,7 +45,7 @@ namespace Chess
         U64 total_nodes = 0;
         for (const Move &move : ml)
         {
-            board.makeMove(move);
+            board.makeMove(move, false);
             U64 nodes = perft(board, depth - 1);
             board.unmakeMove(move);
 

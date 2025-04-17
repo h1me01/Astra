@@ -417,7 +417,7 @@ namespace Astra
                     ss->moved_piece = board.pieceAt(move.from());
                     ss->conth = &history.conth[isCap(move)][ss->moved_piece][move.to()];
 
-                    board.makeMove(move, true);
+                    board.makeMove(move);
                     Score score = -qSearch(0, -beta_cut, -beta_cut + 1, ss + 1);
 
                     if (score >= beta_cut)
@@ -525,7 +525,7 @@ namespace Astra
             ss->moved_piece = board.pieceAt(move.from());
             ss->conth = &history.conth[isCap(move)][ss->moved_piece][move.to()];
 
-            board.makeMove(move, true);
+            board.makeMove(move);
 
             Score score = VALUE_NONE;
 
@@ -796,7 +796,7 @@ namespace Astra
             ss->moved_piece = board.pieceAt(move.from());
             ss->conth = &history.conth[isCap(move)][ss->moved_piece][move.to()];
 
-            board.makeMove(move, true);
+            board.makeMove(move);
             Score score = -qSearch(depth - 1, -beta, -alpha, ss + 1);
             board.unmakeMove(move);
 

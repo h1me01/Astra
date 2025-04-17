@@ -209,12 +209,11 @@ namespace UCI
             return;
         }
 
-        board = Board(fen, false);
+        board.setFen(fen, false);
         while (is >> token)
             if (token != "moves")
             {
-                board.makeMove(getMove(token));
-
+                board.makeMove(getMove(token), false);
                 // if half move clock gets reseted, then we can reset the history
                 // since the last positions should not be considered in the repetition
                 if (board.halfMoveClock() == 0)

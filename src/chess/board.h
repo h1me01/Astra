@@ -85,14 +85,14 @@ namespace Chess
         Color stm;
         int curr_ply;
 
-        int accumulators_idx = 0;
+        int accumulators_idx;
         NNUE::Accum accumulators[MAX_PLY + 1];
 
         std::unique_ptr<NNUE::AccumTable> accumulator_table = std::make_unique<NNUE::AccumTable>(NNUE::AccumTable());
 
-        void putPiece(Piece pc, Square sq, bool update_nnue = false);
-        void removePiece(Square sq, bool update_nnue = false);
-        void movePiece(Square from, Square to, bool update_nnue = false);
+        void putPiece(Piece pc, Square sq, bool update_nnue);
+        void removePiece(Square sq, bool update_nnue);
+        void movePiece(Square from, Square to, bool update_nnue);
 
         void initThreats();
         void initCheckersAndPinned();
@@ -101,10 +101,10 @@ namespace Chess
         StateInfo history[512];
 
         Board(const std::string &fen, bool update_nnue = true);
-        Board(const Board &other);
 
         Board &operator=(const Board &other);
 
+        void setFen(const std::string &fen, bool update_nnue = true);
         void print() const;
 
         std::string getFen() const;
@@ -133,7 +133,7 @@ namespace Chess
         U64 attackersTo(Color c, Square sq, U64 occ) const;
         U64 keyAfter(Move m) const;
 
-        void makeMove(const Move &m, bool update_nnue = false);
+        void makeMove(const Move &m, bool update_nnue = true);
         void unmakeMove(const Move &m);
 
         void makeNullMove();
