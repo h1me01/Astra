@@ -84,7 +84,10 @@ namespace Chess
         Piece board[NUM_SQUARES];
         Color stm;
         int curr_ply;
-        NNUE::Accumulators accumulators;
+
+        int accumulators_idx = 0;
+        NNUE::Accum accumulators[MAX_PLY + 1];
+
         std::unique_ptr<NNUE::AccumTable> accumulator_table = std::make_unique<NNUE::AccumTable>(NNUE::AccumTable());
 
         void putPiece(Piece pc, Square sq, bool update_nnue = false);
@@ -118,7 +121,7 @@ namespace Chess
         U64 getThreats(PieceType pt) const;
 
         Square kingSq(Color c) const { return lsb(getPieceBB(c, KING)); }
-        NNUE::Accum &getAccumulator() { return accumulators.back(); }
+        NNUE::Accum &getAccumulator() { return accumulators[accumulators_idx]; }
 
         void resetAccumulator();
         void resetPly() { curr_ply = 0; }
@@ -178,7 +181,7 @@ namespace Chess
 
     inline void Board::resetAccumulator()
     {
-        accumulators.clear();
+        accumulators_idx = 0;
         accumulator_table->reset();
         accumulator_table->refresh(WHITE, *this);
         accumulator_table->refresh(BLACK, *this);
@@ -271,7 +274,7 @@ namespace Chess
             return;
 
         NNUE::Accum &acc = getAccumulator();
-        NNUE::Accum &input = accumulators[accumulators.size() - 2];
+        NNUE::Accum &input = accumulators[accumulators_idx - 2];
 
         NNUE::nnue.putPiece(acc, input, pc, sq, kingSq(WHITE), WHITE);
         NNUE::nnue.putPiece(acc, input, pc, sq, kingSq(BLACK), BLACK);
@@ -292,7 +295,7 @@ namespace Chess
             return;
 
         NNUE::Accum &acc = getAccumulator();
-        NNUE::Accum &input = accumulators[accumulators.size() - 2];
+        NNUE::Accum &input = accumulators[accumulators_idx - 1];
 
         NNUE::nnue.removePiece(acc, input, pc, sq, kingSq(WHITE), WHITE);
         NNUE::nnue.removePiece(acc, input, pc, sq, kingSq(BLACK), BLACK);
@@ -315,7 +318,7 @@ namespace Chess
             return;
 
         NNUE::Accum &acc = getAccumulator();
-        NNUE::Accum &input = accumulators[accumulators.size() - 2];
+        NNUE::Accum &input = accumulators[accumulators_idx - 1];
 
         // update other side
         NNUE::nnue.movePiece(acc, input, pc, from, to, kingSq(~stm), ~stm);

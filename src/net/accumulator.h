@@ -30,37 +30,6 @@ namespace NNUE
         int16_t *getData(Color view) { return data[view]; }
     };
 
-    class Accumulators
-    {
-    public:
-        Accumulators() : counter(0) {}
-
-        int size() const { return counter + 1; }
-
-        void clear() { counter = 0; }
-
-        void increment()
-        {
-            counter++;
-            assert(counter < MAX_PLY + 1);
-
-            accumulators[counter].reset();
-        }
-
-        void decrement()
-        {
-            assert(counter > 0);
-            counter--;
-        }
-
-        Accum &back() { return accumulators[counter]; }
-        Accum &operator[](int idx) { return accumulators[idx]; }
-
-    private:
-        int counter;
-        std::array<Accum, MAX_PLY + 1> accumulators{};
-    };
-
     // idea from koivisto
     class AccumEntry
     {

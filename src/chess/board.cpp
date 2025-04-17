@@ -109,7 +109,8 @@ namespace Chess
             std::copy(std::begin(other.piece_bb), std::end(other.piece_bb), std::begin(piece_bb));
             std::copy(std::begin(other.board), std::end(other.board), std::begin(board));
             std::copy(std::begin(other.history), std::end(other.history), std::begin(history));
-            accumulators = other.accumulators;
+            std::copy(std::begin(other.accumulators), std::end(other.accumulators), std::begin(accumulators));
+            accumulators_idx = other.accumulators_idx;
         }
 
         return *this;
@@ -123,7 +124,8 @@ namespace Chess
         std::copy(std::begin(other.piece_bb), std::end(other.piece_bb), std::begin(piece_bb));
         std::copy(std::begin(other.board), std::end(other.board), std::begin(board));
         std::copy(std::begin(other.history), std::end(other.history), std::begin(history));
-        accumulators = other.accumulators;
+        std::copy(std::begin(other.accumulators), std::end(other.accumulators), std::begin(accumulators));
+        accumulators_idx = other.accumulators_idx;
     }
 
     void Board::print() const
@@ -386,7 +388,11 @@ namespace Chess
         info.hash ^= Zobrist::side;
 
         if (update_nnue)
-            accumulators.increment();
+        {
+            accumulators_idx++;
+            assert(accumulators_idx < MAX_PLY + 1);
+            accumulators[accumulators_idx].reset();
+        }
 
         if (mt == CASTLING)
         {
@@ -496,8 +502,8 @@ namespace Chess
         assert(pieceAt(to) != NO_PIECE);
         assert(pieceAt(from) == NO_PIECE);
 
-        if (accumulators.size())
-            accumulators.decrement();
+        if (accumulators_idx > 0)
+            accumulators_idx--;
 
         if (isProm(m))
         {
