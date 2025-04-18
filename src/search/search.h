@@ -33,6 +33,7 @@ namespace Astra
     class Search
     {
     private:
+        bool debugging = false;
         int multipv_idx, root_depth;
 
         MoveList<RootMove> root_moves;

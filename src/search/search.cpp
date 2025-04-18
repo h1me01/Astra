@@ -153,7 +153,7 @@ namespace Astra
 
             if (isLimitReached(depth))
                 return 0;
-            if (id == 0 && limit.multipv == 1 && tm.elapsedTime() > 5000)
+            if (debugging && id == 0 && limit.multipv == 1 && (result <= alpha || result >= beta) && tm.elapsedTime() > 5000)
                 printUciInfo();
 
             sortRootMoves(multipv_idx);
@@ -485,7 +485,7 @@ namespace Astra
                 q_moves[q_count++] = move;
 
             // print current move information
-            if (id == 0 && root_node && limit.multipv == 1 && tm.elapsedTime() > 5000 && !threads.isStopped())
+            if (debugging && id == 0 && root_node && limit.multipv == 1 && tm.elapsedTime() > 5000 && !threads.isStopped())
                 std::cout << "info depth " << depth << " currmove " << move << " currmovenumber " << made_moves << std::endl;
 
             int extensions = 0;
