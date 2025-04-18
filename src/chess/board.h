@@ -124,6 +124,8 @@ namespace Chess
         NNUE::Accum &getAccumulator() { return accumulators[accumulators_idx]; }
 
         void resetAccumulator();
+        void updateAccumulator();
+
         void resetPly() { curr_ply = 0; }
 
         U64 diagSliders(Color c) const;
@@ -274,10 +276,9 @@ namespace Chess
             return;
 
         NNUE::Accum &acc = getAccumulator();
-        NNUE::Accum &input = accumulators[accumulators_idx - 2];
 
-        NNUE::nnue.putPiece(acc, input, pc, sq, kingSq(WHITE), WHITE);
-        NNUE::nnue.putPiece(acc, input, pc, sq, kingSq(BLACK), BLACK);
+        acc.setKingSquares(kingSq(WHITE), kingSq(BLACK));
+        acc.putPiece(pc, sq);
     }
 
     inline void Board::removePiece(Square sq, bool update_nnue)
@@ -295,10 +296,9 @@ namespace Chess
             return;
 
         NNUE::Accum &acc = getAccumulator();
-        NNUE::Accum &input = accumulators[accumulators_idx - 1];
 
-        NNUE::nnue.removePiece(acc, input, pc, sq, kingSq(WHITE), WHITE);
-        NNUE::nnue.removePiece(acc, input, pc, sq, kingSq(BLACK), BLACK);
+        acc.setKingSquares(kingSq(WHITE), kingSq(BLACK));
+        acc.removePiece(pc, sq);
     }
 
     inline void Board::movePiece(Square from, Square to, bool update_nnue)
@@ -318,15 +318,16 @@ namespace Chess
             return;
 
         NNUE::Accum &acc = getAccumulator();
-        NNUE::Accum &input = accumulators[accumulators_idx - 1];
 
-        // update other side
-        NNUE::nnue.movePiece(acc, input, pc, from, to, kingSq(~stm), ~stm);
+        acc.setKingSquares(kingSq(WHITE), kingSq(BLACK));
+        acc.movePiece(pc, from, to);
 
-        if (!NNUE::needsRefresh(pc, from, to))
-            NNUE::nnue.movePiece(acc, input, pc, from, to, kingSq(stm), stm);
-        else
-            accumulator_table->refresh(stm, *this);
+        if (typeOf(pc) != KING)
+            return; // no need to refresh
+
+        // refresh only if different bucket index or king crossing the other half
+        if (NNUE::KING_BUCKET[relSquare(stm, from)] != NNUE::KING_BUCKET[relSquare(stm, to)] || fileOf(from) + fileOf(to) == 7)
+            acc.setRefresh(stm); // other side doesn't need refresh
     }
 
 } // namespace Chess

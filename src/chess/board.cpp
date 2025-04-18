@@ -188,6 +188,39 @@ namespace Chess
         return fen.str();
     }
 
+    void Board::updateAccumulator()
+    {
+        NNUE::Accum &acc = getAccumulator();
+
+        for (Color view : {WHITE, BLACK})
+        {
+            if (acc.isInitialized(view))
+                continue;
+
+            assert(accumulators_idx > 0);
+
+            for (int i = accumulators_idx; i >= 0; i--)
+            {
+                if (accumulators[i].needsRefresh(view))
+                {
+                    accumulator_table->refresh(view, *this);
+                    break;
+                }
+
+                // apply lazy update
+                if (accumulators[i].isInitialized(view))
+                {
+                    for (int j = i + 1; j <= accumulators_idx; j++)
+                        accumulators[j].update(accumulators[j - 1], view);
+                    break;
+                }
+            }
+        }
+
+        assert(acc.isInitialized(WHITE));
+        assert(acc.isInitialized(BLACK));
+    }
+
     U64 Board::keyAfter(Move m) const
     {
         U64 new_hash = history[curr_ply].hash;

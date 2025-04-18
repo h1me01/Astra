@@ -7,28 +7,69 @@
 namespace NNUE
 {
 
-    class Accum
-    {
-    private:
-        bool initialized[NUM_COLORS] = {false, false};
-        alignas(ALIGNMENT) int16_t data[NUM_COLORS][HIDDEN_SIZE];
+   // idea from stockfish
+   struct DirtyPiece
+   {
+       Piece pc = NO_PIECE;
+       Square from = NO_SQUARE;
+       Square to = NO_SQUARE;
 
-    public:
-        void reset()
-        {
-            initialized[WHITE] = false;
-            initialized[BLACK] = false;
-        }
+       DirtyPiece() {}
 
-        void markAsInitialized(Color view)
-        {
-            this->initialized[view] = true;
-        }
+       DirtyPiece(Piece pc, Square from, Square to)
+           : pc(pc), from(from), to(to) {}
+   };
 
-        bool isInitialized(Color view) const { return initialized[view]; }
+   class Accum
+   {
+   private:
+       Square wksq, bksq;
 
-        int16_t *getData(Color view) { return data[view]; }
-    };
+       bool initialized[NUM_COLORS] = {false, false};
+       bool needs_refresh[NUM_COLORS] = {false, false};
+
+       alignas(ALIGNMENT) int16_t data[NUM_COLORS][HIDDEN_SIZE];
+
+       int num_dpcs = 0;
+       // an accumulator can update at max only 4 pieces per move:
+       // such case might be pawn captures piece on promotion rank:
+       //  1. remove captured piece
+       //  2. move pawn to target square
+       //  3. add promotion piece to target square
+       //  4. remove pawn from target square
+       DirtyPiece dpcs[4]{};
+
+   public:
+       void reset();
+
+       void putPiece(Piece pc, Square to);
+       void removePiece(Piece pc, Square from);
+       void movePiece(Piece pc, Square from, Square to);
+
+       void update(Accum &prev, Color view);
+
+       void setKingSquares(Square wksq, Square bksq)
+       {
+           this->wksq = wksq;
+           this->bksq = bksq;
+       }
+
+       void markAsInitialized(Color view)
+       {
+           this->initialized[view] = true;
+       }
+
+       void setRefresh(Color view)
+       {
+           this->needs_refresh[view] = true;
+       }
+
+       bool isInitialized(Color view) const { return initialized[view]; }
+       bool needsRefresh(Color view) const { return needs_refresh[view]; }
+
+       int16_t *getData(Color view) { return data[view]; }
+   };
+
 
     // idea from koivisto
     class AccumEntry
