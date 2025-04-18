@@ -123,10 +123,6 @@ namespace Astra
             scores[root_depth] = result;
         }
 
-        // make sure to atleast have a best move
-        if (bestmove == NO_MOVE)
-            bestmove = root_moves[0].move;
-
         if (id == 0)
             std::cout << "bestmove " << bestmove << std::endl;
 
