@@ -3,8 +3,6 @@ ROOT := $(realpath $(dir $(abspath $(lastword $(MAKEFILE_LIST)))))
 
 # Allow custom EVALFILE path via command line
 EVALFILE ?= $(ROOT)/weights.net
-# Allow PEXT support via command line
-PEXT ?= 0
 
 # Compiler and flags
 CXX := g++
@@ -20,7 +18,6 @@ CXXFLAGS := -s \
             -fno-exceptions \
             -flto \
             -march=native \
-            $(if $(filter 1,$(PEXT)),-mbmi2 -DUSE_PEXT,) \
             -DNNUE_PATH=\"$(EVALFILE)\" # nnue path
 LDFLAGS := -lstdc++
 

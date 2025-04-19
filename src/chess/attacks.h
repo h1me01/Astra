@@ -206,11 +206,12 @@ namespace Chess
         assert(sq >= a1 && sq <= h8);
 
 #ifdef __BMI2__
-        return ROOK_ATTACKS[sq][_pext_u64(occ, ROOK_MASKS[sq])];
+        const int idx = _pext_u64(occ, ROOK_MASKS[sq]);
 #else
         const U64 idx = (occ & ROOK_MASKS[sq]) * ROOK_MAGICS[sq] >> ROOK_SHIFTS[sq];
-        return ROOK_ATTACKS[sq][idx];
 #endif
+
+        return ROOK_ATTACKS[sq][idx];
     }
 
     inline U64 getBishopAttacks(Square sq, const U64 occ)
@@ -218,11 +219,12 @@ namespace Chess
         assert(sq >= a1 && sq <= h8);
 
 #ifdef __BMI2__
-        return BISHOP_ATTACKS[sq][_pext_u64(occ, BISHOP_MASKS[sq])];
+        const int idx = _pext_u64(occ, BISHOP_MASKS[sq]);
 #else
         const U64 idx = (occ & BISHOP_MASKS[sq]) * BISHOP_MAGICS[sq] >> BISHOP_SHIFTS[sq];
-        return BISHOP_ATTACKS[sq][idx];
 #endif
+
+        return BISHOP_ATTACKS[sq][idx];
     }
 
     inline U64 getAttacks(PieceType pt, Square sq, const U64 occ)
