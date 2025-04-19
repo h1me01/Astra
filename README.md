@@ -10,11 +10,6 @@ cd Astra/src
 make pgo
 ```
 
-If PEXT is supported on your machine:
-```
-make pgo PEXT=1
-```
-
 ## NNUE
 - Version starting from 5.0 use a self-implemented Neural Network Trainer
 - Versions below 5.0 used [CudAD](https://github.com/Luecx/CudAD)
