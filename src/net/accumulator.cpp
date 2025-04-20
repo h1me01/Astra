@@ -4,8 +4,6 @@
 namespace NNUE
 {
 
-    // AccumTable
-
     void AccumTable::refresh(Color view, Board &board)
     {
         assert(view == WHITE || view == BLACK);
