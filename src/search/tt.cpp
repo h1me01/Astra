@@ -135,6 +135,20 @@ namespace Astra
         return worst_entry;
     }
 
+    int TTable::hashfull() const
+    {
+        int used = 0;
+        for (int i = 0; i < 1000; i++)
+            for (int j = 0; j < BUCKET_SIZE; j++)
+            {
+                TTEntry *entry = &buckets[i].entries[j];
+                if (entry->getAge() == age && entry->getDepth())
+                    used++;
+            }
+
+        return used / BUCKET_SIZE;
+    }
+
     TTable tt(16);
 
 } // namespace Astra

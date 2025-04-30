@@ -101,19 +101,7 @@ namespace Astra
             __builtin_prefetch(&buckets[index(hash)]);
         }
 
-        int hashfull() const
-        {
-            int used = 0;
-            for (int i = 0; i < 1000; i++)
-                for (int j = 0; j < BUCKET_SIZE; j++)
-                {
-                    TTEntry *entry = &buckets[i].entries[j];
-                    if (entry->getAge() == age && entry->getDepth())
-                        used++;
-                }
-
-            return used / BUCKET_SIZE;
-        }
+        int hashfull() const;
 
         void incrementAge() { age += AGE_STEP; }
 

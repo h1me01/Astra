@@ -58,8 +58,7 @@ namespace Chess
         double time_ms = diff.count();
 
         std::cout << "\nTotal nodes: " << total_nodes << std::endl;
-        std::cout << "Total time: " << time_ms << "ms\n"
-                  << std::endl;
+        std::cout << "Total time: " << time_ms << "ms\n\n";
     }
 
 } // namespace Chess
