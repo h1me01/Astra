@@ -170,7 +170,7 @@ namespace UCI
             else if (token == "go")
                 go(is);
             else if (token == "bench")
-                Bench::bench(13);
+                Bench::bench(9);
             else if (token == "tune")
                 Astra::paramsToSpsa();
             else if (token == "setoption")
