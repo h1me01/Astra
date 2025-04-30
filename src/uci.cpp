@@ -138,7 +138,7 @@ namespace UCI
     {
         if (argc > 1 && strncmp(argv[1], "bench", 5) == 0)
         {
-            Bench::bench(9);
+            Bench::bench(13);
             return;
         }
 
@@ -170,7 +170,7 @@ namespace UCI
             else if (token == "go")
                 go(is);
             else if (token == "bench")
-                Bench::bench(9);
+                Bench::bench(13);
             else if (token == "tune")
                 Astra::paramsToSpsa();
             else if (token == "setoption")
