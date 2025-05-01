@@ -460,7 +460,7 @@ namespace Astra
 
                 // late move pruning
                 if (!pv_node && q_count > (3 + depth * depth) / (2 - improving))
-                    mp.skip_quiets = true;
+                    mp.skipQuiets();
 
                 if (!isCap(move) && move.type() != PQ_QUEEN)
                 {
@@ -470,7 +470,7 @@ namespace Astra
 
                     // futility pruning
                     if (!in_check && lmr_depth < 11 && ss->static_eval + fp_base + lmr_depth * fp_mult <= alpha)
-                        mp.skip_quiets = true;
+                        mp.skipQuiets();
                 }
 
                 // see pruning
@@ -814,7 +814,7 @@ namespace Astra
             }
 
             if (best_score > -VALUE_TB_WIN_IN_MAX_PLY)
-                mp.skip_quiets = true;
+                mp.skipQuiets();
         }
 
         if (in_check && made_moves == 0)

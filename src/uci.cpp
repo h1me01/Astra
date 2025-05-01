@@ -62,7 +62,7 @@ namespace UCI
 
         Astra::tt.init(std::stoi(get("Hash")));
         num_workers = std::stoi(get("Threads"));
-        Astra::tt.num_workers = num_workers;
+        Astra::tt.setNumWorkers(num_workers);
     }
 
     void Options::set(std::istringstream &is)

@@ -80,9 +80,9 @@ namespace Astra
         U64 bucket_size{};
         TTBucket *buckets;
 
-    public:
         int num_workers = 1;
 
+    public:
         explicit TTable(U64 size_mb);
         ~TTable();
 
@@ -104,6 +104,8 @@ namespace Astra
         int hashfull() const;
 
         void incrementAge() { age += AGE_STEP; }
+
+        void setNumWorkers(int num_workers) { this->num_workers = num_workers; }
 
         int getAge() const { return age; }
     };

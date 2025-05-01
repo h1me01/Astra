@@ -40,6 +40,7 @@ namespace Astra
         const Stack *ss;
 
         bool gen_checkers;
+        bool skip_quiets = false;
 
         MoveList<> ml_main;
         MoveList<> ml_bad_noisy;
@@ -48,12 +49,12 @@ namespace Astra
         void scoreNoisyMoves();
 
     public:
-        bool skip_quiets = false;
         int see_cutoff = 0;
 
         MovePicker(SearchType st, const Board &board, const History &history, const Stack *ss, const Move &tt_move, bool gen_checks = false);
 
         Move nextMove();
+        void skipQuiets() { skip_quiets = true; }
 
         Move tt_move, killer, counter;
     };

@@ -30,6 +30,9 @@ namespace UCI
 
     class Options
     {
+    private:
+        std::unordered_map<std::string, Option> options;
+
     public:
         int num_workers = 1; // default number of threads
         bool use_tb = false;
@@ -51,19 +54,10 @@ namespace UCI
                 return it->second.val;
             return "";
         }
-
-    private:
-        std::unordered_map<std::string, Option> options;
     };
 
     class Uci
     {
-    public:
-        Uci();
-        ~Uci();
-
-        void loop(int argc, char **argv);
-
     private:
         Board board;
         Options options;
@@ -94,6 +88,12 @@ namespace UCI
             if (logFile.is_open())
                 logFile << message << std::endl;
         }
+
+    public:
+        Uci();
+        ~Uci();
+
+        void loop(int argc, char **argv);
     };
 
 } // namespace UCI

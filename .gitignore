@@ -4,6 +4,8 @@ build/
 
 misc/
 
+openbench/
+
 src/*.exe
 
 CMakeLists.txt
