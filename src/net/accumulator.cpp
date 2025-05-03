@@ -37,7 +37,7 @@ namespace NNUE
         Accum &acc = board.getAccumulator();
         acc.markAsInitialized(view);
 
-        memcpy(acc.getData(view), entry_acc.getData(view), sizeof(int16_t) * HIDDEN_SIZE);
+        memcpy(acc.getData(view), entry_acc.getData(view), sizeof(int16_t) * FT_SIZE);
     }
 
     void AccumTable::reset()
