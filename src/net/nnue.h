@@ -28,9 +28,9 @@ namespace NNUE
     constexpr int BUCKET_SIZE = 10;
     constexpr int FEATURE_SIZE = 768;
 
-    constexpr int INPUT_SIZE = BUCKET_SIZE * FEATURE_SIZE;
-    constexpr int FT_SIZE = 1024;
-    constexpr int L1_SIZE = 1;
+    constexpr int FT_SIZE = BUCKET_SIZE * FEATURE_SIZE;
+    constexpr int L1_SIZE = 1024;
+    constexpr int OUTPUT_SIZE = 1;
 
     constexpr int FT_QUANT = 32;
     constexpr int L1_QUANT = 128;
@@ -63,10 +63,10 @@ namespace NNUE
     class NNUE
     {
     private:
-        alignas(ALIGNMENT) int16_t ft_weights[INPUT_SIZE * FT_SIZE];
-        alignas(ALIGNMENT) int16_t ft_biases[FT_SIZE];
-        alignas(ALIGNMENT) int16_t l1_weights[2 * FT_SIZE * L1_SIZE];
-        alignas(ALIGNMENT) int16_t l1_biases[L1_SIZE];
+        alignas(ALIGNMENT) int16_t ft_weights[FT_SIZE * L1_SIZE];
+        alignas(ALIGNMENT) int16_t ft_biases[L1_SIZE];
+        alignas(ALIGNMENT) int16_t l1_weights[2 * L1_SIZE * OUTPUT_SIZE];
+        alignas(ALIGNMENT) int16_t l1_biases[OUTPUT_SIZE];
 
     public:
         void init();
