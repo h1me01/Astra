@@ -11,7 +11,7 @@ namespace NNUE
     {
     private:
         bool initialized[NUM_COLORS] = {false, false};
-        alignas(ALIGNMENT) int16_t data[NUM_COLORS][FT_SIZE];
+        alignas(ALIGNMENT) int16_t data[NUM_COLORS][L1_SIZE];
 
     public:
         void reset()
