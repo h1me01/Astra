@@ -110,7 +110,7 @@ namespace NNUE
 
 #if defined(__AVX512F__) || defined(__AVX2__) || defined(__AVX__)
         constexpr avx_type zero{};
-        const avx_type max_clipped_value = avx_set1_epi16(CRELU_CLIP);
+        const avx_type ft_clip = avx_set1_epi16(FT_QUANT);
 
         const auto acc_stm = (const avx_type *)acc.getData(stm);
         const auto acc_opp = (const avx_type *)acc.getData(~stm);
@@ -120,17 +120,17 @@ namespace NNUE
 
         for (int i = 0; i < L1_SIZE / div; i++)
         {
-            auto clipped_stm = avx_min_epi16(avx_max_epi16(acc_stm[i], zero), max_clipped_value);
+            auto clipped_stm = avx_min_epi16(avx_max_epi16(acc_stm[i], zero), ft_clip);
             res = avx_add_epi32(res, avx_madd_epi16(weights[i], clipped_stm));
         }
 
         for (int i = 0; i < L1_SIZE / div; i++)
         {
-            auto clipped_opp = avx_min_epi16(avx_max_epi16(acc_opp[i], zero), max_clipped_value);
+            auto clipped_opp = avx_min_epi16(avx_max_epi16(acc_opp[i], zero), ft_clip);
             res = avx_add_epi32(res, avx_madd_epi16(weights[i + L1_SIZE / div], clipped_opp));
         }
 
-        return horizontalSum(res) / (FT_QUANT * L1_QUANT) + l1_biases[0] / L1_QUANT;
+        return (horizontalSum(res) + l1_biases[0]) * 400 / (FT_QUANT * L1_QUANT);
 #else
         int32_t output = 0;
 

@@ -32,10 +32,8 @@ namespace NNUE
     constexpr int L1_SIZE = 1024;
     constexpr int OUTPUT_SIZE = 1;
 
-    constexpr int FT_QUANT = 32;
-    constexpr int L1_QUANT = 128;
-
-    constexpr int CRELU_CLIP = FT_QUANT * 127;
+    constexpr int FT_QUANT = 255;
+    constexpr int L1_QUANT = 64;
 
     // clang-format off
     constexpr int KING_BUCKET[NUM_SQUARES]
