@@ -9,6 +9,9 @@ int main(int argc, char **argv)
     Astra::initReductions();
     NNUE::nnue.init();
 
+    Board  board(STARTING_FEN);
+    std::cout << NNUE::nnue.forward(board) << std::endl;
+
     UCI::Uci uci;
     uci.loop(argc, argv);
 

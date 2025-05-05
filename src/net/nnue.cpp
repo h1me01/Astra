@@ -130,7 +130,9 @@ namespace NNUE
             res = avx_add_epi32(res, avx_madd_epi16(weights[i + L1_SIZE / div], clipped_opp));
         }
 
-        return (horizontalSum(res) + l1_biases[0]) * 400 / (FT_QUANT * L1_QUANT);
+
+
+        return (horizontalSum(res) / FT_QUANT + l1_biases[0]) * 400 / (FT_QUANT * L1_QUANT);
 #else
         int32_t output = 0;
 
