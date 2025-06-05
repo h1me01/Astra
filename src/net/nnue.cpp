@@ -22,6 +22,7 @@ using avx_type = __m512i;
 #define avx_max_epi16 _mm512_max_epi16
 #define avx_min_epi16 _mm512_min_epi16
 #define avx_set1_epi16 _mm512_set1_epi16
+#define avx_mullo_epi16 _mm512_mullo_epi16
 
 #elif defined(__AVX2__) || defined(__AVX__)
 
@@ -35,6 +36,7 @@ using avx_type = __m256i;
 #define avx_max_epi16 _mm256_max_epi16
 #define avx_min_epi16 _mm256_min_epi16
 #define avx_set1_epi16 _mm256_set1_epi16
+#define avx_mullo_epi16 _mm256_mullo_epi16
 
 #endif
 
@@ -120,27 +122,32 @@ namespace NNUE
 
         for (int i = 0; i < L1_SIZE / div; i++)
         {
-            auto clipped_stm = avx_min_epi16(avx_max_epi16(acc_stm[i], zero), ft_clip);
-            res = avx_add_epi32(res, avx_madd_epi16(weights[i], clipped_stm));
+            auto act = avx_min_epi16(avx_max_epi16(acc_stm[i], zero), ft_clip);
+            auto product = avx_madd_epi16(avx_mullo_epi16(act, weights[i]), act);
+            res = avx_add_epi32(res, product);
         }
 
         for (int i = 0; i < L1_SIZE / div; i++)
         {
-            auto clipped_opp = avx_min_epi16(avx_max_epi16(acc_opp[i], zero), ft_clip);
-            res = avx_add_epi32(res, avx_madd_epi16(weights[i + L1_SIZE / div], clipped_opp));
+            auto act = avx_min_epi16(avx_max_epi16(acc_opp[i], zero), ft_clip);
+            auto product = avx_madd_epi16(avx_mullo_epi16(act, weights[i + L1_SIZE / div]), act);
+            res = avx_add_epi32(res, product);
         }
 
-        return (horizontalSum(res) + l1_biases[0]) * 400 / (FT_QUANT * L1_QUANT);
+        return horizontalSum(res) / (FT_QUANT * L1_QUANT) + l1_biases[0] / L1_QUANT;
 #else
         int32_t output = 0;
 
         int16_t *acc_stm = acc.getData(stm);
         int16_t *acc_opp = acc.getData(~stm);
 
-        for (int j = 0; j < HIDDEN_SIZE; j++)
+        for (int j = 0; j < L1_SIZE; j++)
         {
-            output += l1_weights[j] * std::clamp(int32_t(acc_stm[j]), 0, CRELU_CLIP);
-            output += l1_weights[HIDDEN_SIZE + j] * std::clamp(int32_t(acc_opp[j]), 0, CRELU_CLIP);
+            int32_t clamped = std::clamp(int32_t(acc_stm[j]), 0, FT_QUANT);
+            int32_t clamped_opp = std::clamp(int32_t(acc_opp[j]), 0, FT_QUANT);
+
+            output += l1_weights[j] * clamped * clamped;
+            output += l1_weights[L1_SIZE + j] * clamped_opp * clamped_opp;
         }
 
         return output / (FT_QUANT * L1_QUANT) + l1_biases[0] / L1_QUANT;
