@@ -1,22 +1,21 @@
 #pragma once
 
-#include <string>
 #include <cstdint>
 #include <iostream>
+#include <string>
 
-namespace Chess
-{
-    using U64 = uint64_t;
-    using Score = int16_t;
+namespace Chess {
+using U64 = uint64_t;
+using Score = int16_t;
 
-    const std::string PIECE_STR = "PNBRQKpnbrqk.";
-    const std::string STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+const std::string PIECE_STR = "PNBRQKpnbrqk.";
+const std::string STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
-    constexpr int MAX_PLY = 246;
+constexpr int MAX_PLY = 246;
 
-    constexpr int PIECE_VALUES[] = {100, 325, 325, 500, 1000, 30000, 0};
+constexpr int PIECE_VALUES[] = {100, 325, 325, 500, 1000, 30000, 0};
 
-    // clang-format off
+// clang-format off
     constexpr int NUM_COLORS = 2;   
     enum Color
     {
@@ -97,16 +96,16 @@ namespace Chess
     {
         RANK_1, RANK_2, RANK_3, RANK_4, RANK_5, RANK_6, RANK_7, RANK_8
     };
-    // clang-format on
+// clang-format on
 
-    constexpr Score VALUE_DRAW = 0;
-    constexpr Score VALUE_MATE = 32000;
-    constexpr Score VALUE_INFINITE = 32001;
-    constexpr Score VALUE_NONE = 32002;
-    constexpr Score VALUE_TB_WIN = VALUE_MATE;
-    constexpr Score VALUE_TB_WIN_IN_MAX_PLY = VALUE_TB_WIN - MAX_PLY;
+constexpr Score VALUE_DRAW = 0;
+constexpr Score VALUE_MATE = 32000;
+constexpr Score VALUE_INFINITE = 32001;
+constexpr Score VALUE_NONE = 32002;
+constexpr Score VALUE_TB_WIN = VALUE_MATE;
+constexpr Score VALUE_TB_WIN_IN_MAX_PLY = VALUE_TB_WIN - MAX_PLY;
 
-    // clang-format off
+// clang-format off
     enum MoveType
     {
         QUIET,
@@ -116,55 +115,70 @@ namespace Chess
         PQ_KNIGHT, PQ_BISHOP, PQ_ROOK, PQ_QUEEN,
         PC_KNIGHT, PC_BISHOP, PC_ROOK, PC_QUEEN
     };
-    // clang-format on
+// clang-format on
 
-    // max number of possible legal moves in chess are 218
-    // use 128 for faster move generation
-    constexpr int MAX_MOVES = 128;
+// max number of possible legal moves in chess are 218
+// use 128 for faster move generation
+constexpr int MAX_MOVES = 128;
 
-    class Move
-    {
-    private:
-        // first 4 bits represent the move flag
-        // next 6 bits represent the to square
-        // last 6 bits represent the from square
-        uint16_t move;
-        int score = 0; // used for move ordering
+class Move {
+  private:
+    // first 4 bits represent the move flag
+    // next 6 bits represent the to square
+    // last 6 bits represent the from square
+    uint16_t move;
+    int score = 0; // used for move ordering
 
-    public:
-        // default move (a1a1)
-        Move() : move(0) {}
+  public:
+    // default move (a1a1)
+    Move() : move(0) {}
 
-        constexpr explicit Move(uint16_t m) : move(m) {}
+    constexpr explicit Move(uint16_t m) : move(m) {}
 
-        constexpr Move(const Move &other) : move(other.move), score(other.score) {}
-        constexpr Move(Square from, Square to, MoveType mt) : move(mt << 12 | from << 6 | to) {}
+    constexpr Move(const Move &other) : move(other.move), score(other.score) {}
+    constexpr Move(Square from, Square to, MoveType mt) : move(mt << 12 | from << 6 | to) {}
 
-        Square to() const { return Square(move & 0x3f); }
-        Square from() const { return Square(move >> 6 & 0x3f); }
-        MoveType type() const { return MoveType(move >> 12); }
+    Square to() const {
+        return Square(move & 0x3f);
+    }
+    Square from() const {
+        return Square(move >> 6 & 0x3f);
+    }
+    MoveType type() const {
+        return MoveType(move >> 12);
+    }
 
-        Move &operator=(const Move &m)
-        {
-            if (this != &m)
-            {
-                move = m.move;
-                score = m.score;
-            }
-            return *this;
+    Move &operator=(const Move &m) {
+        if(this != &m) {
+            move = m.move;
+            score = m.score;
         }
+        return *this;
+    }
 
-        uint16_t raw() const { return move; }
+    uint16_t raw() const {
+        return move;
+    }
 
-        void setScore(int s) { score = s; }
-        int getScore() const { return score; }
+    void setScore(int s) {
+        score = s;
+    }
+    int getScore() const {
+        return score;
+    }
 
-        bool operator==(const Move &m) const { return move == m.move; }
-        bool operator!=(const Move &m) const { return move != m.move; }
-        bool operator!() const { return move == 0; }
-    };
+    bool operator==(const Move &m) const {
+        return move == m.move;
+    }
+    bool operator!=(const Move &m) const {
+        return move != m.move;
+    }
+    bool operator!() const {
+        return move == 0;
+    }
+};
 
-    const auto NULL_MOVE = Move(65);
-    const auto NO_MOVE = Move();
+const auto NULL_MOVE = Move(65);
+const auto NO_MOVE = Move();
 
 } // namespace Chess
