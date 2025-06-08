@@ -122,14 +122,14 @@ constexpr Score VALUE_TB_WIN_IN_MAX_PLY = VALUE_TB_WIN - MAX_PLY;
 constexpr int MAX_MOVES = 128;
 
 class Move {
-private:
+  private:
     // first 4 bits represent the move flag
     // next 6 bits represent the to square
     // last 6 bits represent the from square
     uint16_t move;
     int score = 0; // used for move ordering
 
-public:
+  public:
     // default move (a1a1)
     Move() : move(0) {}
 
@@ -138,26 +138,44 @@ public:
     constexpr Move(const Move &other) : move(other.move), score(other.score) {}
     constexpr Move(Square from, Square to, MoveType mt) : move(mt << 12 | from << 6 | to) {}
 
-    Square to() const { return Square(move & 0x3f); }
-    Square from() const { return Square(move >> 6 & 0x3f); }
-    MoveType type() const { return MoveType(move >> 12); }
+    Square to() const {
+        return Square(move & 0x3f);
+    }
+    Square from() const {
+        return Square(move >> 6 & 0x3f);
+    }
+    MoveType type() const {
+        return MoveType(move >> 12);
+    }
 
     Move &operator=(const Move &m) {
-        if (this != &m) {
+        if(this != &m) {
             move = m.move;
             score = m.score;
         }
         return *this;
     }
 
-    uint16_t raw() const { return move; }
+    uint16_t raw() const {
+        return move;
+    }
 
-    void setScore(int s) { score = s; }
-    int getScore() const { return score; }
+    void setScore(int s) {
+        score = s;
+    }
+    int getScore() const {
+        return score;
+    }
 
-    bool operator==(const Move &m) const { return move == m.move; }
-    bool operator!=(const Move &m) const { return move != m.move; }
-    bool operator!() const { return move == 0; }
+    bool operator==(const Move &m) const {
+        return move == m.move;
+    }
+    bool operator!=(const Move &m) const {
+        return move != m.move;
+    }
+    bool operator!() const {
+        return move == 0;
+    }
 };
 
 const auto NULL_MOVE = Move(65);

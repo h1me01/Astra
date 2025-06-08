@@ -48,22 +48,21 @@ constexpr int L1_QUANT = 64;
 // clang-format on
 
 inline bool needsRefresh(Piece pc, Square from, Square to) {
-    if (typeOf(pc) != KING)
+    if(typeOf(pc) != KING)
         return false;
 
     Color view = colorOf(pc);
-    return KING_BUCKET[relSquare(view, from)] != KING_BUCKET[relSquare(view, to)] ||
-           fileOf(from) + fileOf(to) == 7;
+    return KING_BUCKET[relSquare(view, from)] != KING_BUCKET[relSquare(view, to)] || fileOf(from) + fileOf(to) == 7;
 }
 
 class NNUE {
-private:
+  private:
     alignas(ALIGNMENT) int16_t ft_weights[FT_SIZE * L1_SIZE];
     alignas(ALIGNMENT) int16_t ft_biases[L1_SIZE];
     alignas(ALIGNMENT) int16_t l1_weights[2 * L1_SIZE * OUTPUT_BUCKETS];
     alignas(ALIGNMENT) int16_t l1_biases[OUTPUT_BUCKETS];
 
-public:
+  public:
     void init();
     void initAccum(Accum &acc) const;
 
@@ -71,8 +70,7 @@ public:
 
     void putPiece(Accum &acc, Accum &prev, Piece pc, Square psq, Square ksq, Color view) const;
     void removePiece(Accum &acc, Accum &prev, Piece pc, Square psq, Square ksq, Color view) const;
-    void movePiece(Accum &acc, Accum &prev, Piece pc, Square from, Square to, Square ksq,
-                   Color view) const;
+    void movePiece(Accum &acc, Accum &prev, Piece pc, Square from, Square to, Square ksq, Color view) const;
 };
 
 // global variable

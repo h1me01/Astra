@@ -5,8 +5,8 @@ void partialInsertionSort(MoveList<> &ml, int idx) {
     assert(idx >= 0);
 
     int best_idx = idx;
-    for (int i = 1 + idx; i < ml.size(); i++)
-        if (ml[i].getScore() > ml[best_idx].getScore())
+    for(int i = 1 + idx; i < ml.size(); i++)
+        if(ml[i].getScore() > ml[best_idx].getScore())
             best_idx = i;
 
     std::swap(ml[idx], ml[best_idx]);
@@ -14,13 +14,13 @@ void partialInsertionSort(MoveList<> &ml, int idx) {
 
 // MovePicker class
 
-MovePicker::MovePicker(SearchType st, const Board &board, const History &history, const Stack *ss,
-                       const Move &tt_move, bool gen_checkers)
+MovePicker::MovePicker(SearchType st, const Board &board, const History &history, const Stack *ss, const Move &tt_move,
+                       bool gen_checkers)
     : st(st), board(board), history(history), ss(ss), gen_checkers(gen_checkers) {
-    if (st == PC_SEARCH)
+    if(st == PC_SEARCH)
         stage = GEN_NOISY;
-    else if (st == Q_SEARCH) {
-        if (board.inCheck()) {
+    else if(st == Q_SEARCH) {
+        if(board.inCheck()) {
             stage = PLAY_TT_MOVE;
             this->tt_move = tt_move;
         } else
@@ -30,7 +30,7 @@ MovePicker::MovePicker(SearchType st, const Board &board, const History &history
         this->tt_move = tt_move;
 
         Move prev_move = (ss - 1)->curr_move;
-        if (isValidMove(prev_move))
+        if(isValidMove(prev_move))
             counter = history.getCounterMove(prev_move);
         else
             counter = NO_MOVE;
@@ -40,10 +40,10 @@ MovePicker::MovePicker(SearchType st, const Board &board, const History &history
 }
 
 Move MovePicker::nextMove() {
-    switch (stage) {
+    switch(stage) {
     case PLAY_TT_MOVE:
         stage = GEN_NOISY;
-        if (board.isPseudoLegal(tt_move))
+        if(board.isPseudoLegal(tt_move))
             return tt_move;
         [[fallthrough]];
     case GEN_NOISY:
@@ -55,18 +55,17 @@ Move MovePicker::nextMove() {
 
         [[fallthrough]];
     case PLAY_NOISY:
-        while (idx < ml_main.size()) {
+        while(idx < ml_main.size()) {
             partialInsertionSort(ml_main, idx);
             Move move = ml_main[idx];
             idx++;
 
             // skip tt move only when in negamax search
-            if (move == tt_move)
+            if(move == tt_move)
                 continue;
 
             // we want to play captures first in qsearch, doesn't matter if its see is fails
-            if (st != Q_SEARCH &&
-                !board.see(move, st == N_SEARCH ? -move.getScore() / 32 : see_cutoff)) {
+            if(st != Q_SEARCH && !board.see(move, st == N_SEARCH ? -move.getScore() / 32 : see_cutoff)) {
                 ml_bad_noisy.add(move); // add to bad noisy
                 continue;
             }
@@ -74,11 +73,11 @@ Move MovePicker::nextMove() {
             return move;
         }
 
-        if (st == PC_SEARCH)
+        if(st == PC_SEARCH)
             return NO_MOVE; // no more moves
 
-        if (st == Q_SEARCH && !board.inCheck()) {
-            if (!gen_checkers)
+        if(st == Q_SEARCH && !board.inCheck()) {
+            if(!gen_checkers)
                 return NO_MOVE; // no more moves
             goto quiet_checkers;
         }
@@ -88,38 +87,38 @@ Move MovePicker::nextMove() {
         [[fallthrough]];
     case PLAY_KILLER:
         stage = PLAY_COUNTER;
-        if (!skip_quiets && killer != tt_move && board.isPseudoLegal(killer))
+        if(!skip_quiets && killer != tt_move && board.isPseudoLegal(killer))
             return killer;
         [[fallthrough]];
     case PLAY_COUNTER:
         stage = GEN_QUIETS;
-        if (!skip_quiets && counter != tt_move && counter != killer && board.isPseudoLegal(counter))
+        if(!skip_quiets && counter != tt_move && counter != killer && board.isPseudoLegal(counter))
             return counter;
         [[fallthrough]];
     case GEN_QUIETS:
         idx = 0;
         stage = PLAY_QUIETS;
 
-        if (!skip_quiets) {
+        if(!skip_quiets) {
             ml_main.gen<QUIETS>(board);
             scoreQuietMoves();
         }
 
         [[fallthrough]];
     case PLAY_QUIETS:
-        while (idx < ml_main.size() && !skip_quiets) {
+        while(idx < ml_main.size() && !skip_quiets) {
             partialInsertionSort(ml_main, idx);
             Move move = ml_main[idx];
             idx++;
 
             // skip tt move, killer, and counter
-            if (move == tt_move || move == killer || move == counter)
+            if(move == tt_move || move == killer || move == counter)
                 continue;
 
             return move;
         }
 
-        if (st == Q_SEARCH)
+        if(st == Q_SEARCH)
             return NO_MOVE; // end of evasion qsearch
 
         idx = 0;
@@ -127,7 +126,7 @@ Move MovePicker::nextMove() {
 
         [[fallthrough]];
     case PLAY_BAD_NOISY:
-        while (idx < ml_bad_noisy.size()) {
+        while(idx < ml_bad_noisy.size()) {
             partialInsertionSort(ml_bad_noisy, idx);
             Move move = ml_bad_noisy[idx];
             idx++;
@@ -142,7 +141,7 @@ Move MovePicker::nextMove() {
         ml_main.gen<QUIET_CHECKERS>(board);
         [[fallthrough]];
     case PLAY_QUIET_CHECKERS:
-        while (idx < ml_main.size()) {
+        while(idx < ml_main.size()) {
             partialInsertionSort(ml_main, idx);
             Move move = ml_main[idx];
             idx++;
@@ -159,7 +158,7 @@ Move MovePicker::nextMove() {
 // private member
 
 void MovePicker::scoreQuietMoves() {
-    for (int i = 0; i < ml_main.size(); i++) {
+    for(int i = 0; i < ml_main.size(); i++) {
         const Piece pc = board.pieceAt(ml_main[i].from());
         const PieceType pt = typeOf(pc);
         const Square from = ml_main[i].from();
@@ -171,23 +170,23 @@ void MovePicker::scoreQuietMoves() {
         assert(pc >= WHITE_PAWN && pc <= BLACK_KING);
 
         int score = 2 * history.getHH(board.getTurn(), ml_main[i]);
-        score += 2 * (int)(*(ss - 1)->conth)[pc][to];
-        score += (int)(*(ss - 2)->conth)[pc][to];
-        score += (int)(*(ss - 4)->conth)[pc][to];
-        score += (int)(*(ss - 6)->conth)[pc][to];
+        score += 2 * (int) (*(ss - 1)->conth)[pc][to];
+        score += (int) (*(ss - 2)->conth)[pc][to];
+        score += (int) (*(ss - 4)->conth)[pc][to];
+        score += (int) (*(ss - 6)->conth)[pc][to];
 
-        if (pt != PAWN && pt != KING) {
+        if(pt != PAWN && pt != KING) {
             U64 danger;
-            if (pt == QUEEN)
+            if(pt == QUEEN)
                 danger = board.getThreats(ROOK);
-            else if (pt == ROOK)
+            else if(pt == ROOK)
                 danger = board.getThreats(BISHOP) | board.getThreats(KNIGHT);
             else
                 danger = board.getThreats(PAWN);
 
-            if (danger & SQUARE_BB[from])
+            if(danger & SQUARE_BB[from])
                 score += 16384 + 16384 * (pt == QUEEN);
-            else if (danger & SQUARE_BB[to])
+            else if(danger & SQUARE_BB[to])
                 score -= (16384 + 16384 * (pt == QUEEN));
         }
 
@@ -196,12 +195,11 @@ void MovePicker::scoreQuietMoves() {
 }
 
 void MovePicker::scoreNoisyMoves() {
-    for (int i = 0; i < ml_main.size(); i++) {
-        PieceType captured =
-            ml_main[i].type() == EN_PASSANT ? PAWN : typeOf(board.pieceAt(ml_main[i].to()));
+    for(int i = 0; i < ml_main.size(); i++) {
+        PieceType captured = ml_main[i].type() == EN_PASSANT ? PAWN : typeOf(board.pieceAt(ml_main[i].to()));
 
         int score;
-        if (captured != NO_PIECE_TYPE)
+        if(captured != NO_PIECE_TYPE)
             score = history.getCH(board, ml_main[i]);
         else
             // quiet queen prom is not a capture

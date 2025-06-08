@@ -7,7 +7,9 @@
 namespace Astra {
 // helper
 
-int getFormula(int value, int bonus) { return bonus - value * std::abs(bonus) / 16384; }
+int getFormula(int value, int bonus) {
+    return bonus - value * std::abs(bonus) / 16384;
+}
 
 void updateCorrection(int16_t &value, int diff, int depth) {
     const int bonus = std::clamp(diff * depth / 8, -256, 256);
@@ -23,18 +25,17 @@ int historyMalus(int depth) {
 }
 
 // history
-void History::update(const Board &board, Move &best, Stack *ss, Move *q_moves, int qc,
-                     Move *c_moves, int cc, int depth) {
+void History::update(const Board &board, Move &best, Stack *ss, Move *q_moves, int qc, Move *c_moves, int cc, int depth) {
     Color stm = board.getTurn();
     int bonus = historyBonus(depth);
     int malus = historyMalus(depth);
 
-    if (!isCap(best)) {
+    if(!isCap(best)) {
         // don't set quiet queen promotions as a counter/killer,
         // so we don't actually return it twice in the movepicker
-        if (best.type() != PQ_QUEEN) {
+        if(best.type() != PQ_QUEEN) {
             Move prev_move = (ss - 1)->curr_move;
-            if (isValidMove(prev_move))
+            if(isValidMove(prev_move))
                 counters[prev_move.from()][prev_move.to()] = best;
 
             ss->killer = best;
@@ -42,14 +43,14 @@ void History::update(const Board &board, Move &best, Stack *ss, Move *q_moves, i
 
         // credits to ethereal
         // only update quiet history if best move was important
-        if (depth > 3 || qc > 1) {
+        if(depth > 3 || qc > 1) {
             updateQH(stm, best, bonus);
             updateContH(best, ss, bonus);
 
             // quiet maluses
-            for (int i = 0; i < qc; i++) {
+            for(int i = 0; i < qc; i++) {
                 Move quiet = q_moves[i];
-                if (quiet == best)
+                if(quiet == best)
                     continue;
                 updateQH(stm, quiet, -malus);
                 updateContH(quiet, ss, -malus);
@@ -59,9 +60,9 @@ void History::update(const Board &board, Move &best, Stack *ss, Move *q_moves, i
         updateCapHistory(board, best, bonus);
 
     // capture maluses
-    for (int i = 0; i < cc; i++) {
+    for(int i = 0; i < cc; i++) {
         Move cap = c_moves[i];
-        if (cap == best)
+        if(cap == best)
             continue;
         updateCapHistory(board, cap, -malus);
     }
@@ -73,8 +74,8 @@ void History::updateQH(Color c, Move move, int bonus) {
 }
 
 void History::updateContH(Move &move, Stack *ss, int bonus) {
-    for (int offset : {1, 2, 4, 6})
-        if (isValidMove((ss - offset)->curr_move)) {
+    for(int offset : {1, 2, 4, 6})
+        if(isValidMove((ss - offset)->curr_move)) {
             Piece pc = (ss - offset)->moved_piece;
             assert(pc >= WHITE_PAWN && pc <= BLACK_KING);
 
@@ -99,10 +100,8 @@ void History::updateMaterialCorr(const Board &board, Score raw_eval, Score real_
     int diff = real_score - raw_eval;
 
     updateCorrection(pawn_corr[board.getTurn()][CORR_IDX(board.getPawnHash())], diff, depth);
-    updateCorrection(w_non_pawn_corr[board.getTurn()][CORR_IDX(board.getNonPawnHash(WHITE))], diff,
-                     depth);
-    updateCorrection(b_non_pawn_corr[board.getTurn()][CORR_IDX(board.getNonPawnHash(BLACK))], diff,
-                     depth);
+    updateCorrection(w_non_pawn_corr[board.getTurn()][CORR_IDX(board.getNonPawnHash(WHITE))], diff, depth);
+    updateCorrection(b_non_pawn_corr[board.getTurn()][CORR_IDX(board.getNonPawnHash(BLACK))], diff, depth);
 }
 
 void History::updateContCorr(Score raw_eval, Score real_score, int depth, const Stack *ss) {
@@ -112,11 +111,10 @@ void History::updateContCorr(Score raw_eval, Score real_score, int depth, const 
     Piece prev_pc = (ss - 1)->moved_piece;
     Piece pprev_pc = (ss - 2)->moved_piece;
 
-    if (!prev_move || !pprev_move)
+    if(!prev_move || !pprev_move)
         return;
 
-    updateCorrection(cont_corr[prev_pc][prev_move.to()][pprev_pc][pprev_move.to()],
-                     real_score - raw_eval, depth);
+    updateCorrection(cont_corr[prev_pc][prev_move.to()][pprev_pc][pprev_move.to()], real_score - raw_eval, depth);
 }
 
 } // namespace Astra

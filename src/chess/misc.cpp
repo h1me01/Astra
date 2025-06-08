@@ -1,10 +1,10 @@
 #include "misc.h"
 
 namespace Chess {
-    
+
 void printBitboard(const U64 b) {
-    for (int rank = 7; rank >= 0; --rank) {
-        for (int file = 0; file < 8; ++file) {
+    for(int rank = 7; rank >= 0; --rank) {
+        for(int file = 0; file < 8; ++file) {
             U64 mask = 1ULL << (rank * 8 + file);
             std::cout << ((b & mask) ? "1 " : "0 ");
         }
@@ -24,9 +24,9 @@ std::vector<std::string> split(const std::string &str, char del) {
     std::vector<std::string> parts;
     std::string current;
 
-    for (const char c : str) {
-        if (c == del) {
-            if (!current.empty()) {
+    for(const char c : str) {
+        if(c == del) {
+            if(!current.empty()) {
                 parts.push_back(current);
                 current.clear();
             }
@@ -34,14 +34,14 @@ std::vector<std::string> split(const std::string &str, char del) {
             current += c;
     }
 
-    if (!current.empty())
+    if(!current.empty())
         parts.push_back(current);
 
     return parts;
 }
 
 PieceType typeOfPromotion(const MoveType mt) {
-    switch (mt) {
+    switch(mt) {
     case PQ_KNIGHT:
     case PC_KNIGHT:
         return KNIGHT;
@@ -60,14 +60,14 @@ PieceType typeOfPromotion(const MoveType mt) {
 }
 
 std::ostream &operator<<(std::ostream &os, const Move &m) {
-    if (!m)
+    if(!m)
         os << "NO MOVE";
-    else if (m == NULL_MOVE)
+    else if(m == NULL_MOVE)
         os << "NULL MOVE";
     else
         os << SQSTR[m.from()] << SQSTR[m.to()];
 
-    if (isProm(m)) {
+    if(isProm(m)) {
         const PieceType pt = typeOfPromotion(m.type());
         os << PIECE_STR[pt + 6];
     }

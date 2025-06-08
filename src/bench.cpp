@@ -54,7 +54,7 @@ void bench(int depth) {
 
     auto start = std::chrono::high_resolution_clock::now();
 
-    for (const auto &fen : bench_positions) {
+    for(const auto &fen : bench_positions) {
         std::cout << "\nPosition: " << fen << std::endl;
 
         Astra::threads.start();

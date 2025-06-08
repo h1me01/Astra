@@ -13,7 +13,9 @@ struct Param {
 
     Param(std::string name, int value, int min, int max);
 
-    operator int() const { return value; }
+    operator int() const {
+        return value;
+    }
 };
 
 inline std::vector<Param *> params;

@@ -12,8 +12,8 @@ void AccumTable::refresh(Color view, Board &board) {
 
     Accum &entry_acc = entry.getAccum();
 
-    for (Color c : {WHITE, BLACK})
-        for (int i = PAWN; i <= KING; i++) {
+    for(Color c : {WHITE, BLACK})
+        for(int i = PAWN; i <= KING; i++) {
             PieceType pt = PieceType(i);
             Piece pc = makePiece(c, pt);
 
@@ -21,11 +21,11 @@ void AccumTable::refresh(Color view, Board &board) {
             const U64 entry_bb = entry.getPieceBB(c, pt);
 
             U64 to_set = pc_bb & ~entry_bb;
-            while (to_set)
+            while(to_set)
                 nnue.putPiece(entry_acc, entry_acc, pc, popLsb(to_set), ksq, view);
 
             U64 to_clear = entry_bb & ~pc_bb;
-            while (to_clear)
+            while(to_clear)
                 nnue.removePiece(entry_acc, entry_acc, pc, popLsb(to_clear), ksq, view);
 
             entry.setPieceBB(c, pt, pc_bb);
@@ -38,8 +38,8 @@ void AccumTable::refresh(Color view, Board &board) {
 }
 
 void AccumTable::reset() {
-    for (Color c : {WHITE, BLACK})
-        for (int i = 0; i < 2 * BUCKET_SIZE; i++)
+    for(Color c : {WHITE, BLACK})
+        for(int i = 0; i < 2 * BUCKET_SIZE; i++)
             entries[c][i].reset();
 }
 

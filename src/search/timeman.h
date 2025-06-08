@@ -23,27 +23,27 @@ struct Limits {
 };
 
 class TimeMan {
-private:
+  private:
     TimePoint start_time;
 
-public:
+  public:
     TimeMan() : start_time(Clock::now()) {}
 
-    void start() { start_time = Clock::now(); }
+    void start() {
+        start_time = Clock::now();
+    }
 
     int64_t elapsedTime() const {
-        return std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now() - start_time)
-            .count();
+        return std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now() - start_time).count();
     }
 
     static Time getOptimum(int64_t time_left, int inc, int moves_to_go, int overhead) {
         Time time;
 
         int mtg = moves_to_go ? std::min(50, moves_to_go) : 50;
-        int64_t adj_time =
-            std::max<int64_t>(1LL, time_left + inc * mtg / 2 - overhead * (moves_to_go ? 1 : mtg));
+        int64_t adj_time = std::max<int64_t>(1LL, time_left + inc * mtg / 2 - overhead * (moves_to_go ? 1 : mtg));
 
-        if (moves_to_go == 0)
+        if(moves_to_go == 0)
             time.optimum = adj_time * 0.05;
         else
             time.optimum = std::min(time_left * 0.5, adj_time * 0.9 / std::max(1.0, mtg / 2.0));

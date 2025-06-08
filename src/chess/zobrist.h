@@ -8,7 +8,7 @@ class Board;
 
 // psuedorandom number generator from stockfish
 class PRNG {
-private:
+  private:
     U64 s;
 
     U64 rand64() {
@@ -16,12 +16,11 @@ private:
         return s * 2685821657736338717LL;
     }
 
-public:
+  public:
     explicit PRNG(U64 seed) : s(seed) {}
 
     // generate psuedorandom number
-    template <typename T>
-    T rand() {
+    template <typename T> T rand() {
         return T(rand64());
     }
 };

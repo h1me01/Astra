@@ -6,17 +6,17 @@
 namespace Chess {
 
 U64 perft(Board &board, int depth) {
-    if (depth == 0)
+    if(depth == 0)
         return 1;
 
     MoveList<> ml;
     ml.gen<LEGALS>(board);
 
-    if (depth == 1)
+    if(depth == 1)
         return ml.size();
 
     U64 nodes = 0;
-    for (const Move &move : ml) {
+    for(const Move &move : ml) {
         board.makeMove(move, false);
         nodes += perft(board, depth - 1);
         board.unmakeMove(move);
@@ -26,7 +26,7 @@ U64 perft(Board &board, int depth) {
 }
 
 void testPerft(Board &board, int depth) {
-    if (depth < 1) {
+    if(depth < 1) {
         std::cout << "Invalid depth value.\n";
         return;
     }
@@ -38,7 +38,7 @@ void testPerft(Board &board, int depth) {
     ml.gen<LEGALS>(board);
 
     U64 total_nodes = 0;
-    for (const Move &move : ml) {
+    for(const Move &move : ml) {
         board.makeMove(move, false);
         U64 nodes = perft(board, depth - 1);
         board.unmakeMove(move);

@@ -13,7 +13,7 @@ constexpr int AGE_MASK = 0xF8;
 
 #pragma pack(push, 1)
 class TTEntry {
-private:
+  private:
     uint16_t hash = 0;
     uint8_t depth = 0;
     uint16_t move = 0;
@@ -21,37 +21,54 @@ private:
     Score eval = VALUE_NONE;
     uint8_t age_pv_bound = NO_BOUND;
 
-public:
-    void setAgePvBound(uint8_t age_pv_bound) { this->age_pv_bound = age_pv_bound; }
+  public:
+    void setAgePvBound(uint8_t age_pv_bound) {
+        this->age_pv_bound = age_pv_bound;
+    }
 
-    U64 getHash() const { return hash; }
+    U64 getHash() const {
+        return hash;
+    }
 
-    uint8_t getDepth() const { return depth; }
+    uint8_t getDepth() const {
+        return depth;
+    }
 
-    Move getMove() const { return Move(move); }
+    Move getMove() const {
+        return Move(move);
+    }
 
     Score getScore(int ply) const {
-        if (score == VALUE_NONE)
+        if(score == VALUE_NONE)
             return VALUE_NONE;
-        if (score >= VALUE_TB_WIN_IN_MAX_PLY)
+        if(score >= VALUE_TB_WIN_IN_MAX_PLY)
             return score - ply;
-        if (score <= -VALUE_TB_WIN_IN_MAX_PLY)
+        if(score <= -VALUE_TB_WIN_IN_MAX_PLY)
             return score + ply;
         return score;
     }
 
-    Score getEval() const { return eval; }
+    Score getEval() const {
+        return eval;
+    }
 
-    uint8_t getAgePvBound() const { return age_pv_bound; }
+    uint8_t getAgePvBound() const {
+        return age_pv_bound;
+    }
 
-    Bound getBound() const { return Bound(age_pv_bound & 0x3); }
+    Bound getBound() const {
+        return Bound(age_pv_bound & 0x3);
+    }
 
-    uint8_t getAge() const { return age_pv_bound & AGE_MASK; }
+    uint8_t getAge() const {
+        return age_pv_bound & AGE_MASK;
+    }
 
-    bool getTTPv() { return age_pv_bound & 0x4; }
+    bool getTTPv() {
+        return age_pv_bound & 0x4;
+    }
 
-    void store(U64 hash, Move move, Score score, Score eval, Bound bound, int depth, int ply,
-               bool pv);
+    void store(U64 hash, Move move, Score score, Score eval, Bound bound, int depth, int ply, bool pv);
 };
 #pragma pack(pop)
 
@@ -65,14 +82,14 @@ struct TTBucket {
 static_assert(sizeof(TTBucket) == 32, "TTBucket is not packed as expected!");
 
 class TTable {
-private:
+  private:
     uint8_t age;
     U64 bucket_size{};
     TTBucket *buckets;
 
     int num_workers = 1;
 
-public:
+  public:
     explicit TTable(U64 size_mb);
     ~TTable();
 
@@ -82,18 +99,26 @@ public:
     TTEntry *lookup(U64 hash, bool *hit) const;
 
     size_t index(U64 hash) const {
-        return ((unsigned __int128)hash * (unsigned __int128)bucket_size) >> 64;
+        return ((unsigned __int128) hash * (unsigned __int128) bucket_size) >> 64;
     }
 
-    void prefetch(U64 hash) const { __builtin_prefetch(&buckets[index(hash)]); }
+    void prefetch(U64 hash) const {
+        __builtin_prefetch(&buckets[index(hash)]);
+    }
 
     int hashfull() const;
 
-    void incrementAge() { age += AGE_STEP; }
+    void incrementAge() {
+        age += AGE_STEP;
+    }
 
-    void setNumWorkers(int num_workers) { this->num_workers = num_workers; }
+    void setNumWorkers(int num_workers) {
+        this->num_workers = num_workers;
+    }
 
-    int getAge() const { return age; }
+    int getAge() const {
+        return age;
+    }
 };
 
 extern TTable tt;

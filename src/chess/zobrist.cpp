@@ -10,15 +10,15 @@ U64 side;
 void init() {
     PRNG rng(1070372);
 
-    for (int p = WHITE_PAWN; p <= BLACK_KING; p++)
-        for (int sq = a1; sq <= h8; sq++)
+    for(int p = WHITE_PAWN; p <= BLACK_KING; p++)
+        for(int sq = a1; sq <= h8; sq++)
             psq[p][sq] = rng.rand<U64>();
 
-    for (int f = FILE_A; f <= FILE_H; f++)
+    for(int f = FILE_A; f <= FILE_H; f++)
         ep[f] = rng.rand<U64>();
 
     castle[0] = 0;
-    for (int i = 1; i < 16; i++)
+    for(int i = 1; i < 16; i++)
         castle[i] = rng.rand<U64>();
 
     side = rng.rand<U64>();
@@ -43,9 +43,9 @@ U64 getEp(Square sq) {
 U64 getPawnZobrist(const Board &board) {
     U64 hash = 0;
 
-    for (Color c : {WHITE, BLACK}) {
+    for(Color c : {WHITE, BLACK}) {
         U64 pawns = board.getPieceBB(c, PAWN);
-        while (pawns)
+        while(pawns)
             hash ^= getPsq(makePiece(c, PAWN), popLsb(pawns));
     }
 
@@ -55,9 +55,9 @@ U64 getPawnZobrist(const Board &board) {
 U64 getNonPawnZobrist(const Board &board, Color c) {
     U64 hash = 0;
 
-    for (PieceType pt : {KNIGHT, BISHOP, ROOK, QUEEN, KING}) {
+    for(PieceType pt : {KNIGHT, BISHOP, ROOK, QUEEN, KING}) {
         U64 pieces = board.getPieceBB(c, pt);
-        while (pieces)
+        while(pieces)
             hash ^= getPsq(makePiece(c, pt), popLsb(pieces));
     }
 

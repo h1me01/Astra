@@ -15,7 +15,9 @@ std::vector<std::string> split(const std::string &str, char del);
 
 PieceType typeOfPromotion(const MoveType mt);
 
-inline bool isValidMove(const Move &m) { return m != NO_MOVE && m != NULL_MOVE; }
+inline bool isValidMove(const Move &m) {
+    return m != NO_MOVE && m != NULL_MOVE;
+}
 
 inline bool isProm(const Move &m) {
     assert(isValidMove(m));
@@ -31,18 +33,26 @@ inline bool isCap(const Move &m) {
 std::ostream &operator<<(std::ostream &os, const Move &m);
 
 // gets the opposite color
-constexpr Color operator~(Color c) { return Color(c ^ BLACK); }
+constexpr Color operator~(Color c) {
+    return Color(c ^ BLACK);
+}
 
-constexpr Piece makePiece(Color c, PieceType pt) { return Piece(pt + 6 * c); }
+constexpr Piece makePiece(Color c, PieceType pt) {
+    return Piece(pt + 6 * c);
+}
 
-constexpr PieceType typeOf(Piece pc) { return PIECE_TO_PIECE_TYPE[pc]; }
+constexpr PieceType typeOf(Piece pc) {
+    return PIECE_TO_PIECE_TYPE[pc];
+}
 
 constexpr Color colorOf(Piece pc) {
     assert(pc != NO_PIECE);
     return pc < 6 ? WHITE : BLACK;
 }
 
-inline Square &operator++(Square &s) { return s = Square(int(s) + 1); }
+inline Square &operator++(Square &s) {
+    return s = Square(int(s) + 1);
+}
 
 constexpr Square operator+(Square sq, Direction d) {
     Square _sq = Square(int(sq) + int(d));
@@ -78,8 +88,12 @@ constexpr int antiDiagOf(Square sq) {
     return rankOf(sq) + fileOf(sq);
 }
 
-inline Square &operator+=(Square &s, Direction d) { return s = s + d; }
-inline Square &operator-=(Square &s, Direction d) { return s = s - d; }
+inline Square &operator+=(Square &s, Direction d) {
+    return s = s + d;
+}
+inline Square &operator-=(Square &s, Direction d) {
+    return s = s - d;
+}
 
 constexpr Square relSquare(Color c, Square sq) {
     assert(sq >= a1 && sq <= h8);

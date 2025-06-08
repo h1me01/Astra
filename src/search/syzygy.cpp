@@ -27,7 +27,7 @@ ProbeData getProbeData(const Board &board) {
     d.b_occ = board.occupancy(BLACK);
     d.occ = d.w_occ | d.b_occ;
 
-    if (popCount(d.occ) > signed(TB_LARGEST)) {
+    if(popCount(d.occ) > signed(TB_LARGEST)) {
         d.is_allowed = false;
         return d;
     }
@@ -55,17 +55,17 @@ ProbeData getProbeData(const Board &board) {
 Score probeWDL(const Board &board) {
     ProbeData d = getProbeData(board);
 
-    if (!d.is_allowed)
+    if(!d.is_allowed)
         return VALUE_NONE;
 
-    unsigned wdl = tb_probe_wdl(d.w_occ, d.b_occ, d.kings, d.queens, d.rooks, d.bishops, d.knights,
-                                d.pawns, d.fmc, d.any_castling, d.ep_sq, d.stm);
+    unsigned wdl = tb_probe_wdl(d.w_occ, d.b_occ, d.kings, d.queens, d.rooks, d.bishops, d.knights, d.pawns, d.fmc,
+                                d.any_castling, d.ep_sq, d.stm);
 
-    if (wdl == TB_LOSS)
+    if(wdl == TB_LOSS)
         return -VALUE_TB_WIN;
-    if (wdl == TB_WIN)
+    if(wdl == TB_WIN)
         return VALUE_TB_WIN;
-    if (wdl == TB_BLESSED_LOSS || wdl == TB_CURSED_WIN || wdl == TB_DRAW)
+    if(wdl == TB_BLESSED_LOSS || wdl == TB_CURSED_WIN || wdl == TB_DRAW)
         return VALUE_DRAW;
 
     // if probing failed return nothing
@@ -75,26 +75,24 @@ Score probeWDL(const Board &board) {
 std::pair<Score, Move> probeDTZ(const Board &board) {
     ProbeData d = getProbeData(board);
 
-    if (!d.is_allowed)
+    if(!d.is_allowed)
         return {VALUE_NONE, NO_MOVE};
 
-    unsigned result =
-        tb_probe_root(d.w_occ, d.b_occ, d.kings, d.queens, d.rooks, d.bishops, d.knights, d.pawns,
-                      d.fmc, d.any_castling, d.ep_sq, d.stm, NULL);
+    unsigned result = tb_probe_root(d.w_occ, d.b_occ, d.kings, d.queens, d.rooks, d.bishops, d.knights, d.pawns, d.fmc,
+                                    d.any_castling, d.ep_sq, d.stm, NULL);
 
     // if the result failed don't do anything
-    if (result == TB_RESULT_FAILED || result == TB_RESULT_CHECKMATE ||
-        result == TB_RESULT_STALEMATE)
+    if(result == TB_RESULT_FAILED || result == TB_RESULT_CHECKMATE || result == TB_RESULT_STALEMATE)
         return {VALUE_NONE, NO_MOVE};
 
     int wdl = TB_GET_WDL(result);
 
     Score s = 0;
-    if (wdl == TB_LOSS)
+    if(wdl == TB_LOSS)
         s = -VALUE_TB_WIN_IN_MAX_PLY;
-    if (wdl == TB_WIN)
+    if(wdl == TB_WIN)
         s = VALUE_TB_WIN_IN_MAX_PLY;
-    if (wdl == TB_BLESSED_LOSS || wdl == TB_CURSED_WIN || wdl == TB_DRAW)
+    if(wdl == TB_BLESSED_LOSS || wdl == TB_CURSED_WIN || wdl == TB_DRAW)
         s = VALUE_DRAW;
 
     const int prom_type = TB_GET_PROMOTES(result);
@@ -103,10 +101,10 @@ std::pair<Score, Move> probeDTZ(const Board &board) {
 
     MoveList<> moves;
     moves.gen<LEGALS>(board);
-    for (auto m : moves) {
+    for(auto m : moves) {
         bool is_prom = typeOfPromotion(m.type()) == prom_type;
 
-        if (from == m.from() && to == m.to() && (is_prom || !isProm(m)))
+        if(from == m.from() && to == m.to() && (is_prom || !isProm(m)))
             return {s, m};
     }
 

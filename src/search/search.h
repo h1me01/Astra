@@ -12,8 +12,12 @@ struct PVLine {
     Move pv[MAX_PLY + 1];
     uint8_t length = 0;
 
-    Move &operator[](int depth) { return pv[depth]; }
-    Move operator[](int depth) const { return pv[depth]; }
+    Move &operator[](int depth) {
+        return pv[depth];
+    }
+    Move operator[](int depth) const {
+        return pv[depth];
+    }
 };
 
 struct RootMove {
@@ -28,7 +32,7 @@ struct RootMove {
 void initReductions();
 
 class Search {
-private:
+  private:
     bool debugging = false;
     int multipv_idx, root_depth;
 
@@ -39,8 +43,7 @@ private:
     TimeMan tm;
 
     Score aspSearch(int depth, Stack *ss);
-    Score negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_node,
-                  const Move skipped = NO_MOVE);
+    Score negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_node, const Move skipped = NO_MOVE);
     Score qSearch(int depth, Score alpha, Score beta, Stack *ss);
 
     Score evaluate();
@@ -54,7 +57,7 @@ private:
 
     void printUciInfo();
 
-public:
+  public:
     int id = 0; // main thread
 
     bool use_tb = false;
