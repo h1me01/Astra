@@ -11,7 +11,7 @@ make pgo
 ```
 
 ## NNUE
-- Version starting from 5.0 use a self-implemented Neural Network Trainer
+- Version starting from 5.0 [Astra-Trainer](https://github.com/h1me01/Astra-Trainer)
 - Versions below 5.0 used [CudAD](https://github.com/Luecx/CudAD)
 - Versions below 4.0 used [Pytorch-Neural-Network](https://github.com/h1me01/Pytorch-Neural-Network)
 
