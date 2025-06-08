@@ -1,62 +1,58 @@
 #pragma once
 
+#include "../chess/movegen.h"
 #include "search.h"
 #include "stack.h"
-#include "../chess/movegen.h"
 
-namespace Astra
-{
-    enum SearchType : int
-    {
-        N_SEARCH,
-        Q_SEARCH,
-        PC_SEARCH
-    };
+namespace Astra {
 
-    enum Stage : int
-    {
-        PLAY_TT_MOVE,
-        GEN_NOISY,
-        PLAY_NOISY,
-        PLAY_KILLER,
-        PLAY_COUNTER,
-        GEN_QUIETS,
-        PLAY_QUIETS,
-        PLAY_BAD_NOISY,
+enum SearchType : int { N_SEARCH, Q_SEARCH, PC_SEARCH };
 
-        GEN_QUIET_CHECKERS,
-        PLAY_QUIET_CHECKERS,
-    };
+enum Stage : int {
+    PLAY_TT_MOVE,
+    GEN_NOISY,
+    PLAY_NOISY,
+    PLAY_KILLER,
+    PLAY_COUNTER,
+    GEN_QUIETS,
+    PLAY_QUIETS,
+    PLAY_BAD_NOISY,
 
-    class MovePicker
-    {
-    private:
-        int idx;
-        Stage stage;
+    GEN_QUIET_CHECKERS,
+    PLAY_QUIET_CHECKERS,
+};
 
-        SearchType st;
-        const Board &board;
-        const History &history;
-        const Stack *ss;
+class MovePicker {
+  private:
+    int idx;
+    Stage stage;
 
-        bool gen_checkers;
-        bool skip_quiets = false;
+    SearchType st;
+    const Board &board;
+    const History &history;
+    const Stack *ss;
 
-        MoveList<> ml_main;
-        MoveList<> ml_bad_noisy;
+    bool gen_checkers;
+    bool skip_quiets = false;
 
-        void scoreQuietMoves();
-        void scoreNoisyMoves();
+    MoveList<> ml_main;
+    MoveList<> ml_bad_noisy;
 
-    public:
-        int see_cutoff = 0;
+    void scoreQuietMoves();
+    void scoreNoisyMoves();
 
-        MovePicker(SearchType st, const Board &board, const History &history, const Stack *ss, const Move &tt_move, bool gen_checks = false);
+  public:
+    int see_cutoff = 0;
 
-        Move nextMove();
-        void skipQuiets() { skip_quiets = true; }
+    MovePicker(SearchType st, const Board &board, const History &history, const Stack *ss, const Move &tt_move,
+               bool gen_checks = false);
 
-        Move tt_move, killer, counter;
-    };
+    Move nextMove();
+    void skipQuiets() {
+        skip_quiets = true;
+    }
+
+    Move tt_move, killer, counter;
+};
 
 } // namespace Astra

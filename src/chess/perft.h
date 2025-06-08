@@ -2,9 +2,8 @@
 
 #include "board.h"
 
-namespace Chess
-{
+namespace Chess {
 
-    void testPerft(Board &board, int depth);
+void testPerft(Board &board, int depth);
 
 } // namespace Chess

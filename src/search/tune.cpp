@@ -1,49 +1,36 @@
+#include "tune.h"
 #include <iostream>
 #include <sstream>
-#include <vector>
-#include "tune.h"
 
-namespace Astra
-{
+namespace Astra {
 
-    Param::Param(std::string name, int value, int min, int max)
-        : name(std::move(name)), value(value), min(min), max(max)
-    {
-        if (value < min || value > max)
-        {
-            std::cerr << "info string Value out of range for parameter " << name << std::endl;
-            return;
-        }
-
-        params.push_back(this);
+Param::Param(std::string name, int value, int min, int max) : name(std::move(name)), value(value), min(min), max(max) {
+    if(value < min || value > max) {
+        std::cerr << "info string Value out of range for parameter " << name << std::endl;
+        return;
     }
 
-    void setParam(const std::string &name, int value)
-    {
-        for (auto *param : params)
-            if (param->name == name)
-            {
-                if (value < param->min || value > param->max)
-                {
-                    std::cerr << "info string Value out of range for parameter " << name << std::endl;
-                    return;
-                }
+    params.push_back(this);
+}
 
-                param->value = value;
+void setParam(const std::string &name, int value) {
+    for(auto *param : params)
+        if(param->name == name) {
+            if(value < param->min || value > param->max) {
+                std::cerr << "info string Value out of range for parameter " << name << std::endl;
                 return;
             }
-    }
 
-    void paramsToSpsa()
-    {
-        for (auto &param : params)
-            std::cout << param->name
-                      << ", " << "int"
-                      << ", " << param->value
-                      << ", " << param->min
-                      << ", " << param->max
-                      << ", " << std::max(0.5, double(param->max - param->min) / 20.0)
-                      << ", " << 0.002 << "\n";
-    }
+            param->value = value;
+            return;
+        }
+}
+
+void paramsToSpsa() {
+    for(auto &param : params)
+        std::cout << param->name << ", " << "int"
+                  << ", " << param->value << ", " << param->min << ", " << param->max << ", "
+                  << std::max(0.5, double(param->max - param->min) / 20.0) << ", " << 0.002 << "\n";
+}
 
 } // namespace Astra

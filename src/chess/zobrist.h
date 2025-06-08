@@ -1,45 +1,43 @@
 #pragma once
 
-#include "types.h"
 #include "board.h"
+#include "types.h"
 
-namespace Chess
-{
-    class Board;
+namespace Chess {
 
-    // psuedorandom number generator from stockfish
-    class PRNG
-    {
-    private:
-        U64 s;
+class Board;
 
-        U64 rand64()
-        {
-            s ^= s >> 12, s ^= s << 25, s ^= s >> 27;
-            return s * 2685821657736338717LL;
-        }
+// psuedorandom number generator from stockfish
+class PRNG {
+  private:
+    U64 s;
 
-    public:
-        explicit PRNG(U64 seed) : s(seed) {}
+    U64 rand64() {
+        s ^= s >> 12, s ^= s << 25, s ^= s >> 27;
+        return s * 2685821657736338717LL;
+    }
 
-        // generate psuedorandom number
-        template <typename T>
-        T rand() { return T(rand64()); }
-    };
+  public:
+    explicit PRNG(U64 seed) : s(seed) {}
 
-    namespace Zobrist
-    {
-        extern U64 side;
+    // generate psuedorandom number
+    template <typename T> T rand() {
+        return T(rand64());
+    }
+};
 
-        void init();
+namespace Zobrist {
+extern U64 side;
 
-        U64 getPsq(Piece pc, Square sq);
-        U64 getCastle(int idx);
-        U64 getEp(Square sq);
+void init();
 
-        U64 getPawnZobrist(const Board &board);
-        U64 getNonPawnZobrist(const Board &board, Color c);
+U64 getPsq(Piece pc, Square sq);
+U64 getCastle(int idx);
+U64 getEp(Square sq);
 
-    } // namespace Zobrist
+U64 getPawnZobrist(const Board &board);
+U64 getNonPawnZobrist(const Board &board, Color c);
+
+} // namespace Zobrist
 
 } // namespace Chess

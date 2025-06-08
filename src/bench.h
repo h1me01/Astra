@@ -1,8 +1,7 @@
 #pragma once
 
-namespace Bench
-{
+namespace Bench {
 
-    void bench(int depth);
+void bench(int depth);
 
 } // namespace Bench

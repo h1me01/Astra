@@ -1,114 +1,106 @@
 #pragma once
 
-#include "stack.h"
 #include "../chess/board.h"
+#include "stack.h"
 
 #define CORR_IDX(hash) ((hash) % 16384)
 
-namespace Astra
-{
-    constexpr size_t CORR_SIZE = 16384;
+namespace Astra {
 
-    int historyBonus(int depth);
+constexpr size_t CORR_SIZE = 16384;
 
-    class History
-    {
-    private:
-        Move counters[NUM_SQUARES][NUM_SQUARES];
+int historyBonus(int depth);
 
-        int16_t hh[NUM_COLORS][NUM_SQUARES][NUM_SQUARES]{};
-        int16_t ch[NUM_PIECES][NUM_SQUARES][NUM_PIECE_TYPES]{};
+class History {
+  private:
+    Move counters[NUM_SQUARES][NUM_SQUARES];
 
-        int16_t cont_corr[NUM_PIECES][NUM_SQUARES][NUM_PIECES][NUM_SQUARES]{};
-        int16_t pawn_corr[NUM_COLORS][CORR_SIZE]{};
-        int16_t w_non_pawn_corr[NUM_COLORS][CORR_SIZE]{};
-        int16_t b_non_pawn_corr[NUM_COLORS][CORR_SIZE]{};
+    int16_t hh[NUM_COLORS][NUM_SQUARES][NUM_SQUARES]{};
+    int16_t ch[NUM_PIECES][NUM_SQUARES][NUM_PIECE_TYPES]{};
 
-        void updateCapHistory(const Board &board, Move &move, int bonus);
+    int16_t cont_corr[NUM_PIECES][NUM_SQUARES][NUM_PIECES][NUM_SQUARES]{};
+    int16_t pawn_corr[NUM_COLORS][CORR_SIZE]{};
+    int16_t w_non_pawn_corr[NUM_COLORS][CORR_SIZE]{};
+    int16_t b_non_pawn_corr[NUM_COLORS][CORR_SIZE]{};
 
-    public:
-        int16_t conth[2][NUM_PIECES][NUM_SQUARES][NUM_PIECES][NUM_SQUARES]{};
+    void updateCapHistory(const Board &board, Move &move, int bonus);
 
-        void update(const Board &board, Move &move, Stack *ss, Move *q_moves, int qc, Move *c_moves, int cc, int depth);
+  public:
+    int16_t conth[2][NUM_PIECES][NUM_SQUARES][NUM_PIECES][NUM_SQUARES]{};
 
-        void updateQH(Color c, Move move, int bonus);
-        void updateContH(Move &move, Stack *ss, int bonus);
-        void updateMaterialCorr(const Board &board, Score raw_eval, Score real_score, int depth);
-        void updateContCorr(Score raw_eval, Score real_score, int depth, const Stack *ss);
+    void update(const Board &board, Move &move, Stack *ss, Move *q_moves, int qc, Move *c_moves, int cc, int depth);
 
-        Move getCounterMove(Move move) const;
+    void updateQH(Color c, Move move, int bonus);
+    void updateContH(Move &move, Stack *ss, int bonus);
+    void updateMaterialCorr(const Board &board, Score raw_eval, Score real_score, int depth);
+    void updateContCorr(Score raw_eval, Score real_score, int depth, const Stack *ss);
 
-        int getHH(Color stm, Move move) const;
-        int getQH(const Board &board, const Stack *ss, Move &move) const;
-        int getCH(const Board &board, Move &move) const;
-        int getMaterialCorr(const Board &board) const;
-        int getContCorr(const Stack *ss) const;
-    };
+    Move getCounterMove(Move move) const;
 
-    inline int History::getHH(Color stm, Move move) const
-    {
-        return hh[stm][move.from()][move.to()];
-    }
+    int getHH(Color stm, Move move) const;
+    int getQH(const Board &board, const Stack *ss, Move &move) const;
+    int getCH(const Board &board, Move &move) const;
+    int getMaterialCorr(const Board &board) const;
+    int getContCorr(const Stack *ss) const;
+};
 
-    inline int History::getQH(const Board &board, const Stack *ss, Move &move) const
-    {
-        Square from = move.from();
-        Square to = move.to();
-        Piece pc = board.pieceAt(from);
+inline int History::getHH(Color stm, Move move) const {
+    return hh[stm][move.from()][move.to()];
+}
 
-        assert(to >= a1 && to <= h8);
-        assert(from >= a1 && from <= h8);
-        assert(pc >= WHITE_PAWN && pc <= BLACK_KING);
+inline int History::getQH(const Board &board, const Stack *ss, Move &move) const {
+    Square from = move.from();
+    Square to = move.to();
+    Piece pc = board.pieceAt(from);
 
-        return hh[board.getTurn()][from][to] +
-               (int)(*(ss - 1)->conth)[pc][to] +
-               (int)(*(ss - 2)->conth)[pc][to] +
-               (int)(*(ss - 4)->conth)[pc][to];
-    }
+    assert(to >= a1 && to <= h8);
+    assert(from >= a1 && from <= h8);
+    assert(pc >= WHITE_PAWN && pc <= BLACK_KING);
 
-    inline int History::getCH(const Board &board, Move &move) const
-    {
-        PieceType captured = move.type() == EN_PASSANT ? PAWN : typeOf(board.pieceAt(move.to()));
-        Piece pc = board.pieceAt(move.from());
+    return hh[board.getTurn()][from][to] +    //
+           (int) (*(ss - 1)->conth)[pc][to] + //
+           (int) (*(ss - 2)->conth)[pc][to] + //
+           (int) (*(ss - 4)->conth)[pc][to];
+}
 
-        assert(pc >= WHITE_PAWN && pc <= BLACK_KING);
-        assert(captured >= PAWN && captured < KING);
+inline int History::getCH(const Board &board, Move &move) const {
+    PieceType captured = move.type() == EN_PASSANT ? PAWN : typeOf(board.pieceAt(move.to()));
+    Piece pc = board.pieceAt(move.from());
 
-        return ch[pc][move.to()][captured];
-    }
+    assert(pc >= WHITE_PAWN && pc <= BLACK_KING);
+    assert(captured >= PAWN && captured < KING);
 
-    inline Move History::getCounterMove(Move prev_move) const
-    {
-        Square from = prev_move.from();
-        Square to = prev_move.to();
+    return ch[pc][move.to()][captured];
+}
 
-        assert(to >= a1 && to <= h8);
-        assert(from >= a1 && from <= h8);
+inline Move History::getCounterMove(Move prev_move) const {
+    Square from = prev_move.from();
+    Square to = prev_move.to();
 
-        return counters[from][to];
-    }
+    assert(to >= a1 && to <= h8);
+    assert(from >= a1 && from <= h8);
 
-    inline int History::getMaterialCorr(const Board &board) const
-    {
-        Color stm = board.getTurn();
+    return counters[from][to];
+}
 
-        return pawn_corr[stm][CORR_IDX(board.getPawnHash())] +
-               w_non_pawn_corr[stm][CORR_IDX(board.getNonPawnHash(WHITE))] +
-               b_non_pawn_corr[stm][CORR_IDX(board.getNonPawnHash(BLACK))];
-    }
+inline int History::getMaterialCorr(const Board &board) const {
+    Color stm = board.getTurn();
 
-    inline int History::getContCorr(const Stack *ss) const
-    {
-        const Move prev_move = (ss - 1)->curr_move;
-        const Move pprev_move = (ss - 2)->curr_move;
+    return pawn_corr[stm][CORR_IDX(board.getPawnHash())] + w_non_pawn_corr[stm][CORR_IDX(board.getNonPawnHash(WHITE))] +
+           b_non_pawn_corr[stm][CORR_IDX(board.getNonPawnHash(BLACK))];
+}
 
-        Piece prev_p = (ss - 1)->moved_piece;
-        Piece pprev_p = (ss - 2)->moved_piece;
+inline int History::getContCorr(const Stack *ss) const {
+    const Move prev_move = (ss - 1)->curr_move;
+    const Move pprev_move = (ss - 2)->curr_move;
 
-        if (!prev_move || !pprev_move)
-            return 0;
+    Piece prev_p = (ss - 1)->moved_piece;
+    Piece pprev_p = (ss - 2)->moved_piece;
 
-        return cont_corr[prev_p][prev_move.to()][pprev_p][pprev_move.to()];
-    }
+    if(!prev_move || !pprev_move)
+        return 0;
+
+    return cont_corr[prev_p][prev_move.to()][pprev_p][pprev_move.to()];
+}
 
 } // namespace Astra
