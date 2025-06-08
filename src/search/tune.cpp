@@ -1,7 +1,6 @@
 #include "tune.h"
 #include <iostream>
 #include <sstream>
-#include <vector>
 
 namespace Astra {
 
