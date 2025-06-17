@@ -23,11 +23,11 @@ class Accum;
 
 // 2x(10x768->1024)->1
 
-constexpr int BUCKET_SIZE = 10;
+constexpr int BUCKET_SIZE = 12;
 constexpr int FEATURE_SIZE = 768;
 
 constexpr int FT_SIZE = BUCKET_SIZE * FEATURE_SIZE;
-constexpr int L1_SIZE = 1024;
+constexpr int L1_SIZE = 1536;
 constexpr int OUTPUT_SIZE = 1;
 
 constexpr int FT_QUANT = 255;
