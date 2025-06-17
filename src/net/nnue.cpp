@@ -132,7 +132,7 @@ int32_t NNUE::forward(Board &board) const {
         res = avx_add_epi32(res, product);
     }
 
-    return (horizontalSum(res) / FT_QUANT + l1_biases[0]) * 400 / (FT_QUANT * L1_QUANT);
+    return horizontalSum(res) / (FT_QUANT * L1_QUANT) + l1_biases[0] / L1_QUANT;
 #else
     int32_t output = 0;
 
