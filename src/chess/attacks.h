@@ -1,6 +1,6 @@
 #pragma once
 
-#include <assert.h> 
+#include <assert.h>
 
 #include "bitboard.h"
 #include "types.h"
