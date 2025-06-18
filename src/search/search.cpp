@@ -187,15 +187,16 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_no
     if(pv_node)
         pv_table[ss->ply].length = ss->ply;
 
+    // do quiescence search if depth is less than 1
+    if(depth <= 0)
+        return qSearch(0, alpha, beta, ss);
+
+    // check for upcoming repetition
     if(!root_node && alpha < VALUE_DRAW && board.hasUpcomingRepetition(ss->ply)) {
         alpha = VALUE_DRAW;
         if(alpha >= beta)
             return alpha;
     }
-
-    // do quiescence search if depth is less than 1
-    if(depth <= 0)
-        return qSearch(0, alpha, beta, ss);
 
     // selective depth
     if(pv_node && ss->ply > seldepth)
