@@ -107,7 +107,7 @@ TTEntry *TTable::lookup(U64 hash, bool *hit) const {
     TTEntry *entries = buckets[index(hash)].entries;
 
     for(int i = 0; i < BUCKET_SIZE; i++) {
-        if(entries[i].getHash() == hash16) {
+        if(entries[i].getHash() == hash16 || !entries[i].getDepth()) {
             uint8_t age_pv_bound = (uint8_t) (tt.getAge() | (entries[i].getAgePvBound() & (AGE_STEP - 1)));
             entries[i].setAgePvBound(age_pv_bound);
 
