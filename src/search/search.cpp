@@ -242,13 +242,13 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_no
         tt_pv |= ent->getTTPv();
     }
 
-    if(!pv_node &&                              //
-       tt_score != VALUE_NONE &&                //
-       tt_depth > depth - (tt_score <= beta) && //
-       (tt_bound & (tt_score >= beta ? LOWER_BOUND : UPPER_BOUND))) {
-
+    if(!pv_node &&                                                 //
+       tt_depth >= depth &&                                        //
+       tt_score != VALUE_NONE &&                                   //
+       (tt_bound & (tt_score >= beta ? LOWER_BOUND : UPPER_BOUND)) //
+    ) {
         // idea from stockfish
-        if(isValidMove(tt_move) && tt_score >= beta) {
+        if(isValidMove(tt_move) && tt_score >= beta && tt_depth > depth) {
             if(prev_sq != NO_SQUARE && (ss - 1)->move_count >= 3 && !(ss - 1)->is_cap)
                 history.updateContH((ss - 1)->curr_move, ss - 1, -historyMalus(depth));
         }
@@ -256,6 +256,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_no
         if(board.halfMoveClock() < 90)
             return tt_score;
     }
+
     // tablebase probing
     if(use_tb && !root_node) {
         Score tb_score = probeWDL(board);
@@ -342,8 +343,14 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_no
 
         // null move pruning
         int nmp_margin = nmp_depth_mult * depth - nmp_base;
-        if(!skipped && depth >= 4 && eval >= beta && ss->static_eval + nmp_margin >= beta && //
-           board.nonPawnMat() && (ss - 1)->curr_move != NULL_MOVE && beta > -VALUE_TB_WIN_IN_MAX_PLY) {
+        if(!skipped &&                          //
+           depth >= 4 &&                        //
+           eval >= beta &&                      //
+           board.nonPawnMat() &&                //
+           beta > -VALUE_TB_WIN_IN_MAX_PLY &&   //
+           (ss - 1)->curr_move != NULL_MOVE &&  //
+           ss->static_eval + nmp_margin >= beta //
+        ) {
             int R = 4 + depth / 3 + std::min(4, (eval - beta) / nmp_eval_div);
 
             ss->curr_move = NULL_MOVE;
