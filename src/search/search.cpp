@@ -249,11 +249,11 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_no
     ) {
         // idea from stockfish
         if(isValidMove(tt_move) && tt_score >= beta && tt_depth > depth) {
-            if(prev_sq != NO_SQUARE && (ss - 1)->move_count >= 3 && !(ss - 1)->is_cap)
+            if(prev_sq != NO_SQUARE && (ss - 1)->move_count <= 3 && !(ss - 1)->is_cap)
                 history.updateContH((ss - 1)->curr_move, ss - 1, -historyMalus(depth));
         }
 
-        if(board.halfMoveClock() < 90)
+        if(board.halfMoveClock() < 90) // idea from stockfish
             return tt_score;
     }
 
