@@ -686,8 +686,13 @@ Score Search::qSearch(int depth, Score alpha, Score beta, Stack *ss) {
         futility = eval + qfp_margin;
 
         // stand pat
-        if(best_score >= beta)
+        if(best_score >= beta) {
+            if(std::abs(best_score) < VALUE_TB_WIN_IN_MAX_PLY)
+                best_score = (best_score + beta) / 2;
+            if(!tt_hit)
+                ent->store(hash, NO_MOVE, VALUE_NONE, raw_eval, NO_BOUND, ent->getDepth(), ss->ply, tt_pv);
             return best_score;
+        }
         if(best_score > alpha)
             alpha = best_score;
     }
