@@ -51,7 +51,8 @@ void TTEntry::store(U64 hash, Move move, Score score, Score eval, Bound bound, i
         this->score = score;
         this->eval = eval;
         age_pv_bound = (uint8_t) (bound + (pv << 2)) | tt.getAge();
-    }
+    } else if(this->depth >= 5 && bound != EXACT_BOUND)
+        this->depth--;
 }
 
 // class TTable
