@@ -104,11 +104,11 @@ TTEntry *TTable::lookup(U64 hash, bool *hit) const {
     TTEntry *entries = buckets[index(hash)].entries;
 
     for(int i = 0; i < BUCKET_SIZE; i++)
-        if(entries[i].getHash() == hash16 || !entries[i].getDepth()) {
+        if(entries[i].getHash() == hash16) {
             uint8_t age_pv_bound = (uint8_t) (tt.getAge() | (entries[i].getAgePvBound() & (AGE_STEP - 1)));
             entries[i].setAgePvBound(age_pv_bound);
 
-            *hit = entries[i].getDepth();
+            *hit = bool(entries[i].getDepth());
             return &entries[i];
         }
 
@@ -116,8 +116,8 @@ TTEntry *TTable::lookup(U64 hash, bool *hit) const {
 
     for(int i = 1; i < BUCKET_SIZE; i++) {
         int worst_value =
-            worst_entry->getDepth() - ((AGE_CYCLE + tt.getAge() - worst_entry->getAgePvBound()) & AGE_MASK) / 2;
-        int entry_value = entries[i].getDepth() - ((AGE_CYCLE + tt.getAge() - entries[i].getAgePvBound()) & AGE_MASK) / 2;
+            worst_entry->getDepth() - ((AGE_CYCLE + tt.getAge() - worst_entry->getAgePvBound()) & AGE_MASK);
+        int entry_value = entries[i].getDepth() - ((AGE_CYCLE + tt.getAge() - entries[i].getAgePvBound()) & AGE_MASK);
 
         if(entry_value < worst_value)
             worst_entry = &entries[i];
