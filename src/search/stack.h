@@ -9,8 +9,11 @@ using ContH = int16_t[NUM_PIECES][NUM_SQUARES];
 
 struct Stack {
     int ply;
-    Score static_eval = VALUE_NONE;
+    int move_count = 0;
 
+    bool is_cap = false;
+
+    Score static_eval = VALUE_NONE;
     Piece moved_piece = NO_PIECE;
 
     Move killer = NO_MOVE;

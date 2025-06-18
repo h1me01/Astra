@@ -184,6 +184,8 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_no
     Score max_score = VALUE_MATE;
     Score best_score = -VALUE_MATE;
 
+    ss->move_count = 0;
+
     if(pv_node)
         pv_table[ss->ply].length = ss->ply;
 
@@ -223,6 +225,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_no
     bool tt_hit = false;
     TTEntry *ent = !skipped ? tt.lookup(hash, &tt_hit) : nullptr;
 
+    Square prev_sq = (isValidMove((ss - 1)->curr_move) ? (ss - 1)->curr_move.to() : NO_SQUARE);
     Move tt_move = NO_MOVE;
     Bound tt_bound = NO_BOUND;
     Score tt_score = VALUE_NONE;
@@ -239,10 +242,20 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_no
         tt_pv |= ent->getTTPv();
     }
 
-    if(!pv_node && tt_depth >= depth && tt_score != VALUE_NONE && //
-       board.halfMoveClock() < 85 && (tt_bound & (tt_score >= beta ? LOWER_BOUND : UPPER_BOUND)))
-        return tt_score;
+    if(!pv_node &&                              //
+       tt_score != VALUE_NONE &&                //
+       tt_depth > depth - (tt_score <= beta) && //
+       (tt_bound & (tt_score >= beta ? LOWER_BOUND : UPPER_BOUND))) {
 
+        // idea from stockfish
+        if(isValidMove(tt_move) && tt_score >= beta) {
+            if(prev_sq != NO_SQUARE && (ss - 1)->move_count >= 3 && !(ss - 1)->is_cap)
+                history.updateContH((ss - 1)->curr_move, ss - 1, -historyMalus(depth));
+        }
+
+        if(board.halfMoveClock() < 90)
+            return tt_score;
+    }
     // tablebase probing
     if(use_tb && !root_node) {
         Score tb_score = probeWDL(board);
@@ -409,6 +422,8 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_no
         tt.prefetch(board.keyAfter(move));
 
         made_moves++;
+        ss->move_count = made_moves;
+        ss->is_cap = isCap(move);
 
         int history_score = isCap(move) ? history.getCH(board, move) : history.getQH(board, ss, move);
 
