@@ -75,6 +75,9 @@ PARAM(hbonus_margin, 41, 10, 200);
 
 PARAM(qfp_margin, 113, 40, 280);
 
+PARAM(asp_delta, 12, 1, 30);
+PARAM(asp_depth, 4, 2, 6);
+
 PARAM(history_bonus_mult, 371, 1, 1536);
 PARAM(history_bonus_minus, -56, -500, 500);
 PARAM(max_history_bonus, 2527, 1, 4096);

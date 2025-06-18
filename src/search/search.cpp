@@ -127,8 +127,8 @@ Score Search::aspSearch(int depth, Stack *ss) {
     Score alpha = -VALUE_INFINITE;
     Score beta = VALUE_INFINITE;
 
-    int delta = 12;
-    if(depth >= 4) {
+    int delta = asp_delta;
+    if(depth >= asp_depth) {
         Score avg_score = root_moves[multipv_idx].avg_score;
         alpha = std::max(avg_score - delta, -int(VALUE_INFINITE));
         beta = std::min(avg_score + delta, int(VALUE_INFINITE));
