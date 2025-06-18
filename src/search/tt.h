@@ -68,6 +68,8 @@ class TTEntry {
         return age_pv_bound & 0x4;
     }
 
+    int relativeAge() const;
+
     void store(U64 hash, Move move, Score score, Score eval, Bound bound, int depth, int ply, bool pv);
 };
 #pragma pack(pop)
