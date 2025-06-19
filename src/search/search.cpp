@@ -498,7 +498,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_no
             } else if(sbeta >= beta)
                 return sbeta;
             else if(tt_score >= beta)
-                extensions = -2 + pv_node;
+                extensions = -3;
             else if(cut_node)
                 extensions = -2;
         }
