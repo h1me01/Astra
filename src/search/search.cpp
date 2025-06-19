@@ -526,7 +526,6 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_no
             r += (isValidMove(tt_move) ? isCap(tt_move) : 0);
             // decrease when in pv node
             r -= tt_pv;
-            r -= pv_node;
             // decrease when move gives check
             r -= board.inCheck();
             // decrease when tt depth is at least current depth
