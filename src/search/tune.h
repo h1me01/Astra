@@ -48,22 +48,28 @@ PARAM(static_h_mult, -48, -500, -1);
 PARAM(static_h_min, 62, 1, 1000);
 PARAM(static_h_max, 230, 1, 1000);
 
+PARAM(rzr_depth, 5, 2, 20);
+PARAM(rzr_depth_mult, 242, 150, 350);
+
+PARAM(rfp_depth, 10, 2, 20);
 PARAM(rfp_depth_mult, 101, 40, 200);
 PARAM(rfp_improving_mult, 85, 40, 200);
-
-PARAM(rzr_depth_mult, 242, 150, 350);
 
 PARAM(nmp_depth_mult, 27, 1, 58);
 PARAM(nmp_base, 159, 1, 400);
 PARAM(nmp_eval_div, 215, 50, 350);
 
+PARAM(prob_cut_margin, 174, 1, 500);
+
+PARAM(hp_depth, 5, 1, 15);
 PARAM(hp_div, 7725, 1, 16384);
 
+PARAM(fp_depth, 11, 2, 20);
 PARAM(fp_base, 129, 1, 300);
 PARAM(fp_mult, 91, 5, 200);
 
 PARAM(see_cap_margin, 97, 5, 200);
-PARAM(see_quiet_margin, 80, -50, 100);
+PARAM(see_quiet_margin, 22, -100, 100);
 
 PARAM(ext_margin, 85, 10, 250);
 PARAM(zws_margin, 50, 10, 160);

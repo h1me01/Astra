@@ -155,8 +155,9 @@ Score Search::aspSearch(int depth, Stack *ss) {
             beta = std::min(beta + delta, int(VALUE_INFINITE));
             if(std::abs(result) < VALUE_TB_WIN_IN_MAX_PLY)
                 fail_high_count++;
-        } else
+        } else {
             break;
+        }
 
         delta += delta / 3;
     }
@@ -333,17 +334,17 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_no
 
     // only use pruning when not in check and pv node
     if(!in_check && !pv_node) {
-        // reverse futility pruning
-        int rfp_margin = rfp_depth_mult * depth - rfp_improving_mult * improving;
-        if(!skipped && depth < 10 && eval < VALUE_TB_WIN_IN_MAX_PLY && eval - rfp_margin >= beta)
-            return (eval + beta) / 2;
-
         // razoring
-        if(depth < 5 && eval + rzr_depth_mult * depth < alpha) {
+        if(depth < rzr_depth && eval + rzr_depth_mult * depth < alpha) {
             Score score = qSearch(0, alpha, beta, ss);
             if(score <= alpha)
                 return score;
         }
+
+        // reverse futility pruning
+        int rfp_margin = rfp_depth_mult * depth - rfp_improving_mult * improving;
+        if(!skipped && depth < rfp_depth && eval < VALUE_TB_WIN_IN_MAX_PLY && eval - rfp_margin >= beta)
+            return (eval + beta) / 2;
 
         // null move pruning
         int nmp_margin = nmp_depth_mult * depth - nmp_base;
@@ -378,11 +379,11 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_no
             depth--;
 
         // probcut
-        int beta_cut = beta + 174;
-        if(!skipped &&                                                               //
-           depth > 5 &&                                                              //
-           std::abs(beta) < VALUE_TB_WIN_IN_MAX_PLY &&                               //
-           !(tt_depth >= depth - 3 && tt_score != VALUE_NONE && tt_score < beta_cut) //
+        int beta_cut = beta + prob_cut_margin;
+        if(!skipped &&                                     //
+           depth > 4 &&                                    //
+           std::abs(beta) < VALUE_TB_WIN_IN_MAX_PLY &&     //
+           !(tt_depth >= depth - 3 && tt_score < beta_cut) //
         ) {
             MovePicker mp(PC_SEARCH, board, history, ss, tt_move);
             mp.see_cutoff = beta_cut > ss->static_eval;
@@ -450,11 +451,11 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_no
 
             if(!isCap(move) && move.type() != PQ_QUEEN) {
                 // history pruning
-                if(history_score < -hp_depth_mult * depth && lmr_depth < 5)
+                if(history_score < -hp_depth_mult * depth && lmr_depth < hp_depth)
                     continue;
 
                 // futility pruning
-                if(!in_check && lmr_depth < 11 && ss->static_eval + fp_base + lmr_depth * fp_mult <= alpha)
+                if(!in_check && lmr_depth < fp_depth && ss->static_eval + fp_base + lmr_depth * fp_mult <= alpha)
                     mp.skipQuiets();
             }
 
