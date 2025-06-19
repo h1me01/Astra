@@ -516,7 +516,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_no
         Score score = VALUE_NONE;
 
         // late move reductions
-        if(depth > 1 && made_moves > 2 && (!tt_pv || !isCap(move))) {
+        if(depth >= 2 && made_moves > 1 && (!tt_pv || !isCap(move))) {
             int r = REDUCTIONS[depth][made_moves];
             // increase when not improving
             r += !improving;
@@ -526,6 +526,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_no
             r += (isValidMove(tt_move) ? isCap(tt_move) : 0);
             // decrease when in pv node
             r -= tt_pv;
+            r -= pv_node;
             // decrease when move gives check
             r -= board.inCheck();
             // decrease when tt depth is at least current depth
