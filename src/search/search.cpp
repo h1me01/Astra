@@ -809,7 +809,7 @@ Score Search::qSearch(int depth, Score alpha, Score beta, Stack *ss) {
 Score Search::evaluate() {
     int32_t eval = NNUE::nnue.forward(board);
     // scale based on phase
-    eval = (230 + board.getPhase()) * eval / 330;
+    eval = (128 + board.getPhase()) * eval / 128;
     return std::clamp(eval, -(VALUE_MATE - MAX_PLY) + 1, VALUE_MATE - MAX_PLY - 1);
 }
 
