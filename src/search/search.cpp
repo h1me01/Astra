@@ -245,18 +245,10 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_no
     if(!pv_node &&                                                 //
        tt_depth >= depth &&                                        //
        tt_score != VALUE_NONE &&                                   //
+       board.halfMoveClock() < 90 &&                               // idea from stockfish
        (tt_bound & (tt_score >= beta ? LOWER_BOUND : UPPER_BOUND)) //
     ) {
-        // idea from stockfish
-        Square prev_sq = (isValidMove((ss - 1)->curr_move) ? (ss - 1)->curr_move.to() : NO_SQUARE);
-
-        if(isValidMove(tt_move) && tt_score >= beta && tt_depth > depth) {
-            if(prev_sq != NO_SQUARE && (ss - 1)->move_count <= 3 && !(ss - 1)->is_cap)
-                history.updateContH((ss - 1)->curr_move, ss - 1, -historyMalus(depth));
-        }
-
-        if(board.halfMoveClock() < 90) // idea from stockfish
-            return tt_score;
+        return tt_score;
     }
 
     // tablebase probing
