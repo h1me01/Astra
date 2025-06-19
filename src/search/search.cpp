@@ -519,7 +519,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_no
         Score score = VALUE_NONE;
 
         // late move reductions
-        if(depth >= 2 && made_moves >= 3 && (!tt_pv || !isCap(move))) {
+        if(depth >= 2 && made_moves > 1 && (!tt_pv || !isCap(move))) {
             int r = REDUCTIONS[depth][made_moves];
             // increase when not improving
             r += !improving;
