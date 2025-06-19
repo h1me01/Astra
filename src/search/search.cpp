@@ -226,7 +226,6 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_no
     bool tt_hit = false;
     TTEntry *ent = !skipped ? tt.lookup(hash, &tt_hit) : nullptr;
 
-    // Square prev_sq = (isValidMove((ss - 1)->curr_move) ? (ss - 1)->curr_move.to() : NO_SQUARE);
     Move tt_move = NO_MOVE;
     Bound tt_bound = NO_BOUND;
     Score tt_score = VALUE_NONE;
@@ -249,10 +248,12 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_no
        (tt_bound & (tt_score >= beta ? LOWER_BOUND : UPPER_BOUND)) //
     ) {
         // idea from stockfish
-        // if(isValidMove(tt_move) && tt_score >= beta && tt_depth > depth) {
-        //     if(prev_sq != NO_SQUARE && (ss - 1)->move_count <= 3 && !(ss - 1)->is_cap)
-        //         history.updateContH((ss - 1)->curr_move, ss - 1, -historyMalus(depth));
-        // }
+        Square prev_sq = (isValidMove((ss - 1)->curr_move) ? (ss - 1)->curr_move.to() : NO_SQUARE);
+
+        if(isValidMove(tt_move) && tt_score >= beta && tt_depth > depth) {
+            if(prev_sq != NO_SQUARE && (ss - 1)->move_count <= 3 && !(ss - 1)->is_cap)
+                history.updateContH((ss - 1)->curr_move, ss - 1, -historyMalus(depth));
+        }
 
         if(board.halfMoveClock() < 90) // idea from stockfish
             return tt_score;
@@ -486,7 +487,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_no
            (tt_bound & LOWER_BOUND) &&                  //
            std::abs(tt_score) < VALUE_TB_WIN_IN_MAX_PLY //
         ) {
-            Score sbeta = tt_score - 3 * depth;
+            Score sbeta = tt_score - 6 * depth / 8;
             Score score = negamax((depth - 1) / 2, sbeta - 1, sbeta, ss, cut_node, move);
 
             if(score < sbeta) {
@@ -516,7 +517,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_no
         Score score = VALUE_NONE;
 
         // late move reductions
-        if(depth >= 2 && made_moves > 1 && (!tt_pv || !isCap(move))) {
+        if(depth >= 2 && made_moves >= 3 && (!tt_pv || !isCap(move))) {
             int r = REDUCTIONS[depth][made_moves];
             // increase when not improving
             r += !improving;
