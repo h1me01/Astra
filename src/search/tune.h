@@ -69,7 +69,7 @@ PARAM(fp_base, 129, 1, 300);
 PARAM(fp_mult, 91, 5, 200);
 
 PARAM(see_cap_margin, 97, 5, 200);
-PARAM(see_quiet_margin, 80, -100, 100);
+PARAM(see_quiet_margin, 22, -100, 100);
 
 PARAM(ext_margin, 85, 10, 250);
 PARAM(zws_margin, 50, 10, 160);
