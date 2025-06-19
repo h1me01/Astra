@@ -461,7 +461,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_no
 
             // see pruning
             int see_margin = isCap(move) ? -see_cap_margin : -see_quiet_margin;
-            if(!board.see(move, (isCap(move) ? depth : lmr_depth * lmr_depth) * see_margin))
+            if(!board.see(move, (isCap(move) ? depth : lmr_depth) * see_margin))
                 continue;
         }
 
