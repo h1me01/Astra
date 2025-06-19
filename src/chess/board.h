@@ -225,10 +225,11 @@ inline U64 Board::attackersTo(Color c, Square sq, const U64 occ) const {
 }
 
 inline int Board::getPhase() const {
-    int phase = 3 * popCount(piece_bb[WHITE_KNIGHT] | piece_bb[BLACK_KNIGHT]);
+    int phase = 2 * popCount(piece_bb[WHITE_PAWN] | piece_bb[BLACK_PAWN]);
+    phase += 3 * popCount(piece_bb[WHITE_KNIGHT] | piece_bb[BLACK_KNIGHT]);
     phase += 3 * popCount(piece_bb[WHITE_BISHOP] | piece_bb[BLACK_BISHOP]);
     phase += 5 * popCount(piece_bb[WHITE_ROOK] | piece_bb[BLACK_ROOK]);
-    phase += 10 * popCount(piece_bb[WHITE_QUEEN] | piece_bb[BLACK_QUEEN]);
+    phase += 12 * popCount(piece_bb[WHITE_QUEEN] | piece_bb[BLACK_QUEEN]);
     return phase;
 }
 
