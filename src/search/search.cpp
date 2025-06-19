@@ -464,18 +464,8 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_no
             q_moves[q_count++] = move;
 
         // print current move information
-        if(debugging &&            //
-           id == 0 &&              //
-           root_node &&            //
-           limit.multipv == 1 &&   //
-           !threads.isStopped() && //
-           tm.elapsedTime() > 5000 //
-        ) {
-            std::cout << "info depth " << depth           //
-                      << " currmove " << move             //
-                      << " currmovenumber " << made_moves //
-                      << std::endl;
-        }
+        if(debugging && id == 0 && root_node && limit.multipv == 1 && tm.elapsedTime() > 5000 && !threads.isStopped())
+            std::cout << "info depth " << depth << " currmove " << move << " currmovenumber " << made_moves << std::endl;
 
         int extensions = 0;
 
@@ -519,7 +509,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_no
         Score score = VALUE_NONE;
 
         // late move reductions
-        if(depth >= 2 && made_moves > 1 && (!tt_pv || !isCap(move))) {
+        if(depth >= 2 && made_moves >= 3 && (!tt_pv || !isCap(move))) {
             int r = REDUCTIONS[depth][made_moves];
             // increase when not improving
             r += !improving;
@@ -879,21 +869,16 @@ void Search::printUciInfo() {
     const Score result = root_moves[multipv_idx].score;
     const PVLine &pv_line = root_moves[multipv_idx].pv;
 
-    std::cout << "info depth " << root_depth                  //
-              << " seldepth " << Astra::threads.getSelDepth() //
-              << " multipv " << multipv_idx + 1               //
-              << " score ";
+    std::cout << "info depth " << root_depth << " seldepth " << Astra::threads.getSelDepth() << " multipv "
+              << multipv_idx + 1 << " score ";
 
     if(std::abs(result) >= VALUE_MATE - MAX_PLY)
         std::cout << "mate " << (VALUE_MATE - std::abs(result) + 1) / 2 * (result > 0 ? 1 : -1);
     else
         std::cout << "cp " << Score(result / 2.5); // normalize
 
-    std::cout << " nodes " << total_nodes                           //
-              << " nps " << total_nodes * 1000 / (elapsed_time + 1) //
-              << " tbhits " << Astra::threads.getTotalTbHits()      //
-              << " hashfull " << Astra::tt.hashfull()               //
-              << " time " << elapsed_time                           //
+    std::cout << " nodes " << total_nodes << " nps " << total_nodes * 1000 / (elapsed_time + 1) << " tbhits "
+              << Astra::threads.getTotalTbHits() << " hashfull " << Astra::tt.hashfull() << " time " << elapsed_time
               << " pv " << root_moves[multipv_idx].move;
 
     // print rest of the pv
