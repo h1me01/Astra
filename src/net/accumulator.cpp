@@ -3,7 +3,7 @@
 
 namespace NNUE {
 
-void AccumTable::refresh(Color view, Board &board) {
+void AccumTable::refresh(Board &board, Color view) {
     assert(view == WHITE || view == BLACK);
 
     const Square ksq = board.kingSq(view);
@@ -12,7 +12,7 @@ void AccumTable::refresh(Color view, Board &board) {
 
     Accum &entry_acc = entry.getAccum();
 
-    for(Color c : {WHITE, BLACK})
+    for(Color c : {WHITE, BLACK}) {
         for(int i = PAWN; i <= KING; i++) {
             PieceType pt = PieceType(i);
             Piece pc = makePiece(c, pt);
@@ -30,6 +30,7 @@ void AccumTable::refresh(Color view, Board &board) {
 
             entry.setPieceBB(c, pt, pc_bb);
         }
+    }
 
     Accum &acc = board.getAccumulator();
     acc.markAsInitialized(view);

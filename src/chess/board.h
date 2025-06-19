@@ -193,8 +193,8 @@ inline U64 Board::getThreats(PieceType pt) const {
 inline void Board::resetAccumulator() {
     accumulators_idx = 0;
     accumulator_table->reset();
-    accumulator_table->refresh(WHITE, *this);
-    accumulator_table->refresh(BLACK, *this);
+    accumulator_table->refresh(*this, WHITE);
+    accumulator_table->refresh(*this, BLACK);
 }
 
 inline U64 Board::diagSliders(Color c) const {
@@ -324,7 +324,7 @@ inline void Board::movePiece(Square from, Square to, bool update_nnue) {
     if(!NNUE::needsRefresh(pc, from, to))
         NNUE::nnue.movePiece(acc, input, pc, from, to, kingSq(stm), stm);
     else
-        accumulator_table->refresh(stm, *this);
+        accumulator_table->refresh(*this, stm);
 }
 
 } // namespace Chess

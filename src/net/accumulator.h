@@ -49,6 +49,7 @@ class AccumEntry {
     U64 getPieceBB(Color c, PieceType pt) const {
         return piece_bb[c][pt];
     }
+
     Accum &getAccum() {
         return acc;
     }
@@ -59,7 +60,7 @@ class AccumTable {
     AccumEntry entries[NUM_COLORS][2 * BUCKET_SIZE]{};
 
   public:
-    void refresh(Color view, Board &board);
+    void refresh(Board &board, Color view);
     void reset();
 };
 
