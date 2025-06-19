@@ -486,7 +486,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_no
            (tt_bound & LOWER_BOUND) &&                  //
            std::abs(tt_score) < VALUE_TB_WIN_IN_MAX_PLY //
         ) {
-            Score sbeta = tt_score - 5 * depth / 8;
+            Score sbeta = tt_score - 6 * depth / 8;
             Score score = negamax((depth - 1) / 2, sbeta - 1, sbeta, ss, cut_node, move);
 
             if(score < sbeta) {
@@ -614,13 +614,9 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_no
 
             if(alpha >= beta) {
                 history.update(                                 //
-                    board,                                      //
-                    move,                                       //
-                    ss,                                         //
-                    q_moves,                                    //
-                    q_count,                                    //
-                    c_moves,                                    //
-                    c_count,                                    //
+                    board, move, ss,                            //
+                    q_moves, q_count,                           //
+                    c_moves, c_count,                           //
                     depth + (best_score > beta + hbonus_margin) //
                 );
                 break; // cut-off
