@@ -107,11 +107,11 @@ TTEntry *TTable::lookup(U64 hash, bool *hit) const {
     TTEntry *entries = buckets[index(hash)].entries;
 
     for(int i = 0; i < BUCKET_SIZE; i++) {
-        if(entries[i].getHash() == hash16 || !entries[i].getDepth()) {
+        if(entries[i].getHash() == hash16 || entries[i].getHash() == 0) {
             uint8_t age_pv_bound = (uint8_t) (tt.getAge() | (entries[i].getAgePvBound() & (AGE_STEP - 1)));
             entries[i].setAgePvBound(age_pv_bound);
 
-            *hit = bool(entries[i].getDepth());
+            *hit = entries[i].getHash() == hash16;
             return &entries[i];
         }
     }
@@ -134,7 +134,7 @@ int TTable::hashfull() const {
     for(int i = 0; i < 1000; i++) {
         for(int j = 0; j < BUCKET_SIZE; j++) {
             TTEntry *entry = &buckets[i].entries[j];
-            if(entry->getAge() == age && entry->getDepth())
+            if(entry->getAge() == age && entry->getHash() != 0)
                 used++;
         }
     }
