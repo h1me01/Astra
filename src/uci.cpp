@@ -13,7 +13,7 @@ bool isInteger(const std::string &s) {
     return !s.empty() && std::all_of(s.begin(), s.end(), ::isdigit);
 }
 
-const std::string version = "5.2";
+const std::string version = "6.0";
 
 // options class
 void Options::print() const {
@@ -49,9 +49,9 @@ void Options::apply() {
             std::cout << "info string Failed to load syzygy path " << path << std::endl;
     }
 
+    Astra::tt.setNumWorkers(num_workers);
     Astra::tt.init(std::stoi(get("Hash")));
     num_workers = std::stoi(get("Threads"));
-    Astra::tt.setNumWorkers(num_workers);
 }
 
 void Options::set(std::istringstream &is) {
@@ -94,6 +94,8 @@ void Options::set(std::istringstream &is) {
         options[name] = value;
     else
         std::cout << "Invalid range of value for option " << name << std::endl;
+
+    apply();
 }
 
 // uci class
@@ -150,7 +152,6 @@ void Uci::loop(int argc, char **argv) {
             Astra::paramsToSpsa();
         else if(token == "setoption") {
             options.set(is);
-            options.apply();
         } else if(token == "d")
             board.print();
         else if(token == "stop")
@@ -179,7 +180,7 @@ void Uci::updatePosition(std::istringstream &is) {
     }
 
     board.setFen(fen, false);
-    while(is >> token)
+    while(is >> token) {
         if(token != "moves") {
             board.makeMove(getMove(token), false);
             // if half move clock gets reseted, then we can reset the history
@@ -189,6 +190,7 @@ void Uci::updatePosition(std::istringstream &is) {
                 board.resetPly();
             }
         }
+    }
 
     board.resetAccumulator();
 }

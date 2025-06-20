@@ -23,9 +23,7 @@ void initReductions() {
 
 // search class
 
-Search::Search(const std::string &fen) : board(fen) {
-    tt.clear();
-}
+Search::Search(const std::string &fen) : board(fen) {}
 
 Move Search::bestMove() {
     tm.start();
