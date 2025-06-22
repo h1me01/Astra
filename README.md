@@ -13,7 +13,7 @@ make pgo
 ## NNUE
 - Versions starting from 5.0 use [Astra-Trainer](https://github.com/h1me01/Astra-Trainer)
 - Versions below 5.0 used [CudAD](https://github.com/Luecx/CudAD)
-- Versions below 4.0 used a simple Pytorch-Neural-Network
+- Versions below 4.0 used a simple Pytorch Neural Network
 
 ## Credits
 - [Stockfish](https://github.com/official-stockfish/Stockfish)
