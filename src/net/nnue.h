@@ -6,6 +6,8 @@
 #include <cstring>
 #include <immintrin.h>
 
+#include "../chess/misc.h"
+
 #if defined(__AVX512F__)
 #define ALIGNMENT 64
 #else
@@ -16,37 +18,34 @@ using namespace Chess;
 
 namespace Chess {
 class Board;
-} // namespace Chess
+}
 
 namespace NNUE {
-
 class Accum;
 
-// 2x(10x768->1024)->1
+// 2x(12x768->1024)->1
 
-constexpr int BUCKET_SIZE = 10;
+constexpr int BUCKET_SIZE = 12;
 constexpr int FEATURE_SIZE = 768;
 
 constexpr int FT_SIZE = BUCKET_SIZE * FEATURE_SIZE;
-constexpr int L1_SIZE = 1024;
+constexpr int L1_SIZE = 1536;
 constexpr int OUTPUT_SIZE = 1;
 
-constexpr int FT_QUANT = 32;
-constexpr int L1_QUANT = 128;
-
-constexpr int CRELU_CLIP = FT_QUANT * 127;
+constexpr int FT_QUANT = 255;
+constexpr int L1_QUANT = 64;
 
 // clang-format off
 constexpr int KING_BUCKET[NUM_SQUARES]
 {
     0, 1, 2, 3, 3, 2, 1, 0,
-    4, 4, 5, 5, 5, 5, 4, 4,
-    6, 6, 6, 6, 6, 6, 6, 6,
-    7, 7, 7, 7, 7, 7, 7, 7,
-    8, 8, 8, 8, 8, 8, 8, 8,
-    8, 8, 8, 8, 8, 8, 8, 8,
-    9, 9, 9, 9, 9, 9, 9, 9,
-    9, 9, 9, 9, 9, 9, 9, 9,
+    4, 5, 6, 7, 7, 6, 5, 4,
+    8, 8, 9, 9, 9, 9, 8, 8,
+    10,10,10,10,10,10,10,10,
+    10,10,10,10,10,10,10,10,
+    11,11,11,11,11,11,11,11,
+    11,11,11,11,11,11,11,11,
+    11,11,11,11,11,11,11,11,
 };
 // clang-format on
 

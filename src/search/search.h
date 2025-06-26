@@ -1,10 +1,11 @@
 #pragma once
 
+#include <algorithm>
+
 #include "../chess/movegen.h"
 #include "history.h"
 #include "timeman.h"
 #include "tt.h"
-#include <algorithm>
 
 namespace Astra {
 

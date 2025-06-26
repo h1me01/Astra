@@ -1,9 +1,10 @@
 #pragma once
 
-#include "types.h"
 #include <cassert>
 #include <sstream>
 #include <vector>
+
+#include "types.h"
 
 namespace Chess {
 
@@ -91,6 +92,7 @@ constexpr int antiDiagOf(Square sq) {
 inline Square &operator+=(Square &s, Direction d) {
     return s = s + d;
 }
+
 inline Square &operator-=(Square &s, Direction d) {
     return s = s - d;
 }

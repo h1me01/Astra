@@ -1,8 +1,9 @@
+#include <algorithm>
+#include <cstring>
+
 #include "history.h"
 #include "search.h"
 #include "tune.h"
-#include <algorithm>
-#include <cstring>
 
 namespace Astra {
 // helper
@@ -25,7 +26,12 @@ int historyMalus(int depth) {
 }
 
 // history
-void History::update(const Board &board, Move &best, Stack *ss, Move *q_moves, int qc, Move *c_moves, int cc, int depth) {
+void History::update(const Board &board,    //
+                     Move &best, Stack *ss, //
+                     Move *q_moves, int qc, //
+                     Move *c_moves, int cc, //
+                     int depth              //
+) {
     Color stm = board.getTurn();
     int bonus = historyBonus(depth);
     int malus = historyMalus(depth);
@@ -37,6 +43,7 @@ void History::update(const Board &board, Move &best, Stack *ss, Move *q_moves, i
             Move prev_move = (ss - 1)->curr_move;
             if(isValidMove(prev_move))
                 counters[prev_move.from()][prev_move.to()] = best;
+
             ss->killer = best;
         }
 
@@ -45,6 +52,7 @@ void History::update(const Board &board, Move &best, Stack *ss, Move *q_moves, i
         if(depth > 3 || qc > 1) {
             updateQH(stm, best, bonus);
             updateContH(best, ss, bonus);
+            updatePawnHist(board, best, bonus);
 
             // quiet maluses
             for(int i = 0; i < qc; i++) {
@@ -53,6 +61,7 @@ void History::update(const Board &board, Move &best, Stack *ss, Move *q_moves, i
                     continue;
                 updateQH(stm, quiet, -malus);
                 updateContH(quiet, ss, -malus);
+                updatePawnHist(board, quiet, -malus);
             }
         }
     } else {
@@ -66,10 +75,20 @@ void History::update(const Board &board, Move &best, Stack *ss, Move *q_moves, i
             continue;
         updateCapHistory(board, cap, -malus);
     }
+
+    pawn_hist[pawnHistIdx(board.getPawnHash())][board.pieceAt(best.from())][best.to()] += bonus;
 }
 
 void History::updateQH(Color c, Move move, int bonus) {
     int16_t &value = hh[c][move.from()][move.to()];
+    value += getFormula(value, bonus);
+}
+
+void History::updatePawnHist(const Board &board, Move &move, int bonus) {
+    Piece pc = board.pieceAt(move.from());
+    int16_t &value = pawn_hist[pawnHistIdx(board.getPawnHash())][pc][move.to()];
+    assert(pc >= WHITE_PAWN && pc <= BLACK_KING);
+    assert(move.to() >= a1 && move.to() <= h8);
     value += getFormula(value, bonus);
 }
 
@@ -98,12 +117,12 @@ void History::updateCapHistory(const Board &board, Move &move, int bonus) {
 }
 
 void History::updateMaterialCorr(const Board &board, Score raw_eval, Score real_score, int depth) {
-    int diff = real_score - raw_eval;
     Color stm = board.getTurn();
+    int diff = real_score - raw_eval;
 
-    updateCorrection(pawn_corr[stm][CORR_IDX(board.getPawnHash())], diff, depth);
-    updateCorrection(w_non_pawn_corr[stm][CORR_IDX(board.getNonPawnHash(WHITE))], diff, depth);
-    updateCorrection(b_non_pawn_corr[stm][CORR_IDX(board.getNonPawnHash(BLACK))], diff, depth);
+    updateCorrection(pawn_corr[stm][corrIdx(board.getPawnHash())], diff, depth);
+    updateCorrection(w_non_pawn_corr[stm][corrIdx(board.getNonPawnHash(WHITE))], diff, depth);
+    updateCorrection(b_non_pawn_corr[stm][corrIdx(board.getNonPawnHash(BLACK))], diff, depth);
 }
 
 void History::updateContCorr(Score raw_eval, Score real_score, int depth, const Stack *ss) {

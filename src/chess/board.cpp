@@ -1,6 +1,8 @@
 #include "board.h"
 #include <cassert>
 
+#include "board.h"
+
 namespace Chess {
 // helper
 
@@ -59,6 +61,7 @@ void Board::setFen(const std::string &fen, bool update_nnue) {
 
     for(auto &i : board)
         i = NO_PIECE;
+
     history[0] = StateInfo();
     StateInfo &info = history[0];
 
@@ -72,14 +75,14 @@ void Board::setFen(const std::string &fen, bool update_nnue) {
 
     for(const char c : fen_parts[2]) {
         // clang-format off
-            switch (c)
-            {
+        switch (c)
+        {
             case 'K': info.castle_rights.addKingSide(WHITE); break;
             case 'Q': info.castle_rights.addQueenSide(WHITE); break;
             case 'k': info.castle_rights.addKingSide(BLACK); break;
             case 'q': info.castle_rights.addQueenSide(BLACK); break;
             default: break;
-            }
+        }
         // clang-format on
     }
 
@@ -302,7 +305,8 @@ bool Board::isPseudoLegal(const Move &m) const {
             // is single push?
             bool singe_push = Square(from + up) == to && to_pc == NO_PIECE;
             // is double push?
-            bool double_push = Square(from + 2 * up) == to && relRank(stm, RANK_2) == rankOf(from) &&
+            bool double_push = Square(from + 2 * up) == to &&          //
+                               relRank(stm, RANK_2) == rankOf(from) && //
                                (to_pc + pieceAt(to - up)) == 2 * NO_PIECE;
 
             // if none of the conditions above are met, then it's not pseudo legal
@@ -311,8 +315,9 @@ bool Board::isPseudoLegal(const Move &m) const {
         }
     }
     // if a non pawn piece's target range isn't reachable, then it's not pseudo legal
-    else if(!(getAttacks(pt, from, occ) & SQUARE_BB[to]))
+    else if(!(getAttacks(pt, from, occ) & SQUARE_BB[to])) {
         return false;
+    }
 
     // check for blockers/captures of the checker
     if(info.checkers && pt != KING) {

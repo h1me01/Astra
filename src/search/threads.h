@@ -2,6 +2,8 @@
 #include <atomic>
 #include <thread>
 
+#include "search.h"
+
 namespace Astra {
 
 class ThreadPool {

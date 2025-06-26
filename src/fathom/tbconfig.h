@@ -58,7 +58,7 @@
 /*
  * Define TB_NO_THREADS if your program is not multi-threaded.
  */
- /*#define TB_NO_THREADS */
+/*#define TB_NO_THREADS */
 
 /*
  * Define TB_NO_HELPER_API if you do not need the helper API.

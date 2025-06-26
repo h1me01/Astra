@@ -1,13 +1,13 @@
 #pragma once
 
+#include <chrono>
+
 #include "../chess/types.h"
 #include <chrono>
 
 using namespace Chess;
 
 namespace Astra {
-using Clock = std::chrono::steady_clock;
-using TimePoint = Clock::time_point;
 
 struct Time {
     int64_t optimum = 0;
@@ -23,6 +23,9 @@ struct Limits {
 };
 
 class TimeMan {
+    using Clock = std::chrono::steady_clock;
+    using TimePoint = Clock::time_point;
+
   private:
     TimePoint start_time;
 

@@ -1,8 +1,9 @@
-#include "nnue.h"
-#include "../chess/board.h"
-#include "accumulator.h"
 #include <algorithm>
 #include <cstring> // std::memcpy
+
+#include "../chess/board.h"
+#include "accumulator.h"
+#include "nnue.h"
 
 #include "incbin.h"
 
@@ -22,6 +23,7 @@ using avx_type = __m512i;
 #define avx_max_epi16 _mm512_max_epi16
 #define avx_min_epi16 _mm512_min_epi16
 #define avx_set1_epi16 _mm512_set1_epi16
+#define avx_mullo_epi16 _mm512_mullo_epi16
 
 #elif defined(__AVX2__) || defined(__AVX__)
 
@@ -35,6 +37,7 @@ using avx_type = __m256i;
 #define avx_max_epi16 _mm256_max_epi16
 #define avx_min_epi16 _mm256_min_epi16
 #define avx_set1_epi16 _mm256_set1_epi16
+#define avx_mullo_epi16 _mm256_mullo_epi16
 
 #endif
 
@@ -104,7 +107,7 @@ int32_t NNUE::forward(Board &board) const {
 
 #if defined(__AVX512F__) || defined(__AVX2__) || defined(__AVX__)
     constexpr avx_type zero{};
-    const avx_type max_clipped_value = avx_set1_epi16(CRELU_CLIP);
+    const avx_type ft_clip = avx_set1_epi16(FT_QUANT);
 
     const auto acc_stm = (const avx_type *) acc.getData(stm);
     const auto acc_opp = (const avx_type *) acc.getData(~stm);
@@ -113,13 +116,15 @@ int32_t NNUE::forward(Board &board) const {
     const auto weights = (const avx_type *) (l1_weights);
 
     for(int i = 0; i < L1_SIZE / div; i++) {
-        auto clipped_stm = avx_min_epi16(avx_max_epi16(acc_stm[i], zero), max_clipped_value);
-        res = avx_add_epi32(res, avx_madd_epi16(weights[i], clipped_stm));
+        auto act = avx_min_epi16(avx_max_epi16(acc_stm[i], zero), ft_clip);
+        auto product = avx_madd_epi16(avx_mullo_epi16(act, weights[i]), act);
+        res = avx_add_epi32(res, product);
     }
 
     for(int i = 0; i < L1_SIZE / div; i++) {
-        auto clipped_opp = avx_min_epi16(avx_max_epi16(acc_opp[i], zero), max_clipped_value);
-        res = avx_add_epi32(res, avx_madd_epi16(weights[i + L1_SIZE / div], clipped_opp));
+        auto act = avx_min_epi16(avx_max_epi16(acc_opp[i], zero), ft_clip);
+        auto product = avx_madd_epi16(avx_mullo_epi16(act, weights[i + L1_SIZE / div]), act);
+        res = avx_add_epi32(res, product);
     }
 
     return horizontalSum(res) / (FT_QUANT * L1_QUANT) + l1_biases[0] / L1_QUANT;
@@ -129,9 +134,12 @@ int32_t NNUE::forward(Board &board) const {
     int16_t *acc_stm = acc.getData(stm);
     int16_t *acc_opp = acc.getData(~stm);
 
-    for(int j = 0; j < HIDDEN_SIZE; j++) {
-        output += l1_weights[j] * std::clamp(int32_t(acc_stm[j]), 0, CRELU_CLIP);
-        output += l1_weights[HIDDEN_SIZE + j] * std::clamp(int32_t(acc_opp[j]), 0, CRELU_CLIP);
+    for(int i = 0; i < L1_SIZE; i++) {
+        int32_t clipped_stm = std::clamp(int32_t(acc_stm[j]), 0, FT_QUANT);
+        int32_t clipped_opp = std::clamp(int32_t(acc_opp[j]), 0, FT_QUANT);
+        
+        output += l1_weights[i] * clipped_stm * clipped_stm;
+        output += l1_weights[L1_SIZE + i] * clipped_opp * clipped_opp;
     }
 
     return output / (FT_QUANT * L1_QUANT) + l1_biases[0] / L1_QUANT;

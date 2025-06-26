@@ -3,6 +3,8 @@
 #include "board.h"
 #include <type_traits> // std::is_same
 
+#include "board.h"
+
 namespace Chess {
 
 enum GenType : int { NOISY = 0, QUIETS = 1, QUIET_CHECKERS = 2, LEGALS = 3 };
@@ -231,9 +233,11 @@ template <typename Type = Move> class MoveList {
     const Type *begin() const {
         return list;
     }
+
     const Type *end() const {
         return last;
     }
+
     int size() const {
         return last - list;
     }

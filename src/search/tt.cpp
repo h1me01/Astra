@@ -1,5 +1,3 @@
-#include "tt.h"
-
 #include <cstdlib>
 #include <cstring>
 #include <thread>
@@ -9,6 +7,8 @@
 #include <sys/mman.h>
 #include <xmmintrin.h>
 #endif
+
+#include "tt.h"
 
 namespace Astra {
 
@@ -31,6 +31,9 @@ void freeAlign(void *ptr) {
 }
 
 // struct TTEntry
+int TTEntry::relativeAge() const {
+    return (AGE_CYCLE + tt.getAge() - age_pv_bound) & AGE_MASK;
+}
 
 void TTEntry::store(U64 hash, Move move, Score score, Score eval, Bound bound, int depth, int ply, bool pv) {
     uint16_t hash16 = (uint16_t) hash;
@@ -51,7 +54,8 @@ void TTEntry::store(U64 hash, Move move, Score score, Score eval, Bound bound, i
         this->score = score;
         this->eval = eval;
         age_pv_bound = (uint8_t) (bound + (pv << 2)) | tt.getAge();
-    }
+    } else if(this->depth >= 5 && bound != EXACT_BOUND)
+        this->depth--;
 }
 
 // class TTable
@@ -102,21 +106,20 @@ TTEntry *TTable::lookup(U64 hash, bool *hit) const {
     uint16_t hash16 = (uint16_t) hash;
     TTEntry *entries = buckets[index(hash)].entries;
 
-    for(int i = 0; i < BUCKET_SIZE; i++)
-        if(entries[i].getHash() == hash16 || !entries[i].getDepth()) {
+    for(int i = 0; i < BUCKET_SIZE; i++) {
+        if(entries[i].getHash() == hash16 || entries[i].getHash() == 0) {
             uint8_t age_pv_bound = (uint8_t) (tt.getAge() | (entries[i].getAgePvBound() & (AGE_STEP - 1)));
             entries[i].setAgePvBound(age_pv_bound);
 
-            *hit = entries[i].getDepth();
+            *hit = entries[i].getHash() == hash16;
             return &entries[i];
         }
+    }
 
     TTEntry *worst_entry = &entries[0];
-
     for(int i = 1; i < BUCKET_SIZE; i++) {
-        int worst_value =
-            worst_entry->getDepth() - ((AGE_CYCLE + tt.getAge() - worst_entry->getAgePvBound()) & AGE_MASK) / 2;
-        int entry_value = entries[i].getDepth() - ((AGE_CYCLE + tt.getAge() - entries[i].getAgePvBound()) & AGE_MASK) / 2;
+        int worst_value = worst_entry->getDepth() - worst_entry->relativeAge();
+        int entry_value = entries[i].getDepth() - entries[i].relativeAge();
 
         if(entry_value < worst_value)
             worst_entry = &entries[i];
@@ -128,12 +131,13 @@ TTEntry *TTable::lookup(U64 hash, bool *hit) const {
 
 int TTable::hashfull() const {
     int used = 0;
-    for(int i = 0; i < 1000; i++)
+    for(int i = 0; i < 1000; i++) {
         for(int j = 0; j < BUCKET_SIZE; j++) {
             TTEntry *entry = &buckets[i].entries[j];
-            if(entry->getAge() == age && entry->getDepth())
+            if(entry->getAge() == age && entry->getHash() != 0)
                 used++;
         }
+    }
 
     return used / BUCKET_SIZE;
 }

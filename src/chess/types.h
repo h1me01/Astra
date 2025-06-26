@@ -40,40 +40,21 @@ constexpr int NUM_PIECE_TYPES = 6;
 enum PieceType { PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING, NO_PIECE_TYPE };
 
 // clang-format off
-constexpr PieceType PIECE_TO_PIECE_TYPE[] = 
-{
-    PAWN,  
-    KNIGHT,
-    BISHOP,       
-    ROOK,   
-    QUEEN,
-    KING,  
-    PAWN,   
-    KNIGHT,      
-    BISHOP, 
-    ROOK,
-    QUEEN, 
-    KING,   
-    NO_PIECE_TYPE
+constexpr PieceType PIECE_TO_PIECE_TYPE[] = {
+    PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING,         
+    PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING,         
+    NO_PIECE_TYPE 
 };
 // clang-format on
 
+// clang-format off
 constexpr int NUM_PIECES = 12;
 enum Piece {
-    WHITE_PAWN,
-    WHITE_KNIGHT,
-    WHITE_BISHOP,
-    WHITE_ROOK,
-    WHITE_QUEEN,
-    WHITE_KING,
-    BLACK_PAWN,
-    BLACK_KNIGHT,
-    BLACK_BISHOP,
-    BLACK_ROOK,
-    BLACK_QUEEN,
-    BLACK_KING,
+    WHITE_PAWN, WHITE_KNIGHT, WHITE_BISHOP, WHITE_ROOK, WHITE_QUEEN, WHITE_KING,
+    BLACK_PAWN, BLACK_KNIGHT, BLACK_BISHOP, BLACK_ROOK, BLACK_QUEEN, BLACK_KING,
     NO_PIECE
 };
+// clang-format on
 
 // clang-format off
 constexpr int NUM_SQUARES = 64;
@@ -116,15 +97,15 @@ constexpr Score VALUE_TB_WIN = VALUE_MATE;
 constexpr Score VALUE_TB_WIN_IN_MAX_PLY = VALUE_TB_WIN - MAX_PLY;
 
 // clang-format off
-    enum MoveType
-    {
-        QUIET,
-        CAPTURE,
-        CASTLING,
-        EN_PASSANT,
-        PQ_KNIGHT, PQ_BISHOP, PQ_ROOK, PQ_QUEEN,
-        PC_KNIGHT, PC_BISHOP, PC_ROOK, PC_QUEEN
-    };
+enum MoveType
+{
+    QUIET,
+    CAPTURE,
+    CASTLING,
+    EN_PASSANT,
+    PQ_KNIGHT, PQ_BISHOP, PQ_ROOK, PQ_QUEEN,
+    PC_KNIGHT, PC_BISHOP, PC_ROOK, PC_QUEEN
+};
 // clang-format on
 
 // max number of possible legal moves in chess are 218
@@ -151,9 +132,11 @@ class Move {
     Square to() const {
         return Square(move & 0x3f);
     }
+
     Square from() const {
         return Square(move >> 6 & 0x3f);
     }
+
     MoveType type() const {
         return MoveType(move >> 12);
     }
@@ -173,6 +156,7 @@ class Move {
     void setScore(int s) {
         score = s;
     }
+
     int getScore() const {
         return score;
     }
@@ -180,9 +164,11 @@ class Move {
     bool operator==(const Move &m) const {
         return move == m.move;
     }
+
     bool operator!=(const Move &m) const {
         return move != m.move;
     }
+
     bool operator!() const {
         return move == 0;
     }

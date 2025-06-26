@@ -5,6 +5,7 @@
 using namespace Chess;
 
 namespace Astra {
+
 enum Bound { NO_BOUND = 0, LOWER_BOUND = 1, UPPER_BOUND = 2, EXACT_BOUND = 3 };
 
 constexpr int AGE_STEP = 0x8;
@@ -67,6 +68,8 @@ class TTEntry {
     bool getTTPv() {
         return age_pv_bound & 0x4;
     }
+
+    int relativeAge() const;
 
     void store(U64 hash, Move move, Score score, Score eval, Bound bound, int depth, int ply, bool pv);
 };

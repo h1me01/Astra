@@ -5,7 +5,6 @@
 #include "stack.h"
 
 namespace Astra {
-
 enum SearchType : int { N_SEARCH, Q_SEARCH, PC_SEARCH };
 
 enum Stage : int {
@@ -44,10 +43,16 @@ class MovePicker {
   public:
     int see_cutoff = 0;
 
-    MovePicker(SearchType st, const Board &board, const History &history, const Stack *ss, const Move &tt_move,
-               bool gen_checks = false);
+    MovePicker(SearchType st,          //
+               const Board &board,     //
+               const History &history, //
+               const Stack *ss,        //
+               const Move &tt_move,    //
+               bool gen_checks = false //
+    );
 
     Move nextMove();
+
     void skipQuiets() {
         skip_quiets = true;
     }

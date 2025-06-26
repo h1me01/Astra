@@ -15,9 +15,14 @@ void partialInsertionSort(MoveList<> &ml, int idx) {
 
 // MovePicker class
 
-MovePicker::MovePicker(SearchType st, const Board &board, const History &history, const Stack *ss, const Move &tt_move,
+MovePicker::MovePicker(SearchType st,          //
+                       const Board &board,     //
+                       const History &history, //
+                       const Stack *ss,        //
+                       const Move &tt_move,    //
                        bool gen_checkers)
     : st(st), board(board), history(history), ss(ss), gen_checkers(gen_checkers) {
+
     if(st == PC_SEARCH)
         stage = GEN_NOISY;
     else if(st == Q_SEARCH) {
@@ -66,7 +71,8 @@ Move MovePicker::nextMove() {
                 continue;
 
             // we want to play captures first in qsearch, doesn't matter if its see is fails
-            if(st != Q_SEARCH && !board.see(move, st == N_SEARCH ? -move.getScore() / 32 : see_cutoff)) {
+            int threshold = st == N_SEARCH ? -move.getScore() / 32 : see_cutoff;
+            if(st != Q_SEARCH && !board.see(move, threshold)) {
                 ml_bad_noisy.add(move); // add to bad noisy
                 continue;
             }
@@ -171,7 +177,8 @@ void MovePicker::scoreQuietMoves() {
         assert(pc >= WHITE_PAWN && pc <= BLACK_KING);
 
         int score = 2 * history.getHH(board.getTurn(), ml_main[i]);
-        score += 2 * (int) (*(ss - 1)->conth)[pc][to];
+        score += 2 * history.getPawnHist(board, ml_main[i]);
+        score += (int) (*(ss - 1)->conth)[pc][to];
         score += (int) (*(ss - 2)->conth)[pc][to];
         score += (int) (*(ss - 4)->conth)[pc][to];
         score += (int) (*(ss - 6)->conth)[pc][to];
@@ -203,10 +210,12 @@ void MovePicker::scoreNoisyMoves() {
         if(captured != NO_PIECE_TYPE)
             score = history.getCH(board, ml_main[i]);
         else
-            // quiet queen prom is not a capture
-            score = history.getHH(board.getTurn(), ml_main[i]);
+            score = history.getHH(board.getTurn(), ml_main[i]); // quiet queen prom is not a capture
 
-        ml_main[i].setScore(16 * PIECE_VALUES[captured] + score);
+        score += 16 * PIECE_VALUES[captured];
+        score += 8192 * isProm(ml_main[i]);
+
+        ml_main[i].setScore(score);
     }
 }
 

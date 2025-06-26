@@ -3,7 +3,7 @@
 
 namespace NNUE {
 
-void AccumTable::refresh(Color view, Board &board) {
+void AccumTable::refresh(Board &board, Color view) {
     assert(view == WHITE || view == BLACK);
 
     const Square ksq = board.kingSq(view);

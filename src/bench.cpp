@@ -1,3 +1,10 @@
+
+#include <chrono>
+#include <iostream>
+#include <memory>
+#include <string>
+#include <vector>
+
 #include "bench.h"
 #include "search/threads.h"
 #include <chrono>
@@ -7,6 +14,7 @@
 #include <vector>
 
 namespace Bench {
+    
 const std::vector<std::string> bench_positions{
     "1r2k2r/3b2pp/2n1pp2/1N6/1BP1P3/8/4BPPP/3RR1K1 b - - 0 23",
     "1r5r/3bk1pp/4pp2/1N6/1nP1PP2/8/3RB1PP/4R1K1 b - - 0 25",
@@ -48,6 +56,8 @@ const std::vector<std::string> bench_positions{
 };
 
 void bench(int depth) {
+    Astra::tt.clear();
+
     U64 nodes = 0;
     Astra::Limits limits;
     limits.depth = depth;

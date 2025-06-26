@@ -27,6 +27,7 @@ class PRNG {
 };
 
 namespace Zobrist {
+
 extern U64 side;
 
 void init();

@@ -1,11 +1,12 @@
 #pragma once
 
+#include <memory>
+
 #include "../net/accumulator.h"
 #include "attacks.h"
 #include "cuckoo.h"
 #include "misc.h"
 #include "zobrist.h"
-#include <memory>
 
 namespace Chess {
 
@@ -19,6 +20,7 @@ class CastlingRights {
     void addKingSide(Color c) {
         mask |= OO_MASK[c];
     }
+
     void addQueenSide(Color c) {
         mask |= OOO_MASK[c];
     }
@@ -40,6 +42,7 @@ class CastlingRights {
     bool any(const Color c) const {
         return kingSide(c) || queenSide(c);
     }
+
     bool any() const {
         return any(WHITE) || any(BLACK);
     }
@@ -111,36 +114,11 @@ class Board {
 
     U64 getPieceBB(Color c, PieceType pt) const;
     Piece pieceAt(Square sq) const;
-    Color getTurn() const {
-        return stm;
-    }
-    int getPly() const {
-        return curr_ply;
-    }
-    int halfMoveClock() const {
-        return history[curr_ply].half_move_clock;
-    }
-    U64 getHash() const {
-        return history[curr_ply].hash;
-    }
-    U64 getPawnHash() const {
-        return history[curr_ply].pawn_hash;
-    }
 
     U64 getNonPawnHash(Color c) const;
     U64 getThreats(PieceType pt) const;
 
-    Square kingSq(Color c) const {
-        return lsb(getPieceBB(c, KING));
-    }
-    NNUE::Accum &getAccumulator() {
-        return accumulators[accumulators_idx];
-    }
-
     void resetAccumulator();
-    void resetPly() {
-        curr_ply = 0;
-    }
 
     U64 diagSliders(Color c) const;
     U64 orthSliders(Color c) const;
@@ -168,6 +146,38 @@ class Board {
     bool hasUpcomingRepetition(int ply);
 
     int getPhase() const;
+
+    void resetPly() {
+        curr_ply = 0;
+    }
+
+    Color getTurn() const {
+        return stm;
+    }
+
+    int getPly() const {
+        return curr_ply;
+    }
+
+    int halfMoveClock() const {
+        return history[curr_ply].half_move_clock;
+    }
+
+    U64 getHash() const {
+        return history[curr_ply].hash;
+    }
+
+    U64 getPawnHash() const {
+        return history[curr_ply].pawn_hash;
+    }
+
+    Square kingSq(Color c) const {
+        return lsb(getPieceBB(c, KING));
+    }
+
+    NNUE::Accum &getAccumulator() {
+        return accumulators[accumulators_idx];
+    }
 };
 
 inline U64 Board::getPieceBB(Color c, PieceType pt) const {
@@ -194,15 +204,15 @@ inline U64 Board::getThreats(PieceType pt) const {
 inline void Board::resetAccumulator() {
     accumulators_idx = 0;
     accumulator_table->reset();
-    accumulator_table->refresh(WHITE, *this);
-    accumulator_table->refresh(BLACK, *this);
+    accumulator_table->refresh(*this, WHITE);
+    accumulator_table->refresh(*this, BLACK);
 }
 
 inline U64 Board::diagSliders(Color c) const {
     return getPieceBB(c, BISHOP) | getPieceBB(c, QUEEN);
 }
 
-inline U64 Board::orthSliders(Color c) const { //
+inline U64 Board::orthSliders(Color c) const {
     return getPieceBB(c, ROOK) | getPieceBB(c, QUEEN);
 }
 
@@ -212,7 +222,6 @@ inline U64 Board::occupancy(Color c = BOTH_COLORS) const {
         occ |= history[curr_ply].occ[WHITE];
     if(c != WHITE)
         occ |= history[curr_ply].occ[BLACK];
-
     return occ;
 }
 
@@ -239,10 +248,7 @@ inline bool Board::inCheck() const {
 
 // checks if there is any non-pawn material on the board of the current side to move
 inline bool Board::nonPawnMat() const {
-    return getPieceBB(stm, KNIGHT) | //
-           getPieceBB(stm, BISHOP) | //
-           getPieceBB(stm, ROOK) |   //
-           getPieceBB(stm, QUEEN);
+    return getPieceBB(stm, KNIGHT) | getPieceBB(stm, BISHOP) | getPieceBB(stm, ROOK) | getPieceBB(stm, QUEEN);
 }
 
 // doesn't include stalemate
@@ -328,7 +334,7 @@ inline void Board::movePiece(Square from, Square to, bool update_nnue) {
     if(!NNUE::needsRefresh(pc, from, to))
         NNUE::nnue.movePiece(acc, input, pc, from, to, kingSq(stm), stm);
     else
-        accumulator_table->refresh(stm, *this);
+        accumulator_table->refresh(*this, stm);
 }
 
 } // namespace Chess

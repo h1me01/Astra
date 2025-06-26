@@ -1,19 +1,22 @@
-#include "uci.h"
+
+#include <cctype>  // std::isdigit
+#include <cstring> // strncmp
+
 #include "bench.h"
 #include "chess/perft.h"
 #include "fathom/tbprobe.h"
 #include "search/threads.h"
 #include "search/tune.h"
-#include <cctype>  // std::isdigit
-#include <cstring> // strncmp
+#include "uci.h"
 
 namespace UCI {
+
 // helper
 bool isInteger(const std::string &s) {
     return !s.empty() && std::all_of(s.begin(), s.end(), ::isdigit);
 }
 
-const std::string version = "5.2";
+const std::string version = "6.0";
 
 // options class
 void Options::print() const {
@@ -45,13 +48,14 @@ void Options::apply() {
         if(success && TB_LARGEST > 0) {
             use_tb = true;
             std::cout << "info string Successfully loaded syzygy path" << std::endl;
-        } else
+        } else {
             std::cout << "info string Failed to load syzygy path " << path << std::endl;
+        }
     }
 
+    Astra::tt.setNumWorkers(num_workers);
     Astra::tt.init(std::stoi(get("Hash")));
     num_workers = std::stoi(get("Threads"));
-    Astra::tt.setNumWorkers(num_workers);
 }
 
 void Options::set(std::istringstream &is) {
@@ -94,6 +98,8 @@ void Options::set(std::istringstream &is) {
         options[name] = value;
     else
         std::cout << "Invalid range of value for option " << name << std::endl;
+
+    apply();
 }
 
 // uci class
@@ -150,7 +156,6 @@ void Uci::loop(int argc, char **argv) {
             Astra::paramsToSpsa();
         else if(token == "setoption") {
             options.set(is);
-            options.apply();
         } else if(token == "d")
             board.print();
         else if(token == "stop")
@@ -179,16 +184,18 @@ void Uci::updatePosition(std::istringstream &is) {
     }
 
     board.setFen(fen, false);
-    while(is >> token)
-        if(token != "moves") {
-            board.makeMove(getMove(token), false);
-            // if half move clock gets reseted, then we can reset the history
-            // since the last positions should not be considered in the repetition
-            if(board.halfMoveClock() == 0) {
-                board.history[0] = board.history[board.getPly()];
-                board.resetPly();
-            }
+    while(is >> token) {
+        if(token == "moves")
+            continue;
+
+        board.makeMove(getMove(token), false);
+        // if half move clock gets reseted, then we can reset the history
+        // since the last positions should not be considered in the repetition
+        if(board.halfMoveClock() == 0) {
+            board.history[0] = board.history[board.getPly()];
+            board.resetPly();
         }
+    }
 
     board.resetAccumulator();
 }
@@ -241,8 +248,9 @@ void Uci::go(std::istringstream &is) {
     if(move_time != 0) {
         limit.time.optimum = move_time;
         limit.time.max = move_time;
-    } else if(time_left != 0)
+    } else if(time_left != 0) {
         limit.time = Astra::TimeMan::getOptimum(time_left, inc, moves_to_go, std::stoi(options.get("MoveOverhead")));
+    }
 
     limit.multipv = std::stoi(options.get("MultiPV"));
 

@@ -4,6 +4,8 @@
 #include <fstream>
 #include <unordered_map>
 
+#include "search/search.h"
+
 namespace UCI {
 
 struct Option {

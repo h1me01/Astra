@@ -2,12 +2,12 @@
 
 #include <assert.h>
 
-#include "bitboard.h"
-#include "types.h"
-
 #ifdef __BMI2__
 #include <immintrin.h>
 #endif
+
+#include "bitboard.h"
+#include "types.h"
 
 namespace Chess {
 
@@ -143,9 +143,16 @@ constexpr U64 BISHOP_MAGICS[NUM_SQUARES] =
      0x0002020202020000ULL, 0x0000104104104000ULL, 0x0000002082082000ULL, 0x0000000020841000ULL, 0x0000000000208800ULL,
      0x0000000010020200ULL, 0x0000000404080200ULL, 0x0000040404040400ULL, 0x0002020202020200ULL};
 
-const int BISHOP_SHIFTS[64] = {58, 59, 59, 59, 59, 59, 59, 58, 59, 59, 59, 59, 59, 59, 59, 59, 59, 59, 57, 57, 57, 57,
-                               59, 59, 59, 59, 57, 55, 55, 57, 59, 59, 59, 59, 57, 55, 55, 57, 59, 59, 59, 59, 57, 57,
-                               57, 57, 59, 59, 59, 59, 59, 59, 59, 59, 59, 59, 58, 59, 59, 59, 59, 59, 59, 58};
+const int BISHOP_SHIFTS[NUM_SQUARES] = {
+    58, 59, 59, 59, 59, 59, 59, 58, //
+    59, 59, 59, 59, 59, 59, 59, 59, //
+    59, 59, 57, 57, 57, 57, 59, 59, //
+    59, 59, 57, 55, 55, 57, 59, 59, //
+    59, 59, 57, 55, 55, 57, 59, 59, //
+    59, 59, 57, 57, 57, 57, 59, 59, //
+    59, 59, 59, 59, 59, 59, 59, 59, //
+    58, 59, 59, 59, 59, 59, 59, 58  //
+};
 
 extern U64 SQUARES_BETWEEN[NUM_SQUARES][NUM_SQUARES];
 extern U64 LINE[NUM_SQUARES][NUM_SQUARES];

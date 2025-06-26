@@ -3,6 +3,7 @@
 #include "../fathom/tbprobe.h"
 
 namespace Astra {
+
 struct ProbeData {
     U64 w_occ;
     U64 b_occ;
@@ -58,8 +59,20 @@ Score probeWDL(const Board &board) {
     if(!d.is_allowed)
         return VALUE_NONE;
 
-    unsigned wdl = tb_probe_wdl(d.w_occ, d.b_occ, d.kings, d.queens, d.rooks, d.bishops, d.knights, d.pawns, d.fmc,
-                                d.any_castling, d.ep_sq, d.stm);
+    unsigned wdl = tb_probe_wdl( //
+        d.w_occ,                 //
+        d.b_occ,                 //
+        d.kings,                 //
+        d.queens,                //
+        d.rooks,                 //
+        d.bishops,               //
+        d.knights,               //
+        d.pawns,                 //
+        d.fmc,                   //
+        d.any_castling,          //
+        d.ep_sq,                 //
+        d.stm                    //
+    );
 
     if(wdl == TB_LOSS)
         return -VALUE_TB_WIN;
@@ -78,8 +91,21 @@ std::pair<Score, Move> probeDTZ(const Board &board) {
     if(!d.is_allowed)
         return {VALUE_NONE, NO_MOVE};
 
-    unsigned result = tb_probe_root(d.w_occ, d.b_occ, d.kings, d.queens, d.rooks, d.bishops, d.knights, d.pawns, d.fmc,
-                                    d.any_castling, d.ep_sq, d.stm, NULL);
+    unsigned result = tb_probe_root( //
+        d.w_occ,                     //
+        d.b_occ,                     //
+        d.kings,                     //
+        d.queens,                    //
+        d.rooks,                     //
+        d.bishops,                   //
+        d.knights,                   //
+        d.pawns,                     //
+        d.fmc,                       //
+        d.any_castling,              //
+        d.ep_sq,                     //
+        d.stm,                       //
+        NULL                         //
+    );
 
     // if the result failed don't do anything
     if(result == TB_RESULT_FAILED || result == TB_RESULT_CHECKMATE || result == TB_RESULT_STALEMATE)
@@ -103,7 +129,6 @@ std::pair<Score, Move> probeDTZ(const Board &board) {
     moves.gen<LEGALS>(board);
     for(auto m : moves) {
         bool is_prom = typeOfPromotion(m.type()) == prom_type;
-
         if(from == m.from() && to == m.to() && (is_prom || !isProm(m)))
             return {s, m};
     }
