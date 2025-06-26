@@ -118,14 +118,15 @@ class Board {
     U64 getNonPawnHash(Color c) const;
     U64 getThreats(PieceType pt) const;
 
-    void resetAccumulator();
-
     U64 diagSliders(Color c) const;
     U64 orthSliders(Color c) const;
 
     U64 occupancy(Color c) const;
     U64 attackersTo(Color c, Square sq, U64 occ) const;
     U64 keyAfter(Move m) const;
+
+    void resetAccumulator();
+    void updateAccumulators();
 
     void makeMove(const Move &m, bool update_nnue = true);
     void unmakeMove(const Move &m);
@@ -284,10 +285,7 @@ inline void Board::putPiece(Piece pc, Square sq, bool update_nnue) {
         return;
 
     NNUE::Accum &acc = getAccumulator();
-    NNUE::Accum &input = accumulators[accumulators_idx - 2];
-
-    NNUE::nnue.putPiece(acc, input, pc, sq, kingSq(WHITE), WHITE);
-    NNUE::nnue.putPiece(acc, input, pc, sq, kingSq(BLACK), BLACK);
+    acc.putPiece(pc, sq, kingSq(WHITE), kingSq(BLACK));
 }
 
 inline void Board::removePiece(Square sq, bool update_nnue) {
@@ -304,10 +302,7 @@ inline void Board::removePiece(Square sq, bool update_nnue) {
         return;
 
     NNUE::Accum &acc = getAccumulator();
-    NNUE::Accum &input = accumulators[accumulators_idx - 1];
-
-    NNUE::nnue.removePiece(acc, input, pc, sq, kingSq(WHITE), WHITE);
-    NNUE::nnue.removePiece(acc, input, pc, sq, kingSq(BLACK), BLACK);
+    acc.removePiece(pc, sq, kingSq(WHITE), kingSq(BLACK));
 }
 
 inline void Board::movePiece(Square from, Square to, bool update_nnue) {
@@ -326,15 +321,14 @@ inline void Board::movePiece(Square from, Square to, bool update_nnue) {
         return;
 
     NNUE::Accum &acc = getAccumulator();
-    NNUE::Accum &input = accumulators[accumulators_idx - 1];
+    acc.movePiece(pc, from, to, kingSq(WHITE), kingSq(BLACK));
 
-    // update other side
-    NNUE::nnue.movePiece(acc, input, pc, from, to, kingSq(~stm), ~stm);
+    if(typeOf(pc) != KING)
+        return; // no need to refresh
 
-    if(!NNUE::needsRefresh(pc, from, to))
-        NNUE::nnue.movePiece(acc, input, pc, from, to, kingSq(stm), stm);
-    else
-        accumulator_table->refresh(*this, stm);
+    // refresh only if different bucket index or king crossing the other half
+    if(NNUE::KING_BUCKET[relSquare(stm, from)] != NNUE::KING_BUCKET[relSquare(stm, to)] || fileOf(from) + fileOf(to) == 7)
+        acc.setRefresh(stm); // other side doesn't need refresh
 }
 
 } // namespace Chess

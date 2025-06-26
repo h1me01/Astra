@@ -22,7 +22,7 @@ class Board;
 namespace NNUE {
 class Accum;
 
-// 2x(12x768->1024)->1
+// 2x(12x768->1536)->1
 
 constexpr int BUCKET_SIZE = 12;
 constexpr int FEATURE_SIZE = 768;

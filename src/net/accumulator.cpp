@@ -3,6 +3,54 @@
 
 namespace NNUE {
 
+// class Accum
+
+void Accum::reset() {
+    initialized[WHITE] = needs_refresh[WHITE] = false;
+    initialized[BLACK] = needs_refresh[BLACK] = false;
+
+    num_dpcs = 0;
+}
+
+void Accum::putPiece(Piece pc, Square to, Square wksq, Square bksq) {
+    assert(num_dpcs < 4);
+    this->wksq = wksq;
+    this->bksq = bksq;
+    dpcs[num_dpcs++] = DirtyPiece(pc, NO_SQUARE, to);
+}
+
+void Accum::removePiece(Piece pc, Square from, Square wksq, Square bksq) {
+    assert(num_dpcs < 4);
+    this->wksq = wksq;
+    this->bksq = bksq;
+    dpcs[num_dpcs++] = DirtyPiece(pc, from, NO_SQUARE);
+}
+
+void Accum::movePiece(Piece pc, Square from, Square to, Square wksq, Square bksq) {
+    assert(num_dpcs < 4);
+    this->wksq = wksq;
+    this->bksq = bksq;
+    dpcs[num_dpcs++] = DirtyPiece(pc, from, to);
+}
+
+void Accum::update(Accum &prev, Color view) {
+    for(int i = 0; i < num_dpcs; i++) {
+        DirtyPiece dpc = dpcs[i];
+        Square ksq = (view == WHITE) ? wksq : bksq;
+
+        if(dpc.from == NO_SQUARE)
+            nnue.putPiece(*this, prev, dpc.pc, dpc.to, ksq, view);
+        else if(dpc.to == NO_SQUARE)
+            nnue.removePiece(*this, prev, dpc.pc, dpc.from, ksq, view);
+        else
+            nnue.movePiece(*this, prev, dpc.pc, dpc.from, dpc.to, ksq, view);
+    }
+
+    assert(isInitialized(view));
+}
+
+// class AccumTable
+
 void AccumTable::refresh(Board &board, Color view) {
     assert(view == WHITE || view == BLACK);
 

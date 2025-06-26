@@ -100,6 +100,8 @@ void NNUE::initAccum(Accum &acc) const {
 }
 
 int32_t NNUE::forward(Board &board) const {
+    board.updateAccumulators();
+
     Color stm = board.getTurn();
     Accum &acc = board.getAccumulator();
 
@@ -137,7 +139,7 @@ int32_t NNUE::forward(Board &board) const {
     for(int i = 0; i < L1_SIZE; i++) {
         int32_t clipped_stm = std::clamp(int32_t(acc_stm[j]), 0, FT_QUANT);
         int32_t clipped_opp = std::clamp(int32_t(acc_opp[j]), 0, FT_QUANT);
-        
+
         output += l1_weights[i] * clipped_stm * clipped_stm;
         output += l1_weights[L1_SIZE + i] * clipped_opp * clipped_opp;
     }
