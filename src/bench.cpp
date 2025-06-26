@@ -7,11 +7,6 @@
 
 #include "bench.h"
 #include "search/threads.h"
-#include <chrono>
-#include <iostream>
-#include <memory>
-#include <string>
-#include <vector>
 
 namespace Bench {
     

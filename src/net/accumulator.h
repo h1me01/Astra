@@ -1,6 +1,5 @@
 #pragma once
 
-#include "nnue.h"
 #include <array>
 #include <cassert>
 

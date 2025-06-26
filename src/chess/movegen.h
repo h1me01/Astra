@@ -1,6 +1,5 @@
 #pragma once
 
-#include "board.h"
 #include <type_traits> // std::is_same
 
 #include "board.h"

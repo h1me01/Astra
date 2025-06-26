@@ -1,6 +1,5 @@
 #pragma once
 
-#include "../chess/misc.h"
 #include <array>
 #include <cassert>
 #include <cstring>

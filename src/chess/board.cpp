@@ -1,4 +1,3 @@
-#include "board.h"
 #include <cassert>
 
 #include "board.h"
