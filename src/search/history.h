@@ -3,6 +3,8 @@
 #include "../chess/board.h"
 #include "stack.h"
 
+using namespace Chess;
+
 namespace Astra {
 
 constexpr size_t PAWN_HIST_SIZE = 512;

@@ -3,6 +3,8 @@
 
 #include "search.h"
 
+using namespace Chess;
+
 namespace Astra {
 
 class ThreadPool {
@@ -14,6 +16,14 @@ class ThreadPool {
     std::atomic<bool> stop_flag{false};
 
   public:
+    void forceStop();
+    bool isStopped() const;
+    U64 getTotalNodes() const;
+    U64 getTotalTbHits() const;
+    int getSelDepth() const;
+
+    void launchWorkers(const Board &board, Limits limit, int worker_count, bool use_tb);
+
     void stop() {
         stop_flag.store(true);
     }
@@ -21,15 +31,6 @@ class ThreadPool {
     void start() {
         stop_flag.store(false);
     }
-
-    void launchWorkers(const Board &board, Limits limit, int worker_count, bool use_tb);
-    void forceStop();
-
-    bool isStopped() const;
-
-    U64 getTotalNodes() const;
-    U64 getTotalTbHits() const;
-    int getSelDepth() const;
 };
 
 // global variable

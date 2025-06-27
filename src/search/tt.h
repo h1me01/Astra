@@ -6,7 +6,12 @@ using namespace Chess;
 
 namespace Astra {
 
-enum Bound { NO_BOUND = 0, LOWER_BOUND = 1, UPPER_BOUND = 2, EXACT_BOUND = 3 };
+enum Bound { //
+    NO_BOUND = 0,
+    LOWER_BOUND = 1,
+    UPPER_BOUND = 2,
+    EXACT_BOUND = 3
+};
 
 constexpr int AGE_STEP = 0x8;
 constexpr int AGE_CYCLE = 255 + AGE_STEP;
@@ -23,6 +28,9 @@ class TTEntry {
     uint8_t age_pv_bound = NO_BOUND;
 
   public:
+    int relativeAge() const;
+    void store(U64 hash, Move move, Score score, Score eval, Bound bound, int depth, int ply, bool pv);
+
     void setAgePvBound(uint8_t age_pv_bound) {
         this->age_pv_bound = age_pv_bound;
     }
@@ -68,10 +76,6 @@ class TTEntry {
     bool getTTPv() {
         return age_pv_bound & 0x4;
     }
-
-    int relativeAge() const;
-
-    void store(U64 hash, Move move, Score score, Score eval, Bound bound, int depth, int ply, bool pv);
 };
 #pragma pack(pop)
 
@@ -99,6 +103,7 @@ class TTable {
     void init(U64 size_mb);
     void clear();
 
+    int hashfull() const;
     TTEntry *lookup(U64 hash, bool *hit) const;
 
     size_t index(U64 hash) const {
@@ -108,8 +113,6 @@ class TTable {
     void prefetch(U64 hash) const {
         __builtin_prefetch(&buckets[index(hash)]);
     }
-
-    int hashfull() const;
 
     void incrementAge() {
         age += AGE_STEP;

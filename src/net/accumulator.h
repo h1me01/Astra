@@ -5,6 +5,8 @@
 
 #include "nnue.h"
 
+using namespace Chess;
+
 namespace NNUE {
 
 // idea from stockfish

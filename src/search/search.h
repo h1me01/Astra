@@ -7,6 +7,8 @@
 #include "timeman.h"
 #include "tt.h"
 
+using namespace Chess;
+
 namespace Astra {
 
 struct PVLine {
@@ -35,7 +37,12 @@ void initReductions();
 class Search {
   private:
     bool debugging = false;
-    int multipv_idx, root_depth;
+
+    int multipv_idx;
+    int root_depth;
+    U64 nodes = 0;
+    U64 tb_hits = 0;
+    int seldepth = 0;
 
     MoveList<RootMove> root_moves;
 
@@ -60,19 +67,26 @@ class Search {
 
   public:
     int id = 0; // main thread
-
     bool use_tb = false;
 
-    U64 nodes = 0;
-    U64 tb_hits = 0;
-    int seldepth = 0;
-
-    Limits limit;
     Board board;
+    Limits limit;
 
     Search(const std::string &fen);
 
     Move bestMove();
+
+    U64 getNodes() const {
+        return nodes;
+    }
+
+    U64 getTbHits() const {
+        return tb_hits;
+    }
+
+    int getSelDepth() const {
+        return seldepth;
+    }
 };
 
 } // namespace Astra

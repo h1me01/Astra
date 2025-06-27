@@ -39,21 +39,21 @@ bool ThreadPool::isStopped() const {
 U64 ThreadPool::getTotalNodes() const {
     U64 total_nodes = 0;
     for(const auto &t : threads)
-        total_nodes += t->nodes;
+        total_nodes += t->getNodes();
     return total_nodes;
 }
 
 U64 ThreadPool::getTotalTbHits() const {
     U64 total_tb_hits = 0;
     for(const auto &t : threads)
-        total_tb_hits += t->tb_hits;
+        total_tb_hits += t->getTbHits();
     return total_tb_hits;
 }
 
 int ThreadPool::getSelDepth() const {
     int max_sel_depth = 0;
     for(const auto &t : threads)
-        max_sel_depth = std::max(max_sel_depth, t->seldepth);
+        max_sel_depth = std::max(max_sel_depth, t->getSelDepth());
     return max_sel_depth;
 }
 

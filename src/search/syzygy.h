@@ -2,6 +2,8 @@
 
 #include "../chess/board.h"
 
+using namespace Chess;
+
 namespace Astra {
 
 Score probeWDL(const Board &board);

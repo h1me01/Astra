@@ -200,7 +200,8 @@ inline Move *genLegals(const Board &board, Move *ml) {
     return ml;
 }
 
-template <typename Type = Move> class MoveList {
+template <typename Type = Move> //
+class MoveList {
   private:
     Type list[MAX_MOVES];
     Type *last;

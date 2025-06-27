@@ -4,8 +4,15 @@
 #include "search.h"
 #include "stack.h"
 
+using namespace Chess;
+
 namespace Astra {
-enum SearchType : int { N_SEARCH, Q_SEARCH, PC_SEARCH };
+
+enum SearchType : int { //
+    N_SEARCH,
+    Q_SEARCH,
+    PC_SEARCH
+};
 
 enum Stage : int {
     PLAY_TT_MOVE,
@@ -34,6 +41,8 @@ class MovePicker {
     bool gen_checkers;
     bool skip_quiets = false;
 
+    Move tt_move, killer, counter;
+
     MoveList<> ml_main;
     MoveList<> ml_bad_noisy;
 
@@ -56,8 +65,6 @@ class MovePicker {
     void skipQuiets() {
         skip_quiets = true;
     }
-
-    Move tt_move, killer, counter;
 };
 
 } // namespace Astra

@@ -68,7 +68,7 @@ void bench(int depth) {
         search->limit = limits;
         search->bestMove();
 
-        nodes += search->nodes;
+        nodes += search->getNodes();
     }
 
     auto end = std::chrono::high_resolution_clock::now();
