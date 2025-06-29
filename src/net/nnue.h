@@ -34,6 +34,8 @@ constexpr int OUTPUT_SIZE = 1;
 constexpr int FT_QUANT = 255;
 constexpr int L1_QUANT = 64;
 
+constexpr int EVAL_SCALE = 400;
+
 // clang-format off
 constexpr int KING_BUCKET[NUM_SQUARES]
 {

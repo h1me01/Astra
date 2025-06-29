@@ -129,7 +129,8 @@ int32_t NNUE::forward(Board &board) const {
         res = avx_add_epi32(res, product);
     }
 
-    return horizontalSum(res) / (FT_QUANT * L1_QUANT) + l1_biases[0] / L1_QUANT;
+    int32_t output = horizontalSum(res) / FT_QUANT + l1_biases[0];
+    return (output * EVAL_SCALE) / (FT_QUANT * L1_QUANT);
 #else
     int32_t output = 0;
 
@@ -144,7 +145,9 @@ int32_t NNUE::forward(Board &board) const {
         output += l1_weights[L1_SIZE + i] * clipped_opp * clipped_opp;
     }
 
-    return output / (FT_QUANT * L1_QUANT) + l1_biases[0] / L1_QUANT;
+    output /= FT_QUANT;
+    output += l1_biases[0];
+    return (output * EVAL_SCALE) / (FT_QUANT * L1_QUANT);
 #endif
 }
 
