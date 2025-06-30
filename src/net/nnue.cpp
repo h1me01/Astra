@@ -138,15 +138,14 @@ int32_t NNUE::forward(Board &board) const {
     int16_t *acc_opp = acc.getData(~stm);
 
     for(int i = 0; i < L1_SIZE; i++) {
-        int32_t clipped_stm = std::clamp(int32_t(acc_stm[j]), 0, FT_QUANT);
-        int32_t clipped_opp = std::clamp(int32_t(acc_opp[j]), 0, FT_QUANT);
+        int32_t clipped_stm = std::clamp(int32_t(acc_stm[i]), 0, FT_QUANT);
+        int32_t clipped_opp = std::clamp(int32_t(acc_opp[i]), 0, FT_QUANT);
 
         output += l1_weights[i] * clipped_stm * clipped_stm;
         output += l1_weights[L1_SIZE + i] * clipped_opp * clipped_opp;
     }
 
-    output /= FT_QUANT;
-    output += l1_biases[0];
+    output = output / FT_QUANT + l1_biases[0];
     return (output * EVAL_SCALE) / (FT_QUANT * L1_QUANT);
 #endif
 }
@@ -165,8 +164,8 @@ void NNUE::putPiece(Accum &acc, Accum &prev, Piece pc, Square psq, Square ksq, C
     int16_t *acc_view = acc.getData(view);
     int16_t *prev_view = acc.isInitialized(view) ? acc_view : prev.getData(view);
 
-    for(int i = 0; i < HIDDEN_SIZE; i++)
-        acc_view[i] = prev_view[i] + ft_weights[idx * HIDDEN_SIZE + i];
+    for(int i = 0; i < L1_SIZE; i++)
+        acc_view[i] = prev_view[i] + ft_weights[idx * L1_SIZE + i];
 #endif
 
     acc.markAsInitialized(view);
@@ -186,8 +185,8 @@ void NNUE::removePiece(Accum &acc, Accum &prev, Piece pc, Square psq, Square ksq
     int16_t *acc_view = acc.getData(view);
     int16_t *prev_view = acc.isInitialized(view) ? acc_view : prev.getData(view);
 
-    for(int i = 0; i < HIDDEN_SIZE; i++)
-        acc_view[i] = prev_view[i] - ft_weights[idx * HIDDEN_SIZE + i];
+    for(int i = 0; i < L1_SIZE; i++)
+        acc_view[i] = prev_view[i] - ft_weights[idx * L1_SIZE + i];
 #endif
 
     acc.markAsInitialized(view);
@@ -210,8 +209,8 @@ void NNUE::movePiece(Accum &acc, Accum &prev, Piece pc, Square from, Square to, 
     int16_t *acc_view = acc.getData(view);
     int16_t *prev_view = acc.isInitialized(view) ? acc_view : prev.getData(view);
 
-    for(int i = 0; i < HIDDEN_SIZE; i++) {
-        int16_t diff = ft_weights[to_idx * HIDDEN_SIZE + i] - ft_weights[from_idx * HIDDEN_SIZE + i];
+    for(int i = 0; i < L1_SIZE; i++) {
+        int16_t diff = ft_weights[to_idx * L1_SIZE + i] - ft_weights[from_idx * L1_SIZE + i];
         acc_view[i] = prev_view[i] + diff;
     }
 #endif
