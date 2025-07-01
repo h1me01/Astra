@@ -264,24 +264,25 @@ bool Board::isPseudoLegal(const Move &m) const {
 
     const Direction up = stm == WHITE ? NORTH : SOUTH;
 
-    if(!isValidMove(m) ||                               // move must exist
-       from_pc == NO_PIECE ||                           // piece must exist
-       colorOf(from_pc) != stm ||                       // piece must match the current stm
-       (SQUARE_BB[to] & us_bb) ||                       // we must not capture our own piece
-       (!isCap(m) && to_pc != NO_PIECE) ||              // if quiet move, then target square must be empty
-       (popCount(info.checkers) > 1 && pt != KING) ||   // if double check, then only king can move
-       (pt == KING && (SQUARE_BB[to] & info.danger)) || // king can't move to danger squares
-       (mt != EN_PASSANT && isCap(m) &&
-        to_pc == NO_PIECE)) // if capture move, then target square must be occupied by enemy piece
-    {
+    // clang-format off
+    if(!isValidMove(m)                                        // move must exist
+       || from_pc == NO_PIECE                                 // piece must exist
+       || colorOf(from_pc) != stm                             // piece must match the current stm
+       || (SQUARE_BB[to] & us_bb)                             // we must not capture our own piece
+       || (!isCap(m) && to_pc != NO_PIECE)                    // if quiet move, then target square must be empty
+       || (popCount(info.checkers) > 1 && pt != KING)         // if double check, then only king can move
+       || (pt == KING && (SQUARE_BB[to] & info.danger))       // king can't move to danger squares
+       || (mt != EN_PASSANT && isCap(m) && to_pc == NO_PIECE) // if capture move, then target square must be occupied by enemy piece
+    ) {
+        // clang-format on
         return false;
     }
 
     if(mt == CASTLING) {
-        if(pt != KING ||                 // make sure we move a king
-           info.checkers ||              // can't castle when in check
-           !info.castle_rights.any(stm)) // or when no castling rights are present
-        {
+        if(pt != KING                      // make sure we move a king
+           || info.checkers                // can't castle when in check
+           || !info.castle_rights.any(stm) // or when no castling rights are present
+        ) {
             return false;
         }
 
@@ -300,11 +301,11 @@ bool Board::isPseudoLegal(const Move &m) const {
     }
 
     if(mt == EN_PASSANT) {
-        if(pt != PAWN ||                                             // make sure we move a pawn
-           to_pc != NO_PIECE ||                                      // to-square must not be occupied
-           info.ep_sq != to ||                                       // ep square must be same
-           pieceAt(Square(info.ep_sq ^ 8)) != makePiece(~stm, PAWN)) // pawn on ep square must be a enemy pawn
-        {
+        if(pt != PAWN                                                  // make sure we move a pawn
+           || to_pc != NO_PIECE                                        // to-square must not be occupied
+           || info.ep_sq != to                                         // ep square must be same
+           || pieceAt(Square(info.ep_sq ^ 8)) != makePiece(~stm, PAWN) // pawn on ep square must be a enemy pawn
+        ) {
             return false;
         }
     }

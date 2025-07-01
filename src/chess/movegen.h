@@ -6,9 +6,15 @@
 
 namespace Chess {
 
-enum GenType : int { NOISY = 0, QUIETS = 1, QUIET_CHECKERS = 2, LEGALS = 3 };
+enum GenType : int { //
+    NOISY = 0,
+    QUIETS = 1,
+    QUIET_CHECKERS = 2,
+    LEGALS = 3
+};
 
-template <GenType gt, Direction d, MoveType mt> Move *makePromotions(Move *ml, Square to) {
+template <GenType gt, Direction d, MoveType mt> //
+Move *makePromotions(Move *ml, Square to) {
     assert(to >= a1 && to <= h8);
     assert(!(to >= a2 && to <= h7));
 
@@ -24,7 +30,8 @@ template <GenType gt, Direction d, MoveType mt> Move *makePromotions(Move *ml, S
     return ml;
 }
 
-template <Color us, GenType gt> Move *genPawnMoves(const Board &board, Move *ml, const U64 targets) {
+template <Color us, GenType gt> //
+Move *genPawnMoves(const Board &board, Move *ml, const U64 targets) {
     constexpr Color them = ~us;
     constexpr U64 rank7_bb = MASK_RANK[relRank(us, RANK_7)];
     constexpr Direction up = us == WHITE ? NORTH : SOUTH;
@@ -103,7 +110,8 @@ template <Color us, GenType gt> Move *genPawnMoves(const Board &board, Move *ml,
     return ml;
 }
 
-template <Color us, PieceType pt, GenType gt> Move *genPieceMoves(const Board &board, Move *ml, const U64 targets) {
+template <Color us, PieceType pt, GenType gt> //
+Move *genPieceMoves(const Board &board, Move *ml, const U64 targets) {
     const U64 them_bb = board.occupancy(~us);
     const U64 occ = board.occupancy(us) | them_bb;
 
@@ -168,7 +176,8 @@ template <Color us, GenType gt> Move *genAll(const Board &board, Move *ml) {
     return ml;
 }
 
-template <Color us> Move *genQuietCheckers(const Board &board, Move *ml) {
+template <Color us> //
+Move *genQuietCheckers(const Board &board, Move *ml) {
     constexpr Color them = ~us;
     const Square opp_ksq = board.kingSq(them);
     const U64 occ = board.occupancy();
@@ -220,9 +229,11 @@ class MoveList {
         if(gt == LEGALS)
             last = genLegals(board, list);
         else if(gt == QUIET_CHECKERS)
-            last = board.getTurn() == WHITE ? genQuietCheckers<WHITE>(board, list) : genQuietCheckers<BLACK>(board, list);
+            last = board.getTurn() == WHITE ? genQuietCheckers<WHITE>(board, list) //
+                                            : genQuietCheckers<BLACK>(board, list);
         else
-            last = board.getTurn() == WHITE ? genAll<WHITE, gt>(board, list) : genAll<BLACK, gt>(board, list);
+            last = board.getTurn() == WHITE ? genAll<WHITE, gt>(board, list) //
+                                            : genAll<BLACK, gt>(board, list);
     }
 
     void add(Type m) {
