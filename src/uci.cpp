@@ -24,8 +24,9 @@ void Options::print() const {
         Option option = elem.second;
         const std::string &value = option.default_val;
 
-        std::cout << "option name " << elem.first << " type " << option.type << " default "
-                  << (value.empty() ? "<empty>" : value);
+        std::cout << "option name " << elem.first //
+                  << " type " << option.type      //
+                  << " default " << (value.empty() ? "<empty>" : value);
 
         if(option.min != 0 && option.max != 0)
             std::cout << " min " << option.min << " max " << option.max << std::endl;
@@ -35,7 +36,9 @@ void Options::print() const {
 
 #ifdef TUNE
     for(auto param : Astra::params)
-        std::cout << "option name " << param->name << " type spin default " << param->value << " min " << param->min
+        std::cout << "option name " << param->name         //
+                  << " type spin default " << param->value //
+                  << " min " << param->min                 //
                   << " max " << param->max << std::endl;
 #endif
 }
