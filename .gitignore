@@ -12,3 +12,5 @@ src/t.h
 src/t2.h
 
 CMakeLists.txt
+
+astrabuild.mk
