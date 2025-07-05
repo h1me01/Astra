@@ -149,6 +149,8 @@ class Board {
     int getPhase() const;
 
     void resetPly() {
+        history[0] = history[curr_ply];
+        history[0].plies_from_null = 0;
         curr_ply = 0;
     }
 
