@@ -27,7 +27,6 @@ struct RootMove {
     Move move;
     Score score;
     Score avg_score;
-    int seldepth;
     U64 nodes;
     PVLine pv;
 };
@@ -54,10 +53,6 @@ class Search {
         return tb_hits;
     }
 
-    int get_seldepth() const {
-        return seldepth;
-    }
-
   private:
     bool debug = false;
 
@@ -65,7 +60,6 @@ class Search {
     int root_depth;
     U64 nodes = 0;
     U64 tb_hits = 0;
-    int seldepth = 0;
 
     MoveList<RootMove> rootmoves;
 

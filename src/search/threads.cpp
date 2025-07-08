@@ -50,13 +50,6 @@ U64 ThreadPool::get_tb_hits() const {
     return total_tb_hits;
 }
 
-int ThreadPool::get_seldepth() const {
-    int max_sel_depth = 0;
-    for(const auto &t : threads)
-        max_sel_depth = std::max(max_sel_depth, t->get_seldepth());
-    return max_sel_depth;
-}
-
 // global variable
 ThreadPool threads;
 

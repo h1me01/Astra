@@ -38,7 +38,7 @@ Move Search::bestmove() {
     }
 
     for(int i = 0; i < legals.size(); i++)
-        rootmoves.add({legals[i], 0, 0, 0, 0, {}});
+        rootmoves.add({legals[i], 0, 0, 0, {}});
 
     const int multipv_size = std::min(limit.multipv, rootmoves.size());
 
@@ -68,9 +68,6 @@ Move Search::bestmove() {
 
     Move bestmove = NO_MOVE, prev_bestmove = NO_MOVE;
     for(root_depth = 1; root_depth < MAX_PLY; root_depth++) {
-        // reset selective depth
-        seldepth = 0;
-
         for(multipv_idx = 0; multipv_idx < multipv_size; multipv_idx++)
             aspiration(root_depth, ss);
 
@@ -205,10 +202,6 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_no
         if(alpha >= beta)
             return alpha;
     }
-
-    // selective depth
-    if(pv_node && ss->ply > seldepth)
-        seldepth = ss->ply; // heighest depth a pv node has reached
 
     // check for terminal state
     if(!root_node) {
@@ -345,7 +338,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_no
     // update quiet history
     Move prev_move = (ss - 1)->curr_move;
     if(!skipped                               //
-       && is_valid_move(prev_move)            //
+       && is_valid_move(prev_move)            // first check if move is valid
        && !is_cap(prev_move)                  //
        && (ss - 1)->static_eval != VALUE_NONE //
     ) {
@@ -648,7 +641,6 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_no
 
             if(made_moves == 1 || score > alpha) {
                 rm->score = score;
-                rm->seldepth = seldepth;
 
                 // copy pv line
                 rm->pv[0] = move;
@@ -987,10 +979,9 @@ void Search::print_uci_info() {
     const Score result = rootmoves[multipv_idx].score;
     const PVLine &pv_line = rootmoves[multipv_idx].pv;
 
-    std::cout << "info depth " << root_depth                   //
-              << " seldepth " << Astra::threads.get_seldepth() //
-              << " multipv " << multipv_idx + 1                //
-              << " score ";                                    //
+    std::cout << "info depth " << root_depth    //
+              << " multipv " << multipv_idx + 1 //
+              << " score ";                     //
 
     if(std::abs(result) >= VALUE_MATE - MAX_PLY)
         std::cout << "mate " << (VALUE_MATE - std::abs(result) + 1) / 2 * (result > 0 ? 1 : -1);

@@ -13,7 +13,6 @@ class ThreadPool {
     bool is_stopped() const;
     U64 get_nodes() const;
     U64 get_tb_hits() const;
-    int get_seldepth() const;
 
     void launch_workers(const Board &board, Limits limit, int worker_count, bool use_tb);
 
