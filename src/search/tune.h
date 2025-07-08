@@ -29,6 +29,18 @@ void params_to_spsa();
 #define PARAM(name, value, min, max) constexpr int name = value
 #endif
 
+PARAM(pawn_value, 100, 50, 150);
+PARAM(knight_value, 325, 200, 400);
+PARAM(bishop_value, 325, 200, 400);
+PARAM(rook_value, 500, 400, 600);
+PARAM(queen_value, 1000, 700, 1100);
+
+PARAM(pawn_value_see, 100, 50, 150);
+PARAM(knight_value_see, 325, 200, 400);
+PARAM(bishop_value_see, 325, 200, 400);
+PARAM(rook_value_see, 500, 400, 600);
+PARAM(queen_value_see, 1000, 700, 1100);
+
 PARAM(stability_base, 134, 100, 200);
 PARAM(stability_mult, 51, 0, 250);
 

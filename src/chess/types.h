@@ -4,6 +4,8 @@
 #include <iostream>
 #include <string>
 
+#include "../search/tune.h"
+
 namespace Chess {
 
 using U64 = uint64_t;
@@ -14,7 +16,25 @@ const std::string STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w 
 
 constexpr int MAX_PLY = 246;
 
-constexpr int PIECE_VALUES[] = {100, 325, 325, 500, 1000, 30000, 0};
+const int PIECE_VALUES[] = {
+    Astra::pawn_value,   //
+    Astra::knight_value, //
+    Astra::bishop_value, //
+    Astra::rook_value,   //
+    Astra::queen_value,  //
+    0,                   //
+    0                    //
+};
+
+const int PIECE_VALUES_SEE[] = {
+    Astra::pawn_value_see,   //
+    Astra::knight_value_see, //
+    Astra::bishop_value_see, //
+    Astra::rook_value_see,   //
+    Astra::queen_value_see,  //
+    0,                       //
+    0                        //
+};
 
 constexpr int NUM_COLORS = 2;
 enum Color {

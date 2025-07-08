@@ -575,11 +575,11 @@ bool Board::see(Move &m, int threshold) const {
 
     assert(attacker != NO_PIECE_TYPE);
 
-    int swap = PIECE_VALUES[victim] - threshold;
+    int swap = PIECE_VALUES_SEE[victim] - threshold;
     if(swap < 0)
         return false;
 
-    swap = PIECE_VALUES[attacker] - swap;
+    swap = PIECE_VALUES_SEE[attacker] - swap;
 
     if(swap <= 0)
         return true;
@@ -604,26 +604,26 @@ bool Board::see(Move &m, int threshold) const {
         result ^= 1;
 
         if((least_attacker = my_attacker & get_piecebb(curr_stm, PAWN))) {
-            if((swap = PIECE_VALUES[PAWN] - swap) < result)
+            if((swap = PIECE_VALUES_SEE[PAWN] - swap) < result)
                 break;
             occ ^= (least_attacker & -least_attacker);
             attackers |= get_bishop_attacks(to, occ) & diag;
         } else if((least_attacker = my_attacker & get_piecebb(curr_stm, KNIGHT))) {
-            if((swap = PIECE_VALUES[KNIGHT] - swap) < result)
+            if((swap = PIECE_VALUES_SEE[KNIGHT] - swap) < result)
                 break;
             occ ^= (least_attacker & -least_attacker);
         } else if((least_attacker = my_attacker & get_piecebb(curr_stm, BISHOP))) {
-            if((swap = PIECE_VALUES[BISHOP] - swap) < result)
+            if((swap = PIECE_VALUES_SEE[BISHOP] - swap) < result)
                 break;
             occ ^= (least_attacker & -least_attacker);
             attackers |= get_bishop_attacks(to, occ) & diag;
         } else if((least_attacker = my_attacker & get_piecebb(curr_stm, ROOK))) {
-            if((swap = PIECE_VALUES[ROOK] - swap) < result)
+            if((swap = PIECE_VALUES_SEE[ROOK] - swap) < result)
                 break;
             occ ^= (least_attacker & -least_attacker);
             attackers |= get_rook_attacks(to, occ) & orth;
         } else if((least_attacker = my_attacker & get_piecebb(curr_stm, QUEEN))) {
-            if((swap = PIECE_VALUES[QUEEN] - swap) < result)
+            if((swap = PIECE_VALUES_SEE[QUEEN] - swap) < result)
                 break;
             occ ^= (least_attacker & -least_attacker);
             attackers |= (get_bishop_attacks(to, occ) & diag) | (get_rook_attacks(to, occ) & orth);
