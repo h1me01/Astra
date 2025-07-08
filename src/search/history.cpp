@@ -32,16 +32,16 @@ void History::update(const Board &board,    //
                      Move *c_moves, int cc, //
                      int depth              //
 ) {
-    Color stm = board.getTurn();
+    Color stm = board.get_stm();
     int bonus = historyBonus(depth);
     int malus = historyMalus(depth);
 
-    if(!isCap(best)) {
+    if(!is_cap(best)) {
         // don't set quiet queen promotions as a counter/killer,
         // so we don't actually return it twice in the movepicker
         if(best.type() != PQ_QUEEN) {
             Move prev_move = (ss - 1)->curr_move;
-            if(isValidMove(prev_move))
+            if(is_valid_move(prev_move))
                 counters[prev_move.from()][prev_move.to()] = best;
 
             ss->killer = best;
@@ -50,22 +50,22 @@ void History::update(const Board &board,    //
         // credits to ethereal
         // only update quiet history if best move was important
         if(depth > 3 || qc > 1) {
-            updateQH(stm, best, bonus);
-            updateContH(best, ss, bonus);
-            updatePawnHist(board, best, bonus);
+            update_qh(stm, best, bonus);
+            update_conth(best, ss, bonus);
+            update_ph(board, best, bonus);
 
             // quiet maluses
             for(int i = 0; i < qc; i++) {
                 Move quiet = q_moves[i];
                 if(quiet == best)
                     continue;
-                updateQH(stm, quiet, -malus);
-                updateContH(quiet, ss, -malus);
-                updatePawnHist(board, quiet, -malus);
+                update_qh(stm, quiet, -malus);
+                update_conth(quiet, ss, -malus);
+                update_ph(board, quiet, -malus);
             }
         }
     } else {
-        updateCapHistory(board, best, bonus);
+        update_ch(board, best, bonus);
     }
 
     // capture maluses
@@ -73,28 +73,28 @@ void History::update(const Board &board,    //
         Move cap = c_moves[i];
         if(cap == best)
             continue;
-        updateCapHistory(board, cap, -malus);
+        update_ch(board, cap, -malus);
     }
 
-    pawn_hist[pawnHistIdx(board.getPawnHash())][board.pieceAt(best.from())][best.to()] += bonus;
+    ph[ph_idx(board.get_pawnhash())][board.piece_at(best.from())][best.to()] += bonus;
 }
 
-void History::updateQH(Color c, Move move, int bonus) {
+void History::update_qh(Color c, Move move, int bonus) {
     int16_t &value = hh[c][move.from()][move.to()];
     value += getFormula(value, bonus);
 }
 
-void History::updatePawnHist(const Board &board, Move &move, int bonus) {
-    Piece pc = board.pieceAt(move.from());
-    int16_t &value = pawn_hist[pawnHistIdx(board.getPawnHash())][pc][move.to()];
+void History::update_ph(const Board &board, Move &move, int bonus) {
+    Piece pc = board.piece_at(move.from());
+    int16_t &value = ph[ph_idx(board.get_pawnhash())][pc][move.to()];
     assert(pc >= WHITE_PAWN && pc <= BLACK_KING);
     assert(move.to() >= a1 && move.to() <= h8);
     value += getFormula(value, bonus);
 }
 
-void History::updateContH(Move &move, Stack *ss, int bonus) {
+void History::update_conth(Move &move, Stack *ss, int bonus) {
     for(int offset : {1, 2, 4, 6}) {
-        if(isValidMove((ss - offset)->curr_move)) {
+        if(is_valid_move((ss - offset)->curr_move)) {
             Piece pc = (ss - offset)->moved_piece;
             assert(pc >= WHITE_PAWN && pc <= BLACK_KING);
 
@@ -104,10 +104,10 @@ void History::updateContH(Move &move, Stack *ss, int bonus) {
     }
 }
 
-void History::updateCapHistory(const Board &board, Move &move, int bonus) {
+void History::update_ch(const Board &board, Move &move, int bonus) {
     Square to = move.to();
-    PieceType captured = move.type() == EN_PASSANT ? PAWN : typeOf(board.pieceAt(to));
-    Piece pc = board.pieceAt(move.from());
+    PieceType captured = move.type() == EN_PASSANT ? PAWN : piece_type(board.piece_at(to));
+    Piece pc = board.piece_at(move.from());
 
     assert(captured != NO_PIECE_TYPE);
     assert(pc != NO_PIECE);
@@ -116,16 +116,16 @@ void History::updateCapHistory(const Board &board, Move &move, int bonus) {
     value += getFormula(value, bonus);
 }
 
-void History::updateMaterialCorr(const Board &board, Score raw_eval, Score real_score, int depth) {
-    Color stm = board.getTurn();
+void History::update_matcorr(const Board &board, Score raw_eval, Score real_score, int depth) {
+    Color stm = board.get_stm();
     int diff = real_score - raw_eval;
 
-    updateCorrection(pawn_corr[stm][corrIdx(board.getPawnHash())], diff, depth);
-    updateCorrection(w_non_pawn_corr[stm][corrIdx(board.getNonPawnHash(WHITE))], diff, depth);
-    updateCorrection(b_non_pawn_corr[stm][corrIdx(board.getNonPawnHash(BLACK))], diff, depth);
+    updateCorrection(pawn_corr[stm][corr_idx(board.get_pawnhash())], diff, depth);
+    updateCorrection(w_non_pawn_corr[stm][corr_idx(board.get_nonpawnhash(WHITE))], diff, depth);
+    updateCorrection(b_non_pawn_corr[stm][corr_idx(board.get_nonpawnhash(BLACK))], diff, depth);
 }
 
-void History::updateContCorr(Score raw_eval, Score real_score, int depth, const Stack *ss) {
+void History::update_contcorr(Score raw_eval, Score real_score, int depth, const Stack *ss) {
     const Move prev_move = (ss - 1)->curr_move;
     const Move pprev_move = (ss - 2)->curr_move;
 

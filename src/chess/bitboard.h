@@ -93,12 +93,12 @@ inline Square lsb(const U64 b) {
 }
 
 // returns number of bits in bitboard
-inline int popCount(U64 b) {
+inline int pop_count(U64 b) {
     return __builtin_popcountll(b);
 }
 
 // returns and removes index of the least significant bit in bitboard
-inline Square popLsb(U64 &b) {
+inline Square pop_lsb(U64 &b) {
     int n = lsb(b);
     b &= b - 1;
     return Square(n);

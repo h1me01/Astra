@@ -19,35 +19,28 @@ constexpr int AGE_MASK = 0xF8;
 
 #pragma pack(push, 1)
 class TTEntry {
-  private:
-    uint16_t hash = 0;
-    uint8_t depth = 0;
-    uint16_t move = 0;
-    Score score = VALUE_NONE;
-    Score eval = VALUE_NONE;
-    uint8_t age_pv_bound = NO_BOUND;
-
   public:
-    int relativeAge() const;
+    int relative_age() const;
+
     void store(U64 hash, Move move, Score score, Score eval, Bound bound, int depth, int ply, bool pv);
 
-    void setAgePvBound(uint8_t age_pv_bound) {
-        this->age_pv_bound = age_pv_bound;
+    void set_agepvbound(uint8_t age_pv_bound) {
+        this->agepvbound = age_pv_bound;
     }
 
-    U64 getHash() const {
+    U64 get_hash() const {
         return hash;
     }
 
-    uint8_t getDepth() const {
+    uint8_t get_depth() const {
         return depth;
     }
 
-    Move getMove() const {
+    Move get_move() const {
         return Move(move);
     }
 
-    Score getScore(int ply) const {
+    Score get_score(int ply) const {
         if(score == VALUE_NONE)
             return VALUE_NONE;
         if(score >= VALUE_TB_WIN_IN_MAX_PLY)
@@ -57,25 +50,33 @@ class TTEntry {
         return score;
     }
 
-    Score getEval() const {
+    Score get_eval() const {
         return eval;
     }
 
-    uint8_t getAgePvBound() const {
-        return age_pv_bound;
+    uint8_t get_agepvbound() const {
+        return agepvbound;
     }
 
-    Bound getBound() const {
-        return Bound(age_pv_bound & 0x3);
+    Bound get_bound() const {
+        return Bound(agepvbound & 0x3);
     }
 
-    uint8_t getAge() const {
-        return age_pv_bound & AGE_MASK;
+    uint8_t get_age() const {
+        return agepvbound & AGE_MASK;
     }
 
-    bool getTTPv() {
-        return age_pv_bound & 0x4;
+    bool get_tt_pv() {
+        return agepvbound & 0x4;
     }
+
+  private:
+    uint16_t hash = 0;
+    uint8_t depth = 0;
+    uint16_t move = 0;
+    Score score = VALUE_NONE;
+    Score eval = VALUE_NONE;
+    uint8_t agepvbound = NO_BOUND;
 };
 #pragma pack(pop)
 
@@ -89,13 +90,6 @@ struct TTBucket {
 static_assert(sizeof(TTBucket) == 32, "TTBucket is not packed as expected!");
 
 class TTable {
-  private:
-    uint8_t age;
-    U64 bucket_size{};
-    TTBucket *buckets;
-
-    int num_workers = 1;
-
   public:
     explicit TTable(U64 size_mb);
     ~TTable();
@@ -114,17 +108,24 @@ class TTable {
         __builtin_prefetch(&buckets[index(hash)]);
     }
 
-    void incrementAge() {
+    void increment() {
         age += AGE_STEP;
     }
 
-    void setNumWorkers(int num_workers) {
+    void set_num_workers(int num_workers) {
         this->num_workers = num_workers;
     }
 
-    int getAge() const {
+    int get_age() const {
         return age;
     }
+
+  private:
+    uint8_t age;
+    U64 bucket_size{};
+    TTBucket *buckets;
+
+    int num_workers = 1;
 };
 
 extern TTable tt;

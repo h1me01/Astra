@@ -8,45 +8,45 @@
 
 namespace Chess {
 
-void printBitboard(U64 b);
+void print_bb(U64 b);
 
-Square squareFromString(std::string_view square_str);
+Square sq_from(std::string_view square_str);
 
 std::vector<std::string> split(const std::string &str, char del);
 
-PieceType typeOfPromotion(const MoveType mt);
+PieceType prom_type(const MoveType mt);
 
-inline bool isValidMove(const Move &m) {
+inline bool is_valid_move(const Move &m) {
     return m != NO_MOVE && m != NULL_MOVE;
 }
 
-inline bool isProm(const Move &m) {
-    assert(isValidMove(m));
+inline bool is_prom(const Move &m) {
+    assert(is_valid_move(m));
     return m.type() >= PQ_KNIGHT;
 }
 
-inline bool isCap(const Move &m) {
-    assert(isValidMove(m));
+inline bool is_cap(const Move &m) {
+    assert(is_valid_move(m));
     return m.type() == CAPTURE || m.type() == EN_PASSANT || m.type() >= PC_KNIGHT;
 }
 
-// prints the move
+// prints move
 std::ostream &operator<<(std::ostream &os, const Move &m);
 
-// gets the opposite color
+// gets opposite color
 constexpr Color operator~(Color c) {
     return Color(c ^ BLACK);
 }
 
-constexpr Piece makePiece(Color c, PieceType pt) {
+constexpr Piece make_piece(Color c, PieceType pt) {
     return Piece(pt + 6 * c);
 }
 
-constexpr PieceType typeOf(Piece pc) {
+constexpr PieceType piece_type(Piece pc) {
     return PIECE_TO_PIECE_TYPE[pc];
 }
 
-constexpr Color colorOf(Piece pc) {
+constexpr Color piece_color(Piece pc) {
     assert(pc != NO_PIECE);
     return pc < 6 ? WHITE : BLACK;
 }
@@ -67,26 +67,26 @@ constexpr Square operator-(Square sq, Direction d) {
     return _sq;
 }
 
-constexpr Rank rankOf(Square sq) {
+constexpr Rank sq_rank(Square sq) {
     assert(sq >= a1 && sq <= h8);
     return Rank(sq >> 3);
 }
 
-constexpr File fileOf(Square sq) {
+constexpr File sq_file(Square sq) {
     assert(sq >= a1 && sq <= h8);
     return File(sq & 0b111);
 }
 
 // gets the diagonal (a1 to h8) of the square
-constexpr int diagOf(Square sq) {
+constexpr int sq_diag(Square sq) {
     assert(sq >= a1 && sq <= h8);
-    return 7 + rankOf(sq) - fileOf(sq);
+    return 7 + sq_rank(sq) - sq_file(sq);
 }
 
 // gets the anti-diagonal (h1 to a8) of the square
-constexpr int antiDiagOf(Square sq) {
+constexpr int sq_antidiag(Square sq) {
     assert(sq >= a1 && sq <= h8);
-    return rankOf(sq) + fileOf(sq);
+    return sq_rank(sq) + sq_file(sq);
 }
 
 inline Square &operator+=(Square &s, Direction d) {
@@ -97,12 +97,12 @@ inline Square &operator-=(Square &s, Direction d) {
     return s = s - d;
 }
 
-constexpr Square relSquare(Color c, Square sq) {
+constexpr Square rel_sq(Color c, Square sq) {
     assert(sq >= a1 && sq <= h8);
     return c == WHITE ? sq : Square(sq ^ 56);
 }
 
-constexpr Rank relRank(Color c, Rank r) {
+constexpr Rank rel_rank(Color c, Rank r) {
     assert(r >= RANK_1 && r <= RANK_8);
     return c == WHITE ? r : Rank(RANK_8 - r);
 }

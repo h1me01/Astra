@@ -12,7 +12,7 @@ struct Stack {
     int ply;
     int move_count = 0;
 
-    bool is_cap = false;
+    bool was_cap = false;
 
     Score static_eval = VALUE_NONE;
     Piece moved_piece = NO_PIECE;

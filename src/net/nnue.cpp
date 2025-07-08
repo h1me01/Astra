@@ -69,13 +69,13 @@ int featureIndex(Square psq, Square ksq, Piece pc, Color view) {
     assert(pc >= WHITE_PAWN && pc <= BLACK_KING);
 
     // mirror psq horizontally if king is on other half
-    if(fileOf(ksq) > 3)
+    if(sq_file(ksq) > 3)
         psq = Square(psq ^ 7);
 
-    psq = relSquare(view, psq);
-    ksq = relSquare(view, ksq);
+    psq = rel_sq(view, psq);
+    ksq = rel_sq(view, ksq);
 
-    return psq + typeOf(pc) * 64 + (colorOf(pc) != view) * 64 * 6 + KING_BUCKET[ksq] * FEATURE_SIZE;
+    return psq + piece_type(pc) * 64 + (piece_color(pc) != view) * 64 * 6 + KING_BUCKET[ksq] * FEATURE_SIZE;
 }
 
 // nnue
@@ -94,16 +94,16 @@ void NNUE::init() {
     memcpy(l1_biases, &gWeightsData[offset], OUTPUT_SIZE * sizeof(int16_t));
 }
 
-void NNUE::initAccum(Accum &acc) const {
-    memcpy(acc.getData(WHITE), nnue.ft_biases, sizeof(int16_t) * L1_SIZE);
-    memcpy(acc.getData(BLACK), nnue.ft_biases, sizeof(int16_t) * L1_SIZE);
+void NNUE::init_accum(Accum &acc) const {
+    memcpy(acc.get_data(WHITE), nnue.ft_biases, sizeof(int16_t) * L1_SIZE);
+    memcpy(acc.get_data(BLACK), nnue.ft_biases, sizeof(int16_t) * L1_SIZE);
 }
 
 int32_t NNUE::forward(Board &board) const {
-    board.updateAccumulators();
+    board.update_accums();
 
-    Color stm = board.getTurn();
-    Accum &acc = board.getAccumulator();
+    Color stm = board.get_stm();
+    Accum &acc = board.get_accum();
 
     assert(stm == WHITE || stm == BLACK);
 
@@ -111,8 +111,8 @@ int32_t NNUE::forward(Board &board) const {
     constexpr avx_type zero{};
     const avx_type ft_clip = avx_set1_epi16(FT_QUANT);
 
-    const auto acc_stm = (const avx_type *) acc.getData(stm);
-    const auto acc_opp = (const avx_type *) acc.getData(~stm);
+    const auto acc_stm = (const avx_type *) acc.get_data(stm);
+    const auto acc_opp = (const avx_type *) acc.get_data(~stm);
 
     avx_type res{};
     const auto weights = (const avx_type *) (l1_weights);
@@ -150,12 +150,12 @@ int32_t NNUE::forward(Board &board) const {
 #endif
 }
 
-void NNUE::putPiece(Accum &acc, Accum &prev, Piece pc, Square psq, Square ksq, Color view) const {
+void NNUE::put(Accum &acc, Accum &prev, Piece pc, Square psq, Square ksq, Color view) const {
     const int idx = featureIndex(psq, ksq, pc, view);
 
 #if defined(__AVX512F__) || defined(__AVX2__) || defined(__AVX__)
-    avx_type *acc_data = (avx_type *) acc.getData(view);
-    const avx_type *prev_data = acc.isInitialized(view) ? acc_data : (avx_type *) prev.getData(view);
+    avx_type *acc_data = (avx_type *) acc.get_data(view);
+    const avx_type *prev_data = acc.is_initialized(view) ? acc_data : (avx_type *) prev.get_data(view);
 
     const auto weights = (const avx_type *) (ft_weights + idx * L1_SIZE);
     for(int i = 0; i < L1_SIZE / div; i++)
@@ -168,15 +168,15 @@ void NNUE::putPiece(Accum &acc, Accum &prev, Piece pc, Square psq, Square ksq, C
         acc_view[i] = prev_view[i] + ft_weights[idx * L1_SIZE + i];
 #endif
 
-    acc.markAsInitialized(view);
+    acc.mark_as_initialized(view);
 }
 
-void NNUE::removePiece(Accum &acc, Accum &prev, Piece pc, Square psq, Square ksq, Color view) const {
+void NNUE::remove(Accum &acc, Accum &prev, Piece pc, Square psq, Square ksq, Color view) const {
     const int idx = featureIndex(psq, ksq, pc, view);
 
 #if defined(__AVX512F__) || defined(__AVX2__) || defined(__AVX__)
-    avx_type *acc_data = (avx_type *) acc.getData(view);
-    const avx_type *prev_data = acc.isInitialized(view) ? acc_data : (avx_type *) prev.getData(view);
+    avx_type *acc_data = (avx_type *) acc.get_data(view);
+    const avx_type *prev_data = acc.is_initialized(view) ? acc_data : (avx_type *) prev.get_data(view);
 
     const auto weights = (const avx_type *) (ft_weights + idx * L1_SIZE);
     for(int i = 0; i < L1_SIZE / div; i++)
@@ -189,16 +189,16 @@ void NNUE::removePiece(Accum &acc, Accum &prev, Piece pc, Square psq, Square ksq
         acc_view[i] = prev_view[i] - ft_weights[idx * L1_SIZE + i];
 #endif
 
-    acc.markAsInitialized(view);
+    acc.mark_as_initialized(view);
 }
 
-void NNUE::movePiece(Accum &acc, Accum &prev, Piece pc, Square from, Square to, Square ksq, Color view) const {
+void NNUE::move(Accum &acc, Accum &prev, Piece pc, Square from, Square to, Square ksq, Color view) const {
     const int from_idx = featureIndex(from, ksq, pc, view);
     const int to_idx = featureIndex(to, ksq, pc, view);
 
 #if defined(__AVX512F__) || defined(__AVX2__) || defined(__AVX__)
-    avx_type *acc_data = (avx_type *) acc.getData(view);
-    const avx_type *prev_data = acc.isInitialized(view) ? acc_data : (avx_type *) prev.getData(view);
+    avx_type *acc_data = (avx_type *) acc.get_data(view);
+    const avx_type *prev_data = acc.is_initialized(view) ? acc_data : (avx_type *) prev.get_data(view);
 
     const auto weights_from = (const avx_type *) (ft_weights + from_idx * L1_SIZE);
     const auto weights_to = (const avx_type *) (ft_weights + to_idx * L1_SIZE);
@@ -215,7 +215,7 @@ void NNUE::movePiece(Accum &acc, Accum &prev, Piece pc, Square from, Square to, 
     }
 #endif
 
-    acc.markAsInitialized(view);
+    acc.mark_as_initialized(view);
 }
 
 // global variable

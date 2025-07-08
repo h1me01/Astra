@@ -21,9 +21,6 @@ class TimeMan {
     using Clock = std::chrono::steady_clock;
     using TimePoint = Clock::time_point;
 
-  private:
-    TimePoint start_time;
-
   public:
     TimeMan() : start_time(Clock::now()) {}
 
@@ -31,11 +28,11 @@ class TimeMan {
         start_time = Clock::now();
     }
 
-    int64_t elapsedTime() const {
+    int64_t elapsed_time() const {
         return std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now() - start_time).count();
     }
 
-    static Time getOptimum(int64_t time_left, int inc, int moves_to_go, int overhead) {
+    static Time get_optimum(int64_t time_left, int inc, int moves_to_go, int overhead) {
         Time time;
 
         int mtg = moves_to_go ? std::min(50, moves_to_go) : 50;
@@ -50,6 +47,9 @@ class TimeMan {
 
         return time;
     }
+
+  private:
+    TimePoint start_time;
 };
 
 } // namespace Astra

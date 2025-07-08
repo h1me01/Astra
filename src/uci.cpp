@@ -56,7 +56,7 @@ void Options::apply() {
         }
     }
 
-    Astra::tt.setNumWorkers(num_workers);
+    Astra::tt.set_num_workers(num_workers);
     Astra::tt.init(std::stoi(get("Hash")));
     num_workers = std::stoi(get("Threads"));
 }
@@ -117,12 +117,6 @@ Uci::Uci() : board(STARTING_FEN) {
     options.add("SyzygyPath", Option("string", "", "", 0, 0));
 #endif
     options.apply();
-
-    // openLog();
-}
-
-Uci::~Uci() {
-    closeLog();
 }
 
 void Uci::loop(int argc, char **argv) {
@@ -133,8 +127,6 @@ void Uci::loop(int argc, char **argv) {
 
     std::string line, token;
     while(std::getline(std::cin, line)) {
-        writeLog(line);
-
         std::istringstream is(line);
         token.clear();
         is >> std::skipws >> token;
@@ -147,7 +139,7 @@ void Uci::loop(int argc, char **argv) {
         } else if(token == "isready")
             std::cout << "readyok" << std::endl;
         else if(token == "ucinewgame") {
-            Astra::threads.forceStop();
+            Astra::threads.force_stop();
             Astra::tt.clear();
         } else if(token == "position")
             updatePosition(is);
@@ -156,15 +148,15 @@ void Uci::loop(int argc, char **argv) {
         else if(token == "bench")
             Bench::bench(13);
         else if(token == "tune")
-            Astra::paramsToSpsa();
+            Astra::params_to_spsa();
         else if(token == "setoption") {
             options.set(is);
         } else if(token == "d")
             board.print();
         else if(token == "stop")
-            Astra::threads.forceStop();
+            Astra::threads.force_stop();
         else if(token == "quit") {
-            Astra::threads.forceStop();
+            Astra::threads.force_stop();
             tb_free();
             break;
         } else
@@ -186,23 +178,23 @@ void Uci::updatePosition(std::istringstream &is) {
         return;
     }
 
-    board.setFen(fen, false);
+    board.set_fen(fen, false);
     while(is >> token) {
         if(token == "moves")
             continue;
 
-        board.makeMove(getMove(token), false);
+        board.make_move(get_move(token), false);
         // if half move clock gets reseted, then we can reset the history
         // since the last positions should not be considered in the repetition
-        if(board.halfMoveClock() == 0)
-            board.resetPly();
+        if(board.halfmoveclock() == 0)
+            board.reset_ply();
     }
 
-    board.resetAccumulator();
+    board.reset_accum();
 }
 
 void Uci::go(std::istringstream &is) {
-    Astra::threads.forceStop();
+    Astra::threads.force_stop();
     Astra::Limits limit;
 
     int64_t w_time = 0, b_time = 0, move_time = 0;
@@ -215,7 +207,7 @@ void Uci::go(std::istringstream &is) {
             if(!(is >> depth))
                 std::cout << "No depth value provided for perft\n";
             else
-                testPerft(board, depth);
+                test_perft(board, depth);
 
             return;
         } else if(token == "wtime")
@@ -242,7 +234,7 @@ void Uci::go(std::istringstream &is) {
         }
     }
 
-    Color stm = board.getTurn();
+    Color stm = board.get_stm();
     const int64_t time_left = stm == WHITE ? w_time : b_time;
     const int inc = stm == WHITE ? w_inc : b_inc;
 
@@ -250,42 +242,42 @@ void Uci::go(std::istringstream &is) {
         limit.time.optimum = move_time;
         limit.time.max = move_time;
     } else if(time_left != 0) {
-        limit.time = Astra::TimeMan::getOptimum(time_left, inc, moves_to_go, std::stoi(options.get("MoveOverhead")));
+        limit.time = Astra::TimeMan::get_optimum(time_left, inc, moves_to_go, std::stoi(options.get("MoveOverhead")));
     }
 
     limit.multipv = std::stoi(options.get("MultiPV"));
 
     // start search
-    Astra::threads.launchWorkers(board, limit, options.num_workers, options.use_tb);
+    Astra::threads.launch_workers(board, limit, options.num_workers, options.use_tb);
 }
 
-Move Uci::getMove(const std::string &str_move) const {
-    Square from = squareFromString(str_move.substr(0, 2));
-    Square to = squareFromString(str_move.substr(2, 2));
-    Piece pc = board.pieceAt(from);
-    Piece captured = board.pieceAt(to);
+Move Uci::get_move(const std::string &str_move) const {
+    Square from = sq_from(str_move.substr(0, 2));
+    Square to = sq_from(str_move.substr(2, 2));
+    Piece pc = board.piece_at(from);
+    Piece captured = board.piece_at(to);
     MoveType mt = QUIET;
 
     if(captured != NO_PIECE)
         mt = CAPTURE;
 
-    if(typeOf(pc) == PAWN) {
-        if(board.history[board.getPly()].ep_sq == to)
+    if(piece_type(pc) == PAWN) {
+        if(board.history[board.get_ply()].ep_sq == to)
             mt = EN_PASSANT;
-        else if(rankOf(to) == RANK_1 || rankOf(to) == RANK_8) {
-            char prom_type = tolower(str_move[4]);
+        else if(sq_rank(to) == RANK_1 || sq_rank(to) == RANK_8) {
+            char prom_t = tolower(str_move[4]); // piece type
 
             mt = captured != NO_PIECE ? PC_QUEEN : PQ_QUEEN;
-            if(prom_type == 'r')
+            if(prom_t == 'r')
                 mt = MoveType(mt - 1);
-            else if(prom_type == 'b')
+            else if(prom_t == 'b')
                 mt = MoveType(mt - 2);
-            else if(prom_type == 'n')
+            else if(prom_t == 'n')
                 mt = MoveType(mt - 3);
         }
-    } else if(typeOf(pc) == KING) {
-        Color stm = board.getTurn();
-        if(from == relSquare(stm, e1) && (to == relSquare(stm, g1) || to == relSquare(stm, c1)))
+    } else if(piece_type(pc) == KING) {
+        Color stm = board.get_stm();
+        if(from == rel_sq(stm, e1) && (to == rel_sq(stm, g1) || to == rel_sq(stm, c1)))
             mt = CASTLING;
     }
 

@@ -20,8 +20,8 @@ struct Param {
 
 inline std::vector<Param *> params;
 
-void setParam(const std::string &name, int value);
-void paramsToSpsa();
+void set_param(const std::string &name, int value);
+void params_to_spsa();
 
 #ifdef TUNE
 #define PARAM(name, value, min, max) inline Param name(#name, value, min, max)

@@ -113,13 +113,6 @@ enum MoveType
 constexpr int MAX_MOVES = 128;
 
 class Move {
-  private:
-    // first 4 bits represent the move flag
-    // next 6 bits represent the to square
-    // last 6 bits represent the from square
-    uint16_t move;
-    int score = 0; // used for move ordering
-
   public:
     // default move (a1a1)
     Move() : move(0) {}
@@ -153,11 +146,11 @@ class Move {
         return move;
     }
 
-    void setScore(int s) {
+    void set_score(int s) {
         score = s;
     }
 
-    int getScore() const {
+    int get_score() const {
         return score;
     }
 
@@ -172,6 +165,13 @@ class Move {
     bool operator!() const {
         return move == 0;
     }
+
+  private:
+    // first 4 bits represent the move flag
+    // next 6 bits represent the to square
+    // last 6 bits represent the from square
+    uint16_t move;
+    int score = 0; // used for move ordering
 };
 
 const auto NULL_MOVE = Move(65);

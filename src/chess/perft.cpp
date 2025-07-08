@@ -18,15 +18,15 @@ U64 perft(Board &board, int depth) {
 
     U64 nodes = 0;
     for(const Move &move : ml) {
-        board.makeMove(move, false);
+        board.make_move(move, false);
         nodes += perft(board, depth - 1);
-        board.unmakeMove(move);
+        board.unmake_move(move);
     }
 
     return nodes;
 }
 
-void testPerft(Board &board, int depth) {
+void test_perft(Board &board, int depth) {
     if(depth < 1) {
         std::cout << "Invalid depth value.\n";
         return;
@@ -40,9 +40,9 @@ void testPerft(Board &board, int depth) {
 
     U64 total_nodes = 0;
     for(const Move &move : ml) {
-        board.makeMove(move, false);
+        board.make_move(move, false);
         U64 nodes = perft(board, depth - 1);
-        board.unmakeMove(move);
+        board.unmake_move(move);
 
         total_nodes += nodes;
         std::cout << move << ": " << nodes << std::endl;

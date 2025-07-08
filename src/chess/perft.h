@@ -4,6 +4,6 @@
 
 namespace Chess {
 
-void testPerft(Board &board, int depth);
+void test_perft(Board &board, int depth);
 
 } // namespace Chess

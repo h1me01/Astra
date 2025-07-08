@@ -24,7 +24,7 @@ class Accum {
     Square wksq, bksq;
 
     bool initialized[NUM_COLORS] = {false, false};
-    bool needs_refresh[NUM_COLORS] = {false, false};
+    bool m_needs_refresh[NUM_COLORS] = {false, false};
 
     alignas(ALIGNMENT) int16_t data[NUM_COLORS][L1_SIZE];
 
@@ -40,29 +40,29 @@ class Accum {
   public:
     void reset();
 
-    void putPiece(Piece pc, Square to, Square wksq, Square bksq);
-    void removePiece(Piece pc, Square from, Square wksq, Square bksq);
-    void movePiece(Piece pc, Square from, Square to, Square wksq, Square bksq);
+    void put_piece(Piece pc, Square to, Square wksq, Square bksq);
+    void remove_piece(Piece pc, Square from, Square wksq, Square bksq);
+    void move_piece(Piece pc, Square from, Square to, Square wksq, Square bksq);
 
     void update(Accum &prev, Color view);
 
-    void markAsInitialized(Color view) {
+    void mark_as_initialized(Color view) {
         this->initialized[view] = true;
     }
 
-    void setRefresh(Color view) {
-        this->needs_refresh[view] = true;
+    void set_refresh(Color view) {
+        this->m_needs_refresh[view] = true;
     }
 
-    bool isInitialized(Color view) const {
+    bool is_initialized(Color view) const {
         return initialized[view];
     }
 
-    bool needsRefresh(Color view) const {
-        return needs_refresh[view];
+    bool needs_refresh(Color view) const {
+        return m_needs_refresh[view];
     }
 
-    int16_t *getData(Color view) {
+    int16_t *get_data(Color view) {
         return data[view];
     }
 };
@@ -76,18 +76,18 @@ class AccumEntry {
   public:
     void reset() {
         memset(piece_bb, 0, sizeof(piece_bb));
-        nnue.initAccum(acc);
+        nnue.init_accum(acc);
     }
 
-    void setPieceBB(Color c, PieceType pt, U64 bb) {
+    void set_piecebb(Color c, PieceType pt, U64 bb) {
         piece_bb[c][pt] = bb;
     }
 
-    U64 getPieceBB(Color c, PieceType pt) const {
+    U64 get_piecebb(Color c, PieceType pt) const {
         return piece_bb[c][pt];
     }
 
-    Accum &getAccum() {
+    Accum &get_accum() {
         return acc;
     }
 };
