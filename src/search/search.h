@@ -31,7 +31,7 @@ struct RootMove {
     PVLine pv;
 };
 
-void initReductions();
+void init_reductions();
 
 class Search {
   public:

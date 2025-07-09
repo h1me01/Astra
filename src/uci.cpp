@@ -75,8 +75,8 @@ void Options::set(std::istringstream &is) {
         return;
 
 #ifdef TUNE
-    Astra::setParam(name, std::stoi(value));
-    Astra::initReductions();
+    Astra::set_param(name, std::stoi(value));
+    Astra::init_reductions();
 #endif
 
     if(!options.count(name)) {

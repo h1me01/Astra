@@ -10,8 +10,8 @@ namespace Astra {
 constexpr size_t PAWN_HIST_SIZE = 512;
 constexpr size_t CORR_SIZE = 16384;
 
-int historyBonus(int depth);
-int historyMalus(int depth);
+int history_bonus(int depth);
+int history_malus(int depth);
 
 class History {
   private:

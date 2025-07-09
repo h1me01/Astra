@@ -17,11 +17,11 @@ void updateCorrection(int16_t &value, int diff, int depth) {
     value = bonus - int(value) * std::abs(bonus) / 1024;
 }
 
-int historyBonus(int depth) {
+int history_bonus(int depth) {
     return std::min(int(max_history_bonus), history_bonus_mult * depth + history_bonus_minus);
 }
 
-int historyMalus(int depth) {
+int history_malus(int depth) {
     return std::min(int(max_history_malus), history_malus_mult * depth + history_malus_minus);
 }
 
@@ -33,8 +33,8 @@ void History::update(const Board &board,    //
                      int depth              //
 ) {
     Color stm = board.get_stm();
-    int bonus = historyBonus(depth);
-    int malus = historyMalus(depth);
+    int bonus = history_bonus(depth);
+    int malus = history_malus(depth);
 
     if(!is_cap(best)) {
         // don't set quiet queen promotions as a counter/killer,

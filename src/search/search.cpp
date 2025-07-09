@@ -11,7 +11,7 @@
 namespace Astra {
 int REDUCTIONS[MAX_PLY][MAX_MOVES];
 
-void initReductions() {
+void init_reductions() {
     REDUCTIONS[0][0] = 0;
 
     const double base = double(lmr_base) / 100.0;
@@ -380,7 +380,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_no
            && (ss - 1)->curr_move != NULL_MOVE     //
            && ss->static_eval + nmp_margin >= beta //
         ) {
-            int R = nmp_rbase + depth / nmp_rdepth_div + std::min(nmp_rmin, (eval - beta) / nmp_eval_div);
+            int R = nmp_rbase + depth / nmp_rdepth_div + std::min(int(nmp_rmin), (eval - beta) / nmp_eval_div);
 
             ss->curr_move = NULL_MOVE;
             ss->moved_piece = NO_PIECE;
@@ -571,19 +571,19 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_no
         // late move reductions
         if(depth >= 2 && made_moves >= lmr_min_moves && (!tt_pv || !is_cap(move))) {
             int r = REDUCTIONS[depth][made_moves];
-            // increase when not improving
+
             r += !improving;
-            // increase when expected to fail high
+
             r += 2 * cut_node;
-            // increase when tt_move is a capture
+
             r += (is_valid_move(tt_move) ? is_cap(tt_move) : 0);
-            // decrease when in pv node
+
             r -= tt_pv;
-            // decrease when move gives check
+
             r -= board.in_check();
-            // decrease when tt depth is at least current depth
+
             r -= (tt_depth >= depth);
-            // decrease/increase based on history score
+
             r -= history_score / (is_cap(move) ? hp_cdiv : hp_qdiv);
 
             int lmr_depth = std::clamp(new_depth - r, 1, new_depth + 1);
@@ -602,9 +602,9 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_no
                 if(!is_cap(move)) {
                     int bonus;
                     if(score <= alpha)
-                        bonus = -historyBonus(new_depth);
+                        bonus = -history_bonus(new_depth);
                     else if(score >= beta)
-                        bonus = historyBonus(new_depth);
+                        bonus = history_bonus(new_depth);
                     else
                         bonus = 0;
 
