@@ -22,7 +22,7 @@ CXXFLAGS := -s \
 LDFLAGS := -lstdc++
 
 # Source files
-CHESS_SRC := chess/attacks.cpp \
+CHESS_SRC := chess/bitboard.cpp \
              chess/board.cpp \
              chess/misc.cpp \
              chess/perft.cpp \

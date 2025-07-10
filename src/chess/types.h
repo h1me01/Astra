@@ -51,9 +51,7 @@ enum Direction {
     SOUTH = -8,
     SOUTH_WEST = -9,
     WEST = -1,
-    NORTH_WEST = 7,
-    NORTH_NORTH = 16,
-    SOUTH_SOUTH = -16
+    NORTH_WEST = 7
 };
 
 constexpr int NUM_PIECE_TYPES = 6;
@@ -135,39 +133,39 @@ constexpr int MAX_MOVES = 128;
 class Move {
   public:
     // default move (a1a1)
-    Move() : move(0) {}
+    Move() : data(0) {}
 
-    constexpr explicit Move(uint16_t m) : move(m) {}
+    constexpr explicit Move(uint16_t m) : data(m) {}
 
-    constexpr Move(const Move &other) : move(other.move), score(other.score) {}
-    constexpr Move(Square from, Square to, MoveType mt) : move(mt << 12 | from << 6 | to) {}
-
-    Square to() const {
-        return Square(move & 0x3f);
-    }
+    constexpr Move(const Move &other) : data(other.data), score(other.score) {}
+    constexpr Move(Square from, Square to, MoveType mt) : data((mt << 12) | (to << 6) | from) {}
 
     Square from() const {
-        return Square(move >> 6 & 0x3f);
+        return Square(data & 0x3f);
+    }
+
+    Square to() const {
+        return Square((data >> 6) & 0x3f);
     }
 
     MoveType type() const {
-        return MoveType(move >> 12);
+        return MoveType(data >> 12);
     }
 
     Move &operator=(const Move &m) {
         if(this != &m) {
-            move = m.move;
+            data = m.data;
             score = m.score;
         }
         return *this;
     }
 
     uint16_t raw() const {
-        return move;
+        return data;
     }
 
-    void set_score(int s) {
-        score = s;
+    void set_score(int val) {
+        score = val;
     }
 
     int get_score() const {
@@ -175,26 +173,26 @@ class Move {
     }
 
     bool operator==(const Move &m) const {
-        return move == m.move;
+        return data == m.data;
     }
 
     bool operator!=(const Move &m) const {
-        return move != m.move;
+        return data != m.data;
     }
 
     bool operator!() const {
-        return move == 0;
+        return data == 0;
     }
 
   private:
-    // first 4 bits represent the move flag
+    // first 6 bits represent the from square
     // next 6 bits represent the to square
-    // last 6 bits represent the from square
-    uint16_t move;
+    // last 4 bits represent the move type
+    uint16_t data;
     int score = 0; // used for move ordering
 };
 
-const auto NULL_MOVE = Move(65);
-const auto NO_MOVE = Move();
+const Move NO_MOVE{};
+const Move NULL_MOVE{65};
 
 } // namespace Chess

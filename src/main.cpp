@@ -7,7 +7,7 @@ int main(int argc, char **argv) {
 
     Astra::init_reductions();
     NNUE::nnue.init();
-
+    
     UCI::Uci uci;
     uci.loop(argc, argv);
 

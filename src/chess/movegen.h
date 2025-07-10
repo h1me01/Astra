@@ -47,8 +47,8 @@ Move *gen_pawnmoves(const Board &board, Move *ml, const U64 targets) {
 
     // single and double pawn pushes, no promotions
     if constexpr(gt != NOISY) {
-        U64 b1 = shift(up, pawns_non7) & empty_sqs;
-        U64 b2 = shift(up, b1 & MASK_RANK[rel_rank(us, RANK_3)]) & empty_sqs;
+        U64 b1 = shift<up>(pawns_non7) & empty_sqs;
+        U64 b2 = shift<up>(b1 & MASK_RANK[rel_rank(us, RANK_3)]) & empty_sqs;
 
         b1 &= targets;
         b2 &= targets;
@@ -66,8 +66,8 @@ Move *gen_pawnmoves(const Board &board, Move *ml, const U64 targets) {
 
     // standard and en passant captures, no promotions
     if constexpr(gt != QUIETS) {
-        U64 b1 = shift(up_right, pawns_non7) & them_bb & targets;
-        U64 b2 = shift(up_left, pawns_non7) & them_bb & targets;
+        U64 b1 = shift<up_right>(pawns_non7) & them_bb & targets;
+        U64 b2 = shift<up_left>(pawns_non7) & them_bb & targets;
 
         while(b1) {
             Square to = pop_lsb(b1);
@@ -93,9 +93,9 @@ Move *gen_pawnmoves(const Board &board, Move *ml, const U64 targets) {
 
     // promotions, both capture and non-capture
     const U64 pawns_on7 = pawns & rank7_bb;
-    U64 b1 = shift(up_right, pawns_on7) & them_bb & targets;
-    U64 b2 = shift(up_left, pawns_on7) & them_bb & targets;
-    U64 b3 = shift(up, pawns_on7) & empty_sqs & targets;
+    U64 b1 = shift<up_right>(pawns_on7) & them_bb & targets;
+    U64 b2 = shift<up_left>(pawns_on7) & them_bb & targets;
+    U64 b3 = shift<up>(pawns_on7) & empty_sqs & targets;
 
     if constexpr(gt != QUIETS) {
         while(b1)
@@ -153,7 +153,7 @@ Move *gen_all(const Board &board, Move *ml) {
     if(pop_count(checkers) > 1)
         return gen_piecemoves<us, KING, gt>(board, ml, ~danger);
 
-    const U64 targets = checkers ? SQUARES_BETWEEN[ksq][lsb(checkers)] | checkers : -1ULL;
+    const U64 targets = checkers ? squares_between(ksq, lsb(checkers)) | checkers : -1ULL;
 
     ml = gen_pawnmoves<us, gt>(board, ml, targets);
     ml = gen_piecemoves<us, KNIGHT, gt>(board, ml, targets);
@@ -182,11 +182,11 @@ Move *gen_quiet_checkers(const Board &board, Move *ml) {
     constexpr Color them = ~us;
     const Square opp_ksq = board.king_sq(them);
     const U64 occ = board.occupancy();
-    const U64 bishop_attacks = get_bishop_attacks(opp_ksq, occ);
-    const U64 rook_attacks = get_rook_attacks(opp_ksq, occ);
+    const U64 bishop_attacks = get_attacks(BISHOP, opp_ksq, occ);
+    const U64 rook_attacks = get_attacks(ROOK, opp_ksq, occ);
 
     ml = gen_pawnmoves<us, QUIETS>(board, ml, get_pawn_attacks(them, opp_ksq));
-    ml = gen_piecemoves<us, KNIGHT, QUIETS>(board, ml, get_knight_attacks(opp_ksq));
+    ml = gen_piecemoves<us, KNIGHT, QUIETS>(board, ml, get_attacks(KNIGHT, opp_ksq));
     ml = gen_piecemoves<us, BISHOP, QUIETS>(board, ml, bishop_attacks);
     ml = gen_piecemoves<us, ROOK, QUIETS>(board, ml, rook_attacks);
     ml = gen_piecemoves<us, QUEEN, QUIETS>(board, ml, bishop_attacks | rook_attacks);

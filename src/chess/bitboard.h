@@ -104,27 +104,28 @@ inline Square pop_lsb(U64 &b) {
     return Square(n);
 }
 
-inline U64 reverse(U64 b) {
-    b = ((b & 0x5555555555555555) << 1) | ((b >> 1) & 0x5555555555555555);
-    b = ((b & 0x3333333333333333) << 2) | ((b >> 2) & 0x3333333333333333);
-    b = ((b & 0x0f0f0f0f0f0f0f0f) << 4) | ((b >> 4) & 0x0f0f0f0f0f0f0f0f);
-    b = ((b & 0x00ff00ff00ff00ff) << 8) | ((b >> 8) & 0x00ff00ff00ff00ff);
-    return (b << 48) | ((b & 0xffff0000) << 16) | ((b >> 16) & 0xffff0000) | (b >> 48);
-}
-
-constexpr U64 shift(Direction d, const U64 b) {
+template <Direction d> //
+constexpr U64 shift(const U64 b) {
     // clang-format off
-        return d == NORTH ? b << 8 : d == SOUTH     
-                          ? b >> 8 : d == EAST        
-                          ? (b & ~MASK_FILE[FILE_H]) << 1 : d == WEST        
-                          ? (b & ~MASK_FILE[FILE_A]) >> 1 : d == NORTH_EAST  
-                          ? (b & ~MASK_FILE[FILE_H]) << 9 : d == NORTH_WEST  
-                          ? (b & ~MASK_FILE[FILE_A]) << 7 : d == SOUTH_EAST  
-                          ? (b & ~MASK_FILE[FILE_H]) >> 7 : d == SOUTH_WEST  
-                          ? (b & ~MASK_FILE[FILE_A]) >> 9 : d == NORTH_NORTH 
-                          ? b << 16 : d == SOUTH_SOUTH 
-                          ? b >> 16 : 0;
+    return d == NORTH      ? b << 8 
+         : d == SOUTH      ? b >> 8 
+         : d == EAST       ? (b & ~MASK_FILE[FILE_H]) << 1 
+         : d == WEST       ? (b & ~MASK_FILE[FILE_A]) >> 1 
+         : d == NORTH_EAST ? (b & ~MASK_FILE[FILE_H]) << 9 
+         : d == NORTH_WEST ? (b & ~MASK_FILE[FILE_A]) << 7 
+         : d == SOUTH_EAST ? (b & ~MASK_FILE[FILE_H]) >> 7 
+         : d == SOUTH_WEST ? (b & ~MASK_FILE[FILE_A]) >> 9 
+         : 0;
     // clang-format on
 }
+
+void init_lookup_tables();
+
+U64 squares_between(Square sq1, Square sq2);
+U64 line(Square sq1, Square sq2);
+
+U64 get_pawn_attacks(Color c, Square sq);
+
+U64 get_attacks(PieceType pt, Square sq, const U64 occ = 0);
 
 } // namespace Chess

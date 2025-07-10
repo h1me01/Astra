@@ -1,5 +1,5 @@
 #include "cuckoo.h"
-#include "attacks.h"
+#include "bitboard.h"
 #include "zobrist.h"
 
 namespace Chess::Cuckoo {

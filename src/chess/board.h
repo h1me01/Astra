@@ -3,7 +3,7 @@
 #include <memory>
 
 #include "../net/accumulator.h"
-#include "attacks.h"
+#include "bitboard.h"
 #include "cuckoo.h"
 #include "misc.h"
 #include "zobrist.h"
@@ -229,10 +229,10 @@ inline U64 Board::occupancy(Color c = BOTH_COLORS) const {
 
 inline U64 Board::attackers_to(Color c, Square sq, const U64 occ) const {
     U64 attacks = get_pawn_attacks(~c, sq) & get_piecebb(c, PAWN);
-    attacks |= get_knight_attacks(sq) & get_piecebb(c, KNIGHT);
-    attacks |= get_bishop_attacks(sq, occ) & diag_sliders(c);
-    attacks |= get_rook_attacks(sq, occ) & orth_sliders(c);
-    attacks |= get_king_attacks(sq) & get_piecebb(c, KING);
+    attacks |= get_attacks(KNIGHT, sq) & get_piecebb(c, KNIGHT);
+    attacks |= get_attacks(BISHOP, sq, occ) & diag_sliders(c);
+    attacks |= get_attacks(ROOK, sq, occ) & orth_sliders(c);
+    attacks |= get_attacks(KING, sq) & get_piecebb(c, KING);
     return attacks;
 }
 
