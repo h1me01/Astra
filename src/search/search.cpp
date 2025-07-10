@@ -24,7 +24,7 @@ void init_reductions() {
 
 // search class
 
-Search::Search(const std::string &fen) : board(fen) {}
+Search::Search(const std::string &fen) : board(fen), nodes(0), tb_hits(0) {}
 
 Move Search::bestmove() {
     tm.start();
@@ -169,7 +169,7 @@ Score Search::aspiration(int depth, Stack *ss) {
     return result;
 }
 
-Score Search::negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_node, const Move skipped) {
+Score Search::negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_node) {
     assert(alpha < beta);
     assert(ss->ply >= 0);
 
@@ -222,7 +222,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_no
 
     // look up in transposition table
     bool tt_hit = false;
-    TTEntry *ent = !skipped ? tt.lookup(hash, &tt_hit) : nullptr;
+    TTEntry *ent = !ss->skipped ? tt.lookup(hash, &tt_hit) : nullptr;
 
     Move tt_move = NO_MOVE;
     Bound tt_bound = NO_BOUND;
@@ -310,9 +310,10 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_no
             ) {
                 eval = tt_score;
             }
-        } else if(!skipped) {
+        } else if(!ss->skipped) {
             raw_eval = evaluate();
             eval = ss->static_eval = adjust_eval(ss, raw_eval);
+
             ent->store(     //
                 hash,       // hash
                 NO_MOVE,    // move
@@ -337,7 +338,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_no
 
     // update quiet history
     Move prev_move = (ss - 1)->curr_move;
-    if(!skipped                               //
+    if(!ss->skipped                           //
        && is_valid_move(prev_move)            // first check if move is valid
        && !is_cap(prev_move)                  //
        && (ss - 1)->static_eval != VALUE_NONE //
@@ -362,7 +363,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_no
 
         // reverse futility pruning
         int rfp_margin = rfp_depth_mult * depth - rfp_improving_mult * improving;
-        if(!skipped                          //
+        if(!ss->skipped                      //
            && depth < rfp_depth              //
            && eval - rfp_margin >= beta      //
            && eval < VALUE_TB_WIN_IN_MAX_PLY //
@@ -372,7 +373,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_no
 
         // null move pruning
         int nmp_margin = nmp_depth_mult * depth - nmp_base;
-        if(!skipped                                //
+        if(!ss->skipped                            //
            && depth >= 4                           //
            && eval >= beta                         //
            && board.nonpawnmat()                   //
@@ -399,7 +400,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_no
         }
 
         // internal iterative reduction
-        if(!skipped                 //
+        if(!ss->skipped             //
            && !in_check             //
            && !tt_move              //
            && depth >= 4            //
@@ -410,7 +411,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_no
 
         // probcut
         int beta_cut = beta + prob_cut_margin;
-        if(!skipped                                           //
+        if(!ss->skipped                                       //
            && depth > 4                                       //
            && std::abs(beta) < VALUE_TB_WIN_IN_MAX_PLY        //
            && !(tt_depth >= depth - 3 && tt_score < beta_cut) //
@@ -465,7 +466,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_no
     Move best_move = NO_MOVE, move;
 
     while((move = mp.next()) != NO_MOVE) {
-        if(move == skipped || !board.is_legal(move))
+        if(move == ss->skipped || !board.is_legal(move))
             continue;
         if(root_node && !found_rootmove(move))
             continue;
@@ -530,7 +531,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_no
         int extensions = 0;
 
         // singular extensions
-        if(!skipped                                        //
+        if(!ss->skipped                                    //
            && !root_node                                   //
            && depth >= 6                                   //
            && tt_move == move                              //
@@ -540,7 +541,9 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_no
            && std::abs(tt_score) < VALUE_TB_WIN_IN_MAX_PLY //
         ) {
             Score sbeta = tt_score - 6 * depth / 8;
-            Score score = negamax((depth - 1) / 2, sbeta - 1, sbeta, ss, cut_node, move);
+            ss->skipped = move;
+            Score score = negamax((depth - 1) / 2, sbeta - 1, sbeta, ss, cut_node);
+            ss->skipped = NO_MOVE;
 
             if(score < sbeta) {
                 // if we didn't find a better move, then extend
@@ -679,7 +682,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_no
 
     // check for mate/stalemate
     if(made_moves == 0) {
-        if(skipped != NO_MOVE)
+        if(ss->skipped != NO_MOVE)
             return alpha;
         else if(in_check)
             return -VALUE_MATE + ss->ply;
@@ -697,7 +700,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_no
     else
         bound = EXACT_BOUND;
 
-    if(!skipped && (!root_node || multipv_idx == 0)) {
+    if(!ss->skipped && (!root_node || multipv_idx == 0)) {
         ent->store(     //
             hash,       // hash
             best_move,  // move
@@ -922,9 +925,10 @@ Score Search::evaluate() {
 Score Search::adjust_eval(const Stack *ss, Score eval) const {
     eval += (history.get_matcorr(board) + history.get_contcorr(ss)) / 256;
 
-    return std::clamp(eval,                                // value
-                      Score(-VALUE_TB_WIN_IN_MAX_PLY + 1), // min
-                      Score(VALUE_TB_WIN_IN_MAX_PLY - 1)   // max
+    return std::clamp(                       //
+        eval,                                // value
+        Score(-VALUE_TB_WIN_IN_MAX_PLY + 1), // min
+        Score(VALUE_TB_WIN_IN_MAX_PLY - 1)   // max
     );
 }
 
@@ -935,9 +939,9 @@ bool Search::is_limit_reached(int depth) const {
         return true;
     if(limit.infinite)
         return false;
-    if(limit.nodes != 0 && nodes >= limit.nodes)
-        return true;
     if(depth > limit.depth)
+        return true;
+    if(limit.nodes != 0 && nodes >= limit.nodes)
         return true;
     if(limit.time.max != 0 && tm.elapsed_time() >= limit.time.max)
         return true;

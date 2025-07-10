@@ -35,7 +35,16 @@ int TTEntry::relative_age() const {
     return (AGE_CYCLE + tt.get_age() - agepvbound) & AGE_MASK;
 }
 
-void TTEntry::store(U64 hash, Move move, Score score, Score eval, Bound bound, int depth, int ply, bool pv) {
+void TTEntry::store( //
+    U64 hash,        //
+    Move move,       //
+    Score score,     //
+    Score eval,      //
+    Bound bound,     //
+    int depth,       //
+    int ply,         //
+    bool pv          //
+) {
     uint16_t hash16 = (uint16_t) hash;
 
     if(is_valid_move(move) || this->hash != hash16)
@@ -54,8 +63,9 @@ void TTEntry::store(U64 hash, Move move, Score score, Score eval, Bound bound, i
         this->score = score;
         this->eval = eval;
         agepvbound = (uint8_t) (bound + (pv << 2)) | tt.get_age();
-    } else if(this->depth >= 5 && bound != EXACT_BOUND)
+    } else if(this->depth >= 5 && bound != EXACT_BOUND) {
         this->depth--;
+    }
 }
 
 // class TTable
@@ -87,11 +97,12 @@ void TTable::clear() {
     std::vector<std::thread> threads;
     threads.reserve(num_workers);
 
-    for(int i = 0; i < num_workers; i++)
+    for(int i = 0; i < num_workers; i++) {
         threads.emplace_back([this, i, chunk_size]() {
             for(U64 j = 0; j < chunk_size; ++j)
                 buckets[i * chunk_size + j] = TTBucket{};
         });
+    }
 
     const U64 cleared = chunk_size * num_workers;
     if(cleared < bucket_size)
@@ -108,8 +119,8 @@ TTEntry *TTable::lookup(U64 hash, bool *hit) const {
 
     for(int i = 0; i < BUCKET_SIZE; i++) {
         if(entries[i].get_hash() == hash16 || entries[i].get_hash() == 0) {
-            uint8_t age_pv_bound = (uint8_t) (tt.get_age() | (entries[i].get_agepvbound() & (AGE_STEP - 1)));
-            entries[i].set_agepvbound(age_pv_bound);
+            uint8_t agepvbound = (uint8_t) (tt.get_age() | (entries[i].get_agepvbound() & (AGE_STEP - 1)));
+            entries[i].set_agepvbound(agepvbound);
 
             *hit = entries[i].get_hash() == hash16;
             return &entries[i];

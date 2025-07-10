@@ -8,13 +8,12 @@ U64 keys[8192];
 Move cuckoo_moves[8192];
 
 void init() {
-    int count = 0;
-
     for(int i = 0; i < 8192; i++) {
         keys[i] = 0;
         cuckoo_moves[i] = NO_MOVE;
     }
 
+    int count = 0;
     for(Color c : {WHITE, BLACK}) {
         for(PieceType pt : {KNIGHT, BISHOP, ROOK, QUEEN, KING}) {
             Piece p = make_piece(c, pt);
@@ -25,10 +24,9 @@ void init() {
                         continue;
 
                     Move move = Move(sq1, sq2, QUIET);
-
                     U64 hash = Zobrist::get_psq(p, sq1) ^ Zobrist::get_psq(p, sq2) ^ Zobrist::side;
+                    
                     int i = cuckoo_h1(hash);
-
                     while(true) {
                         std::swap(keys[i], hash);
                         std::swap(cuckoo_moves[i], move);

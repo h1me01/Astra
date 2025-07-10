@@ -410,15 +410,13 @@ void Board::make_move(const Move &m, bool update_nnue) {
         info.hash ^= Zobrist::get_psq(rook, rook_from) ^ Zobrist::get_psq(rook, rook_to);
         info.non_pawn_hash[stm] ^= Zobrist::get_psq(rook, rook_from) ^ Zobrist::get_psq(rook, rook_to);
 
-        // move rook
         move_piece(rook_from, rook_to, update_nnue);
     }
 
     if(captured != NO_PIECE) {
         Square cap_sq = mt == EN_PASSANT ? Square(to ^ 8) : to;
-        // remove captured piece from hash
-        info.hash ^= Zobrist::get_psq(captured, cap_sq);
-        // remove captured piece from board
+
+        info.hash ^= Zobrist::get_psq(captured, cap_sq); // remove captured piece from hash
         remove_piece(cap_sq, update_nnue);
 
         // update hash
@@ -437,8 +435,7 @@ void Board::make_move(const Move &m, bool update_nnue) {
 
     // reset ep square if it exists
     if(info.ep_sq != NO_SQUARE) {
-        // remove ep square from hash
-        info.hash ^= Zobrist::get_ep(info.ep_sq);
+        info.hash ^= Zobrist::get_ep(info.ep_sq); // remove ep square from hash
         info.ep_sq = NO_SQUARE;
     }
 
@@ -451,7 +448,6 @@ void Board::make_move(const Move &m, bool update_nnue) {
         info.hash ^= Zobrist::get_castle(info.castle_rights.get_hash_idx());
     }
 
-    // move piece
     move_piece(from, to, update_nnue);
 
     if(pt == PAWN) {
@@ -459,8 +455,7 @@ void Board::make_move(const Move &m, bool update_nnue) {
         auto ep_sq = Square(to ^ 8);
         if((from ^ to) == 16 && (get_pawn_attacks(stm, ep_sq) & get_piecebb(~stm, PAWN))) {
             info.ep_sq = ep_sq;
-            // add ep square to hash
-            info.hash ^= Zobrist::get_ep(ep_sq);
+            info.hash ^= Zobrist::get_ep(ep_sq); // add ep square to hash
         } else if(is_prom(m)) {
             PieceType prom_t = prom_type(mt);
             Piece prom_pc = make_piece(stm, prom_t);
@@ -531,12 +526,10 @@ void Board::make_nullmove() {
     info.plies_from_null = 0;
 
     if(info.ep_sq != NO_SQUARE) {
-        // remove ep square from hash
-        info.hash ^= Zobrist::get_ep(info.ep_sq);
+        info.hash ^= Zobrist::get_ep(info.ep_sq); // remove ep square from hash
         info.ep_sq = NO_SQUARE;
     }
 
-    // update hash
     info.hash ^= Zobrist::side;
 
     stm = ~stm;

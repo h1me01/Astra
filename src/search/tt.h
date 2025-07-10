@@ -22,7 +22,16 @@ class TTEntry {
   public:
     int relative_age() const;
 
-    void store(U64 hash, Move move, Score score, Score eval, Bound bound, int depth, int ply, bool pv);
+    void store(      //
+        U64 hash,    //
+        Move move,   //
+        Score score, //
+        Score eval,  //
+        Bound bound, //
+        int depth,   //
+        int ply,     //
+        bool pv      //
+    );
 
     void set_agepvbound(uint8_t age_pv_bound) {
         this->agepvbound = age_pv_bound;
@@ -122,7 +131,7 @@ class TTable {
 
   private:
     uint8_t age;
-    U64 bucket_size{};
+    U64 bucket_size;
     TTBucket *buckets;
 
     int num_workers = 1;

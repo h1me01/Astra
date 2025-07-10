@@ -328,8 +328,11 @@ inline void Board::move_piece(Square from, Square to, bool update_nnue) {
         return; // no need to refresh
 
     // refresh only if different bucket index or king crossing the other half
-    if(NNUE::KING_BUCKET[rel_sq(stm, from)] != NNUE::KING_BUCKET[rel_sq(stm, to)] || sq_file(from) + sq_file(to) == 7)
+    if(sq_file(from) + sq_file(to) == 7                                              // check if crossing other half
+       || NNUE::KING_BUCKET[rel_sq(stm, from)] != NNUE::KING_BUCKET[rel_sq(stm, to)] // check if bucket index changed
+    ) {
         acc.set_refresh(stm); // other side doesn't need refresh
+    }
 }
 
 } // namespace Chess

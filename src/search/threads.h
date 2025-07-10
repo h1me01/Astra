@@ -11,6 +11,7 @@ class ThreadPool {
   public:
     void force_stop();
     bool is_stopped() const;
+
     U64 get_nodes() const;
     U64 get_tb_hits() const;
 

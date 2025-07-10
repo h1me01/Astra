@@ -20,23 +20,6 @@ struct DirtyPiece {
 };
 
 class Accum {
-  private:
-    Square wksq, bksq;
-
-    bool initialized[NUM_COLORS] = {false, false};
-    bool m_needs_refresh[NUM_COLORS] = {false, false};
-
-    alignas(ALIGNMENT) int16_t data[NUM_COLORS][L1_SIZE];
-
-    int num_dpcs = 0;
-    // an accumulator can update at max only 4 pieces per move:
-    // such case might be pawn captures piece on promotion rank:
-    //  1. remove captured piece
-    //  2. move pawn to target square
-    //  3. add promotion piece to target square
-    //  4. remove pawn from target square
-    DirtyPiece dpcs[4]{};
-
   public:
     void reset();
 
@@ -65,14 +48,27 @@ class Accum {
     int16_t *get_data(Color view) {
         return data[view];
     }
+
+  private:
+    Square wksq, bksq;
+
+    bool initialized[NUM_COLORS] = {false, false};
+    bool m_needs_refresh[NUM_COLORS] = {false, false};
+
+    alignas(ALIGNMENT) int16_t data[NUM_COLORS][L1_SIZE];
+
+    int num_dpcs = 0;
+    // an accumulator can update at max only 4 pieces per move:
+    // such case might be pawn captures piece on promotion rank:
+    //  1. remove captured piece
+    //  2. move pawn to target square
+    //  3. add promotion piece to target square
+    //  4. remove pawn from target square
+    DirtyPiece dpcs[4]{};
 };
 
 // idea from koivisto
 class AccumEntry {
-  private:
-    U64 piece_bb[NUM_COLORS][NUM_PIECE_TYPES]{};
-    Accum acc{};
-
   public:
     void reset() {
         memset(piece_bb, 0, sizeof(piece_bb));
@@ -90,15 +86,19 @@ class AccumEntry {
     Accum &get_accum() {
         return acc;
     }
+
+  private:
+    U64 piece_bb[NUM_COLORS][NUM_PIECE_TYPES]{};
+    Accum acc{};
 };
 
 class AccumTable {
-  private:
-    AccumEntry entries[NUM_COLORS][2 * BUCKET_SIZE]{};
-
   public:
     void refresh(Board &board, Color view);
     void reset();
+
+  private:
+    AccumEntry entries[NUM_COLORS][2 * BUCKET_SIZE]{};
 };
 
 } // namespace NNUE

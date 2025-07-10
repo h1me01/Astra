@@ -18,6 +18,7 @@ struct PVLine {
     Move &operator[](int depth) {
         return pv[depth];
     }
+
     Move operator[](int depth) const {
         return pv[depth];
     }
@@ -58,18 +59,19 @@ class Search {
 
     int multipv_idx;
     int root_depth;
-    U64 nodes = 0;
-    U64 tb_hits = 0;
+    U64 nodes;
+    U64 tb_hits;
+
+    TimeMan tm;
+    History history;
+    PVLine pv_table[MAX_PLY + 1];
 
     MoveList<RootMove> rootmoves;
 
-    PVLine pv_table[MAX_PLY + 1];
-    History history;
-    TimeMan tm;
-
     Score aspiration(int depth, Stack *ss);
-    Score negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_node, const Move skipped = NO_MOVE);
+
     Score qsearch(int depth, Score alpha, Score beta, Stack *ss);
+    Score negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_node);
 
     Score evaluate();
     Score adjust_eval(const Stack *ss, Score eval) const;

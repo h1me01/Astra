@@ -18,6 +18,7 @@ struct Stack {
     Piece moved_piece = NO_PIECE;
 
     Move killer = NO_MOVE;
+    Move skipped = NO_MOVE;
     Move curr_move = NO_MOVE;
 
     ContH *conth;
