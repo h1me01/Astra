@@ -88,10 +88,10 @@ void NNUE::init() {
     memcpy(ft_biases, &gWeightsData[offset], L1_SIZE * sizeof(int16_t));
     offset += L1_SIZE * sizeof(int16_t);
 
-    memcpy(l1_weights, &gWeightsData[offset], 2 * L1_SIZE * OUTPUT_SIZE * sizeof(int16_t));
-    offset += 2 * L1_SIZE * sizeof(int16_t);
+    memcpy(l1_weights, &gWeightsData[offset], 2 * L1_SIZE * OUTPUT_BUCKETS * sizeof(int16_t));
+    offset += 2 * L1_SIZE * OUTPUT_BUCKETS * sizeof(int16_t);
 
-    memcpy(l1_biases, &gWeightsData[offset], OUTPUT_SIZE * sizeof(int16_t));
+    memcpy(l1_biases, &gWeightsData[offset], OUTPUT_BUCKETS * sizeof(int16_t));
 }
 
 void NNUE::init_accum(Accum &acc) const {
@@ -102,34 +102,40 @@ void NNUE::init_accum(Accum &acc) const {
 int32_t NNUE::forward(Board &board) const {
     board.update_accums();
 
+    const int bucket = (pop_count(board.occupancy()) - 2) / 4;
+
+    assert(0 <= bucket && bucket < OUTPUT_BUCKETS);
+
     Color stm = board.get_stm();
     Accum &acc = board.get_accum();
 
-    assert(valid_color(stm));
+    assert(stm == WHITE || stm == BLACK);
 
 #if defined(__AVX512F__) || defined(__AVX2__) || defined(__AVX__)
     constexpr avx_type zero{};
-    const avx_type ft_clip = avx_set1_epi16(FT_QUANT);
+    const avx_type max_clipped_value = avx_set1_epi16(FT_QUANT);
 
     const auto acc_stm = (const avx_type *) acc.get_data(stm);
     const auto acc_opp = (const avx_type *) acc.get_data(~stm);
 
     avx_type res{};
-    const auto weights = (const avx_type *) (l1_weights);
+    const auto weights = (const avx_type *) (l1_weights + bucket * L1_SIZE * 2);
 
     for(int i = 0; i < L1_SIZE / div; i++) {
-        auto act = avx_min_epi16(avx_max_epi16(acc_stm[i], zero), ft_clip);
+        auto act = avx_min_epi16(avx_max_epi16(acc_stm[i], zero), max_clipped_value);
         auto product = avx_madd_epi16(avx_mullo_epi16(act, weights[i]), act);
+
         res = avx_add_epi32(res, product);
     }
 
     for(int i = 0; i < L1_SIZE / div; i++) {
-        auto act = avx_min_epi16(avx_max_epi16(acc_opp[i], zero), ft_clip);
+        auto act = avx_min_epi16(avx_max_epi16(acc_opp[i], zero), max_clipped_value);
         auto product = avx_madd_epi16(avx_mullo_epi16(act, weights[i + L1_SIZE / div]), act);
+
         res = avx_add_epi32(res, product);
     }
 
-    int32_t output = horizontalSum(res) / FT_QUANT + l1_biases[0];
+    int32_t output = horizontalSum(res) / FT_QUANT + l1_biases[bucket];
     return (output * EVAL_SCALE) / (FT_QUANT * L1_QUANT);
 #else
     int32_t output = 0;
@@ -137,15 +143,17 @@ int32_t NNUE::forward(Board &board) const {
     int16_t *acc_stm = acc.getData(stm);
     int16_t *acc_opp = acc.getData(~stm);
 
+    int offset = bucket * L1_SIZE * 2;
+
     for(int i = 0; i < L1_SIZE; i++) {
         int32_t clipped_stm = std::clamp(int32_t(acc_stm[i]), 0, FT_QUANT);
         int32_t clipped_opp = std::clamp(int32_t(acc_opp[i]), 0, FT_QUANT);
 
-        output += l1_weights[i] * clipped_stm * clipped_stm;
-        output += l1_weights[L1_SIZE + i] * clipped_opp * clipped_opp;
+        output += l1_weights[offset + i] * clipped_stm * clipped_stm;
+        output += l1_weights[offset + L1_SIZE + i] * clipped_opp * clipped_opp;
     }
 
-    output = output / FT_QUANT + l1_biases[0];
+    output = output / FT_QUANT + l1_biases[bucket];
     return (output * EVAL_SCALE) / (FT_QUANT * L1_QUANT);
 #endif
 }
