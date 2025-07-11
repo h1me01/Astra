@@ -67,9 +67,9 @@ inline int History::get_qh(const Board &board, const Stack *ss, Move &move) cons
     Square to = move.to();
     Piece pc = board.piece_at(from);
 
-    assert(to >= a1 && to <= h8);
-    assert(from >= a1 && from <= h8);
-    assert(pc >= WHITE_PAWN && pc <= BLACK_KING);
+    assert(valid_sq(to));
+    assert(valid_sq(from));
+    assert(valid_piece(pc));
 
     return get_hh(board.get_stm(), move) +    //
            get_ph(board, move) +              //
@@ -82,16 +82,16 @@ inline int History::get_ch(const Board &board, Move &move) const {
     PieceType captured = move.type() == EN_PASSANT ? PAWN : piece_type(board.piece_at(move.to()));
     Piece pc = board.piece_at(move.from());
 
-    assert(pc >= WHITE_PAWN && pc <= BLACK_KING);
-    assert(captured >= PAWN && captured < KING);
+    assert(valid_piece(pc));
+    assert(valid_piece_type(captured) && captured != KING);
 
     return ch[pc][move.to()][captured];
 }
 
 inline int History::get_ph(const Board &board, Move &move) const {
     Piece pc = board.piece_at(move.from());
-    assert(pc >= WHITE_PAWN && pc <= BLACK_KING);
-    assert(move.to() >= a1 && move.to() <= h8);
+    assert(valid_piece(pc));
+    assert(valid_sq(move.to()));
     return ph[ph_idx(board.get_pawnhash())][pc][move.to()];
 }
 
@@ -99,8 +99,8 @@ inline Move History::get_counter(Move prev_move) const {
     Square from = prev_move.from();
     Square to = prev_move.to();
 
-    assert(to >= a1 && to <= h8);
-    assert(from >= a1 && from <= h8);
+    assert(valid_sq(to));
+    assert(valid_sq(from));
 
     return counters[from][to];
 }

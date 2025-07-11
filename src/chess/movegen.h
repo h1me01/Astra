@@ -15,7 +15,7 @@ enum GenType : int { //
 
 template <GenType gt, Direction d, MoveType mt> //
 Move *make_promotions(Move *ml, Square to) {
-    assert(to >= a1 && to <= h8);
+    assert(valid_sq(to));
     assert(!(to >= a2 && to <= h7));
 
     if constexpr(gt != QUIETS)
@@ -153,7 +153,7 @@ Move *gen_all(const Board &board, Move *ml) {
     if(pop_count(checkers) > 1)
         return gen_piecemoves<us, KING, gt>(board, ml, ~danger);
 
-    const U64 targets = checkers ? squares_between(ksq, lsb(checkers)) | checkers : -1ULL;
+    const U64 targets = checkers ? between_bb(ksq, lsb(checkers)) | checkers : -1ULL;
 
     ml = gen_pawnmoves<us, gt>(board, ml, targets);
     ml = gen_piecemoves<us, KNIGHT, gt>(board, ml, targets);
@@ -169,7 +169,7 @@ Move *gen_all(const Board &board, Move *ml) {
             *ml++ = us == WHITE ? Move(e1, g1, CASTLING) : Move(e8, g8, CASTLING);
 
         // ignore the square b1/b8 since the king does move there
-        not_free = (occ | (danger & ~SQUARE_BB[rel_sq(us, b1)])) & OOO_BLOCKERS_MASK[us];
+        not_free = (occ | (danger & ~square_bb(rel_sq(us, b1)))) & OOO_BLOCKERS_MASK[us];
         if(!not_free && info.castle_rights.queenside(us))
             *ml++ = us == WHITE ? Move(e1, c1, CASTLING) : Move(e8, c8, CASTLING);
     }
@@ -196,13 +196,13 @@ Move *gen_quiet_checkers(const Board &board, Move *ml) {
 
 inline Move *gen_legals(const Board &board, Move *ml) {
     const Color us = board.get_stm();
-    const U64 pinned = board.history[board.get_ply()].pinned;
+    const U64 pinned = board.history[board.get_ply()].get_blockers();
 
     Move *curr = ml;
 
     ml = us == WHITE ? gen_all<WHITE, LEGALS>(board, ml) : gen_all<BLACK, LEGALS>(board, ml);
     while(curr != ml)
-        if(((pinned & SQUARE_BB[curr->from()]) || curr->type() == EN_PASSANT) && !board.is_legal(*curr))
+        if(((pinned & square_bb(curr->from())) || curr->type() == EN_PASSANT) && !board.is_legal(*curr))
             *curr = *(--ml);
         else
             ++curr;

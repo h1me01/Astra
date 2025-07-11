@@ -3,6 +3,7 @@
 #include "board.h"
 
 namespace Chess {
+
 // helper
 
 // represent castle rights correctly in fen notation
@@ -13,7 +14,7 @@ bool castleNotationHelper(const std::ostringstream &fen_stream) {
 }
 
 std::pair<Square, Square> getCastleRookSquares(Color c, Square to) {
-    assert(c == WHITE || c == BLACK);
+    assert(valid_color(c));
     assert(to == rel_sq(c, g1) || to == rel_sq(c, c1));
 
     Square rook_from, rook_to;
@@ -43,8 +44,8 @@ Board &Board::operator=(const Board &other) {
         curr_ply = other.curr_ply;
         accums_idx = other.accums_idx;
 
-        std::copy(std::begin(other.piece_bb), std::end(other.piece_bb), std::begin(piece_bb));
         std::copy(std::begin(other.board), std::end(other.board), std::begin(board));
+        std::copy(std::begin(other.piece_bb), std::end(other.piece_bb), std::begin(piece_bb));
 
         history = other.history;
         accums = other.accums;
@@ -227,13 +228,13 @@ bool Board::is_legal(const Move &m) const {
     const Square to = m.to();
     const Square ksq = king_sq(stm);
 
-    assert(is_valid_move(m));
+    assert(m.is_valid());
     assert(piece_at(from) != NO_PIECE);
     assert(piece_at(ksq) == make_piece(stm, KING));
 
     if(m.type() == EN_PASSANT) {
         Square cap_sq = Square(to ^ 8);
-        U64 occ = (occupancy() ^ SQUARE_BB[from] ^ SQUARE_BB[cap_sq]) | SQUARE_BB[to];
+        U64 occ = (occupancy() ^ square_bb(from) ^ square_bb(cap_sq)) | square_bb(to);
 
         assert(piece_at(cap_sq) == make_piece(~stm, PAWN));
         assert(piece_at(to) == NO_PIECE);
@@ -249,7 +250,7 @@ bool Board::is_legal(const Move &m) const {
     }
 
     // only legal if not pinned or moving in the direction of the pin
-    return !(history[curr_ply].pinned & SQUARE_BB[from]) || (line(from, ksq) & SQUARE_BB[to]);
+    return !(history[curr_ply].get_blockers() & square_bb(from)) || (line(from, ksq) & square_bb(to));
 }
 
 bool Board::is_pseudolegal(const Move &m) const {
@@ -269,19 +270,19 @@ bool Board::is_pseudolegal(const Move &m) const {
     const U64 them_bb = occupancy(~stm);
     const U64 occ = us_bb | them_bb;
 
-    if(!is_valid_move(m))
+    if(!m.is_valid())
         return false;
     if(from_pc == NO_PIECE)
         return false;
-    if(piece_color(from_pc) != stm)
+    if(square_bb(to) & us_bb)
         return false;
-    if(SQUARE_BB[to] & us_bb)
+    if(piece_color(from_pc) != stm)
         return false;
     if(!is_cap(m) && to_pc != NO_PIECE)
         return false;
     if(pop_count(info.checkers) > 1 && pt != KING)
         return false;
-    if(pt == KING && (SQUARE_BB[to] & info.danger))
+    if(pt == KING && (square_bb(to) & info.danger))
         return false;
     if(mt != EN_PASSANT && is_cap(m) && to_pc == NO_PIECE)
         return false;
@@ -297,7 +298,7 @@ bool Board::is_pseudolegal(const Move &m) const {
             return true;
 
         // long castling
-        not_free = (occ | (info.danger & ~SQUARE_BB[rel_sq(stm, b1)])) & OOO_BLOCKERS_MASK[stm];
+        not_free = (occ | (info.danger & ~square_bb(rel_sq(stm, b1)))) & OOO_BLOCKERS_MASK[stm];
         if(!not_free && info.castle_rights.queenside(stm) && to == rel_sq(stm, c1))
             return true;
 
@@ -319,23 +320,23 @@ bool Board::is_pseudolegal(const Move &m) const {
         if(pt != PAWN)
             return false;
 
-        U64 up_bb = (stm == WHITE ? SQUARE_BB[from] << 8 : SQUARE_BB[from] >> 8) & ~occ;
+        U64 up_bb = (stm == WHITE ? square_bb(from) << 8 : square_bb(from) >> 8) & ~occ;
         U64 attacks = up_bb | (get_pawn_attacks(stm, from) & them_bb);
-        U64 targets = info.checkers ? squares_between(ksq, lsb(info.checkers)) | info.checkers : -1ULL;
+        U64 targets = info.checkers ? between_bb(ksq, lsb(info.checkers)) | info.checkers : -1ULL;
 
         // only pseudo legal, if target range is reachable
-        return (MASK_RANK[rel_rank(stm, RANK_8)] & attacks & targets) & SQUARE_BB[to];
+        return (MASK_RANK[rel_rank(stm, RANK_8)] & attacks & targets) & square_bb(to);
     }
 
     if(pt == PAWN) {
         const Direction up = (stm == WHITE ? NORTH : SOUTH);
 
         // no promotion moves allowed here since we already handled them
-        if(SQUARE_BB[to] & (MASK_RANK[RANK_1] | MASK_RANK[RANK_8]))
+        if(square_bb(to) & (MASK_RANK[RANK_1] | MASK_RANK[RANK_8]))
             return false;
 
         if(mt != EN_PASSANT) {
-            bool capture = get_pawn_attacks(stm, from) & them_bb & SQUARE_BB[to];
+            bool capture = get_pawn_attacks(stm, from) & them_bb & square_bb(to);
 
             bool singe_push = Square(from + up) == to && to_pc == NO_PIECE;
 
@@ -349,17 +350,17 @@ bool Board::is_pseudolegal(const Move &m) const {
         }
     }
     // if a non pawn piece's target range isn't reachable, then it's not pseudo legal
-    else if(!(get_attacks(pt, from, occ) & SQUARE_BB[to])) {
+    else if(!(get_attacks(pt, from, occ) & square_bb(to))) {
         return false;
     }
 
     // check for blockers/captures of the checker
     if(info.checkers && pt != KING) {
-        U64 target = squares_between(ksq, lsb(info.checkers)) | info.checkers;
+        U64 target = between_bb(ksq, lsb(info.checkers)) | info.checkers;
         Square cap_sq = mt == EN_PASSANT ? Square(to ^ 8) : to;
 
         // if move can't capture/block the checker, then it's not pseudo legal
-        if(!(target & SQUARE_BB[cap_sq]))
+        if(!(target & square_bb(cap_sq)))
             return false;
     }
 
@@ -374,9 +375,9 @@ void Board::make_move(const Move &m, bool update_nnue) {
     const PieceType pt = piece_type(pc);
     const Piece captured = mt == EN_PASSANT ? make_piece(~stm, PAWN) : piece_at(to);
 
-    assert(pc != NO_PIECE);
+    assert(m.is_valid());
+    assert(valid_piece(pc));
     assert(piece_type(captured) != KING);
-    assert(is_valid_move(m));
 
     curr_ply++;
     history[curr_ply] = StateInfo(history[curr_ply - 1]);
@@ -443,7 +444,7 @@ void Board::make_move(const Move &m, bool update_nnue) {
     if(info.castle_rights.on_castle_sq(from) || info.castle_rights.on_castle_sq(to)) {
         // remove old castling rights from hash
         info.hash ^= Zobrist::get_castle(info.castle_rights.get_hash_idx());
-        info.castle_rights.update(SQUARE_BB[from], SQUARE_BB[to]);
+        info.castle_rights.update(square_bb(from), square_bb(to));
         // add new castling rights to hash
         info.hash ^= Zobrist::get_castle(info.castle_rights.get_hash_idx());
     }
@@ -488,7 +489,7 @@ void Board::unmake_move(const Move &m) {
     const Square to = m.to();
     const Piece captured = history[curr_ply].captured;
 
-    assert(is_valid_move(m));
+    assert(m.is_valid());
     assert(piece_at(to) != NO_PIECE);
     assert(piece_at(from) == NO_PIECE);
 
@@ -562,10 +563,12 @@ bool Board::is_repetition(int ply) const {
 }
 
 bool Board::see(Move &m, int threshold) const {
-    assert(is_valid_move(m));
+    assert(m.is_valid());
 
     if(is_prom(m) || m.type() == EN_PASSANT || m.type() == CASTLING)
         return true;
+
+    const StateInfo &info = history[curr_ply];
 
     const Square from = m.from();
     const Square to = m.to();
@@ -583,54 +586,57 @@ bool Board::see(Move &m, int threshold) const {
     if(swap <= 0)
         return true;
 
-    U64 occ = occupancy() ^ SQUARE_BB[from] ^ SQUARE_BB[to];
+    U64 occ = occupancy() ^ square_bb(from) ^ square_bb(to);
     U64 attackers = attackers_to(WHITE, to, occ) | attackers_to(BLACK, to, occ);
 
     const U64 diag = diag_sliders(WHITE) | diag_sliders(BLACK);
     const U64 orth = orth_sliders(WHITE) | orth_sliders(BLACK);
 
-    int result = 1;
+    int res = 1;
 
     Color curr_stm = get_stm();
 
-    U64 my_attacker, least_attacker;
+    U64 stm_attacker, bb;
     while(true) {
         curr_stm = ~curr_stm;
         attackers &= occ;
 
-        if(!(my_attacker = (attackers & occupancy(curr_stm))))
+        if(!(stm_attacker = (attackers & occupancy(curr_stm))))
             break;
-        result ^= 1;
 
-        if((least_attacker = my_attacker & get_piecebb(curr_stm, PAWN))) {
-            if((swap = PIECE_VALUES_SEE[PAWN] - swap) < result)
+        res ^= 1;
+
+        if((bb = stm_attacker & get_piecebb(curr_stm, PAWN))) {
+            if((swap = PIECE_VALUES_SEE[PAWN] - swap) < res)
                 break;
-            occ ^= (least_attacker & -least_attacker);
+            occ ^= (bb & -bb);
             attackers |= get_attacks(BISHOP, to, occ) & diag;
-        } else if((least_attacker = my_attacker & get_piecebb(curr_stm, KNIGHT))) {
-            if((swap = PIECE_VALUES_SEE[KNIGHT] - swap) < result)
+        } else if((bb = stm_attacker & get_piecebb(curr_stm, KNIGHT))) {
+            if((swap = PIECE_VALUES_SEE[KNIGHT] - swap) < res)
                 break;
-            occ ^= (least_attacker & -least_attacker);
-        } else if((least_attacker = my_attacker & get_piecebb(curr_stm, BISHOP))) {
-            if((swap = PIECE_VALUES_SEE[BISHOP] - swap) < result)
+            occ ^= (bb & -bb);
+        } else if((bb = stm_attacker & get_piecebb(curr_stm, BISHOP))) {
+            if((swap = PIECE_VALUES_SEE[BISHOP] - swap) < res)
                 break;
-            occ ^= (least_attacker & -least_attacker);
+            occ ^= (bb & -bb);
             attackers |= get_attacks(BISHOP, to, occ) & diag;
-        } else if((least_attacker = my_attacker & get_piecebb(curr_stm, ROOK))) {
-            if((swap = PIECE_VALUES_SEE[ROOK] - swap) < result)
+        } else if((bb = stm_attacker & get_piecebb(curr_stm, ROOK))) {
+            if((swap = PIECE_VALUES_SEE[ROOK] - swap) < res)
                 break;
-            occ ^= (least_attacker & -least_attacker);
+            occ ^= (bb & -bb);
             attackers |= get_attacks(ROOK, to, occ) & orth;
-        } else if((least_attacker = my_attacker & get_piecebb(curr_stm, QUEEN))) {
-            if((swap = PIECE_VALUES_SEE[QUEEN] - swap) < result)
-                break;
-            occ ^= (least_attacker & -least_attacker);
+        } else if((bb = stm_attacker & get_piecebb(curr_stm, QUEEN))) {
+            swap = PIECE_VALUES_SEE[QUEEN] - swap;
+            assert(swap >= res);
+
+            occ ^= (bb & -bb);
             attackers |= (get_attacks(BISHOP, to, occ) & diag) | (get_attacks(ROOK, to, occ) & orth);
-        } else
-            return (attackers & ~occupancy(curr_stm)) ? result ^ 1 : result;
+        } else {
+            return (attackers & ~occupancy(curr_stm)) ? res ^ 1 : res;
+        }
     }
 
-    return bool(result);
+    return bool(res);
 }
 
 bool Board::has_upcoming_repetition(int ply) {
@@ -657,7 +663,7 @@ bool Board::has_upcoming_repetition(int ply) {
         Square from = move.from();
         Square to = move.to();
 
-        U64 between = squares_between(from, to) ^ SQUARE_BB[to];
+        U64 between = between_bb(from, to) ^ square_bb(to);
         if(between & occ)
             continue;
 
@@ -684,7 +690,7 @@ bool Board::has_upcoming_repetition(int ply) {
 void Board::init_threats() {
     StateInfo &info = history[curr_ply];
     Color them = ~stm;
-    U64 occ = occupancy() ^ SQUARE_BB[king_sq(stm)]; // king must be excluded so we don't block the slider attacks
+    U64 occ = occupancy() ^ square_bb(king_sq(stm)); // king must be excluded so we don't block the slider attacks
 
     U64 danger = 0;
     U64 threat = 0;
@@ -725,16 +731,23 @@ void Board::init_checkers_and_pinned() {
     U64 candidates = (get_attacks(ROOK, ksq, their_occ) & orth_sliders(them)) |
                      (get_attacks(BISHOP, ksq, their_occ) & diag_sliders(them));
 
-    info.pinned = 0;
+    info.pinners[WHITE] = info.pinners[BLACK] = 0;
+    info.blockers[WHITE] = info.blockers[BLACK] = 0;
+
     while(candidates) {
-        Square s = pop_lsb(candidates);
-        U64 blockers = squares_between(ksq, s) & our_occ;
+        Square sq = pop_lsb(candidates);
+        U64 blockers = between_bb(ksq, sq) & our_occ;
+
+        Piece cand_pc = piece_at(sq);
+
         if(!blockers)
             // if no piece is between the enemy slider, then add that piece as checker
-            info.checkers ^= SQUARE_BB[s];
-        else if(pop_count(blockers) == 1)
-            // if we have only one blocker, add that piece as pinned
-            info.pinned ^= blockers;
+            info.checkers ^= square_bb(sq);
+        else if(pop_count(blockers) == 1) {
+            Piece blocker_pc = piece_at(lsb(blockers));
+            info.blockers[piece_color(blocker_pc)] ^= blockers;
+            info.pinners[piece_color(cand_pc)] ^= square_bb(sq);
+        }
     }
 }
 

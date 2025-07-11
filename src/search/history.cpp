@@ -41,7 +41,7 @@ void History::update(const Board &board,    //
         // so we don't actually return it twice in the movepicker
         if(best.type() != PQ_QUEEN) {
             Move prev_move = (ss - 1)->curr_move;
-            if(is_valid_move(prev_move))
+            if(prev_move.is_valid())
                 counters[prev_move.from()][prev_move.to()] = best;
 
             ss->killer = best;
@@ -87,16 +87,16 @@ void History::update_qh(Color c, Move move, int bonus) {
 void History::update_ph(const Board &board, Move &move, int bonus) {
     Piece pc = board.piece_at(move.from());
     int16_t &value = ph[ph_idx(board.get_pawnhash())][pc][move.to()];
-    assert(pc >= WHITE_PAWN && pc <= BLACK_KING);
-    assert(move.to() >= a1 && move.to() <= h8);
+    assert(valid_piece(pc));
+    assert(valid_sq(move.to()));
     value += getFormula(value, bonus);
 }
 
 void History::update_conth(Move &move, Stack *ss, int bonus) {
     for(int offset : {1, 2, 4, 6}) {
-        if(is_valid_move((ss - offset)->curr_move)) {
+        if((ss - offset)->curr_move.is_valid()) {
             Piece pc = (ss - offset)->moved_piece;
-            assert(pc >= WHITE_PAWN && pc <= BLACK_KING);
+            assert(valid_piece(pc));
 
             int16_t &value = (*(ss - offset)->conth)[pc][move.to()];
             value += getFormula(value, bonus);

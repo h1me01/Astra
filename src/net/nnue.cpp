@@ -63,10 +63,10 @@ int32_t horizontalSum(avx_type &reg) {
 #endif
 
 int featureIndex(Square psq, Square ksq, Piece pc, Color view) {
-    assert(psq >= a1 && psq <= h8);
-    assert(ksq >= a1 && ksq <= h8);
-    assert(view == WHITE || view == BLACK);
-    assert(pc >= WHITE_PAWN && pc <= BLACK_KING);
+    assert(valid_sq(psq));
+    assert(valid_sq(ksq));
+    assert(valid_color(view));
+    assert(valid_piece(pc));
 
     // mirror psq horizontally if king is on other half
     if(sq_file(ksq) > 3)
@@ -105,7 +105,7 @@ int32_t NNUE::forward(Board &board) const {
     Color stm = board.get_stm();
     Accum &acc = board.get_accum();
 
-    assert(stm == WHITE || stm == BLACK);
+    assert(valid_color(stm));
 
 #if defined(__AVX512F__) || defined(__AVX2__) || defined(__AVX__)
     constexpr avx_type zero{};

@@ -16,22 +16,37 @@ std::vector<std::string> split(const std::string &str, char del);
 
 PieceType prom_type(const MoveType mt);
 
-inline bool is_valid_move(const Move &m) {
-    return m != NO_MOVE && m != NULL_MOVE;
-}
+std::ostream &operator<<(std::ostream &os, const Move &m);
 
 inline bool is_prom(const Move &m) {
-    assert(is_valid_move(m));
+    assert(m.is_valid());
     return m.type() >= PQ_KNIGHT;
 }
 
 inline bool is_cap(const Move &m) {
-    assert(is_valid_move(m));
+    assert(m.is_valid());
     return m.type() == CAPTURE || m.type() == EN_PASSANT || m.type() >= PC_KNIGHT;
 }
 
-// prints move
-std::ostream &operator<<(std::ostream &os, const Move &m);
+constexpr bool valid_color(Color c) {
+    return c == WHITE || c == BLACK;
+}
+
+constexpr bool valid_sq(Square sq) {
+    return sq >= a1 && sq <= h8;
+}
+
+constexpr bool valid_piece_type(PieceType pt) {
+    return pt >= PAWN && pt <= KING;
+}
+
+constexpr bool valid_piece(Piece pc) {
+    return pc >= WHITE_PAWN && pc <= BLACK_KING;
+}
+
+constexpr bool valid_score(Score score) {
+    return score > -VALUE_INFINITE && score < VALUE_INFINITE;
+}
 
 // gets opposite color
 constexpr Color operator~(Color c) {
@@ -57,35 +72,35 @@ inline Square &operator++(Square &s) {
 
 constexpr Square operator+(Square sq, Direction d) {
     Square _sq = Square(int(sq) + int(d));
-    assert(_sq >= a1 && _sq <= h8);
+    assert(valid_sq(_sq));
     return _sq;
 }
 
 constexpr Square operator-(Square sq, Direction d) {
     Square _sq = Square(int(sq) - int(d));
-    assert(_sq >= a1 && _sq <= h8);
+    assert(valid_sq(_sq));
     return _sq;
 }
 
 constexpr Rank sq_rank(Square sq) {
-    assert(sq >= a1 && sq <= h8);
+    assert(valid_sq(sq));
     return Rank(sq >> 3);
 }
 
 constexpr File sq_file(Square sq) {
-    assert(sq >= a1 && sq <= h8);
+    assert(valid_sq(sq));
     return File(sq & 0b111);
 }
 
 // gets the diagonal (a1 to h8) of the square
 constexpr int sq_diag(Square sq) {
-    assert(sq >= a1 && sq <= h8);
+    assert(valid_sq(sq));
     return 7 + sq_rank(sq) - sq_file(sq);
 }
 
 // gets the anti-diagonal (h1 to a8) of the square
 constexpr int sq_antidiag(Square sq) {
-    assert(sq >= a1 && sq <= h8);
+    assert(valid_sq(sq));
     return sq_rank(sq) + sq_file(sq);
 }
 
@@ -98,7 +113,7 @@ inline Square &operator-=(Square &s, Direction d) {
 }
 
 constexpr Square rel_sq(Color c, Square sq) {
-    assert(sq >= a1 && sq <= h8);
+    assert(valid_sq(sq));
     return c == WHITE ? sq : Square(sq ^ 56);
 }
 

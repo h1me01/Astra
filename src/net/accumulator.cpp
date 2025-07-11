@@ -52,7 +52,7 @@ void Accum::update(Accum &prev, Color view) {
 // class AccumTable
 
 void AccumTable::refresh(Board &board, Color view) {
-    assert(view == WHITE || view == BLACK);
+    assert(valid_color(view));
 
     const Square ksq = board.king_sq(view);
     const int ksq_idx = KING_BUCKET[rel_sq(view, ksq)];

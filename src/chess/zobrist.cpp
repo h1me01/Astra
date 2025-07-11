@@ -26,8 +26,8 @@ void init() {
 }
 
 U64 get_psq(Piece pc, Square sq) {
-    assert(pc >= WHITE_PAWN && pc <= BLACK_KING);
-    assert(sq >= a1 && sq <= h8);
+    assert(valid_sq(sq));
+    assert(valid_piece(pc));
     return psq[pc][sq];
 }
 
@@ -37,7 +37,7 @@ U64 get_castle(int idx) {
 }
 
 U64 get_ep(Square sq) {
-    assert(sq >= a1 && sq <= h8);
+    assert(valid_sq(sq));
     return ep[sq_file(sq)];
 }
 

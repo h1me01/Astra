@@ -339,7 +339,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_no
     // update quiet history
     Move prev_move = (ss - 1)->curr_move;
     if(!ss->skipped                           //
-       && is_valid_move(prev_move)            // first check if move is valid
+       && prev_move.is_valid()                // first check if move is valid
        && !is_cap(prev_move)                  //
        && (ss - 1)->static_eval != VALUE_NONE //
     ) {
@@ -579,7 +579,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_no
 
             r += 2 * cut_node;
 
-            r += (is_valid_move(tt_move) ? is_cap(tt_move) : 0);
+            r += (tt_move.is_valid() ? is_cap(tt_move) : 0);
 
             r -= tt_pv;
 
@@ -625,7 +625,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_no
 
         board.unmake_move(move);
 
-        assert(score > -VALUE_INFINITE && score < VALUE_INFINITE);
+        assert(valid_score(score));
 
         if(is_limit_reached(depth))
             return 0;
@@ -872,7 +872,7 @@ Score Search::qsearch(int depth, Score alpha, Score beta, Stack *ss) {
         Score score = -qsearch(depth - 1, -beta, -alpha, ss + 1);
         board.unmake_move(move);
 
-        assert(score > -VALUE_INFINITE && score < VALUE_INFINITE);
+        assert(valid_score(score));
 
         // update the best score
         if(score > best_score) {

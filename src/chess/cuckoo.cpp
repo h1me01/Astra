@@ -20,12 +20,12 @@ void init() {
 
             for(Square sq1 = a1; sq1 <= h8; ++sq1) {
                 for(Square sq2 = Square(sq1 + 1); sq2 <= h8; ++sq2) {
-                    if(!(get_attacks(pt, sq1, 0) & SQUARE_BB[sq2]))
+                    if(!(get_attacks(pt, sq1, 0) & square_bb(sq2)))
                         continue;
 
                     Move move = Move(sq1, sq2, QUIET);
                     U64 hash = Zobrist::get_psq(p, sq1) ^ Zobrist::get_psq(p, sq2) ^ Zobrist::side;
-                    
+
                     int i = cuckoo_h1(hash);
                     while(true) {
                         std::swap(keys[i], hash);

@@ -36,7 +36,7 @@ MovePicker::MovePicker(SearchType st,          //
         this->tt_move = tt_move;
 
         Move prev_move = (ss - 1)->curr_move;
-        if(is_valid_move(prev_move))
+        if(prev_move.is_valid())
             counter = history.get_counter(prev_move);
         else
             counter = NO_MOVE;
@@ -171,10 +171,10 @@ void MovePicker::score_quiets() {
         const Square from = ml_main[i].from();
         const Square to = ml_main[i].to();
 
-        assert(to >= a1 && to <= h8);
-        assert(from >= a1 && from <= h8);
-        assert(pt >= PAWN && pt <= KING);
-        assert(pc >= WHITE_PAWN && pc <= BLACK_KING);
+        assert(valid_sq(to));
+        assert(valid_sq(from));
+        assert(valid_piece(pc));
+        assert(valid_piece_type(pt));
 
         int score = 2 * history.get_hh(board.get_stm(), ml_main[i]);
         score += 2 * history.get_ph(board, ml_main[i]);
@@ -192,9 +192,9 @@ void MovePicker::score_quiets() {
             else
                 danger = board.get_threats(PAWN);
 
-            if(danger & SQUARE_BB[from])
+            if(danger & square_bb(from))
                 score += 16384 + 16384 * (pt == QUEEN);
-            else if(danger & SQUARE_BB[to])
+            else if(danger & square_bb(to))
                 score -= (16384 + 16384 * (pt == QUEEN));
         }
 

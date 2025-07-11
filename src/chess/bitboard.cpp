@@ -130,10 +130,10 @@ U64 reverse_bb(U64 b) {
 }
 
 U64 sliding_attacks(Square sq, const U64 occ, const U64 mask) {
-    assert(sq >= a1 && sq <= h8);
+    assert(valid_sq(sq));
     // hyperbola quintessence algorithm
     const U64 mask_occ = mask & occ;
-    return ((mask_occ - SQUARE_BB[sq] * 2) ^ (reverse_bb(reverse_bb(mask_occ) - reverse_bb(SQUARE_BB[sq]) * 2))) & mask;
+    return ((mask_occ - square_bb(sq) * 2) ^ (reverse_bb(reverse_bb(mask_occ) - reverse_bb(square_bb(sq)) * 2))) & mask;
 }
 
 void init_rook_attacks() {
@@ -153,7 +153,7 @@ void init_rook_attacks() {
 }
 
 U64 get_rook_attacks(Square sq, const U64 occ = 0) {
-    assert(sq >= a1 && sq <= h8);
+    assert(valid_sq(sq));
 
 #ifdef __BMI2__
     const int idx = _pext_u64(occ, ROOK_MASKS[sq]);
@@ -181,7 +181,7 @@ void init_bishop_attacks() {
 }
 
 U64 get_bishop_attacks(Square sq, const U64 occ = 0) {
-    assert(sq >= a1 && sq <= h8);
+    assert(valid_sq(sq));
 
 #ifdef __BMI2__
     const int idx = _pext_u64(occ, BISHOP_MASKS[sq]);
@@ -203,13 +203,13 @@ void init_lookup_tables() {
 
     // helper
     auto in_bounds = [](Square sq, Square target_sq, int max_delta) {
-        return target_sq >= a1 && target_sq <= h8 &&                      //
+        return valid_sq(target_sq) &&                                     //
                std::abs(sq_rank(sq) - sq_rank(target_sq)) <= max_delta && //
                std::abs(sq_file(sq) - sq_file(target_sq)) <= max_delta;
     };
 
     auto set_pawn_attacks = [](Color c, Square sq) {
-        const U64 sq_bb = SQUARE_BB[sq];
+        const U64 sq_bb = square_bb(sq);
         if(c == WHITE)
             return shift<NORTH_WEST>(sq_bb) | shift<NORTH_EAST>(sq_bb);
         else
@@ -226,9 +226,9 @@ void init_lookup_tables() {
             Square knight_sq = Square(int(sq) + knight_offsets[i]);
 
             if(in_bounds(sq, king_sq, 1))
-                PSEUDO_LEGAL_ATTACKS[KING][sq] |= SQUARE_BB[king_sq];
+                PSEUDO_LEGAL_ATTACKS[KING][sq] |= square_bb(king_sq);
             if(in_bounds(sq, knight_sq, 2))
-                PSEUDO_LEGAL_ATTACKS[KNIGHT][sq] |= SQUARE_BB[knight_sq];
+                PSEUDO_LEGAL_ATTACKS[KNIGHT][sq] |= square_bb(knight_sq);
         }
 
         PSEUDO_LEGAL_ATTACKS[BISHOP][sq] = get_bishop_attacks(sq);
@@ -239,7 +239,7 @@ void init_lookup_tables() {
     // init squares between and line
     for(Square sq1 = a1; sq1 <= h8; ++sq1) {
         for(Square sq2 = a1; sq2 <= h8; ++sq2) {
-            const U64 s = SQUARE_BB[sq1] | SQUARE_BB[sq2];
+            const U64 s = square_bb(sq1) | square_bb(sq2);
 
             if(sq_file(sq1) == sq_file(sq2) || sq_rank(sq1) == sq_rank(sq2)) {
                 U64 b1 = get_rook_attacks(sq1, s);
@@ -248,7 +248,7 @@ void init_lookup_tables() {
 
                 b1 = get_rook_attacks(sq1);
                 b2 = get_rook_attacks(sq2);
-                LINE[sq1][sq2] = (b1 & b2) | SQUARE_BB[sq1] | SQUARE_BB[sq2];
+                LINE[sq1][sq2] = (b1 & b2) | square_bb(sq1) | square_bb(sq2);
             } else if(sq_diag(sq1) == sq_diag(sq2) || sq_antidiag(sq1) == sq_antidiag(sq2)) {
                 U64 b1 = get_bishop_attacks(sq1, s);
                 U64 b2 = get_bishop_attacks(sq2, s);
@@ -256,33 +256,33 @@ void init_lookup_tables() {
 
                 b1 = get_bishop_attacks(sq1);
                 b2 = get_bishop_attacks(sq2);
-                LINE[sq1][sq2] = (b1 & b2) | SQUARE_BB[sq1] | SQUARE_BB[sq2];
+                LINE[sq1][sq2] = (b1 & b2) | square_bb(sq1) | square_bb(sq2);
             }
         }
     }
 }
 
-U64 squares_between(Square sq1, Square sq2) {
-    assert(sq1 >= a1 && sq1 <= h8);
-    assert(sq2 >= a1 && sq2 <= h8);
+U64 between_bb(Square sq1, Square sq2) {
+    assert(valid_sq(sq1));
+    assert(valid_sq(sq2));
     return SQUARES_BETWEEN[sq1][sq2];
 }
 
 U64 line(Square sq1, Square sq2) {
-    assert(sq1 >= a1 && sq1 <= h8);
-    assert(sq2 >= a1 && sq2 <= h8);
+    assert(valid_sq(sq1));
+    assert(valid_sq(sq2));
     return LINE[sq1][sq2];
 }
 
 U64 get_pawn_attacks(Color c, Square sq) {
-    assert(c == WHITE || c == BLACK);
-    assert(sq >= a1 && sq <= h8);
+    assert(valid_sq(sq));
+    assert(valid_color(c));
     return PAWN_ATTACKS[c][sq];
 }
 
 U64 get_attacks(PieceType pt, Square sq, const U64 occ) {
-    assert(sq >= a1 && sq <= h8);
-    assert(pt >= KNIGHT && pt <= KING);
+    assert(valid_sq(sq));
+    assert(valid_piece_type(pt) && pt != PAWN);
 
     switch(pt) {
     case ROOK:

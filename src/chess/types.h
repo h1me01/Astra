@@ -184,6 +184,10 @@ class Move {
         return data == 0;
     }
 
+    bool is_valid() const {
+        return data != 0 && data != 65;
+    }
+
   private:
     // first 6 bits represent the from square
     // next 6 bits represent the to square

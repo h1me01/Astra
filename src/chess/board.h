@@ -27,12 +27,12 @@ class CastlingRights {
     }
 
     bool kingside(const Color c) const {
-        assert(c == WHITE || c == BLACK);
+        assert(valid_color(c));
         return (mask & OO_MASK[c]) == OO_MASK[c];
     }
 
     bool queenside(const Color c) const {
-        assert(c == WHITE || c == BLACK);
+        assert(valid_color(c));
         return (mask & OOO_MASK[c]) == OOO_MASK[c];
     }
 
@@ -45,8 +45,8 @@ class CastlingRights {
     }
 
     bool on_castle_sq(Square sq) const {
-        assert(sq >= a1 && sq <= h8);
-        return mask & SQUARE_BB[sq];
+        assert(valid_sq(sq));
+        return mask & square_bb(sq);
     }
 
     int get_hash_idx() const {
@@ -54,10 +54,17 @@ class CastlingRights {
     }
 
   private:
+    static constexpr U64 OO_MASK[NUM_COLORS] = {0x90ULL, 0x9000000000000000ULL};
+    static constexpr U64 OOO_MASK[NUM_COLORS] = {0x11ULL, 0x1100000000000000ULL};
+
     U64 mask;
 };
 
 struct StateInfo {
+    StateInfo() = default;
+    StateInfo(const StateInfo &other) = default;
+    StateInfo &operator=(const StateInfo &other) = default;
+
     U64 hash;
     U64 pawn_hash;
     U64 non_pawn_hash[NUM_COLORS];
@@ -69,16 +76,19 @@ struct StateInfo {
     int half_move_clock;
     int plies_from_null;
 
-    // enemy pieces that check our king
     U64 checkers = 0;
-    // squares of our pinned pieces
-    U64 pinned = 0;
-    // potential danger squares for our king
     U64 danger = 0;
 
-    StateInfo() = default;
-    StateInfo(const StateInfo &other) = default;
-    StateInfo &operator=(const StateInfo &other) = default;
+    U64 pinners[NUM_COLORS] = {};
+    U64 blockers[NUM_COLORS] = {};
+
+    U64 get_pinners() const {
+        return pinners[WHITE] | pinners[BLACK];
+    }
+
+    U64 get_blockers() const {
+        return blockers[WHITE] | blockers[BLACK];
+    }
 };
 
 class Board {
@@ -183,23 +193,23 @@ class Board {
 };
 
 inline U64 Board::get_piecebb(Color c, PieceType pt) const {
-    assert(c == WHITE || c == BLACK);
-    assert(pt >= PAWN && pt <= KING);
+    assert(valid_color(c));
+    assert(valid_piece_type(pt));
     return piece_bb[make_piece(c, pt)];
 }
 
 inline Piece Board::piece_at(Square sq) const {
-    assert(sq >= a1 && sq <= h8);
+    assert(valid_sq(sq));
     return board[sq];
 }
 
 inline U64 Board::get_nonpawnhash(Color c) const {
-    assert(c == WHITE || c == BLACK);
+    assert(valid_color(c));
     return history[curr_ply].non_pawn_hash[c];
 }
 
 inline U64 Board::get_threats(PieceType pt) const {
-    assert(pt >= PAWN && pt <= KING);
+    assert(valid_piece_type(pt));
     return history[curr_ply].threats[pt];
 }
 
@@ -275,12 +285,12 @@ inline bool Board::is_draw(int ply) const {
 }
 
 inline void Board::put_piece(Piece pc, Square sq, bool update_nnue) {
-    assert(sq >= a1 && sq <= h8);
-    assert(pc >= WHITE_PAWN && pc <= BLACK_KING);
+    assert(valid_sq(sq));
+    assert(valid_piece(pc));
 
     board[sq] = pc;
-    piece_bb[pc] |= SQUARE_BB[sq];
-    history[curr_ply].occ[piece_color(pc)] ^= SQUARE_BB[sq];
+    piece_bb[pc] |= square_bb(sq);
+    history[curr_ply].occ[piece_color(pc)] ^= square_bb(sq);
 
     if(!update_nnue)
         return;
@@ -290,14 +300,14 @@ inline void Board::put_piece(Piece pc, Square sq, bool update_nnue) {
 }
 
 inline void Board::remove_piece(Square sq, bool update_nnue) {
-    assert(sq >= a1 && sq <= h8);
+    assert(valid_sq(sq));
 
     Piece pc = board[sq];
     assert(pc != NO_PIECE);
 
-    piece_bb[pc] ^= SQUARE_BB[sq];
+    piece_bb[pc] ^= square_bb(sq);
     board[sq] = NO_PIECE;
-    history[curr_ply].occ[piece_color(pc)] ^= SQUARE_BB[sq];
+    history[curr_ply].occ[piece_color(pc)] ^= square_bb(sq);
 
     if(!update_nnue)
         return;
@@ -307,16 +317,16 @@ inline void Board::remove_piece(Square sq, bool update_nnue) {
 }
 
 inline void Board::move_piece(Square from, Square to, bool update_nnue) {
-    assert(from >= a1 && from <= h8);
-    assert(to >= a1 && to <= h8);
+    assert(valid_sq(to));
+    assert(valid_sq(from));
 
     Piece pc = board[from];
-    assert(pc != NO_PIECE);
+    assert(valid_piece(pc));
 
-    piece_bb[pc] ^= SQUARE_BB[from] | SQUARE_BB[to];
+    piece_bb[pc] ^= square_bb(from) | square_bb(to);
     board[to] = pc;
     board[from] = NO_PIECE;
-    history[curr_ply].occ[piece_color(pc)] ^= SQUARE_BB[from] | SQUARE_BB[to];
+    history[curr_ply].occ[piece_color(pc)] ^= square_bb(from) | square_bb(to);
 
     if(!update_nnue)
         return;
