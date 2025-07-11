@@ -604,6 +604,12 @@ bool Board::see(Move &m, int threshold) const {
         if(!(stm_attacker = (attackers & occupancy(curr_stm))))
             break;
 
+        if(info.pinners[~stm] & occ) {
+            stm_attacker &= ~info.blockers[stm];
+            if(!stm_attacker)
+                break;
+        }
+
         res ^= 1;
 
         if((bb = stm_attacker & get_piecebb(curr_stm, PAWN))) {
