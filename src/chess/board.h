@@ -334,15 +334,8 @@ inline void Board::move_piece(Square from, Square to, bool update_nnue) {
     NNUE::Accum &acc = get_accum();
     acc.move_piece(pc, from, to, king_sq(WHITE), king_sq(BLACK));
 
-    if(piece_type(pc) != KING)
-        return; // no need to refresh
-
-    // refresh only if different bucket index or king crossing the other half
-    if(sq_file(from) + sq_file(to) == 7                                              // check if crossing other half
-       || NNUE::KING_BUCKET[rel_sq(stm, from)] != NNUE::KING_BUCKET[rel_sq(stm, to)] // check if bucket index changed
-    ) {
-        acc.set_refresh(stm); // other side doesn't need refresh
-    }
+    if (NNUE::needs_refresh(pc, from, to))
+        acc.set_refresh(piece_color(pc));
 }
 
 } // namespace Chess

@@ -17,13 +17,11 @@ using namespace Chess;
 
 namespace Chess {
 class Board;
-}
+} // namespace Chess
 
 namespace NNUE {
 
 class Accum;
-
-// (12x768->1536)x2->1
 
 constexpr int BUCKET_SIZE = 12;
 constexpr int FEATURE_SIZE = 768;
@@ -37,7 +35,7 @@ constexpr int L1_QUANT = 64;
 
 constexpr int EVAL_SCALE = 400;
 
-constexpr int KING_BUCKET[NUM_SQUARES]{
+constexpr int KING_BUCKET[NUM_SQUARES] = {
     0,  1,  2,  3,  3,  2,  1,  0,  //
     4,  5,  6,  7,  7,  6,  5,  4,  //
     8,  8,  9,  9,  9,  9,  8,  8,  //
@@ -57,12 +55,6 @@ inline bool needs_refresh(Piece pc, Square from, Square to) {
 }
 
 class NNUE {
-  private:
-    alignas(ALIGNMENT) int16_t ft_weights[FT_SIZE * L1_SIZE];
-    alignas(ALIGNMENT) int16_t ft_biases[L1_SIZE];
-    alignas(ALIGNMENT) int16_t l1_weights[2 * L1_SIZE * OUTPUT_SIZE];
-    alignas(ALIGNMENT) int16_t l1_biases[OUTPUT_SIZE];
-
   public:
     void init();
     void init_accum(Accum &acc) const;
@@ -96,6 +88,13 @@ class NNUE {
         Square ksq,  //
         Color view   //
     ) const;
+
+  private:
+    // (12x768->1536)x2->1
+    alignas(ALIGNMENT) int16_t ft_weights[FT_SIZE * L1_SIZE];
+    alignas(ALIGNMENT) int16_t ft_biases[L1_SIZE];
+    alignas(ALIGNMENT) int16_t l1_weights[2 * L1_SIZE * OUTPUT_SIZE];
+    alignas(ALIGNMENT) int16_t l1_biases[OUTPUT_SIZE];
 };
 
 // global variable
