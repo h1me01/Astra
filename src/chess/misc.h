@@ -18,16 +18,6 @@ PieceType prom_type(const MoveType mt);
 
 std::ostream &operator<<(std::ostream &os, const Move &m);
 
-inline bool is_prom(const Move &m) {
-    assert(m.is_valid());
-    return m.type() >= PQ_KNIGHT;
-}
-
-inline bool is_cap(const Move &m) {
-    assert(m.is_valid());
-    return m.type() == CAPTURE || m.type() == EN_PASSANT || m.type() >= PC_KNIGHT;
-}
-
 constexpr bool valid_color(Color c) {
     return c == WHITE || c == BLACK;
 }

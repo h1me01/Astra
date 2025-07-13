@@ -334,7 +334,7 @@ inline void Board::move_piece(Square from, Square to, bool update_nnue) {
     NNUE::Accum &acc = get_accum();
     acc.move_piece(pc, from, to, king_sq(WHITE), king_sq(BLACK));
 
-    if (NNUE::needs_refresh(pc, from, to))
+    if(NNUE::needs_refresh(pc, from, to))
         acc.set_refresh(piece_color(pc));
 }
 

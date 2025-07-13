@@ -188,6 +188,16 @@ class Move {
         return data != 0 && data != 65;
     }
 
+    bool is_prom() const {
+        assert(is_valid());
+        return type() >= PQ_KNIGHT;
+    }
+
+    bool is_cap() const {
+        assert(is_valid());
+        return type() == CAPTURE || type() == EN_PASSANT || type() >= PC_KNIGHT;
+    }
+
   private:
     // first 6 bits represent the from square
     // next 6 bits represent the to square

@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 
-// #define TUNE
+#define TUNE
 
 namespace Astra {
 
@@ -55,7 +55,7 @@ PARAM(node_base, 54, 10, 90);
 
 PARAM(lmr_base, 107, 40, 200);
 PARAM(lmr_div, 303, 150, 500);
-PARAM(lmr_min_moves, 3, 1, 3);
+PARAM(lmr_mc_base, 1, 1, 10);
 
 PARAM(static_h_mult, -53, -500, -1);
 PARAM(static_h_min, 72, 1, 1000);
@@ -98,7 +98,7 @@ PARAM(hbonus_margin, 64, 10, 200);
 PARAM(qfp_margin, 114, 40, 280);
 
 PARAM(asp_delta, 11, 1, 30);
-PARAM(asp_depth, 4, 2, 6);
+PARAM(asp_depth, 4, 2, 10);
 
 PARAM(history_bonus_mult, 238, 1, 1536);
 PARAM(history_bonus_minus, -64, -500, 500);

@@ -213,7 +213,7 @@ void MovePicker::score_noisy() {
             score = history.get_hh(board.get_stm(), ml_main[i]); // quiet queen prom is not a capture
 
         score += 16 * PIECE_VALUES[captured];
-        score += 8192 * is_prom(ml_main[i]);
+        score += 8192 * ml_main[i].is_prom();
 
         ml_main[i].set_score(score);
     }

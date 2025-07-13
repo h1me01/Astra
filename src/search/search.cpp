@@ -177,7 +177,6 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_no
     const bool root_node = ss->ply == 0;
     const bool pv_node = beta - alpha != 1;
     const bool in_check = board.in_check();
-    bool improving = false;
 
     const U64 hash = board.get_hash();
 
@@ -187,7 +186,12 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_no
     Score max_score = VALUE_MATE;
     Score best_score = -VALUE_MATE;
 
+    bool improving = false;
+
     ss->move_count = 0;
+
+    (ss + 1)->killer = NO_MOVE;
+    (ss + 1)->skipped = NO_MOVE;
 
     if(pv_node)
         pv_table[ss->ply].length = ss->ply;
@@ -197,7 +201,10 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_no
         return qsearch(0, alpha, beta, ss);
 
     // check for upcoming repetition
-    if(!root_node && alpha < VALUE_DRAW && board.has_upcoming_repetition(ss->ply)) {
+    if(!root_node                                //
+       && alpha < VALUE_DRAW                     //
+       && board.has_upcoming_repetition(ss->ply) //
+    ) {
         alpha = VALUE_DRAW;
         if(alpha >= beta)
             return alpha;
@@ -246,6 +253,18 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_no
        && board.halfmoveclock() < 90                                  // idea from stockfish
        && (tt_bound & (tt_score >= beta ? LOWER_BOUND : UPPER_BOUND)) //
     ) {
+        Square prev_sq = ((ss - 1)->curr_move.is_valid() ? (ss - 1)->curr_move.to() : NO_SQUARE);
+
+        // idea from stockfish
+        if(tt_move.is_valid() && tt_score >= beta && tt_depth > depth) {
+            if(prev_sq != NO_SQUARE         //
+               && !(ss - 1)->was_cap        //
+               && (ss - 1)->move_count <= 3 //
+            ) {
+                history.update_conth((ss - 1)->curr_move, ss - 1, -history_malus(depth));
+            }
+        }
+
         return tt_score;
     }
 
@@ -282,6 +301,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_no
                     ss->ply,  // ply
                     tt_pv     // pv
                 );
+
                 return tb_score;
             }
 
@@ -302,7 +322,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_no
     else {
         // use tt score for better evaluation
         if(tt_hit) {
-            raw_eval = tt_eval == VALUE_NONE ? evaluate() : tt_eval;
+            raw_eval = (tt_eval == VALUE_NONE) ? evaluate() : tt_eval;
             eval = ss->static_eval = adjust_eval(ss, raw_eval);
 
             if(tt_score != VALUE_NONE                                        //
@@ -333,14 +353,11 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_no
             improving = ss->static_eval > (ss - 4)->static_eval;
     }
 
-    // reset killer
-    (ss + 1)->killer = NO_MOVE;
-
     // update quiet history
     Move prev_move = (ss - 1)->curr_move;
     if(!ss->skipped                           //
        && prev_move.is_valid()                // first check if move is valid
-       && !is_cap(prev_move)                  //
+       && !prev_move.is_cap()                 //
        && (ss - 1)->static_eval != VALUE_NONE //
     ) {
         int bonus = std::clamp(                                             //
@@ -430,7 +447,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_no
                 nodes++;
                 ss->curr_move = move;
                 ss->moved_piece = board.piece_at(move.from());
-                ss->conth = &history.conth[is_cap(move)][ss->moved_piece][move.to()];
+                ss->conth = &history.conth[move.is_cap()][ss->moved_piece][move.to()];
 
                 board.make_move(move);
                 Score score = -qsearch(0, -beta_cut, -beta_cut + 1, ss + 1);
@@ -451,6 +468,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_no
                         ss->ply,     // ply
                         tt_pv        // pv
                     );
+
                     return score;
                 }
             }
@@ -478,39 +496,44 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_no
 
         made_moves++;
         ss->move_count = made_moves;
-        ss->was_cap = is_cap(move);
+        ss->was_cap = move.is_cap();
 
-        int history_score = is_cap(move) ? history.get_ch(board, move) //
-                                         : history.get_qh(board, ss, move);
+        int history_score = move.is_cap() ? history.get_ch(board, move) //
+                                          : history.get_qh(board, ss, move);
 
-        if(!root_node && best_score > -VALUE_TB_WIN_IN_MAX_PLY) {
+        if(!root_node                               //
+           && board.nonpawnmat()                    //
+           && best_score > -VALUE_TB_WIN_IN_MAX_PLY //
+        ) {
             int lmr_depth = std::max(0, depth - REDUCTIONS[depth][made_moves] + history_score / hp_div);
 
             // late move pruning
             if(!pv_node && q_count > (3 + depth * depth) / (2 - improving))
                 mp.skip_quiets();
 
-            if(!is_cap(move) && move.type() != PQ_QUEEN) {
-                // history pruning
-                if(history_score < -hp_depth_mult * depth && lmr_depth < hp_depth)
-                    continue;
+            // history pruning
+            if(!move.is_cap()                            //
+               && lmr_depth < hp_depth                   //
+               && history_score < -hp_depth_mult * depth //
+            ) {
+                continue;
+            }
 
-                // futility pruning
-                if(!in_check                                                   //
-                   && lmr_depth < fp_depth                                     //
-                   && ss->static_eval + fp_base + lmr_depth * fp_mult <= alpha //
-                ) {
-                    mp.skip_quiets();
-                }
+            // futility pruning
+            if(!move.is_cap()                                              //
+               && lmr_depth < fp_depth                                     //
+               && ss->static_eval + fp_base + lmr_depth * fp_mult <= alpha //
+            ) {
+                mp.skip_quiets();
             }
 
             // see pruning
-            int see_margin = is_cap(move) ? -see_cap_margin : -see_quiet_margin;
-            if(!board.see(move, (is_cap(move) ? depth : lmr_depth * lmr_depth) * see_margin))
+            int see_margin = move.is_cap() ? -see_cap_margin : -see_quiet_margin;
+            if(!board.see(move, (move.is_cap() ? depth : lmr_depth * lmr_depth) * see_margin))
                 continue;
         }
 
-        if(is_cap(move) && c_count < 32)
+        if(move.is_cap() && c_count < 32)
             c_moves[c_count++] = move;
         else if(q_count < 64)
             q_moves[q_count++] = move;
@@ -548,7 +571,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_no
             if(score < sbeta) {
                 // if we didn't find a better move, then extend
                 if(!pv_node && score < sbeta - 14)
-                    extensions = 2 + (!is_cap(move) && !is_prom(move) && score < sbeta - ext_margin);
+                    extensions = 2 + (!move.is_cap() && !move.is_prom() && score < sbeta - ext_margin);
                 else
                     extensions = 1;
             } else if(sbeta >= beta)
@@ -565,29 +588,34 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_no
 
         ss->curr_move = move;
         ss->moved_piece = board.piece_at(move.from());
-        ss->conth = &history.conth[is_cap(move)][ss->moved_piece][move.to()];
+        ss->conth = &history.conth[move.is_cap()][ss->moved_piece][move.to()];
 
         board.make_move(move);
 
         Score score = VALUE_NONE;
 
         // late move reductions
-        if(depth >= 2 && made_moves >= lmr_min_moves && (!tt_pv || !is_cap(move))) {
+        if(depth >= 2                                  //
+           && (!tt_pv || !move.is_cap())               //
+           && made_moves > lmr_mc_base + 2 * root_node //
+        ) {
             int r = REDUCTIONS[depth][made_moves];
 
             r += !improving;
 
             r += 2 * cut_node;
 
-            r += (tt_move.is_valid() ? is_cap(tt_move) : 0);
+            r += (tt_move.is_valid() ? tt_move.is_cap() : 0);
 
             r -= tt_pv;
+
+            r -= pv_node;
 
             r -= board.in_check();
 
             r -= (tt_depth >= depth);
 
-            r -= history_score / (is_cap(move) ? hp_cdiv : hp_qdiv);
+            r -= history_score / (move.is_cap() ? hp_cdiv : hp_qdiv);
 
             int lmr_depth = std::clamp(new_depth - r, 1, new_depth + 1);
 
@@ -602,7 +630,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_no
                 if(lmr_depth < new_depth)
                     score = -negamax(new_depth, -alpha - 1, -alpha, ss + 1, !cut_node);
 
-                if(!is_cap(move)) {
+                if(!move.is_cap()) {
                     int bonus;
                     if(score <= alpha)
                         bonus = -history_bonus(new_depth);
@@ -644,7 +672,6 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_no
 
             if(made_moves == 1 || score > alpha) {
                 rm->score = score;
-
                 // copy pv line
                 rm->pv[0] = move;
 
@@ -675,6 +702,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_no
                     c_moves, c_count,                           //
                     depth + (best_score > beta + hbonus_margin) //
                 );
+
                 break; // cut-off
             }
         }
@@ -715,7 +743,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_no
 
     // update correction histories
     if(!in_check                                                                //
-       && (!best_move || !is_cap(best_move))                                    //
+       && (!best_move || !best_move.is_cap())                                   //
        && (bound & (best_score >= ss->static_eval ? LOWER_BOUND : UPPER_BOUND)) //
     ) {
         history.update_contcorr(raw_eval, best_score, depth, ss);
@@ -788,7 +816,7 @@ Score Search::qsearch(int depth, Score alpha, Score beta, Stack *ss) {
     else {
         // use tt score for better evaluation
         if(tt_hit) {
-            raw_eval = tt_eval == VALUE_NONE ? evaluate() : tt_eval;
+            raw_eval = (tt_eval == VALUE_NONE) ? evaluate() : tt_eval;
             eval = ss->static_eval = adjust_eval(ss, raw_eval);
 
             if(tt_score != VALUE_NONE                                        //
@@ -799,6 +827,7 @@ Score Search::qsearch(int depth, Score alpha, Score beta, Stack *ss) {
         } else {
             raw_eval = evaluate();
             eval = ss->static_eval = adjust_eval(ss, raw_eval);
+
             ent->store(     //
                 hash,       // hash
                 NO_MOVE,    // move
@@ -818,6 +847,7 @@ Score Search::qsearch(int depth, Score alpha, Score beta, Stack *ss) {
         if(best_score >= beta) {
             if(std::abs(best_score) < VALUE_TB_WIN_IN_MAX_PLY)
                 best_score = (best_score + beta) / 2;
+
             if(!tt_hit) {
                 ent->store(           //
                     hash,             // hash
@@ -830,6 +860,7 @@ Score Search::qsearch(int depth, Score alpha, Score beta, Stack *ss) {
                     tt_pv             // pv
                 );
             }
+
             return best_score;
         }
 
@@ -852,7 +883,7 @@ Score Search::qsearch(int depth, Score alpha, Score beta, Stack *ss) {
         made_moves++;
 
         if(best_score > -VALUE_TB_WIN_IN_MAX_PLY) {
-            if(!in_check && futility <= alpha && is_cap(move) && !board.see(move, 1)) {
+            if(!in_check && futility <= alpha && move.is_cap() && !board.see(move, 1)) {
                 best_score = std::max(best_score, futility);
                 continue;
             }
@@ -866,7 +897,7 @@ Score Search::qsearch(int depth, Score alpha, Score beta, Stack *ss) {
 
         ss->curr_move = move;
         ss->moved_piece = board.piece_at(move.from());
-        ss->conth = &history.conth[is_cap(move)][ss->moved_piece][move.to()];
+        ss->conth = &history.conth[move.is_cap()][ss->moved_piece][move.to()];
 
         board.make_move(move);
         Score score = -qsearch(depth - 1, -beta, -alpha, ss + 1);

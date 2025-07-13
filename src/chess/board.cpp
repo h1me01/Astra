@@ -278,13 +278,13 @@ bool Board::is_pseudolegal(const Move &m) const {
         return false;
     if(piece_color(from_pc) != stm)
         return false;
-    if(!is_cap(m) && to_pc != NO_PIECE)
+    if(!m.is_cap() && to_pc != NO_PIECE)
         return false;
     if(pop_count(info.checkers) > 1 && pt != KING)
         return false;
     if(pt == KING && (square_bb(to) & info.danger))
         return false;
-    if(mt != EN_PASSANT && is_cap(m) && to_pc == NO_PIECE)
+    if(mt != EN_PASSANT && m.is_cap() && to_pc == NO_PIECE)
         return false;
 
     if(mt == CASTLING) {
@@ -316,7 +316,7 @@ bool Board::is_pseudolegal(const Move &m) const {
         }
     }
 
-    if(is_prom(m)) {
+    if(m.is_prom()) {
         if(pt != PAWN)
             return false;
 
@@ -457,7 +457,7 @@ void Board::make_move(const Move &m, bool update_nnue) {
         if((from ^ to) == 16 && (get_pawn_attacks(stm, ep_sq) & get_piecebb(~stm, PAWN))) {
             info.ep_sq = ep_sq;
             info.hash ^= Zobrist::get_ep(ep_sq); // add ep square to hash
-        } else if(is_prom(m)) {
+        } else if(m.is_prom()) {
             PieceType prom_t = prom_type(mt);
             Piece prom_pc = make_piece(stm, prom_t);
 
@@ -496,7 +496,7 @@ void Board::unmake_move(const Move &m) {
     if(accums_idx > 0)
         accums_idx--;
 
-    if(is_prom(m)) {
+    if(m.is_prom()) {
         remove_piece(to, false);
         put_piece(make_piece(stm, PAWN), to, false);
     }
@@ -565,7 +565,7 @@ bool Board::is_repetition(int ply) const {
 bool Board::see(Move &m, int threshold) const {
     assert(m.is_valid());
 
-    if(is_prom(m) || m.type() == EN_PASSANT || m.type() == CASTLING)
+    if(m.is_prom() || m.type() == EN_PASSANT || m.type() == CASTLING)
         return true;
 
     const StateInfo &info = history[curr_ply];

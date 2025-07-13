@@ -28,7 +28,7 @@ constexpr int FEATURE_SIZE = 768;
 
 constexpr int FT_SIZE = BUCKET_SIZE * FEATURE_SIZE;
 constexpr int L1_SIZE = 1536;
-constexpr int OUTPUT_SIZE = 1;
+constexpr int OUTPUT_BUCKETS = 8;
 
 constexpr int FT_QUANT = 255;
 constexpr int L1_QUANT = 64;
@@ -90,11 +90,11 @@ class NNUE {
     ) const;
 
   private:
-    // (12x768->1536)x2->1
+    // (12x768->1536)x2->8x1
     alignas(ALIGNMENT) int16_t ft_weights[FT_SIZE * L1_SIZE];
     alignas(ALIGNMENT) int16_t ft_biases[L1_SIZE];
-    alignas(ALIGNMENT) int16_t l1_weights[2 * L1_SIZE * OUTPUT_SIZE];
-    alignas(ALIGNMENT) int16_t l1_biases[OUTPUT_SIZE];
+    alignas(ALIGNMENT) int16_t l1_weights[2 * L1_SIZE * OUTPUT_BUCKETS];
+    alignas(ALIGNMENT) int16_t l1_biases[OUTPUT_BUCKETS];
 };
 
 // global variable

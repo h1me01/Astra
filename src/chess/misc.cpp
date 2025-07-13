@@ -67,7 +67,7 @@ std::ostream &operator<<(std::ostream &os, const Move &m) {
     else
         os << SQSTR[m.from()] << SQSTR[m.to()];
 
-    if(is_prom(m)) {
+    if(m.is_prom()) {
         const PieceType pt = prom_type(m.type());
         os << PIECE_STR[pt + 6];
     }

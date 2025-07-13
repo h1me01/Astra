@@ -36,7 +36,7 @@ void History::update(const Board &board,    //
     int bonus = history_bonus(depth);
     int malus = history_malus(depth);
 
-    if(!is_cap(best)) {
+    if(!best.is_cap()) {
         // don't set quiet queen promotions as a counter/killer,
         // so we don't actually return it twice in the movepicker
         if(best.type() != PQ_QUEEN) {

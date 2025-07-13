@@ -129,8 +129,8 @@ std::pair<Score, Move> probe_dtz(const Board &board) {
     moves.gen<LEGALS>(board);
 
     for(auto m : moves) {
-        if(from == m.from() && to == m.to()                  //
-           && (prom_type(m.type()) == prom_t || !is_prom(m)) //
+        if(from == m.from() && to == m.to()                   //
+           && (prom_type(m.type()) == prom_t || !m.is_prom()) //
         ) {
             return {s, m};
         }
