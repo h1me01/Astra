@@ -53,7 +53,7 @@ void TTEntry::store( //
     if(score != VALUE_NONE) {
         if(score >= VALUE_TB_WIN_IN_MAX_PLY)
             score += ply;
-        if(score <= -VALUE_TB_WIN_IN_MAX_PLY)
+        if(score <= VALUE_TB_LOSS_IN_MAX_PLY)
             score = -ply;
     }
 

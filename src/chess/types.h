@@ -112,7 +112,9 @@ constexpr Score VALUE_MATE = 32000;
 constexpr Score VALUE_INFINITE = 32001;
 constexpr Score VALUE_NONE = 32002;
 constexpr Score VALUE_TB_WIN = VALUE_MATE;
+constexpr Score VALUE_TB_LOSS = -VALUE_MATE;
 constexpr Score VALUE_TB_WIN_IN_MAX_PLY = VALUE_TB_WIN - MAX_PLY;
+constexpr Score VALUE_TB_LOSS_IN_MAX_PLY = VALUE_TB_LOSS + MAX_PLY;
 
 // clang-format off
 enum MoveType

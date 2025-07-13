@@ -41,17 +41,18 @@ PARAM(bishop_value_see, 325, 200, 400);
 PARAM(rook_value_see, 500, 400, 600);
 PARAM(queen_value_see, 1000, 700, 1100);
 
-PARAM(stability_base, 134, 100, 200);
-PARAM(stability_mult, 51, 0, 250);
+PARAM(tm_stability_base, 134, 100, 200);
+PARAM(tm_stability_mult, 51, 0, 250);
+PARAM(tm_stability_max, 9, 1, 20);
 
-PARAM(results_base, 57, 0, 160);
-PARAM(results_mult1, 11, 0, 27);
-PARAM(results_mult2, 28, 0, 45);
-PARAM(results_min, 67, 0, 150);
-PARAM(results_max, 139, 50, 220);
+PARAM(tm_results_base, 57, 0, 160);
+PARAM(tm_results_mult1, 11, 0, 27);
+PARAM(tm_results_mult2, 28, 0, 45);
+PARAM(tm_results_min, 67, 0, 150);
+PARAM(tm_results_max, 139, 50, 220);
 
-PARAM(node_mult, 197, 120, 260);
-PARAM(node_base, 54, 10, 90);
+PARAM(tm_node_mult, 197, 120, 260);
+PARAM(tm_node_base, 54, 10, 90);
 
 PARAM(lmr_base, 107, 40, 200);
 PARAM(lmr_div, 303, 150, 500);

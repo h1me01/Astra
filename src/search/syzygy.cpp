@@ -75,7 +75,7 @@ Score probe_wdl(const Board &board) {
     );
 
     if(wdl == TB_LOSS)
-        return -VALUE_TB_WIN;
+        return VALUE_TB_LOSS;
     if(wdl == TB_WIN)
         return VALUE_TB_WIN;
     if(wdl == TB_BLESSED_LOSS || wdl == TB_CURSED_WIN || wdl == TB_DRAW)
@@ -115,7 +115,7 @@ std::pair<Score, Move> probe_dtz(const Board &board) {
 
     Score s = 0;
     if(wdl == TB_LOSS)
-        s = -VALUE_TB_WIN_IN_MAX_PLY;
+        s = VALUE_TB_LOSS_IN_MAX_PLY;
     if(wdl == TB_WIN)
         s = VALUE_TB_WIN_IN_MAX_PLY;
     if(wdl == TB_BLESSED_LOSS || wdl == TB_CURSED_WIN || wdl == TB_DRAW)
