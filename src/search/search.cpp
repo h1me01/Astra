@@ -9,6 +9,7 @@
 #include "tune.h"
 
 namespace Astra {
+
 int REDUCTIONS[MAX_PLY][MAX_MOVES];
 
 void init_reductions() {
