@@ -41,15 +41,6 @@ Move Search::bestmove() {
 
     const int multipv_size = std::min(limit.multipv, rootmoves.size());
 
-    if(use_tb) {
-        const auto dtz = probe_dtz(board);
-        if(dtz.second != NO_MOVE) {
-            if(id == 0)
-                std::cout << "bestmove " << dtz.second << std::endl;
-            return dtz.second;
-        }
-    }
-
     if(id == 0)
         tt.increment();
 
@@ -274,10 +265,10 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_no
             tb_hits++;
 
             if(tb_score == VALUE_TB_WIN) {
-                tb_score = VALUE_MATE - ss->ply;
+                tb_score = VALUE_TB_WIN - ss->ply;
                 bound = LOWER_BOUND;
             } else if(tb_score == VALUE_TB_LOSS) {
-                tb_score = ss->ply - VALUE_MATE;
+                tb_score = ss->ply - VALUE_TB_WIN;
                 bound = UPPER_BOUND;
             } else {
                 tb_score = 0;
@@ -288,6 +279,16 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_no
                || (bound == LOWER_BOUND && tb_score >= beta)  //
                || (bound == UPPER_BOUND && tb_score <= alpha) //
             ) {
+                ent->store(     //
+                    hash,       //
+                    NO_MOVE,    //
+                    tb_score,   //
+                    VALUE_NONE, // eval
+                    bound,      //
+                    depth,      //
+                    ss->ply,    //
+                    tt_pv       //
+                );
                 return tb_score;
             }
 
@@ -334,7 +335,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_no
         improving = ss->static_eval > (ss - 4)->static_eval;
 
     // update quiet history
-    if((ss - 1)->move.is_valid()          // first check if move is valid
+    if((ss - 1)->move.is_valid()             // first check if move is valid
        && !(ss - 1)->move.is_cap()           //
        && valid_score((ss - 1)->static_eval) //
     ) {
