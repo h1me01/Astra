@@ -336,8 +336,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_no
         improving = ss->static_eval > (ss - 4)->static_eval;
 
     // update quiet history
-    if(!(ss - 1)->was_check                  //
-       && (ss - 1)->move.is_valid()          // first check if move is valid
+    if((ss - 1)->move.is_valid()          // first check if move is valid
        && !(ss - 1)->move.is_cap()           //
        && valid_score((ss - 1)->static_eval) //
     ) {
