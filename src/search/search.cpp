@@ -423,7 +423,6 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_no
             if(!board.is_legal(move))
                 continue;
 
-            // prefetch tt entry
             tt.prefetch(board.key_after(move));
 
             nodes++;
@@ -584,7 +583,7 @@ movesloop:
             // if late move reduction failed high and we actually reduced, do a research
             if(score > alpha && lmr_depth < new_depth) {
                 // credits to stockfish
-                new_depth += (score > best_score + zws_margin + 2 * new_depth);
+                new_depth += (score > best_score + zws_margin);
                 new_depth -= (score < best_score + new_depth);
 
                 if(lmr_depth < new_depth)
