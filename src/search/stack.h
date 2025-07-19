@@ -12,7 +12,6 @@ struct Stack {
     int ply;
     int move_count;
 
-    bool was_check;
     bool was_cap;
 
     Score static_eval;
