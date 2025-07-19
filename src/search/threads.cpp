@@ -2,7 +2,7 @@
 
 namespace Astra {
 
-void ThreadPool::launchWorkers(const Board &board, Limits limit, int worker_count, bool use_tb) {
+void ThreadPool::launch_workers(const Board &board, Limits limit, int worker_count, bool use_tb) {
     start();
 
     threads.clear();
@@ -15,12 +15,12 @@ void ThreadPool::launchWorkers(const Board &board, Limits limit, int worker_coun
         thread->limit = limit;
         thread->use_tb = use_tb;
 
-        running_threads.emplace_back(&Search::bestMove, thread.get());
+        running_threads.emplace_back(&Search::bestmove, thread.get());
         threads.emplace_back(std::move(thread));
     }
 }
 
-void ThreadPool::forceStop() {
+void ThreadPool::force_stop() {
     stop();
 
     // wait for all worker threads to finish
@@ -32,29 +32,22 @@ void ThreadPool::forceStop() {
     running_threads.clear();
 }
 
-bool ThreadPool::isStopped() const {
+bool ThreadPool::is_stopped() const {
     return stop_flag.load(std::memory_order_relaxed);
 }
 
-U64 ThreadPool::getTotalNodes() const {
+U64 ThreadPool::get_nodes() const {
     U64 total_nodes = 0;
     for(const auto &t : threads)
-        total_nodes += t->getNodes();
+        total_nodes += t->get_nodes();
     return total_nodes;
 }
 
-U64 ThreadPool::getTotalTbHits() const {
+U64 ThreadPool::get_tb_hits() const {
     U64 total_tb_hits = 0;
     for(const auto &t : threads)
-        total_tb_hits += t->getTbHits();
+        total_tb_hits += t->get_tb_hits();
     return total_tb_hits;
-}
-
-int ThreadPool::getSelDepth() const {
-    int max_sel_depth = 0;
-    for(const auto &t : threads)
-        max_sel_depth = std::max(max_sel_depth, t->getSelDepth());
-    return max_sel_depth;
 }
 
 // global variable

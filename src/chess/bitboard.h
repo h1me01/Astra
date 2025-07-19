@@ -62,30 +62,12 @@ constexpr U64 MASK_ANTI_DIAGONAL[15] = {
     0x8000000000000000ULL  //
 };
 
-constexpr U64 SQUARE_BB[NUM_SQUARES] = {
-    0x0000000000000001ULL, 0x0000000000000002ULL, 0x0000000000000004ULL, 0x0000000000000008ULL, //
-    0x0000000000000010ULL, 0x0000000000000020ULL, 0x0000000000000040ULL, 0x0000000000000080ULL, //
-    0x0000000000000100ULL, 0x0000000000000200ULL, 0x0000000000000400ULL, 0x0000000000000800ULL, //
-    0x0000000000001000ULL, 0x0000000000002000ULL, 0x0000000000004000ULL, 0x0000000000008000ULL, //
-    0x0000000000010000ULL, 0x0000000000020000ULL, 0x0000000000040000ULL, 0x0000000000080000ULL, //
-    0x0000000000100000ULL, 0x0000000000200000ULL, 0x0000000000400000ULL, 0x0000000000800000ULL, //
-    0x0000000001000000ULL, 0x0000000002000000ULL, 0x0000000004000000ULL, 0x0000000008000000ULL, //
-    0x0000000010000000ULL, 0x0000000020000000ULL, 0x0000000040000000ULL, 0x0000000080000000ULL, //
-    0x0000000100000000ULL, 0x0000000200000000ULL, 0x0000000400000000ULL, 0x0000000800000000ULL, //
-    0x0000001000000000ULL, 0x0000002000000000ULL, 0x0000004000000000ULL, 0x0000008000000000ULL, //
-    0x0000010000000000ULL, 0x0000020000000000ULL, 0x0000040000000000ULL, 0x0000080000000000ULL, //
-    0x0000100000000000ULL, 0x0000200000000000ULL, 0x0000400000000000ULL, 0x0000800000000000ULL, //
-    0x0001000000000000ULL, 0x0002000000000000ULL, 0x0004000000000000ULL, 0x0008000000000000ULL, //
-    0x0010000000000000ULL, 0x0020000000000000ULL, 0x0040000000000000ULL, 0x0080000000000000ULL, //
-    0x0100000000000000ULL, 0x0200000000000000ULL, 0x0400000000000000ULL, 0x0800000000000000ULL, //
-    0x1000000000000000ULL, 0x2000000000000000ULL, 0x4000000000000000ULL, 0x8000000000000000ULL  //
-};
-
-constexpr U64 OO_MASK[NUM_COLORS] = {0x90ULL, 0x9000000000000000ULL};
-constexpr U64 OOO_MASK[NUM_COLORS] = {0x11ULL, 0x1100000000000000ULL};
-
 constexpr U64 OO_BLOCKERS_MASK[NUM_COLORS] = {0x60ULL, 0x6000000000000000ULL};
 constexpr U64 OOO_BLOCKERS_MASK[NUM_COLORS] = {0xeULL, 0xE00000000000000ULL};
+
+inline U64 square_bb(Square sq) {
+    return (1ULL << sq);
+}
 
 // returns index of least significant bit in bitboard
 inline Square lsb(const U64 b) {
@@ -93,38 +75,39 @@ inline Square lsb(const U64 b) {
 }
 
 // returns number of bits in bitboard
-inline int popCount(U64 b) {
+inline int pop_count(U64 b) {
     return __builtin_popcountll(b);
 }
 
 // returns and removes index of the least significant bit in bitboard
-inline Square popLsb(U64 &b) {
+inline Square pop_lsb(U64 &b) {
     int n = lsb(b);
     b &= b - 1;
     return Square(n);
 }
 
-inline U64 reverse(U64 b) {
-    b = ((b & 0x5555555555555555) << 1) | ((b >> 1) & 0x5555555555555555);
-    b = ((b & 0x3333333333333333) << 2) | ((b >> 2) & 0x3333333333333333);
-    b = ((b & 0x0f0f0f0f0f0f0f0f) << 4) | ((b >> 4) & 0x0f0f0f0f0f0f0f0f);
-    b = ((b & 0x00ff00ff00ff00ff) << 8) | ((b >> 8) & 0x00ff00ff00ff00ff);
-    return (b << 48) | ((b & 0xffff0000) << 16) | ((b >> 16) & 0xffff0000) | (b >> 48);
-}
-
-constexpr U64 shift(Direction d, const U64 b) {
+template <Direction d> //
+constexpr U64 shift(const U64 b) {
     // clang-format off
-        return d == NORTH ? b << 8 : d == SOUTH     
-                          ? b >> 8 : d == EAST        
-                          ? (b & ~MASK_FILE[FILE_H]) << 1 : d == WEST        
-                          ? (b & ~MASK_FILE[FILE_A]) >> 1 : d == NORTH_EAST  
-                          ? (b & ~MASK_FILE[FILE_H]) << 9 : d == NORTH_WEST  
-                          ? (b & ~MASK_FILE[FILE_A]) << 7 : d == SOUTH_EAST  
-                          ? (b & ~MASK_FILE[FILE_H]) >> 7 : d == SOUTH_WEST  
-                          ? (b & ~MASK_FILE[FILE_A]) >> 9 : d == NORTH_NORTH 
-                          ? b << 16 : d == SOUTH_SOUTH 
-                          ? b >> 16 : 0;
+    return d == NORTH      ? b << 8 
+         : d == SOUTH      ? b >> 8 
+         : d == EAST       ? (b & ~MASK_FILE[FILE_H]) << 1 
+         : d == WEST       ? (b & ~MASK_FILE[FILE_A]) >> 1 
+         : d == NORTH_EAST ? (b & ~MASK_FILE[FILE_H]) << 9 
+         : d == NORTH_WEST ? (b & ~MASK_FILE[FILE_A]) << 7 
+         : d == SOUTH_EAST ? (b & ~MASK_FILE[FILE_H]) >> 7 
+         : d == SOUTH_WEST ? (b & ~MASK_FILE[FILE_A]) >> 9 
+         : 0;
     // clang-format on
 }
+
+void init_lookup_tables();
+
+U64 between_bb(Square sq1, Square sq2);
+U64 line(Square sq1, Square sq2);
+
+U64 get_pawn_attacks(Color c, Square sq);
+
+U64 get_attacks(PieceType pt, Square sq, const U64 occ = 0);
 
 } // namespace Chess

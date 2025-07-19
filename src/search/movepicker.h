@@ -29,26 +29,6 @@ enum Stage : int {
 };
 
 class MovePicker {
-  private:
-    int idx;
-    Stage stage;
-
-    SearchType st;
-    const Board &board;
-    const History &history;
-    const Stack *ss;
-
-    bool gen_checkers;
-    bool skip_quiets = false;
-
-    Move tt_move, killer, counter;
-
-    MoveList<> ml_main;
-    MoveList<> ml_bad_noisy;
-
-    void scoreQuietMoves();
-    void scoreNoisyMoves();
-
   public:
     int see_cutoff = 0;
 
@@ -60,11 +40,31 @@ class MovePicker {
                bool gen_checks = false //
     );
 
-    Move nextMove();
+    Move next();
 
-    void skipQuiets() {
-        skip_quiets = true;
+    void skip_quiets() {
+        m_skip_quiets = true;
     }
+
+  private:
+    int idx;
+    Stage stage;
+
+    SearchType st;
+    const Board &board;
+    const History &history;
+    const Stack *ss;
+
+    bool gen_checkers;
+    bool m_skip_quiets = false;
+
+    Move tt_move, killer, counter;
+
+    MoveList<> ml_main;
+    MoveList<> ml_bad_noisy;
+
+    void score_quiets();
+    void score_noisy();
 };
 
 } // namespace Astra

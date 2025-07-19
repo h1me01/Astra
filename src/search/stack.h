@@ -6,19 +6,21 @@ using namespace Chess;
 
 namespace Astra {
 
-using ContH = int16_t[NUM_PIECES][NUM_SQUARES];
+using ContH = int16_t[NUM_PIECES + 1][NUM_SQUARES + 1];
 
 struct Stack {
     int ply;
-    int move_count = 0;
+    int move_count;
 
-    bool is_cap = false;
+    bool was_check;
+    bool was_cap;
 
-    Score static_eval = VALUE_NONE;
-    Piece moved_piece = NO_PIECE;
+    Score static_eval;
+    Piece moved_piece;
 
-    Move killer = NO_MOVE;
-    Move curr_move = NO_MOVE;
+    Move killer;
+    Move skipped;
+    Move move;
 
     ContH *conth;
 };

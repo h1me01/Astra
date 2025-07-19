@@ -6,8 +6,8 @@ using namespace Chess;
 
 namespace Astra {
 
-Score probeWDL(const Board &board);
+Score probe_wdl(const Board &board);
 
-std::pair<Score, Move> probeDTZ(const Board &board);
+std::pair<Score, Move> probe_dtz(const Board &board);
 
 } // namespace Astra

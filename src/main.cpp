@@ -1,11 +1,11 @@
 #include "uci.h"
 
 int main(int argc, char **argv) {
-    initLookUpTables();
+    init_lookup_tables();
     Zobrist::init();
     Cuckoo::init();
 
-    Astra::initReductions();
+    Astra::init_reductions();
     NNUE::nnue.init();
 
     UCI::Uci uci;

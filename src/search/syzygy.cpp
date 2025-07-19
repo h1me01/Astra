@@ -28,19 +28,19 @@ ProbeData getProbeData(const Board &board) {
     d.b_occ = board.occupancy(BLACK);
     d.occ = d.w_occ | d.b_occ;
 
-    if(popCount(d.occ) > signed(TB_LARGEST)) {
+    if(pop_count(d.occ) > signed(TB_LARGEST)) {
         d.is_allowed = false;
         return d;
     }
 
-    d.pawns = board.getPieceBB(WHITE, PAWN) | board.getPieceBB(BLACK, PAWN);
-    d.knights = board.getPieceBB(WHITE, KNIGHT) | board.getPieceBB(BLACK, KNIGHT);
-    d.bishops = board.getPieceBB(WHITE, BISHOP) | board.getPieceBB(BLACK, BISHOP);
-    d.rooks = board.getPieceBB(WHITE, ROOK) | board.getPieceBB(BLACK, ROOK);
-    d.queens = board.getPieceBB(WHITE, QUEEN) | board.getPieceBB(BLACK, QUEEN);
-    d.kings = board.getPieceBB(WHITE, KING) | board.getPieceBB(BLACK, KING);
+    d.pawns = board.get_piecebb(WHITE, PAWN) | board.get_piecebb(BLACK, PAWN);
+    d.knights = board.get_piecebb(WHITE, KNIGHT) | board.get_piecebb(BLACK, KNIGHT);
+    d.bishops = board.get_piecebb(WHITE, BISHOP) | board.get_piecebb(BLACK, BISHOP);
+    d.rooks = board.get_piecebb(WHITE, ROOK) | board.get_piecebb(BLACK, ROOK);
+    d.queens = board.get_piecebb(WHITE, QUEEN) | board.get_piecebb(BLACK, QUEEN);
+    d.kings = board.get_piecebb(WHITE, KING) | board.get_piecebb(BLACK, KING);
 
-    int ply = board.getPly();
+    int ply = board.get_ply();
     d.fmc = board.history[ply].half_move_clock;
     d.any_castling = board.history[ply].castle_rights.any();
 
@@ -48,12 +48,12 @@ ProbeData getProbeData(const Board &board) {
     d.ep_sq = ep_sq != NO_SQUARE ? ep_sq : 0;
 
     d.ep_sq = board.history[ply].ep_sq;
-    d.stm = board.getTurn() == WHITE;
+    d.stm = board.get_stm() == WHITE;
 
     return d;
 }
 
-Score probeWDL(const Board &board) {
+Score probe_wdl(const Board &board) {
     ProbeData d = getProbeData(board);
 
     if(!d.is_allowed)
@@ -75,7 +75,7 @@ Score probeWDL(const Board &board) {
     );
 
     if(wdl == TB_LOSS)
-        return -VALUE_TB_WIN;
+        return VALUE_TB_LOSS;
     if(wdl == TB_WIN)
         return VALUE_TB_WIN;
     if(wdl == TB_BLESSED_LOSS || wdl == TB_CURSED_WIN || wdl == TB_DRAW)
@@ -85,7 +85,7 @@ Score probeWDL(const Board &board) {
     return VALUE_NONE;
 }
 
-std::pair<Score, Move> probeDTZ(const Board &board) {
+std::pair<Score, Move> probe_dtz(const Board &board) {
     ProbeData d = getProbeData(board);
 
     if(!d.is_allowed)
@@ -115,22 +115,25 @@ std::pair<Score, Move> probeDTZ(const Board &board) {
 
     Score s = 0;
     if(wdl == TB_LOSS)
-        s = -VALUE_TB_WIN_IN_MAX_PLY;
+        s = VALUE_TB_LOSS_IN_MAX_PLY;
     if(wdl == TB_WIN)
         s = VALUE_TB_WIN_IN_MAX_PLY;
     if(wdl == TB_BLESSED_LOSS || wdl == TB_CURSED_WIN || wdl == TB_DRAW)
         s = VALUE_DRAW;
 
-    const int prom_type = TB_GET_PROMOTES(result);
+    const int prom_t = TB_GET_PROMOTES(result);
     const auto from = Square(TB_GET_FROM(result));
     const auto to = Square(TB_GET_TO(result));
 
     MoveList<> moves;
     moves.gen<LEGALS>(board);
+
     for(auto m : moves) {
-        bool is_prom = typeOfPromotion(m.type()) == prom_type;
-        if(from == m.from() && to == m.to() && (is_prom || !isProm(m)))
+        if(from == m.from() && to == m.to()                   //
+           && (prom_type(m.type()) == prom_t || !m.is_prom()) //
+        ) {
             return {s, m};
+        }
     }
 
     return {s, NO_MOVE};

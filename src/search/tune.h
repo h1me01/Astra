@@ -20,8 +20,8 @@ struct Param {
 
 inline std::vector<Param *> params;
 
-void setParam(const std::string &name, int value);
-void paramsToSpsa();
+void set_param(const std::string &name, int value);
+void params_to_spsa();
 
 #ifdef TUNE
 #define PARAM(name, value, min, max) inline Param name(#name, value, min, max)
@@ -29,17 +29,30 @@ void paramsToSpsa();
 #define PARAM(name, value, min, max) constexpr int name = value
 #endif
 
-PARAM(stability_base, 134, 100, 200);
-PARAM(stability_mult, 51, 0, 250);
+PARAM(pawn_value, 100, 50, 150);
+PARAM(knight_value, 325, 200, 400);
+PARAM(bishop_value, 325, 200, 400);
+PARAM(rook_value, 500, 400, 600);
+PARAM(queen_value, 1000, 700, 1100);
 
-PARAM(results_base, 57, 0, 160);
-PARAM(results_mult1, 11, 0, 27);
-PARAM(results_mult2, 28, 0, 45);
-PARAM(results_min, 67, 0, 150);
-PARAM(results_max, 139, 50, 220);
+PARAM(pawn_value_see, 100, 50, 150);
+PARAM(knight_value_see, 325, 200, 400);
+PARAM(bishop_value_see, 325, 200, 400);
+PARAM(rook_value_see, 500, 400, 600);
+PARAM(queen_value_see, 1000, 700, 1100);
 
-PARAM(node_mult, 197, 120, 260);
-PARAM(node_base, 54, 10, 90);
+PARAM(tm_stability_base, 134, 100, 200);
+PARAM(tm_stability_mult, 51, 0, 250);
+PARAM(tm_stability_max, 9, 1, 20);
+
+PARAM(tm_results_base, 57, 0, 160);
+PARAM(tm_results_mult1, 11, 0, 27);
+PARAM(tm_results_mult2, 28, 0, 45);
+PARAM(tm_results_min, 67, 0, 150);
+PARAM(tm_results_max, 139, 50, 220);
+
+PARAM(tm_node_mult, 197, 120, 260);
+PARAM(tm_node_base, 54, 10, 90);
 
 PARAM(lmr_base, 107, 40, 200);
 PARAM(lmr_div, 303, 150, 500);
@@ -75,7 +88,8 @@ PARAM(fp_mult, 107, 5, 200);
 PARAM(see_cap_margin, 97, 5, 200);
 PARAM(see_quiet_margin, 17, -100, 100);
 
-PARAM(ext_margin, 74, 10, 250);
+PARAM(double_ext_margin, 14, 1, 30);
+PARAM(tripple_ext_margin, 74, 10, 250);
 PARAM(zws_margin, 56, 10, 160);
 
 PARAM(hp_depth_mult, 6775, 2500, 12500);
@@ -84,6 +98,7 @@ PARAM(hp_cdiv, 3886, 1, 16384);
 PARAM(hbonus_margin, 64, 10, 200);
 
 PARAM(qfp_margin, 114, 40, 280);
+PARAM(qsee_margin, 0, -200, 50);
 
 PARAM(asp_delta, 11, 1, 30);
 PARAM(asp_depth, 4, 2, 6);

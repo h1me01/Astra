@@ -3,7 +3,7 @@
 #include <memory>
 
 #include "../net/accumulator.h"
-#include "attacks.h"
+#include "bitboard.h"
 #include "cuckoo.h"
 #include "misc.h"
 #include "zobrist.h"
@@ -11,17 +11,14 @@
 namespace Chess {
 
 class CastlingRights {
-  private:
-    U64 mask;
-
   public:
     CastlingRights() : mask(0) {}
 
-    void addKingSide(Color c) {
+    void add_kingside(Color c) {
         mask |= OO_MASK[c];
     }
 
-    void addQueenSide(Color c) {
+    void add_queenside(Color c) {
         mask |= OOO_MASK[c];
     }
 
@@ -29,35 +26,45 @@ class CastlingRights {
         mask &= ~(from | to);
     }
 
-    bool kingSide(const Color c) const {
-        assert(c == WHITE || c == BLACK);
+    bool kingside(const Color c) const {
+        assert(valid_color(c));
         return (mask & OO_MASK[c]) == OO_MASK[c];
     }
 
-    bool queenSide(const Color c) const {
-        assert(c == WHITE || c == BLACK);
+    bool queenside(const Color c) const {
+        assert(valid_color(c));
         return (mask & OOO_MASK[c]) == OOO_MASK[c];
     }
 
     bool any(const Color c) const {
-        return kingSide(c) || queenSide(c);
+        return kingside(c) || queenside(c);
     }
 
     bool any() const {
         return any(WHITE) || any(BLACK);
     }
 
-    bool onCastleSquare(Square sq) const {
-        assert(sq >= a1 && sq <= h8);
-        return mask & SQUARE_BB[sq];
+    bool on_castle_sq(Square sq) const {
+        assert(valid_sq(sq));
+        return mask & square_bb(sq);
     }
 
-    int getHashIndex() const {
-        return kingSide(WHITE) + 2 * queenSide(WHITE) + 4 * kingSide(BLACK) + 8 * queenSide(BLACK);
+    int get_hash_idx() const {
+        return kingside(WHITE) + 2 * queenside(WHITE) + 4 * kingside(BLACK) + 8 * queenside(BLACK);
     }
+
+  private:
+    static constexpr U64 OO_MASK[NUM_COLORS] = {0x90ULL, 0x9000000000000000ULL};
+    static constexpr U64 OOO_MASK[NUM_COLORS] = {0x11ULL, 0x1100000000000000ULL};
+
+    U64 mask;
 };
 
 struct StateInfo {
+    StateInfo() = default;
+    StateInfo(const StateInfo &other) = default;
+    StateInfo &operator=(const StateInfo &other) = default;
+
     U64 hash;
     U64 pawn_hash;
     U64 non_pawn_hash[NUM_COLORS];
@@ -69,37 +76,14 @@ struct StateInfo {
     int half_move_clock;
     int plies_from_null;
 
-    // enemy pieces that check our king
     U64 checkers = 0;
-    // squares of our pinned pieces
-    U64 pinned = 0;
-    // potential danger squares for our king
     U64 danger = 0;
 
-    StateInfo() = default;
-    StateInfo(const StateInfo &other) = default;
-    StateInfo &operator=(const StateInfo &other) = default;
+    U64 pinners[NUM_COLORS] = {};
+    U64 blockers[NUM_COLORS] = {};
 };
 
 class Board {
-  private:
-    U64 piece_bb[NUM_PIECES];
-    Piece board[NUM_SQUARES];
-    Color stm;
-    int curr_ply;
-
-    int accumulators_idx;
-    std::array<NNUE::Accum, MAX_PLY + 1> accumulators;
-
-    std::unique_ptr<NNUE::AccumTable> accumulator_table = std::make_unique<NNUE::AccumTable>(NNUE::AccumTable());
-
-    void putPiece(Piece pc, Square sq, bool update_nnue);
-    void removePiece(Square sq, bool update_nnue);
-    void movePiece(Square from, Square to, bool update_nnue);
-
-    void initThreats();
-    void initCheckersAndPinned();
-
   public:
     std::array<StateInfo, 512> history;
 
@@ -107,116 +91,133 @@ class Board {
 
     Board &operator=(const Board &other);
 
-    void setFen(const std::string &fen, bool update_nnue = true);
     void print() const;
+    void set_fen(const std::string &fen, bool update_nnue = true);
 
-    std::string getFen() const;
+    std::string get_fen() const;
 
-    U64 getPieceBB(Color c, PieceType pt) const;
-    Piece pieceAt(Square sq) const;
+    U64 get_piecebb(Color c, PieceType pt) const;
+    Piece piece_at(Square sq) const;
 
-    U64 getNonPawnHash(Color c) const;
-    U64 getThreats(PieceType pt) const;
+    U64 get_nonpawnhash(Color c) const;
+    U64 get_threats(PieceType pt) const;
 
-    U64 diagSliders(Color c) const;
-    U64 orthSliders(Color c) const;
+    U64 diag_sliders(Color c) const;
+    U64 orth_sliders(Color c) const;
 
     U64 occupancy(Color c) const;
-    U64 attackersTo(Color c, Square sq, U64 occ) const;
-    U64 keyAfter(Move m) const;
+    U64 attackers_to(Color c, Square sq, U64 occ) const;
+    U64 key_after(Move m) const;
 
-    void resetAccumulator();
-    void updateAccumulators();
+    void reset_accum();
+    void update_accums();
 
-    void makeMove(const Move &m, bool update_nnue = true);
-    void unmakeMove(const Move &m);
+    void make_move(const Move &m, bool update_nnue = true);
+    void unmake_move(const Move &m);
 
-    void makeNullMove();
-    void unmakeNullMove();
+    void make_nullmove();
+    void unmake_nullmove();
 
-    bool inCheck() const;
-    bool nonPawnMat() const;
+    bool in_check() const;
+    bool nonpawnmat(Color c) const;
 
-    bool isLegal(const Move &m) const;
-    bool isPseudoLegal(const Move &m) const;
+    bool is_legal(const Move &m) const;
+    bool is_pseudolegal(const Move &m) const;
 
-    bool isRepetition(int ply) const;
-    bool isDraw(int ply) const;
+    bool is_repetition(int ply) const;
+    bool is_draw(int ply) const;
 
     bool see(Move &m, int threshold) const;
-    bool hasUpcomingRepetition(int ply);
+    bool has_upcoming_repetition(int ply);
 
-    int getPhase() const;
+    int get_phase() const;
 
-    void resetPly() {
+    void reset_ply() {
         history[0] = history[curr_ply];
         history[0].plies_from_null = 0;
         curr_ply = 0;
     }
 
-    Color getTurn() const {
+    Color get_stm() const {
         return stm;
     }
 
-    int getPly() const {
+    int get_ply() const {
         return curr_ply;
     }
 
-    int halfMoveClock() const {
+    int halfmoveclock() const {
         return history[curr_ply].half_move_clock;
     }
 
-    U64 getHash() const {
+    U64 get_hash() const {
         return history[curr_ply].hash;
     }
 
-    U64 getPawnHash() const {
+    U64 get_pawnhash() const {
         return history[curr_ply].pawn_hash;
     }
 
-    Square kingSq(Color c) const {
-        return lsb(getPieceBB(c, KING));
+    Square king_sq(Color c) const {
+        return lsb(get_piecebb(c, KING));
     }
 
-    NNUE::Accum &getAccumulator() {
-        return accumulators[accumulators_idx];
+    NNUE::Accum &get_accum() {
+        return accums[accums_idx];
     }
+
+  private:
+    Color stm;
+    int curr_ply;
+    Piece board[NUM_SQUARES];
+    U64 piece_bb[NUM_PIECES];
+
+    int accums_idx;
+    std::array<NNUE::Accum, MAX_PLY + 1> accums;
+    std::unique_ptr<NNUE::AccumTable> accum_table = std::make_unique<NNUE::AccumTable>(NNUE::AccumTable());
+
+    void put_piece(Piece pc, Square sq, bool update_nnue);
+    void remove_piece(Square sq, bool update_nnue);
+    void move_piece(Square from, Square to, bool update_nnue);
+
+    void init_threats();
+    void init_slider_blockers();
 };
 
-inline U64 Board::getPieceBB(Color c, PieceType pt) const {
-    assert(c == WHITE || c == BLACK);
-    assert(pt >= PAWN && pt <= KING);
-    return piece_bb[makePiece(c, pt)];
+inline U64 Board::get_piecebb(Color c, PieceType pt) const {
+    assert(valid_color(c));
+    assert(valid_piece_type(pt));
+    return piece_bb[make_piece(c, pt)];
 }
 
-inline Piece Board::pieceAt(Square sq) const {
-    assert(sq >= a1 && sq <= h8);
+inline Piece Board::piece_at(Square sq) const {
+    assert(valid_sq(sq));
     return board[sq];
 }
 
-inline U64 Board::getNonPawnHash(Color c) const {
-    assert(c == WHITE || c == BLACK);
+inline U64 Board::get_nonpawnhash(Color c) const {
+    assert(valid_color(c));
     return history[curr_ply].non_pawn_hash[c];
 }
 
-inline U64 Board::getThreats(PieceType pt) const {
-    assert(pt >= PAWN && pt <= KING);
+inline U64 Board::get_threats(PieceType pt) const {
+    assert(valid_piece_type(pt));
     return history[curr_ply].threats[pt];
 }
 
-inline void Board::resetAccumulator() {
-    accumulators_idx = 0;
-    accumulator_table->reset();
-    accumulator_table->refresh(*this, WHITE);
-    accumulator_table->refresh(*this, BLACK);
+inline void Board::reset_accum() {
+    accums_idx = 0;
+    accum_table->reset();
+    accum_table->refresh(*this, WHITE);
+    accum_table->refresh(*this, BLACK);
 }
 
-inline U64 Board::diagSliders(Color c) const {
-    return getPieceBB(c, BISHOP) | getPieceBB(c, QUEEN);
+inline U64 Board::diag_sliders(Color c) const {
+    return get_piecebb(c, BISHOP) | get_piecebb(c, QUEEN);
 }
 
-inline U64 Board::orthSliders(Color c) const {
-    return getPieceBB(c, ROOK) | getPieceBB(c, QUEEN);
+inline U64 Board::orth_sliders(Color c) const {
+    return get_piecebb(c, ROOK) | get_piecebb(c, QUEEN);
 }
 
 inline U64 Board::occupancy(Color c = BOTH_COLORS) const {
@@ -228,37 +229,37 @@ inline U64 Board::occupancy(Color c = BOTH_COLORS) const {
     return occ;
 }
 
-inline U64 Board::attackersTo(Color c, Square sq, const U64 occ) const {
-    U64 attacks = getPawnAttacks(~c, sq) & getPieceBB(c, PAWN);
-    attacks |= getKnightAttacks(sq) & getPieceBB(c, KNIGHT);
-    attacks |= getBishopAttacks(sq, occ) & diagSliders(c);
-    attacks |= getRookAttacks(sq, occ) & orthSliders(c);
-    attacks |= getKingAttacks(sq) & getPieceBB(c, KING);
+inline U64 Board::attackers_to(Color c, Square sq, const U64 occ) const {
+    U64 attacks = get_pawn_attacks(~c, sq) & get_piecebb(c, PAWN);
+    attacks |= get_attacks(KNIGHT, sq) & get_piecebb(c, KNIGHT);
+    attacks |= get_attacks(BISHOP, sq, occ) & diag_sliders(c);
+    attacks |= get_attacks(ROOK, sq, occ) & orth_sliders(c);
+    attacks |= get_attacks(KING, sq) & get_piecebb(c, KING);
     return attacks;
 }
 
-inline int Board::getPhase() const {
-    int phase = 3 * popCount(piece_bb[WHITE_KNIGHT] | piece_bb[BLACK_KNIGHT]);
-    phase += 3 * popCount(piece_bb[WHITE_BISHOP] | piece_bb[BLACK_BISHOP]);
-    phase += 5 * popCount(piece_bb[WHITE_ROOK] | piece_bb[BLACK_ROOK]);
-    phase += 10 * popCount(piece_bb[WHITE_QUEEN] | piece_bb[BLACK_QUEEN]);
+inline int Board::get_phase() const {
+    int phase = 3 * pop_count(piece_bb[WHITE_KNIGHT] | piece_bb[BLACK_KNIGHT]);
+    phase += 3 * pop_count(piece_bb[WHITE_BISHOP] | piece_bb[BLACK_BISHOP]);
+    phase += 5 * pop_count(piece_bb[WHITE_ROOK] | piece_bb[BLACK_ROOK]);
+    phase += 10 * pop_count(piece_bb[WHITE_QUEEN] | piece_bb[BLACK_QUEEN]);
     return phase;
 }
 
-inline bool Board::inCheck() const {
-    return history[curr_ply].checkers;
+inline bool Board::in_check() const {
+    return history[curr_ply].checkers > 0;
 }
 
 // checks if there is any non-pawn material on the board of the current side to move
-inline bool Board::nonPawnMat() const {
-    return getPieceBB(stm, KNIGHT) | getPieceBB(stm, BISHOP) | getPieceBB(stm, ROOK) | getPieceBB(stm, QUEEN);
+inline bool Board::nonpawnmat(Color c) const {
+    return get_piecebb(c, KNIGHT) | get_piecebb(c, BISHOP) | get_piecebb(c, ROOK) | get_piecebb(c, QUEEN);
 }
 
 // doesn't include stalemate
-inline bool Board::isDraw(int ply) const {
-    int num_pieces = popCount(occupancy());
-    int num_knights = popCount(getPieceBB(WHITE, KNIGHT) | getPieceBB(BLACK, KNIGHT));
-    int num_bishops = popCount(getPieceBB(WHITE, BISHOP) | getPieceBB(BLACK, BISHOP));
+inline bool Board::is_draw(int ply) const {
+    int num_pieces = pop_count(occupancy());
+    int num_knights = pop_count(get_piecebb(WHITE, KNIGHT) | get_piecebb(BLACK, KNIGHT));
+    int num_bishops = pop_count(get_piecebb(WHITE, BISHOP) | get_piecebb(BLACK, BISHOP));
 
     if(num_pieces == 2)
         return true;
@@ -268,69 +269,65 @@ inline bool Board::isDraw(int ply) const {
     if(num_pieces == 4) {
         if(num_knights == 2)
             return true;
-        if(num_bishops == 2 && popCount(getPieceBB(WHITE, BISHOP)) == 1)
+        if(num_bishops == 2 && pop_count(get_piecebb(WHITE, BISHOP)) == 1)
             return true;
     }
 
-    return history[curr_ply].half_move_clock > 99 || isRepetition(ply);
+    return history[curr_ply].half_move_clock > 99 || is_repetition(ply);
 }
 
-inline void Board::putPiece(Piece pc, Square sq, bool update_nnue) {
-    assert(sq >= a1 && sq <= h8);
-    assert(pc >= WHITE_PAWN && pc <= BLACK_KING);
+inline void Board::put_piece(Piece pc, Square sq, bool update_nnue) {
+    assert(valid_sq(sq));
+    assert(valid_piece(pc));
 
     board[sq] = pc;
-    piece_bb[pc] |= SQUARE_BB[sq];
-    history[curr_ply].occ[colorOf(pc)] ^= SQUARE_BB[sq];
+    piece_bb[pc] |= square_bb(sq);
+    history[curr_ply].occ[piece_color(pc)] ^= square_bb(sq);
 
     if(!update_nnue)
         return;
 
-    NNUE::Accum &acc = getAccumulator();
-    acc.putPiece(pc, sq, kingSq(WHITE), kingSq(BLACK));
+    NNUE::Accum &acc = get_accum();
+    acc.put_piece(pc, sq, king_sq(WHITE), king_sq(BLACK));
 }
 
-inline void Board::removePiece(Square sq, bool update_nnue) {
-    assert(sq >= a1 && sq <= h8);
+inline void Board::remove_piece(Square sq, bool update_nnue) {
+    assert(valid_sq(sq));
 
     Piece pc = board[sq];
     assert(pc != NO_PIECE);
 
-    piece_bb[pc] ^= SQUARE_BB[sq];
+    piece_bb[pc] ^= square_bb(sq);
     board[sq] = NO_PIECE;
-    history[curr_ply].occ[colorOf(pc)] ^= SQUARE_BB[sq];
+    history[curr_ply].occ[piece_color(pc)] ^= square_bb(sq);
 
     if(!update_nnue)
         return;
 
-    NNUE::Accum &acc = getAccumulator();
-    acc.removePiece(pc, sq, kingSq(WHITE), kingSq(BLACK));
+    NNUE::Accum &acc = get_accum();
+    acc.remove_piece(pc, sq, king_sq(WHITE), king_sq(BLACK));
 }
 
-inline void Board::movePiece(Square from, Square to, bool update_nnue) {
-    assert(from >= a1 && from <= h8);
-    assert(to >= a1 && to <= h8);
+inline void Board::move_piece(Square from, Square to, bool update_nnue) {
+    assert(valid_sq(to));
+    assert(valid_sq(from));
 
     Piece pc = board[from];
-    assert(pc != NO_PIECE);
+    assert(valid_piece(pc));
 
-    piece_bb[pc] ^= SQUARE_BB[from] | SQUARE_BB[to];
+    piece_bb[pc] ^= square_bb(from) | square_bb(to);
     board[to] = pc;
     board[from] = NO_PIECE;
-    history[curr_ply].occ[colorOf(pc)] ^= SQUARE_BB[from] | SQUARE_BB[to];
+    history[curr_ply].occ[piece_color(pc)] ^= square_bb(from) | square_bb(to);
 
     if(!update_nnue)
         return;
 
-    NNUE::Accum &acc = getAccumulator();
-    acc.movePiece(pc, from, to, kingSq(WHITE), kingSq(BLACK));
+    NNUE::Accum &acc = get_accum();
+    acc.move_piece(pc, from, to, king_sq(WHITE), king_sq(BLACK));
 
-    if(typeOf(pc) != KING)
-        return; // no need to refresh
-
-    // refresh only if different bucket index or king crossing the other half
-    if(NNUE::KING_BUCKET[relSquare(stm, from)] != NNUE::KING_BUCKET[relSquare(stm, to)] || fileOf(from) + fileOf(to) == 7)
-        acc.setRefresh(stm); // other side doesn't need refresh
+    if(NNUE::needs_refresh(pc, from, to))
+        acc.set_refresh(piece_color(pc));
 }
 
 } // namespace Chess

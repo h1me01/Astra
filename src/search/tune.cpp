@@ -15,7 +15,7 @@ Param::Param(std::string name, int value, int min, int max) //
     params.push_back(this);
 }
 
-void setParam(const std::string &name, int value) {
+void set_param(const std::string &name, int value) {
     for(auto *param : params) {
         if(param->name != name)
             continue;
@@ -30,7 +30,7 @@ void setParam(const std::string &name, int value) {
     }
 }
 
-void paramsToSpsa() {
+void params_to_spsa() {
     for(auto &param : params) {
         std::cout << param->name << ", "                                           //
                   << "int" << ", "                                                 //

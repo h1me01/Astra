@@ -2,7 +2,7 @@
 
 namespace Chess {
 
-void printBitboard(const U64 b) {
+void print_bb(const U64 b) {
     for(int rank = 7; rank >= 0; --rank) {
         for(int file = 0; file < 8; ++file) {
             U64 mask = 1ULL << (rank * 8 + file);
@@ -13,7 +13,7 @@ void printBitboard(const U64 b) {
     std::cout << std::endl;
 }
 
-Square squareFromString(std::string_view square_str) {
+Square sq_from(std::string_view square_str) {
     int file = square_str[0] - 97;
     int rank = square_str[1] - 49;
     int index = rank * 8 + file;
@@ -40,7 +40,7 @@ std::vector<std::string> split(const std::string &str, char del) {
     return parts;
 }
 
-PieceType typeOfPromotion(const MoveType mt) {
+PieceType prom_type(const MoveType mt) {
     switch(mt) {
     case PQ_KNIGHT:
     case PC_KNIGHT:
@@ -67,8 +67,8 @@ std::ostream &operator<<(std::ostream &os, const Move &m) {
     else
         os << SQSTR[m.from()] << SQSTR[m.to()];
 
-    if(isProm(m)) {
-        const PieceType pt = typeOfPromotion(m.type());
+    if(m.is_prom()) {
+        const PieceType pt = prom_type(m.type());
         os << PIECE_STR[pt + 6];
     }
 

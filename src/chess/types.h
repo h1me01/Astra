@@ -4,6 +4,8 @@
 #include <iostream>
 #include <string>
 
+#include "../search/tune.h"
+
 namespace Chess {
 
 using U64 = uint64_t;
@@ -14,7 +16,25 @@ const std::string STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w 
 
 constexpr int MAX_PLY = 246;
 
-constexpr int PIECE_VALUES[] = {100, 325, 325, 500, 1000, 30000, 0};
+const int PIECE_VALUES[] = {
+    Astra::pawn_value,   //
+    Astra::knight_value, //
+    Astra::bishop_value, //
+    Astra::rook_value,   //
+    Astra::queen_value,  //
+    0,                   //
+    0                    //
+};
+
+const int PIECE_VALUES_SEE[] = {
+    Astra::pawn_value_see,   //
+    Astra::knight_value_see, //
+    Astra::bishop_value_see, //
+    Astra::rook_value_see,   //
+    Astra::queen_value_see,  //
+    0,                       //
+    0                        //
+};
 
 constexpr int NUM_COLORS = 2;
 enum Color {
@@ -31,9 +51,7 @@ enum Direction {
     SOUTH = -8,
     SOUTH_WEST = -9,
     WEST = -1,
-    NORTH_WEST = 7,
-    NORTH_NORTH = 16,
-    SOUTH_SOUTH = -16
+    NORTH_WEST = 7
 };
 
 constexpr int NUM_PIECE_TYPES = 6;
@@ -94,7 +112,9 @@ constexpr Score VALUE_MATE = 32000;
 constexpr Score VALUE_INFINITE = 32001;
 constexpr Score VALUE_NONE = 32002;
 constexpr Score VALUE_TB_WIN = VALUE_MATE;
+constexpr Score VALUE_TB_LOSS = -VALUE_MATE;
 constexpr Score VALUE_TB_WIN_IN_MAX_PLY = VALUE_TB_WIN - MAX_PLY;
+constexpr Score VALUE_TB_LOSS_IN_MAX_PLY = VALUE_TB_LOSS + MAX_PLY;
 
 // clang-format off
 enum MoveType
@@ -113,68 +133,86 @@ enum MoveType
 constexpr int MAX_MOVES = 128;
 
 class Move {
-  private:
-    // first 4 bits represent the move flag
-    // next 6 bits represent the to square
-    // last 6 bits represent the from square
-    uint16_t move;
-    int score = 0; // used for move ordering
-
   public:
     // default move (a1a1)
-    Move() : move(0) {}
+    Move() : data(0) {}
 
-    constexpr explicit Move(uint16_t m) : move(m) {}
+    constexpr explicit Move(uint16_t m) : data(m) {}
 
-    constexpr Move(const Move &other) : move(other.move), score(other.score) {}
-    constexpr Move(Square from, Square to, MoveType mt) : move(mt << 12 | from << 6 | to) {}
-
-    Square to() const {
-        return Square(move & 0x3f);
-    }
+    constexpr Move(const Move &other) : data(other.data), score(other.score) {}
+    constexpr Move(Square from, Square to, MoveType mt) : data((mt << 12) | (to << 6) | from) {}
 
     Square from() const {
-        return Square(move >> 6 & 0x3f);
+        return Square(data & 0x3f);
+    }
+
+    Square to() const {
+        return Square((data >> 6) & 0x3f);
     }
 
     MoveType type() const {
-        return MoveType(move >> 12);
+        return MoveType(data >> 12);
     }
 
     Move &operator=(const Move &m) {
         if(this != &m) {
-            move = m.move;
+            data = m.data;
             score = m.score;
         }
         return *this;
     }
 
     uint16_t raw() const {
-        return move;
+        return data;
     }
 
-    void setScore(int s) {
-        score = s;
+    void set_score(int val) {
+        score = val;
     }
 
-    int getScore() const {
+    int get_score() const {
         return score;
     }
 
     bool operator==(const Move &m) const {
-        return move == m.move;
+        return data == m.data;
     }
 
     bool operator!=(const Move &m) const {
-        return move != m.move;
+        return data != m.data;
     }
 
     bool operator!() const {
-        return move == 0;
+        return data == 0;
     }
+
+    bool is_valid() const {
+        return data != 0 && data != 65;
+    }
+
+    bool is_prom() const {
+        assert(is_valid());
+        return type() >= PQ_KNIGHT;
+    }
+
+    bool is_quiet() const {
+        return !is_cap() && !is_prom();
+    }
+
+    bool is_cap() const {
+        assert(is_valid());
+        return type() == CAPTURE || type() == EN_PASSANT || type() >= PC_KNIGHT;
+    }
+
+  private:
+    // first 6 bits represent the from square
+    // next 6 bits represent the to square
+    // last 4 bits represent the move type
+    uint16_t data;
+    int score = 0; // used for move ordering
 };
 
-const auto NULL_MOVE = Move(65);
-const auto NO_MOVE = Move();
+const Move NO_MOVE{};
+const Move NULL_MOVE{65};
 
 } // namespace Chess

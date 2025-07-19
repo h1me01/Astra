@@ -25,41 +25,41 @@ void init() {
     side = rng.rand<U64>();
 }
 
-U64 getPsq(Piece pc, Square sq) {
-    assert(pc >= WHITE_PAWN && pc <= BLACK_KING);
-    assert(sq >= a1 && sq <= h8);
+U64 get_psq(Piece pc, Square sq) {
+    assert(valid_sq(sq));
+    assert(valid_piece(pc));
     return psq[pc][sq];
 }
 
-U64 getCastle(int idx) {
+U64 get_castle(int idx) {
     assert(idx >= 0 && idx < 16);
     return castle[idx];
 }
 
-U64 getEp(Square sq) {
-    assert(sq >= a1 && sq <= h8);
-    return ep[fileOf(sq)];
+U64 get_ep(Square sq) {
+    assert(valid_sq(sq));
+    return ep[sq_file(sq)];
 }
 
-U64 getPawnZobrist(const Board &board) {
+U64 get_pawnzobrist(const Board &board) {
     U64 hash = 0;
 
     for(Color c : {WHITE, BLACK}) {
-        U64 pawns = board.getPieceBB(c, PAWN);
+        U64 pawns = board.get_piecebb(c, PAWN);
         while(pawns)
-            hash ^= getPsq(makePiece(c, PAWN), popLsb(pawns));
+            hash ^= get_psq(make_piece(c, PAWN), pop_lsb(pawns));
     }
 
     return hash;
 }
 
-U64 getNonPawnZobrist(const Board &board, Color c) {
+U64 get_nonpawnzobrist(const Board &board, Color c) {
     U64 hash = 0;
 
     for(PieceType pt : {KNIGHT, BISHOP, ROOK, QUEEN, KING}) {
-        U64 pieces = board.getPieceBB(c, pt);
+        U64 pieces = board.get_piecebb(c, pt);
         while(pieces)
-            hash ^= getPsq(makePiece(c, pt), popLsb(pieces));
+            hash ^= get_psq(make_piece(c, pt), pop_lsb(pieces));
     }
 
     return hash;

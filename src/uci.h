@@ -14,7 +14,11 @@ struct Option {
     Option() : min(0), max(0) {}
 
     Option(std::string type, std::string default_val, std::string val, int min, int max)
-        : type(std::move(type)), default_val(std::move(default_val)), val(std::move(val)), min(min), max(max) {};
+        : type(std::move(type)),               //
+          default_val(std::move(default_val)), //
+          val(std::move(val)),                 //
+          min(min),                            //
+          max(max) {};
 
     Option &operator=(const std::string &v) {
         val = v;
@@ -23,9 +27,6 @@ struct Option {
 };
 
 class Options {
-  private:
-    std::unordered_map<std::string, Option> options;
-
   public:
     int num_workers = 1; // default number of threads
     bool use_tb = false;
@@ -45,42 +46,25 @@ class Options {
             return it->second.val;
         return "";
     }
+
+  private:
+    std::unordered_map<std::string, Option> options;
 };
 
 class Uci {
+  public:
+    Uci();
+
+    void loop(int argc, char **argv);
+
   private:
     Board board;
     Options options;
-    std::ofstream logFile;
 
     void updatePosition(std::istringstream &is);
     void go(std::istringstream &is);
 
-    Move getMove(const std::string &str_move) const;
-
-    void openLog(const std::string &filename = "astra_log.txt") {
-        logFile.open(filename, std::ios::app);
-        writeLog("=== New Session Started ===");
-    }
-
-    void closeLog() {
-        if(!logFile.is_open())
-            return;
-
-        writeLog("=== Session Ended ===");
-        logFile.close();
-    }
-
-    void writeLog(const std::string &message) {
-        if(logFile.is_open())
-            logFile << message << std::endl;
-    }
-
-  public:
-    Uci();
-    ~Uci();
-
-    void loop(int argc, char **argv);
+    Move get_move(const std::string &str_move) const;
 };
 
 } // namespace UCI

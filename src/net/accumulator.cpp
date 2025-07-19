@@ -6,27 +6,27 @@ namespace NNUE {
 // class Accum
 
 void Accum::reset() {
-    initialized[WHITE] = needs_refresh[WHITE] = false;
-    initialized[BLACK] = needs_refresh[BLACK] = false;
+    initialized[WHITE] = m_needs_refresh[WHITE] = false;
+    initialized[BLACK] = m_needs_refresh[BLACK] = false;
 
     num_dpcs = 0;
 }
 
-void Accum::putPiece(Piece pc, Square to, Square wksq, Square bksq) {
+void Accum::put_piece(Piece pc, Square to, Square wksq, Square bksq) {
     assert(num_dpcs < 4);
     this->wksq = wksq;
     this->bksq = bksq;
     dpcs[num_dpcs++] = DirtyPiece(pc, NO_SQUARE, to);
 }
 
-void Accum::removePiece(Piece pc, Square from, Square wksq, Square bksq) {
+void Accum::remove_piece(Piece pc, Square from, Square wksq, Square bksq) {
     assert(num_dpcs < 4);
     this->wksq = wksq;
     this->bksq = bksq;
     dpcs[num_dpcs++] = DirtyPiece(pc, from, NO_SQUARE);
 }
 
-void Accum::movePiece(Piece pc, Square from, Square to, Square wksq, Square bksq) {
+void Accum::move_piece(Piece pc, Square from, Square to, Square wksq, Square bksq) {
     assert(num_dpcs < 4);
     this->wksq = wksq;
     this->bksq = bksq;
@@ -39,51 +39,51 @@ void Accum::update(Accum &prev, Color view) {
         Square ksq = (view == WHITE) ? wksq : bksq;
 
         if(dpc.from == NO_SQUARE)
-            nnue.putPiece(*this, prev, dpc.pc, dpc.to, ksq, view);
+            nnue.put(*this, prev, dpc.pc, dpc.to, ksq, view);
         else if(dpc.to == NO_SQUARE)
-            nnue.removePiece(*this, prev, dpc.pc, dpc.from, ksq, view);
+            nnue.remove(*this, prev, dpc.pc, dpc.from, ksq, view);
         else
-            nnue.movePiece(*this, prev, dpc.pc, dpc.from, dpc.to, ksq, view);
+            nnue.move(*this, prev, dpc.pc, dpc.from, dpc.to, ksq, view);
     }
 
-    assert(isInitialized(view));
+    assert(is_initialized(view));
 }
 
 // class AccumTable
 
 void AccumTable::refresh(Board &board, Color view) {
-    assert(view == WHITE || view == BLACK);
+    assert(valid_color(view));
 
-    const Square ksq = board.kingSq(view);
-    const int ksq_idx = KING_BUCKET[relSquare(view, ksq)];
-    AccumEntry &entry = entries[view][(fileOf(ksq) > 3) * BUCKET_SIZE + ksq_idx];
+    const Square ksq = board.king_sq(view);
+    const int ksq_idx = KING_BUCKET[rel_sq(view, ksq)];
+    AccumEntry &entry = entries[view][(sq_file(ksq) > 3) * BUCKET_SIZE + ksq_idx];
 
-    Accum &entry_acc = entry.getAccum();
+    Accum &entry_acc = entry.get_accum();
 
     for(Color c : {WHITE, BLACK}) {
         for(int i = PAWN; i <= KING; i++) {
             PieceType pt = PieceType(i);
-            Piece pc = makePiece(c, pt);
+            Piece pc = make_piece(c, pt);
 
-            const U64 pc_bb = board.getPieceBB(c, pt);
-            const U64 entry_bb = entry.getPieceBB(c, pt);
+            const U64 pc_bb = board.get_piecebb(c, pt);
+            const U64 entry_bb = entry.get_piecebb(c, pt);
 
             U64 to_set = pc_bb & ~entry_bb;
             while(to_set)
-                nnue.putPiece(entry_acc, entry_acc, pc, popLsb(to_set), ksq, view);
+                nnue.put(entry_acc, entry_acc, pc, pop_lsb(to_set), ksq, view);
 
             U64 to_clear = entry_bb & ~pc_bb;
             while(to_clear)
-                nnue.removePiece(entry_acc, entry_acc, pc, popLsb(to_clear), ksq, view);
+                nnue.remove(entry_acc, entry_acc, pc, pop_lsb(to_clear), ksq, view);
 
-            entry.setPieceBB(c, pt, pc_bb);
+            entry.set_piecebb(c, pt, pc_bb);
         }
     }
 
-    Accum &acc = board.getAccumulator();
-    acc.markAsInitialized(view);
+    Accum &acc = board.get_accum();
+    acc.mark_as_initialized(view);
 
-    memcpy(acc.getData(view), entry_acc.getData(view), sizeof(int16_t) * L1_SIZE);
+    memcpy(acc.get_data(view), entry_acc.get_data(view), sizeof(int16_t) * L1_SIZE);
 }
 
 void AccumTable::reset() {
