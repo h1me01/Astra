@@ -482,7 +482,7 @@ movesloop:
             const int lmr_depth = std::max(0, depth - REDUCTIONS[depth][made_moves] + history_score / hp_div);
 
             // late move pruning
-            if(q_count > (3 + depth * depth) / (2 - improving))
+            if(!pv_node && q_count > (3 + depth * depth) / (2 - improving))
                 mp.skip_quiets();
 
             // history pruning
