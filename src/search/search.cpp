@@ -116,7 +116,6 @@ Score Search::aspiration(int depth) {
 
     for(int i = -6; i < MAX_PLY; i++) {
         (ss + i)->move_count = 0;
-        (ss + i)->was_check = false;
         (ss + i)->was_cap = false;
         (ss + i)->static_eval = VALUE_NONE;
         (ss + i)->moved_piece = NO_PIECE;
@@ -215,7 +214,6 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_no
     int beta_cut = 0;
 
     ss->move_count = 0;
-    ss->was_check = in_check;
 
     (ss + 1)->killer = NO_MOVE;
     (ss + 1)->skipped = NO_MOVE;
@@ -336,8 +334,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_no
         improving = ss->static_eval > (ss - 4)->static_eval;
 
     // update quiet history
-    if(!(ss - 1)->was_check                  //
-       && (ss - 1)->move.is_valid()          // first check if move is valid
+    if((ss - 1)->move.is_valid()          // first check if move is valid
        && !(ss - 1)->move.is_cap()           //
        && valid_score((ss - 1)->static_eval) //
     ) {
@@ -485,7 +482,7 @@ movesloop:
             const int lmr_depth = std::max(0, depth - REDUCTIONS[depth][made_moves] + history_score / hp_div);
 
             // late move pruning
-            if(q_count > (3 + depth * depth) / (2 - improving))
+            if(!pv_node && q_count > (3 + depth * depth) / (2 - improving))
                 mp.skip_quiets();
 
             // history pruning
@@ -731,8 +728,6 @@ Score Search::qsearch(int depth, Score alpha, Score beta, Stack *ss) {
 
     const bool in_check = board.in_check();
     const U64 hash = board.get_hash();
-
-    ss->was_check = in_check;
 
     if(board.is_draw(ss->ply))
         return VALUE_DRAW;

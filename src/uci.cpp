@@ -181,6 +181,10 @@ void Uci::updatePosition(std::istringstream &is) {
             continue;
 
         board.make_move(get_move(token), false);
+        // if half move clock gets reseted, then we can reset the history
+        // since the last positions should not be considered in the repetition
+        if(board.halfmoveclock() == 0)
+            board.reset_ply();
     }
 
     board.reset_accum();
