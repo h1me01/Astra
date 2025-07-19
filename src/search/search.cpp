@@ -489,7 +489,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_no
         int history_score = isCap(move) ? history.getCH(board, move) //
                                         : history.getQH(board, ss, move);
 
-        if(!root_node && best_score > -VALUE_TB_WIN_IN_MAX_PLY) {
+         if(!root_node && best_score > -VALUE_TB_WIN_IN_MAX_PLY) {
             int lmr_depth = std::max(0, depth - REDUCTIONS[depth][made_moves] + history_score / hp_div);
 
             // late move pruning
