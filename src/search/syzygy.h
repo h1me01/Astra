@@ -6,6 +6,6 @@ using namespace Chess;
 
 namespace Astra {
 
-Score probe_wdl(const Board &board);
+unsigned int probe_wdl(const Board &board);
 
 } // namespace Astra

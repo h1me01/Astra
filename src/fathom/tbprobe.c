@@ -1,7 +1,7 @@
 /*
 Copyright (c) 2013-2018 Ronald de Man
 Copyright (c) 2015 basil00
-Modifications Copyright (c) 2016-2020 by Jon Dart
+Modifications Copyright (c) 2016-2023 by Jon Dart
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -51,6 +51,7 @@ SOFTWARE.
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <unistd.h>
+
 #define SEP_CHAR ':'
 #define FD int
 #define FD_ERR -1
@@ -316,6 +317,9 @@ static FD open_tb(const char *str, const char *suffix) {
         wchar_t ucode_name[4096];
         size_t len;
         mbstowcs_s(&len, ucode_name, 4096, file, _TRUNCATE);
+        /* use FILE_FLAG_RANDOM_ACCESS because we are likely to access this file
+           randomly, so prefetch is not helpful. See
+           https://github.com/official-stockfish/Stockfish/pull/1829 */
         fd = CreateFile(ucode_name, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_FLAG_RANDOM_ACCESS, NULL);
 #else
         fd = CreateFile(file, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_FLAG_RANDOM_ACCESS, NULL);
@@ -347,13 +351,16 @@ static void *map_file(FD fd, map_t *mapping) {
     }
     *mapping = statbuf.st_size;
     void *data = mmap(NULL, statbuf.st_size, PROT_READ, MAP_SHARED, fd, 0);
-#if defined(MADV_RANDOM)
-    madvise((void *) data, statbuf.st_size, MADV_RANDOM);
-#endif
     if(data == MAP_FAILED) {
         perror("mmap");
         return NULL;
     }
+#ifdef POSIX_MADV_RANDOM
+    /* Advise the kernel that we are likely to access this data
+       region randomly, so prefetch is not helpful. See
+       https://github.com/official-stockfish/Stockfish/pull/1829 */
+    posix_madvise(data, statbuf.st_size, POSIX_MADV_RANDOM);
+#endif
 #else
     DWORD size_low, size_high;
     size_low = GetFileSize(fd, &size_high);
@@ -405,7 +412,7 @@ enum { WDL, DTM, DTZ };
 enum { PIECE_ENC, FILE_ENC, RANK_ENC };
 
 // Attack and move generation code
-#include "tbchess.cpp"
+#include "tbchess.c"
 
 struct PairsData {
     uint8_t *indexTable;
@@ -792,33 +799,33 @@ bool tb_init(const char *path) {
     int i, j, k, l, m;
 
     for(i = 0; i < 5; i++) {
-        sprintf(str, "K%cvK", pchr(i));
+        snprintf(str, 16, "K%cvK", pchr(i));
         init_tb(str);
     }
 
     for(i = 0; i < 5; i++)
         for(j = i; j < 5; j++) {
-            sprintf(str, "K%cvK%c", pchr(i), pchr(j));
+            snprintf(str, 16, "K%cvK%c", pchr(i), pchr(j));
             init_tb(str);
         }
 
     for(i = 0; i < 5; i++)
         for(j = i; j < 5; j++) {
-            sprintf(str, "K%c%cvK", pchr(i), pchr(j));
+            snprintf(str, 16, "K%c%cvK", pchr(i), pchr(j));
             init_tb(str);
         }
 
     for(i = 0; i < 5; i++)
         for(j = i; j < 5; j++)
             for(k = 0; k < 5; k++) {
-                sprintf(str, "K%c%cvK%c", pchr(i), pchr(j), pchr(k));
+                snprintf(str, 16, "K%c%cvK%c", pchr(i), pchr(j), pchr(k));
                 init_tb(str);
             }
 
     for(i = 0; i < 5; i++)
         for(j = i; j < 5; j++)
             for(k = j; k < 5; k++) {
-                sprintf(str, "K%c%c%cvK", pchr(i), pchr(j), pchr(k));
+                snprintf(str, 16, "K%c%c%cvK", pchr(i), pchr(j), pchr(k));
                 init_tb(str);
             }
 
@@ -830,7 +837,7 @@ bool tb_init(const char *path) {
         for(j = i; j < 5; j++)
             for(k = i; k < 5; k++)
                 for(l = (i == k) ? j : k; l < 5; l++) {
-                    sprintf(str, "K%c%cvK%c%c", pchr(i), pchr(j), pchr(k), pchr(l));
+                    snprintf(str, 16, "K%c%cvK%c%c", pchr(i), pchr(j), pchr(k), pchr(l));
                     init_tb(str);
                 }
 
@@ -838,7 +845,7 @@ bool tb_init(const char *path) {
         for(j = i; j < 5; j++)
             for(k = j; k < 5; k++)
                 for(l = 0; l < 5; l++) {
-                    sprintf(str, "K%c%c%cvK%c", pchr(i), pchr(j), pchr(k), pchr(l));
+                    snprintf(str, 16, "K%c%c%cvK%c", pchr(i), pchr(j), pchr(k), pchr(l));
                     init_tb(str);
                 }
 
@@ -846,7 +853,7 @@ bool tb_init(const char *path) {
         for(j = i; j < 5; j++)
             for(k = j; k < 5; k++)
                 for(l = k; l < 5; l++) {
-                    sprintf(str, "K%c%c%c%cvK", pchr(i), pchr(j), pchr(k), pchr(l));
+                    snprintf(str, 16, "K%c%c%c%cvK", pchr(i), pchr(j), pchr(k), pchr(l));
                     init_tb(str);
                 }
 
@@ -858,7 +865,7 @@ bool tb_init(const char *path) {
             for(k = j; k < 5; k++)
                 for(l = k; l < 5; l++)
                     for(m = l; m < 5; m++) {
-                        sprintf(str, "K%c%c%c%c%cvK", pchr(i), pchr(j), pchr(k), pchr(l), pchr(m));
+                        snprintf(str, 16, "K%c%c%c%c%cvK", pchr(i), pchr(j), pchr(k), pchr(l), pchr(m));
                         init_tb(str);
                     }
 
@@ -867,7 +874,7 @@ bool tb_init(const char *path) {
             for(k = j; k < 5; k++)
                 for(l = k; l < 5; l++)
                     for(m = 0; m < 5; m++) {
-                        sprintf(str, "K%c%c%c%cvK%c", pchr(i), pchr(j), pchr(k), pchr(l), pchr(m));
+                        snprintf(str, 16, "K%c%c%c%cvK%c", pchr(i), pchr(j), pchr(k), pchr(l), pchr(m));
                         init_tb(str);
                     }
 
@@ -876,7 +883,7 @@ bool tb_init(const char *path) {
             for(k = j; k < 5; k++)
                 for(l = 0; l < 5; l++)
                     for(m = l; m < 5; m++) {
-                        sprintf(str, "K%c%c%cvK%c%c", pchr(i), pchr(j), pchr(k), pchr(l), pchr(m));
+                        snprintf(str, 16, "K%c%c%cvK%c%c", pchr(i), pchr(j), pchr(k), pchr(l), pchr(m));
                         init_tb(str);
                     }
 
@@ -1744,13 +1751,13 @@ int probe_wdl(Pos *pos, int *success) {
     // Now handle the stalemate case.
     if(bestEp > -3 && v == 0) {
         TbMove moves[TB_MAX_MOVES];
-        TbMove *end = gen_moves(pos, moves);
+        TbMove *end2 = gen_moves(pos, moves);
         // Check for stalemate in the position with ep captures.
-        for(m = moves; m < end; m++) {
+        for(m = moves; m < end2; m++) {
             if(!is_en_passant(pos, *m) && legal_move(pos, *m))
                 break;
         }
-        if(m == end && !is_check(pos)) {
+        if(m == end2 && !is_check(pos)) {
             // stalemate score from tb (w/o e.p.), but an en-passant capture
             // is possible.
             *success = 2;
@@ -2219,7 +2226,7 @@ void tb_expand_mate(Pos *pos, struct TbRootMove *move, Value moveScore, unsigned
     }
 
     // Now try to expand until the actual mate.
-    if(unsigned(popcount(pos->white | pos->black)) <= cardinalityDTM) {
+    if(popcount(pos->white | pos->black) <= (int) cardinalityDTM) {
         while(v != -TB_VALUE_MATE && move->pvSize < TB_MAX_PLY) {
             v = v > 0 ? -v - 1 : -v + 1;
             wdl = -wdl;

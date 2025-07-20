@@ -50,11 +50,11 @@ class TTEntry {
     }
 
     Score get_score(int ply) const {
-        if(score == VALUE_NONE)
+        if(!valid_score(score))
             return VALUE_NONE;
-        if(score >= VALUE_TB_WIN_IN_MAX_PLY)
+        if(is_win(score))
             return score - ply;
-        if(score <= VALUE_TB_LOSS_IN_MAX_PLY)
+        if(is_loss(score))
             return score + ply;
         return score;
     }

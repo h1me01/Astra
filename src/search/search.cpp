@@ -1,4 +1,5 @@
 #include "search.h"
+#include "../fathom/tbprobe.h"
 #include "../net/nnue.h"
 #include "../uci.h"
 #include "movepicker.h"
@@ -44,6 +45,14 @@ Move Search::bestmove() {
     if(id == 0)
         tt.increment();
 
+    // init stack
+    Stack stack[MAX_PLY + 6]; // +6 for history
+    Stack *ss = &stack[6];
+    for(int i = 0; i < MAX_PLY + 6; i++) {
+        stack[i].ply = i - 6;
+        stack[i].conth = &history.conth[0][NO_PIECE][NO_SQUARE];
+    }
+
     int stability = 0;
     Score prev_result = VALUE_NONE;
     Score scores[MAX_PLY];
@@ -51,7 +60,7 @@ Move Search::bestmove() {
     Move bestmove = NO_MOVE, prev_bestmove = NO_MOVE;
     for(root_depth = 1; root_depth < MAX_PLY; root_depth++) {
         for(multipv_idx = 0; multipv_idx < multipv_size; multipv_idx++)
-            aspiration(root_depth);
+            aspiration(root_depth, ss);
 
         if(is_limit_reached(root_depth))
             break;
@@ -94,33 +103,12 @@ Move Search::bestmove() {
     if(id == 0)
         std::cout << "bestmove " << bestmove << std::endl;
 
-    // stop all threads
     threads.stop();
 
     return bestmove;
 }
 
-Score Search::aspiration(int depth) {
-    // init stack
-    Stack stack[MAX_PLY + 6]; // +6 for history
-    Stack *ss = &stack[6];
-
-    for(int i = -6; i < MAX_PLY; i++) {
-        (ss + i)->move_count = 0;
-        (ss + i)->was_cap = false;
-        (ss + i)->static_eval = VALUE_NONE;
-        (ss + i)->moved_piece = NO_PIECE;
-        (ss + i)->killer = NO_MOVE;
-        (ss + i)->skipped = NO_MOVE;
-        (ss + i)->move = NO_MOVE;
-        (ss + i)->conth = &history.conth[0][NO_PIECE][NO_SQUARE];
-    }
-
-    for(int i = 0; i < MAX_PLY; i++) {
-        (ss + i)->ply = i;
-        (ss + i)->conth = &history.conth[0][NO_PIECE][NO_SQUARE];
-    }
-
+Score Search::aspiration(int depth, Stack *ss) {
     Score score;
     Score alpha = -VALUE_INFINITE;
     Score beta = VALUE_INFINITE;
@@ -142,12 +130,10 @@ Score Search::aspiration(int depth) {
         sort_rootmoves(multipv_idx);
 
         if(score <= alpha) {
-            // if result is lower than alpha, than we can lower alpha for next iteration
             beta = (alpha + beta) / 2;
             alpha = std::max(alpha - delta, int(-VALUE_INFINITE));
             fail_high_count = 0;
         } else if(score >= beta) {
-            // if result is higher than beta, than we can raise beta for next iteration
             beta = std::min(beta + delta, int(VALUE_INFINITE));
             if(!is_decisive(score))
                 fail_high_count++;
@@ -198,8 +184,8 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_no
     const Score old_alpha = alpha;
     Score eval = VALUE_NONE;
     Score raw_eval = VALUE_NONE;
-    Score max_score = VALUE_MATE;
-    Score best_score = -VALUE_MATE;
+    Score max_score = VALUE_INFINITE;
+    Score best_score = -VALUE_INFINITE;
 
     bool improving = false;
     int beta_cut = 0;
@@ -258,33 +244,34 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_no
 
     // tablebase probing
     if(use_tb && !root_node && !ss->skipped) {
-        Score tb_score = probe_wdl(board);
+        auto tb_result = probe_wdl(board);
 
-        if(valid_score(tb_score)) {
-            Bound bound = NO_BOUND;
+        if(tb_result != TB_RESULT_FAILED) {
+            Bound tb_bound;
+            Score tb_score;
             tb_hits++;
 
-            if(tb_score == VALUE_TB_WIN) {
-                tb_score = VALUE_TB_WIN - ss->ply;
-                bound = LOWER_BOUND;
-            } else if(tb_score == VALUE_TB_LOSS) {
-                tb_score = ss->ply - VALUE_TB_WIN;
-                bound = UPPER_BOUND;
+            if(tb_result == TB_LOSS) {
+                tb_score = ss->ply - VALUE_TB;
+                tb_bound = UPPER_BOUND;
+            } else if(tb_result == TB_WIN) {
+                tb_score = VALUE_TB - ss->ply;
+                tb_bound = LOWER_BOUND;
             } else {
-                tb_score = 0;
-                bound = EXACT_BOUND;
+                tb_score = VALUE_DRAW;
+                tb_bound = EXACT_BOUND;
             }
 
-            if(bound == EXACT_BOUND                           //
-               || (bound == LOWER_BOUND && tb_score >= beta)  //
-               || (bound == UPPER_BOUND && tb_score <= alpha) //
+            if(tb_bound == EXACT_BOUND                           //
+               || (tb_bound == LOWER_BOUND && tb_score >= beta)  //
+               || (tb_bound == UPPER_BOUND && tb_score <= alpha) //
             ) {
                 ent->store(     //
                     hash,       //
                     NO_MOVE,    //
                     tb_score,   //
                     VALUE_NONE, // eval
-                    bound,      //
+                    tb_bound,   //
                     depth,      //
                     ss->ply,    //
                     tt_pv       //
@@ -293,7 +280,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_no
             }
 
             if(pv_node) {
-                if(bound == LOWER_BOUND) {
+                if(tb_bound == LOWER_BOUND) {
                     best_score = tb_score;
                     alpha = std::max(alpha, best_score);
                 } else {
@@ -335,14 +322,14 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_no
         improving = ss->static_eval > (ss - 4)->static_eval;
 
     // update quiet history
-    if((ss - 1)->move.is_valid()             // first check if move is valid
+    if((ss - 1)->move.is_valid()             //
        && !(ss - 1)->move.is_cap()           //
        && valid_score((ss - 1)->static_eval) //
     ) {
         int bonus = std::clamp(                                             //
-            static_h_mult * (ss->static_eval + (ss - 1)->static_eval) / 16, // value
-            int(-static_h_min),                                             // min
-            int(static_h_max)                                               // max
+            static_h_mult * (ss->static_eval + (ss - 1)->static_eval) / 16, //
+            int(-static_h_min),                                             //
+            int(static_h_max)                                               //
         );
 
         history.update_qh(~stm, (ss - 1)->move, bonus);
@@ -483,16 +470,8 @@ movesloop:
             const int lmr_depth = std::max(0, depth - REDUCTIONS[depth][made_moves] + history_score / hp_div);
 
             // late move pruning
-            if(!pv_node && q_count > (3 + depth * depth) / (2 - improving))
+            if(q_count > (3 + depth * depth) / (2 - improving))
                 mp.skip_quiets();
-
-            // history pruning
-            if(!move.is_cap()                            //
-               && lmr_depth < hp_depth                   //
-               && history_score < -hp_depth_mult * depth //
-            ) {
-                continue;
-            }
 
             // futility pruning
             if(!move.is_cap()                                              //
@@ -500,6 +479,12 @@ movesloop:
                && ss->static_eval + fp_base + lmr_depth * fp_mult <= alpha //
             ) {
                 mp.skip_quiets();
+            }
+
+            // history pruning
+            if(!move.is_cap() && lmr_depth < hp_depth && history_score < -hp_depth_mult * depth) {
+                mp.skip_quiets();
+                continue;
             }
 
             // see pruning
@@ -578,9 +563,8 @@ movesloop:
 
             score = -negamax<NON_PV>(lmr_depth, -alpha - 1, -alpha, ss + 1, true);
 
-            // if late move reduction failed high and we actually reduced, do a research
             if(score > alpha && lmr_depth < new_depth) {
-                // credits to stockfish
+                // idea from stockfish
                 new_depth += (score > best_score + zws_margin);
                 new_depth -= (score < best_score + new_depth);
 
@@ -598,7 +582,6 @@ movesloop:
                 }
             }
         } else if(!pv_node || made_moves > 1) {
-            // full-depth search if lmr was skipped
             score = -negamax<NON_PV>(new_depth, -alpha - 1, -alpha, ss + 1, !cut_node);
         }
 
@@ -721,6 +704,7 @@ Score Search::qsearch(int depth, Score alpha, Score beta, Stack *ss) {
     if(is_limit_reached(1))
         return 0;
 
+    // check for upcoming repetition
     if(alpha < VALUE_DRAW && board.has_upcoming_repetition(ss->ply)) {
         alpha = VALUE_DRAW;
         if(alpha >= beta)
@@ -762,10 +746,7 @@ Score Search::qsearch(int depth, Score alpha, Score beta, Stack *ss) {
         tt_pv |= ent->get_tt_pv();
     }
 
-    if(!pv_node                                    //
-       && valid_score(tt_score)                    //
-       && valid_tt_score(tt_score, beta, tt_bound) //
-    ) {
+    if(!pv_node && valid_score(tt_score) && valid_tt_score(tt_score, beta, tt_bound)) {
         return tt_score;
     }
 
@@ -818,11 +799,7 @@ Score Search::qsearch(int depth, Score alpha, Score beta, Stack *ss) {
         made_moves++;
 
         if(!is_loss(best_score)) {
-            if(!in_check              //
-               && !move.is_quiet()    //
-               && futility <= alpha   //
-               && !board.see(move, 1) //
-            ) {
+            if(!in_check && !move.is_quiet() && futility <= alpha && !board.see(move, 1)) {
                 best_score = std::max(best_score, futility);
                 continue;
             }
@@ -846,7 +823,6 @@ Score Search::qsearch(int depth, Score alpha, Score beta, Stack *ss) {
         if(is_limit_reached(1))
             return 0;
 
-        // update the best score
         if(score > best_score) {
             best_score = score;
 
@@ -869,8 +845,7 @@ Score Search::qsearch(int depth, Score alpha, Score beta, Stack *ss) {
     if(best_score >= beta && !is_decisive(best_score))
         best_score = (best_score + beta) / 2;
 
-    // store in transposition table
-    Bound bound = (best_score >= beta) ? LOWER_BOUND : UPPER_BOUND; // no exact bound in qsearch
+    Bound bound = (best_score >= beta) ? LOWER_BOUND : UPPER_BOUND;
 
     ent->store(     //
         hash,       //
@@ -888,7 +863,6 @@ Score Search::qsearch(int depth, Score alpha, Score beta, Stack *ss) {
     return best_score;
 }
 
-// search eval
 Score Search::evaluate() {
     int32_t eval = NNUE::nnue.forward(board);
 
@@ -902,9 +876,9 @@ Score Search::adjust_eval(const Stack *ss, Score eval) const {
     eval += (history.get_matcorr(board) + history.get_contcorr(ss)) / 256;
 
     return std::clamp(                       //
-        eval,                                // value
-        Score(VALUE_TB_LOSS_IN_MAX_PLY + 1), // min
-        Score(VALUE_TB_WIN_IN_MAX_PLY - 1)   // max
+        eval,                                //
+        Score(VALUE_TB_LOSS_IN_MAX_PLY + 1), //
+        Score(VALUE_TB_WIN_IN_MAX_PLY - 1)   //
     );
 }
 
@@ -966,7 +940,7 @@ void Search::print_uci_info() {
               << " multipv " << multipv_idx + 1 //
               << " score ";                     //
 
-    if(is_decisive(result))
+    if(std::abs(result) >= VALUE_MATE_IN_MAX_PLY)
         std::cout << "mate " << (VALUE_MATE - std::abs(result) + 1) / 2 * (result > 0 ? 1 : -1);
     else
         std::cout << "cp " << Score(result / 2.5); // normalize

@@ -72,7 +72,7 @@ class Search {
 
     MoveList<RootMove> rootmoves;
 
-    Score aspiration(int depth);
+    Score aspiration(int depth, Stack* ss);
 
     template <NodeType nt> Score qsearch(int depth, Score alpha, Score beta, Stack *ss);
     template <NodeType nt> Score negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_node);

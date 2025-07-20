@@ -50,10 +50,10 @@ void TTEntry::store( //
     if(move.is_valid() || this->hash != hash16)
         this->move = move.raw();
 
-    if(score != VALUE_NONE) {
-        if(score >= VALUE_TB_WIN_IN_MAX_PLY)
+    if(valid_score(score)) {
+        if(is_win(score))
             score += ply;
-        if(score <= VALUE_TB_LOSS_IN_MAX_PLY)
+        if(is_loss(score))
             score -= ply;
     }
 

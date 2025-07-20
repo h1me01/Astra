@@ -18,18 +18,6 @@ PieceType prom_type(const MoveType mt);
 
 std::ostream &operator<<(std::ostream &os, const Move &m);
 
-inline bool is_loss(const Score score) {
-    return score <= VALUE_TB_LOSS_IN_MAX_PLY;
-}
-
-inline bool is_win(const Score score) {
-    return score >= VALUE_TB_WIN_IN_MAX_PLY;
-}
-
-inline bool is_decisive(const Score score) {
-    return is_loss(score) || is_win(score);
-}
-
 constexpr bool valid_color(Color c) {
     return c == WHITE || c == BLACK;
 }
@@ -47,7 +35,7 @@ constexpr bool valid_piece(Piece pc) {
 }
 
 constexpr bool valid_score(Score score) {
-    return score > -VALUE_INFINITE && score < VALUE_INFINITE;
+    return score != VALUE_NONE;
 }
 
 // gets opposite color
@@ -122,6 +110,20 @@ constexpr Square rel_sq(Color c, Square sq) {
 constexpr Rank rel_rank(Color c, Rank r) {
     assert(r >= RANK_1 && r <= RANK_8);
     return c == WHITE ? r : Rank(RANK_8 - r);
+}
+
+inline bool is_loss(const Score score) {
+    assert(valid_score(score));
+    return score <= VALUE_TB_LOSS_IN_MAX_PLY;
+}
+
+inline bool is_win(const Score score) {
+    assert(valid_score(score));
+    return score >= VALUE_TB_WIN_IN_MAX_PLY;
+}
+
+inline bool is_decisive(const Score score) {
+    return is_loss(score) || is_win(score);
 }
 
 } // namespace Chess

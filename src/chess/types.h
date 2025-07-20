@@ -108,13 +108,15 @@ enum File { FILE_A, FILE_B, FILE_C, FILE_D, FILE_E, FILE_F, FILE_G, FILE_H };
 enum Rank { RANK_1, RANK_2, RANK_3, RANK_4, RANK_5, RANK_6, RANK_7, RANK_8 };
 
 constexpr Score VALUE_DRAW = 0;
-constexpr Score VALUE_MATE = 32000;
-constexpr Score VALUE_INFINITE = 32001;
 constexpr Score VALUE_NONE = 32002;
-constexpr Score VALUE_TB_WIN = VALUE_MATE;
-constexpr Score VALUE_TB_LOSS = -VALUE_MATE;
-constexpr Score VALUE_TB_WIN_IN_MAX_PLY = VALUE_TB_WIN - MAX_PLY;
-constexpr Score VALUE_TB_LOSS_IN_MAX_PLY = VALUE_TB_LOSS + MAX_PLY;
+constexpr Score VALUE_INFINITE = 32001;
+
+constexpr Score VALUE_MATE = 32000;
+constexpr Score VALUE_MATE_IN_MAX_PLY = VALUE_MATE - MAX_PLY;
+
+constexpr Score VALUE_TB = VALUE_MATE_IN_MAX_PLY - 1;
+constexpr Score VALUE_TB_WIN_IN_MAX_PLY = VALUE_TB - MAX_PLY;
+constexpr Score VALUE_TB_LOSS_IN_MAX_PLY = -VALUE_TB_WIN_IN_MAX_PLY;
 
 // clang-format off
 enum MoveType

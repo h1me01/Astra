@@ -47,18 +47,18 @@
  * Define TB_NO_STDINT if you do not want to use <stdint.h> or it is not
  * available.
  */
-// #define TB_NO_STDINT
+/* #define TB_NO_STDINT */
 
 /*
  * Define TB_NO_STDBOOL if you do not want to use <stdbool.h> or it is not
  * available or unnecessary (e.g. C++).
  */
-// #define TB_NO_STDBOOL
+/* #define TB_NO_STDBOOL */
 
 /*
  * Define TB_NO_THREADS if your program is not multi-threaded.
  */
-/*#define TB_NO_THREADS */
+/* #define TB_NO_THREADS */
 
 /*
  * Define TB_NO_HELPER_API if you do not need the helper API.

@@ -40,7 +40,7 @@ SEARCH_SRC := search/history.cpp \
               search/tt.cpp \
               search/tune.cpp
              
-SYZYGY_SRC := fathom/tbprobe.cpp
+SYZYGY_SRC := fathom/tbprobe.c
 
 MAIN_SRC := main.cpp \
             bench.cpp \
