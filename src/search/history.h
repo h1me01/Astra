@@ -18,7 +18,7 @@ class History {
     Move counters[NUM_SQUARES][NUM_SQUARES];
 
     int16_t hh[NUM_COLORS][NUM_SQUARES][NUM_SQUARES]{};
-    int16_t ch[NUM_PIECES][NUM_SQUARES][NUM_PIECE_TYPES]{};
+    int16_t ch[NUM_PIECES][NUM_SQUARES][NUM_PIECE_TYPES + 1]{};
 
     int16_t ph[PAWN_HIST_SIZE][NUM_PIECES][NUM_SQUARES]{};
 
@@ -83,7 +83,8 @@ inline int History::get_ch(const Board &board, Move &move) const {
     Piece pc = board.piece_at(move.from());
 
     assert(valid_piece(pc));
-    assert(valid_piece_type(captured) && captured != KING);
+    assert(captured != KING);
+    assert(valid_piece_type(captured) || (move.type() >= PQ_KNIGHT && move.type() <= PQ_QUEEN));
 
     return ch[pc][move.to()][captured];
 }

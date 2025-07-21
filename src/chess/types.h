@@ -197,6 +197,11 @@ class Move {
         return type() >= PQ_KNIGHT;
     }
 
+    bool is_underprom() const {
+        assert(is_valid());
+        return type() == PQ_KNIGHT || type() == PQ_BISHOP || type() == PC_KNIGHT || type() == PC_BISHOP;
+    }
+
     bool is_quiet() const {
         return !is_cap() && !is_prom();
     }

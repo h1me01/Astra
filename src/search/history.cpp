@@ -36,18 +36,14 @@ void History::update(const Board &board,    //
     int bonus = history_bonus(depth);
     int malus = history_malus(depth);
 
-    if(!best.is_cap()) {
-        // don't set quiet queen promotions as a counter/killer,
-        // so we don't actually return it twice in the movepicker
-        if(best.type() != PQ_QUEEN) {
-            Move prev_move = (ss - 1)->move;
-            if(prev_move.is_valid())
-                counters[prev_move.from()][prev_move.to()] = best;
+    if(best.is_quiet()) {
+        Move prev_move = (ss - 1)->move;
+        if(prev_move.is_valid())
+            counters[prev_move.from()][prev_move.to()] = best;
 
-            ss->killer = best;
-        }
+        ss->killer = best;
 
-        // credits to ethereal
+        // idea from ethereal
         // only update quiet history if best move was important
         if(depth > 3 || qc > 1) {
             update_qh(stm, best, bonus);
@@ -109,8 +105,8 @@ void History::update_ch(const Board &board, Move &move, int bonus) {
     PieceType captured = move.type() == EN_PASSANT ? PAWN : piece_type(board.piece_at(to));
     Piece pc = board.piece_at(move.from());
 
-    assert(captured != NO_PIECE_TYPE);
     assert(pc != NO_PIECE);
+    assert(valid_piece_type(captured) || (move.type() >= PQ_KNIGHT && move.type() <= PQ_QUEEN));
 
     int16_t &value = ch[pc][to][captured];
     value += getFormula(value, bonus);

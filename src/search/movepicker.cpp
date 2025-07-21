@@ -29,8 +29,9 @@ MovePicker::MovePicker(SearchType st,          //
         if(board.in_check()) {
             stage = PLAY_TT_MOVE;
             this->tt_move = tt_move;
-        } else
+        } else {
             stage = GEN_NOISY;
+        }
     } else {
         stage = PLAY_TT_MOVE;
         this->tt_move = tt_move;
@@ -72,8 +73,8 @@ Move MovePicker::next() {
 
             // we want to play captures first in qsearch, doesn't matter if its see is fails
             int threshold = (st == N_SEARCH) ? -move.get_score() / 32 : see_cutoff;
-            if(st != Q_SEARCH && !board.see(move, threshold)) {
-                ml_bad_noisy.add(move); // add to bad noisy
+            if(st != Q_SEARCH && (move.is_underprom() || !board.see(move, threshold))) {
+                ml_bad_noisy.add(move);
                 continue;
             }
 
@@ -204,16 +205,13 @@ void MovePicker::score_quiets() {
 
 void MovePicker::score_noisy() {
     for(int i = 0; i < ml_main.size(); i++) {
-        PieceType captured = (ml_main[i].type() == EN_PASSANT) ? PAWN : piece_type(board.piece_at(ml_main[i].to()));
+        PieceType captured = (ml_main[i].type() == EN_PASSANT) ? PAWN //
+                                                               : piece_type(board.piece_at(ml_main[i].to()));
 
-        int score;
-        if(captured != NO_PIECE_TYPE)
-            score = history.get_ch(board, ml_main[i]);
-        else
-            score = history.get_hh(board.get_stm(), ml_main[i]); // quiet queen prom is not a capture
+        int score = history.get_ch(board, ml_main[i]);
 
         score += 16 * PIECE_VALUES[captured];
-        score += 8192 * ml_main[i].is_prom();
+        score += 4096 * (2 * ml_main[i].is_prom() - ml_main[i].is_underprom());
 
         ml_main[i].set_score(score);
     }

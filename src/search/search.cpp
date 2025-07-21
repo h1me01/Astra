@@ -373,7 +373,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_no
 
         ss->move = NULL_MOVE;
         ss->moved_piece = NO_PIECE;
-        ss->conth = &history.conth[0][NO_PIECE][NO_SQUARE]; // put null move to quiet moves
+        ss->conth = &history.conth[0][NO_PIECE][NO_SQUARE];
 
         board.make_nullmove();
         Score score = -negamax<NON_PV>(depth - R, -beta, -beta + 1, ss + 1, !cut_node);
@@ -463,8 +463,8 @@ movesloop:
         ss->move_count = made_moves;
         ss->was_cap = move.is_cap();
 
-        int history_score = move.is_cap() ? history.get_ch(board, move) //
-                                          : history.get_qh(board, ss, move);
+        int history_score = move.is_quiet() ? history.get_qh(board, ss, move) //
+                                            : history.get_ch(board, move);
 
         if(!root_node && !is_loss(best_score)) {
             const int lmr_depth = std::max(0, depth - REDUCTIONS[depth][made_moves] + history_score / hp_div);
