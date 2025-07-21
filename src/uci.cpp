@@ -16,7 +16,7 @@ bool isInteger(const std::string &s) {
     return !s.empty() && std::all_of(s.begin(), s.end(), ::isdigit);
 }
 
-const std::string version = "6.1";
+const std::string version = "6.1.1";
 
 // options class
 void Options::print() const {
