@@ -170,7 +170,6 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *ss, bool cut_no
             return alpha;
     }
 
-    assert(alpha < beta);
     assert(ss->ply >= 0);
     assert(!(pv_node && cut_node));
     assert(pv_node || (alpha == beta - 1));
@@ -461,10 +460,9 @@ movesloop:
 
         made_moves++;
         ss->move_count = made_moves;
-        ss->was_cap = move.is_cap();
 
         int history_score = move.is_quiet() ? history.get_qh(board, ss, move) //
-                                            : history.get_ch(board, move);
+                                            : history.get_nh(board, move);
 
         if(!root_node && !is_loss(best_score)) {
             const int lmr_depth = std::max(0, depth - REDUCTIONS[depth][made_moves] + history_score / hp_div);
@@ -565,7 +563,7 @@ movesloop:
 
             if(score > alpha && lmr_depth < new_depth) {
                 // idea from stockfish
-                new_depth += (score > best_score + zws_margin);
+                new_depth += (score > best_score + zws_margin + 2 * new_depth);
                 new_depth -= (score < best_score + new_depth);
 
                 if(lmr_depth < new_depth)
@@ -697,7 +695,6 @@ Score Search::qsearch(int depth, Score alpha, Score beta, Stack *ss) {
 
     constexpr bool pv_node = nt == PV;
 
-    assert(alpha < beta);
     assert(pv_node || (alpha == beta - 1));
     assert(valid_score(alpha + 1) && valid_score(beta - 1) && alpha < beta);
 
@@ -787,7 +784,7 @@ Score Search::qsearch(int depth, Score alpha, Score beta, Stack *ss) {
             alpha = best_score;
     }
 
-    MovePicker mp(Q_SEARCH, board, history, ss, tt_move, depth >= -1);
+    MovePicker mp(Q_SEARCH, board, history, ss, tt_move, depth > -1);
 
     int made_moves = 0;
     while((move = mp.next()) != NO_MOVE) {

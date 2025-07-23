@@ -264,7 +264,7 @@ Move Uci::get_move(const std::string &str_move) const {
         mt = CAPTURE;
 
     if(piece_type(pc) == PAWN) {
-        if(board.history[board.get_ply()].ep_sq == to)
+        if(board.get_state().ep_sq == to)
             mt = EN_PASSANT;
         else if(sq_rank(to) == RANK_1 || sq_rank(to) == RANK_8) {
             char prom_t = tolower(str_move[4]); // piece type

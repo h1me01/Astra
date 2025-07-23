@@ -8,11 +8,11 @@
 namespace Astra {
 // helper
 
-int getFormula(int value, int bonus) {
+int adjusted_bonus(int value, int bonus) {
     return bonus - value * std::abs(bonus) / 16384;
 }
 
-void updateCorrection(int16_t &value, int diff, int depth) {
+void update_corr(int16_t &value, int diff, int depth) {
     const int bonus = std::clamp(diff * depth / 8, -256, 256);
     value = bonus - int(value) * std::abs(bonus) / 1024;
 }
@@ -61,7 +61,7 @@ void History::update(const Board &board,    //
             }
         }
     } else {
-        update_ch(board, best, bonus);
+        update_nh(board, best, bonus);
     }
 
     // capture maluses
@@ -69,56 +69,59 @@ void History::update(const Board &board,    //
         Move cap = c_moves[i];
         if(cap == best)
             continue;
-        update_ch(board, cap, -malus);
-    }
-
-    ph[ph_idx(board.get_pawnhash())][board.piece_at(best.from())][best.to()] += bonus;
+        update_nh(board, cap, -malus);
+    }    
 }
 
 void History::update_qh(Color c, Move move, int bonus) {
+    assert(move.is_valid());
     int16_t &value = hh[c][move.from()][move.to()];
-    value += getFormula(value, bonus);
+    value += adjusted_bonus(value, bonus);
 }
 
 void History::update_ph(const Board &board, Move &move, int bonus) {
+    assert(move.is_valid());
     Piece pc = board.piece_at(move.from());
-    int16_t &value = ph[ph_idx(board.get_pawnhash())][pc][move.to()];
     assert(valid_piece(pc));
-    assert(valid_sq(move.to()));
-    value += getFormula(value, bonus);
+    int16_t &value = ph[ph_idx(board.get_pawnhash())][pc][move.to()];
+    value += adjusted_bonus(value, bonus);
 }
 
 void History::update_conth(Move &move, Stack *ss, int bonus) {
+    assert(move.is_valid());
+
     for(int offset : {1, 2, 4, 6}) {
         if((ss - offset)->move.is_valid()) {
             Piece pc = (ss - offset)->moved_piece;
             assert(valid_piece(pc));
 
             int16_t &value = (*(ss - offset)->conth)[pc][move.to()];
-            value += getFormula(value, bonus);
+            value += adjusted_bonus(value, bonus);
         }
     }
 }
 
-void History::update_ch(const Board &board, Move &move, int bonus) {
+void History::update_nh(const Board &board, Move &move, int bonus) {
+    assert(move.is_valid());
+
     Square to = move.to();
-    PieceType captured = move.type() == EN_PASSANT ? PAWN : piece_type(board.piece_at(to));
+    PieceType captured = (move.type() == EN_PASSANT) ? PAWN : piece_type(board.piece_at(to));
     Piece pc = board.piece_at(move.from());
 
     assert(pc != NO_PIECE);
     assert(valid_piece_type(captured) || (move.type() >= PQ_KNIGHT && move.type() <= PQ_QUEEN));
 
-    int16_t &value = ch[pc][to][captured];
-    value += getFormula(value, bonus);
+    int16_t &value = nh[pc][to][captured];
+    value += adjusted_bonus(value, bonus);
 }
 
 void History::update_matcorr(const Board &board, Score raw_eval, Score real_score, int depth) {
     Color stm = board.get_stm();
     int diff = real_score - raw_eval;
 
-    updateCorrection(pawn_corr[stm][corr_idx(board.get_pawnhash())], diff, depth);
-    updateCorrection(w_non_pawn_corr[stm][corr_idx(board.get_nonpawnhash(WHITE))], diff, depth);
-    updateCorrection(b_non_pawn_corr[stm][corr_idx(board.get_nonpawnhash(BLACK))], diff, depth);
+    update_corr(pawn_corr[stm][corr_idx(board.get_pawnhash())], diff, depth);
+    update_corr(w_non_pawn_corr[stm][corr_idx(board.get_nonpawnhash(WHITE))], diff, depth);
+    update_corr(b_non_pawn_corr[stm][corr_idx(board.get_nonpawnhash(BLACK))], diff, depth);
 }
 
 void History::update_contcorr(Score raw_eval, Score real_score, int depth, const Stack *ss) {
@@ -128,10 +131,10 @@ void History::update_contcorr(Score raw_eval, Score real_score, int depth, const
     Piece prev_pc = (ss - 1)->moved_piece;
     Piece pprev_pc = (ss - 2)->moved_piece;
 
-    if(!prev_move || !pprev_move)
+    if(!prev_move.is_valid() || !pprev_move.is_valid())
         return;
 
-    updateCorrection(cont_corr[prev_pc][prev_move.to()][pprev_pc][pprev_move.to()], real_score - raw_eval, depth);
+    update_corr(cont_corr[prev_pc][prev_move.to()][pprev_pc][pprev_move.to()], real_score - raw_eval, depth);
 }
 
 } // namespace Astra

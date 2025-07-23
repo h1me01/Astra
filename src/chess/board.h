@@ -85,8 +85,6 @@ struct StateInfo {
 
 class Board {
   public:
-    std::array<StateInfo, 512> history;
-
     Board(const std::string &fen, bool update_nnue = true);
 
     Board &operator=(const Board &other);
@@ -133,8 +131,8 @@ class Board {
     int get_phase() const;
 
     void reset_ply() {
-        history[0] = history[curr_ply];
-        history[0].plies_from_null = 0;
+        states[0] = states[curr_ply];
+        states[0].plies_from_null = 0;
         curr_ply = 0;
     }
 
@@ -147,15 +145,15 @@ class Board {
     }
 
     int halfmoveclock() const {
-        return history[curr_ply].half_move_clock;
+        return states[curr_ply].half_move_clock;
     }
 
     U64 get_hash() const {
-        return history[curr_ply].hash;
+        return states[curr_ply].hash;
     }
 
     U64 get_pawnhash() const {
-        return history[curr_ply].pawn_hash;
+        return states[curr_ply].pawn_hash;
     }
 
     Square king_sq(Color c) const {
@@ -166,7 +164,21 @@ class Board {
         return accums[accums_idx];
     }
 
+    const NNUE::Accum &get_accum() const {
+        return accums[accums_idx];
+    }
+
+    StateInfo &get_state() {
+        return states[curr_ply];
+    }
+
+    const StateInfo &get_state() const {
+        return states[curr_ply];
+    }
+
   private:
+    std::array<StateInfo, 512> states;
+
     Color stm;
     int curr_ply;
     Piece board[NUM_SQUARES];
@@ -197,12 +209,12 @@ inline Piece Board::piece_at(Square sq) const {
 
 inline U64 Board::get_nonpawnhash(Color c) const {
     assert(valid_color(c));
-    return history[curr_ply].non_pawn_hash[c];
+    return states[curr_ply].non_pawn_hash[c];
 }
 
 inline U64 Board::get_threats(PieceType pt) const {
     assert(valid_piece_type(pt));
-    return history[curr_ply].threats[pt];
+    return states[curr_ply].threats[pt];
 }
 
 inline void Board::reset_accum() {
@@ -223,9 +235,9 @@ inline U64 Board::orth_sliders(Color c) const {
 inline U64 Board::occupancy(Color c = BOTH_COLORS) const {
     U64 occ = 0;
     if(c != BLACK)
-        occ |= history[curr_ply].occ[WHITE];
+        occ |= states[curr_ply].occ[WHITE];
     if(c != WHITE)
-        occ |= history[curr_ply].occ[BLACK];
+        occ |= states[curr_ply].occ[BLACK];
     return occ;
 }
 
@@ -247,7 +259,7 @@ inline int Board::get_phase() const {
 }
 
 inline bool Board::in_check() const {
-    return history[curr_ply].checkers > 0;
+    return states[curr_ply].checkers > 0;
 }
 
 // checks if there is any non-pawn material on the board of the current side to move
@@ -273,7 +285,7 @@ inline bool Board::is_draw(int ply) const {
             return true;
     }
 
-    return history[curr_ply].half_move_clock > 99 || is_repetition(ply);
+    return states[curr_ply].half_move_clock > 99 || is_repetition(ply);
 }
 
 inline void Board::put_piece(Piece pc, Square sq, bool update_nnue) {
@@ -282,7 +294,7 @@ inline void Board::put_piece(Piece pc, Square sq, bool update_nnue) {
 
     board[sq] = pc;
     piece_bb[pc] |= square_bb(sq);
-    history[curr_ply].occ[piece_color(pc)] ^= square_bb(sq);
+    states[curr_ply].occ[piece_color(pc)] ^= square_bb(sq);
 
     if(!update_nnue)
         return;
@@ -299,7 +311,7 @@ inline void Board::remove_piece(Square sq, bool update_nnue) {
 
     piece_bb[pc] ^= square_bb(sq);
     board[sq] = NO_PIECE;
-    history[curr_ply].occ[piece_color(pc)] ^= square_bb(sq);
+    states[curr_ply].occ[piece_color(pc)] ^= square_bb(sq);
 
     if(!update_nnue)
         return;
@@ -318,7 +330,7 @@ inline void Board::move_piece(Square from, Square to, bool update_nnue) {
     piece_bb[pc] ^= square_bb(from) | square_bb(to);
     board[to] = pc;
     board[from] = NO_PIECE;
-    history[curr_ply].occ[piece_color(pc)] ^= square_bb(from) | square_bb(to);
+    states[curr_ply].occ[piece_color(pc)] ^= square_bb(from) | square_bb(to);
 
     if(!update_nnue)
         return;

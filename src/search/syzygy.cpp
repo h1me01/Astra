@@ -19,28 +19,21 @@ unsigned int probe_wdl(const Board &board) {
     U64 queens = board.get_piecebb(WHITE, QUEEN) | board.get_piecebb(BLACK, QUEEN);
     U64 kings = board.get_piecebb(WHITE, KING) | board.get_piecebb(BLACK, KING);
 
-    int ply = board.get_ply();
-    int fmc = board.halfmoveclock();
-    bool any_castling = board.history[ply].castle_rights.any();
+    Square ep_sq = board.get_state().ep_sq;
 
-    int ep_sq = int(board.history[ply].ep_sq);
-    ep_sq = valid_sq(Square(ep_sq)) ? ep_sq : 0;
-
-    bool stm = board.get_stm() == WHITE;
-
-    return tb_probe_wdl( //
-        w_occ,           //
-        b_occ,           //
-        kings,           //
-        queens,          //
-        rooks,           //
-        bishops,         //
-        knights,         //
-        pawns,           //
-        fmc,             //
-        any_castling,    //
-        ep_sq,           //
-        stm              //
+    return tb_probe_wdl(                       //
+        w_occ,                                 //
+        b_occ,                                 //
+        kings,                                 //
+        queens,                                //
+        rooks,                                 //
+        bishops,                               //
+        knights,                               //
+        pawns,                                 //
+        board.halfmoveclock(),                 //
+        board.get_state().castle_rights.any(), //
+        valid_sq(ep_sq) ? ep_sq : 0,           //
+        board.get_stm() == WHITE               //
     );
 }
 

@@ -18,7 +18,7 @@ class History {
     Move counters[NUM_SQUARES][NUM_SQUARES];
 
     int16_t hh[NUM_COLORS][NUM_SQUARES][NUM_SQUARES]{};
-    int16_t ch[NUM_PIECES][NUM_SQUARES][NUM_PIECE_TYPES + 1]{};
+    int16_t nh[NUM_PIECES][NUM_SQUARES][NUM_PIECE_TYPES + 1]{};
 
     int16_t ph[PAWN_HIST_SIZE][NUM_PIECES][NUM_SQUARES]{};
 
@@ -27,14 +27,13 @@ class History {
     int16_t w_non_pawn_corr[NUM_COLORS][CORR_SIZE]{};
     int16_t b_non_pawn_corr[NUM_COLORS][CORR_SIZE]{};
 
-    void update_ch(const Board &board, Move &move, int bonus);
-
   public:
     int16_t conth[2][NUM_PIECES + 1][NUM_SQUARES + 1][NUM_PIECES + 1][NUM_SQUARES + 1]{};
 
     void update(const Board &board, Move &move, Stack *ss, Move *q_moves, int qc, Move *c_moves, int cc, int depth);
 
     void update_qh(Color c, Move move, int bonus);
+    void update_nh(const Board &board, Move &move, int bonus);
     void update_ph(const Board &board, Move &move, int bonus);
     void update_conth(Move &move, Stack *ss, int bonus);
     void update_matcorr(const Board &board, Score raw_eval, Score real_score, int depth);
@@ -44,7 +43,7 @@ class History {
 
     int get_hh(Color stm, Move move) const;
     int get_qh(const Board &board, const Stack *ss, Move &move) const;
-    int get_ch(const Board &board, Move &move) const;
+    int get_nh(const Board &board, Move &move) const;
     int get_ph(const Board &board, Move &move) const;
     int get_matcorr(const Board &board) const;
     int get_contcorr(const Stack *ss) const;
@@ -78,7 +77,7 @@ inline int History::get_qh(const Board &board, const Stack *ss, Move &move) cons
            (int) (*(ss - 4)->conth)[pc][to];
 }
 
-inline int History::get_ch(const Board &board, Move &move) const {
+inline int History::get_nh(const Board &board, Move &move) const {
     PieceType captured = move.type() == EN_PASSANT ? PAWN : piece_type(board.piece_at(move.to()));
     Piece pc = board.piece_at(move.from());
 
@@ -86,7 +85,7 @@ inline int History::get_ch(const Board &board, Move &move) const {
     assert(captured != KING);
     assert(valid_piece_type(captured) || (move.type() >= PQ_KNIGHT && move.type() <= PQ_QUEEN));
 
-    return ch[pc][move.to()][captured];
+    return nh[pc][move.to()][captured];
 }
 
 inline int History::get_ph(const Board &board, Move &move) const {

@@ -76,9 +76,7 @@ Move *gen_pawnmoves(const Board &board, Move *ml, const U64 targets) {
         }
 
         // en passant
-        int ply = board.get_ply();
-        Square ep_sq = board.history[ply].ep_sq;
-
+        Square ep_sq = board.get_state().ep_sq;
         if(ep_sq != NO_SQUARE) {
             assert(sq_rank(ep_sq) == rel_rank(us, RANK_6));
 
@@ -132,8 +130,7 @@ Move *gen_piecemoves(const Board &board, Move *ml, const U64 targets) {
 
 template <Color us, GenType gt> //
 Move *gen_all(const Board &board, Move *ml) {
-    const int ply = board.get_ply();
-    const StateInfo &info = board.history[ply];
+    const StateInfo &info = board.get_state();
     const Square ksq = board.king_sq(us);
 
     const U64 us_bb = board.occupancy(us);
@@ -191,7 +188,7 @@ Move *gen_quiet_checkers(const Board &board, Move *ml) {
 inline Move *gen_legals(const Board &board, Move *ml) {
     const Color us = board.get_stm();
     const Square ksq = board.king_sq(us);
-    const U64 pinned = board.history[board.get_ply()].blockers[us] & board.occupancy(us);
+    const U64 pinned = board.get_state().blockers[us] & board.occupancy(us);
 
     Move *curr = ml;
 

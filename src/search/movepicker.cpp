@@ -36,12 +36,7 @@ MovePicker::MovePicker(SearchType st,          //
         stage = PLAY_TT_MOVE;
         this->tt_move = tt_move;
 
-        Move prev_move = (ss - 1)->move;
-        if(prev_move.is_valid())
-            counter = history.get_counter(prev_move);
-        else
-            counter = NO_MOVE;
-
+        counter = (ss - 1)->move.is_valid() ? history.get_counter((ss - 1)->move) : NO_MOVE;
         killer = ss->killer;
     }
 }
@@ -208,7 +203,7 @@ void MovePicker::score_noisy() {
         PieceType captured = (ml_main[i].type() == EN_PASSANT) ? PAWN //
                                                                : piece_type(board.piece_at(ml_main[i].to()));
 
-        int score = history.get_ch(board, ml_main[i]);
+        int score = history.get_nh(board, ml_main[i]);
 
         score += 16 * PIECE_VALUES[captured];
         score += 4096 * (2 * ml_main[i].is_prom() - ml_main[i].is_underprom());

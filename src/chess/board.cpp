@@ -47,7 +47,7 @@ Board &Board::operator=(const Board &other) {
         std::copy(std::begin(other.board), std::end(other.board), std::begin(board));
         std::copy(std::begin(other.piece_bb), std::end(other.piece_bb), std::begin(piece_bb));
 
-        history = other.history;
+        states = other.states;
         accums = other.accums;
     }
 
@@ -62,8 +62,8 @@ void Board::set_fen(const std::string &fen, bool update_nnue) {
     for(auto &i : board)
         i = NO_PIECE;
 
-    history[0] = StateInfo();
-    StateInfo &info = history[0];
+    states[0] = StateInfo();
+    StateInfo &info = states[0];
 
     std::vector<std::string> fen_parts = split(fen, ' ');
     if(fen_parts.size() != 6) {
@@ -134,11 +134,11 @@ void Board::print() const {
 
     std::cout << "   a   b   c   d   e   f   g   h\n";
     std::cout << "\nFen: " << get_fen() << std::endl;
-    std::cout << "Hash key: " << std::hex << history[curr_ply].hash << std::dec << "\n\n";
+    std::cout << "Hash key: " << std::hex << states[curr_ply].hash << std::dec << "\n\n";
 }
 
 std::string Board::get_fen() const {
-    const StateInfo &info = history[curr_ply];
+    const StateInfo &info = states[curr_ply];
     std::ostringstream fen;
 
     for(int i = 56; i >= 0; i -= 8) {
@@ -202,7 +202,7 @@ void Board::update_accums() {
 }
 
 U64 Board::key_after(Move m) const {
-    U64 new_hash = history[curr_ply].hash;
+    U64 new_hash = states[curr_ply].hash;
 
     if(!m)
         return new_hash ^ Zobrist::side;
@@ -264,11 +264,11 @@ bool Board::is_legal(const Move &m) const {
         return !(attackers_to(~stm, to, occupancy() ^ square_bb(from)));
 
     // only legal if not pinned or moving in the direction of the pin
-    return !(history[curr_ply].blockers[stm] & square_bb(from)) || (line(from, to) & square_bb(ksq));
+    return !(states[curr_ply].blockers[stm] & square_bb(from)) || (line(from, to) & square_bb(ksq));
 }
 
 bool Board::is_pseudolegal(const Move &m) const {
-    const StateInfo &info = history[curr_ply];
+    const StateInfo &info = states[curr_ply];
 
     const Square from = m.from();
     const Square to = m.to();
@@ -394,8 +394,8 @@ void Board::make_move(const Move &m, bool update_nnue) {
     assert(piece_type(captured) != KING);
 
     curr_ply++;
-    history[curr_ply] = StateInfo(history[curr_ply - 1]);
-    StateInfo &info = history[curr_ply];
+    states[curr_ply] = StateInfo(states[curr_ply - 1]);
+    StateInfo &info = states[curr_ply];
 
     info.half_move_clock++;
     info.plies_from_null++;
@@ -501,7 +501,7 @@ void Board::unmake_move(const Move &m) {
     const MoveType mt = m.type();
     const Square from = m.from();
     const Square to = m.to();
-    const Piece captured = history[curr_ply].captured;
+    const Piece captured = states[curr_ply].captured;
 
     assert(m.is_valid());
     assert(piece_at(to) != NO_PIECE);
@@ -534,8 +534,8 @@ void Board::unmake_move(const Move &m) {
 
 void Board::make_nullmove() {
     curr_ply++;
-    history[curr_ply] = StateInfo(history[curr_ply - 1]);
-    StateInfo &info = history[curr_ply];
+    states[curr_ply] = StateInfo(states[curr_ply - 1]);
+    StateInfo &info = states[curr_ply];
 
     info.half_move_clock++;
     info.plies_from_null = 0;
@@ -559,12 +559,12 @@ void Board::unmake_nullmove() {
 }
 
 bool Board::is_repetition(int ply) const {
-    const StateInfo &info = history[curr_ply];
+    const StateInfo &info = states[curr_ply];
     const int distance = std::min(info.plies_from_null, info.half_move_clock);
 
     int rep = 0;
     for(int i = curr_ply - 4; i >= 0 && i >= curr_ply - distance; i -= 2) {
-        if(history[i].hash == info.hash) {
+        if(states[i].hash == info.hash) {
             if(i > curr_ply - ply)
                 return true;
             rep++;
@@ -582,7 +582,7 @@ bool Board::see(Move &m, int threshold) const {
     if(m.is_prom() || m.type() == EN_PASSANT || m.type() == CASTLING)
         return true;
 
-    const StateInfo &info = history[curr_ply];
+    const StateInfo &info = states[curr_ply];
 
     const Square from = m.from();
     const Square to = m.to();
@@ -664,8 +664,8 @@ bool Board::has_upcoming_repetition(int ply) {
 
     const U64 occ = occupancy();
 
-    const StateInfo &info = history[curr_ply];
-    StateInfo *prev = &history[curr_ply - 1];
+    const StateInfo &info = states[curr_ply];
+    StateInfo *prev = &states[curr_ply - 1];
 
     int distance = std::min(info.half_move_clock, info.plies_from_null);
     for(int i = 3; i <= distance; i += 2) {
@@ -708,7 +708,7 @@ bool Board::has_upcoming_repetition(int ply) {
 // private member
 
 void Board::init_threats() {
-    StateInfo &info = history[curr_ply];
+    StateInfo &info = states[curr_ply];
     Color them = ~stm;
     U64 occ = occupancy() ^ square_bb(king_sq(stm)); // king must be excluded so we don't block the slider attacks
 
@@ -736,7 +736,7 @@ void Board::init_threats() {
 }
 
 void Board::init_slider_blockers() {
-    StateInfo &info = history[curr_ply];
+    StateInfo &info = states[curr_ply];
 
     auto helper = [&](Color c) {
         info.blockers[c] = 0;
