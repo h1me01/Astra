@@ -1,0 +1,9 @@
+.vscode/
+
+build/
+
+misc/
+
+openbench/
+
+CMakeLists.txt
