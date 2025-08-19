@@ -28,7 +28,8 @@ class Board {
 
     bool is_pseudolegal(const Move &m) const;
 
-    bool is_draw() const;
+    bool is_repetition(int ply) const;
+    bool is_draw(int ply) const;
 
     void reset_ply() {
         states[0] = states[curr_ply];
@@ -129,8 +130,16 @@ inline U64 Board::attackers_to(Color c, Square sq, const U64 occ) const {
     return attacks;
 }
 
-// doesn't include stalemate & repetitions
-inline bool Board::is_draw() const {
+inline bool Board::is_repetition(int ply) const {
+    for(int i = 0; i < ply; i++) {
+        if(states[i].hash == states[ply].hash)
+            return true;
+    }
+    return false;
+}
+
+// doesn't include stalemate
+inline bool Board::is_draw(int ply) const {
     int num_pieces = pop_count(occupancy());
     int num_knights = pop_count(get_piecebb(WHITE, KNIGHT) | get_piecebb(BLACK, KNIGHT));
     int num_bishops = pop_count(get_piecebb(WHITE, BISHOP) | get_piecebb(BLACK, BISHOP));
@@ -147,7 +156,7 @@ inline bool Board::is_draw() const {
             return true;
     }
 
-    return states[curr_ply].fmr_counter > 99;
+    return states[curr_ply].fmr_counter > 99 || is_repetition(ply);
 }
 
 inline void Board::put_piece(Piece pc, Square sq) {

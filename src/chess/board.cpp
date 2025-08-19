@@ -150,9 +150,9 @@ std::string Board::get_fen() const {
         << (info.castle_rights.queenside(WHITE) ? "Q" : "")    //
         << (info.castle_rights.kingside(BLACK) ? "k" : "")     //
         << (info.castle_rights.queenside(BLACK) ? "q" : "")    //
-        << (castle_notation_helper(fen) ? " " : "- ")            //
+        << (castle_notation_helper(fen) ? " " : "- ")          //
         << (info.ep_sq == NO_SQUARE ? "-" : SQSTR[info.ep_sq]) //
-        << " " << info.fmr_counter                         //
+        << " " << info.fmr_counter                             //
         << " " << (curr_ply == 0 ? 1 : (curr_ply + 1) / 2);
 
     return fen.str();
@@ -314,6 +314,24 @@ bool Board::is_pseudolegal(const Move &m) const {
     }
 
     return true;
+}
+
+bool Board::is_repetition(int ply) const {
+    const StateInfo &info = states[curr_ply];
+    const int distance = std::min(curr_ply, info.fmr_counter);
+
+    int rep = 0;
+    for(int i = curr_ply - 4; i >= 0 && i >= curr_ply - distance; i -= 2) {
+        if(states[i].hash == info.hash) {
+            if(i > curr_ply - ply)
+                return true;
+            rep++;
+            if(rep == 2)
+                return true;
+        }
+    }
+
+    return false;
 }
 
 void Board::make_move(const Move &m) {
