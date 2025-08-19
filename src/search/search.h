@@ -27,7 +27,7 @@ class Search {
 
     void start(Limits limits);
 
-    Move best_move() const {
+    Move get_best_move() const {
         return pv_table[0][0];
     }
 

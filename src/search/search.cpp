@@ -7,6 +7,7 @@ namespace Search {
 
 void Search::start(Limits limits) {
     this->limits = limits;
+    Move best_move = NO_MOVE;
 
     for(root_depth = 1; root_depth <= MAX_PLY; root_depth++) {
         Score alpha = -VALUE_INFINITE;
@@ -17,8 +18,11 @@ void Search::start(Limits limits) {
         if(is_limit_reached(root_depth))
             break;
 
+        best_move = get_best_move();
         print_uci_info(score);
     }
+
+    std::cout << "bestmove " << best_move << std::endl;
 }
 
 Score Search::negamax(int depth, Score alpha, Score beta) {
