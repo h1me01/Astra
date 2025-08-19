@@ -33,6 +33,12 @@ Score Search::negamax(int depth, Score alpha, Score beta) {
             return 0;
         if(board.is_draw(ply))
             return VALUE_DRAW;
+
+        // mate distance pruning
+        alpha = std::max(alpha, Score(ply - VALUE_MATE));
+        beta = std::min(beta, Score(VALUE_MATE - ply - 1));
+        if(alpha >= beta)
+            return alpha;
     }
 
     if(depth == 0)
