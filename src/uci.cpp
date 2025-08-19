@@ -8,7 +8,7 @@
 namespace UCI {
 
 // helper
-bool isInteger(const std::string &s) {
+bool is_integer(const std::string &s) {
     return !s.empty() && std::all_of(s.begin(), s.end(), ::isdigit);
 }
 
@@ -53,7 +53,7 @@ void Options::set(std::istringstream &is) {
         return;
     }
 
-    if(!isInteger(value)) {
+    if(!is_integer(value)) {
         std::cout << "Invalid value for option " << name << std::endl;
         return;
     }
@@ -89,7 +89,7 @@ void UCI::loop() {
         else if(token == "ucinewgame") {
             // nothing to do here
         } else if(token == "position")
-            updatePosition(is);
+            update_position(is);
         else if(token == "go")
             go(is);
         else if(token == "setoption") {
@@ -104,7 +104,7 @@ void UCI::loop() {
     }
 }
 
-void UCI::updatePosition(std::istringstream &is) {
+void UCI::update_position(std::istringstream &is) {
     std::string token, fen;
 
     is >> token;
@@ -123,6 +123,11 @@ void UCI::updatePosition(std::istringstream &is) {
         if(token == "moves")
             continue;
         board.make_move(get_move(token));
+
+        // if half move clock gets reseted, then we can reset the history
+        // since the last positions should not be considered in the repetition
+        if(board.get_fmr() == 0)
+            board.reset_ply();
     }
 }
 
@@ -168,7 +173,7 @@ void UCI::go(std::istringstream &is) {
 
     if(move_time != 0)
         limits.time.maximum = move_time;
-    
+
     // start search
     Search::Search search{board};
     search.start(limits);
