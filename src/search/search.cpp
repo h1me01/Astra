@@ -5,23 +5,27 @@
 
 namespace Search {
 
-void Search::start() {
+void Search::start(Limits limits) {
+    this->limits = limits;
+
     for(root_depth = 1; root_depth <= MAX_PLY; root_depth++) {
         Score alpha = -VALUE_INFINITE;
         Score beta = VALUE_INFINITE;
 
         Score score = negamax(root_depth, alpha, beta);
 
-        std::cout << "Depth: " << root_depth << ", Score: " << score << ", PV: " << best_move();
-        for(int i = 1; i < pv_table[0].length; i++) {
-            std::cout << " " << pv_table[0][i];
-        }
-        std::cout << std::endl;
+        if(is_limit_reached(root_depth))
+            break;
+
+        print_uci_info(score);
     }
 }
 
 Score Search::negamax(int depth, Score alpha, Score beta) {
     pv_table[ply].length = ply;
+
+    if(depth != root_depth && is_limit_reached(depth))
+        return 0;
 
     if(depth == 0)
         return Eval::evaluate(board);
@@ -35,6 +39,9 @@ Score Search::negamax(int depth, Score alpha, Score beta) {
         make_move(move);
         Score score = -negamax(depth - 1, -beta, -alpha);
         unmake_move(move);
+
+        if(is_limit_reached(depth))
+            return 0;
 
         if(score > best_score) {
             best_score = score;
@@ -61,6 +68,43 @@ void Search::update_pv(const Move &move) {
     for(int nply = ply + 1; nply < pv_table[ply + 1].length; nply++)
         pv_table[ply][nply] = pv_table[ply + 1][nply];
     pv_table[ply].length = pv_table[ply + 1].length;
+}
+
+void Search::print_uci_info(Score score) const {
+    const int64_t elapsed_time = tm.elapsed_time();
+    const PVLine &pv_line = pv_table[0];
+
+    std::cout << "info depth " << root_depth //
+              << " score ";                  //
+
+    if(std::abs(score) >= VALUE_MATE_IN_MAX_PLY)
+        std::cout << "mate " << (VALUE_MATE - std::abs(score) + 1) / 2 * (score > 0 ? 1 : -1);
+    else
+        std::cout << "cp " << score;
+
+    std::cout << " nodes " << total_nodes                           //
+              << " nps " << total_nodes * 1000 / (elapsed_time + 1) //
+              << " time " << elapsed_time                           //
+              << " pv " << pv_line[0];
+
+    // print rest of the pv
+    for(int i = 1; i < pv_line.length; i++)
+        std::cout << " " << pv_line[i];
+
+    std::cout << std::endl;
+}
+
+bool Search::is_limit_reached(int depth) const {
+    if(limits.infinite)
+        return false;
+    if(depth > limits.depth)
+        return true;
+    if(limits.nodes != 0 && total_nodes >= limits.nodes)
+        return true;
+    if(limits.time.maximum != 0 && tm.elapsed_time() >= limits.time.maximum)
+        return true;
+
+    return false;
 }
 
 } // namespace Search

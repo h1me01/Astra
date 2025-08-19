@@ -1,16 +1,14 @@
 #include "chess/board.h"
 #include "eval/eval.h"
-#include "search/search.h"
-
-using namespace Chess;
+#include "uci.h"
 
 int main() {
-    init_lookup_tables();
+    Chess::init_lookup_tables();
     Zobrist::init();
     Eval::init_tables();
 
-    Search::Search search;
-    search.start();
+    UCI::UCI uci;
+    uci.loop();
 
     return 0;
 }

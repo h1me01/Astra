@@ -2,6 +2,8 @@
 
 #include "../chess/board.h"
 
+#include "timeman.h"
+
 using namespace Chess;
 
 namespace Search {
@@ -21,9 +23,9 @@ struct PVLine {
 
 class Search {
   public:
-    Search() : ply{0}, nodes_count{0}, board{STARTING_FEN} {}
+    Search(Board &board) : ply{0}, total_nodes{0}, board{board} {}
 
-    void start();
+    void start(Limits limits);
 
     Move best_move() const {
         return pv_table[0][0];
@@ -32,9 +34,12 @@ class Search {
   private:
     int root_depth;
     int ply;
-    U64 nodes_count;
+    U64 total_nodes;
 
-    Board board;
+    Limits limits;
+    TimeMan tm;
+
+    Board &board;
     PVLine pv_table[MAX_PLY + 1];
 
     void make_move(const Move &m) {
@@ -48,6 +53,10 @@ class Search {
     }
 
     void update_pv(const Move &move);
+
+    bool is_limit_reached(int depth) const;
+
+    void print_uci_info(Score score) const;
 
     Score negamax(int depth, Score alpha, Score beta);
 };
