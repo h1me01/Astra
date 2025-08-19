@@ -1,5 +1,6 @@
 #include "chess/board.h"
 #include "eval/eval.h"
+#include "search/search.h"
 
 using namespace Chess;
 
@@ -8,8 +9,8 @@ int main() {
     Zobrist::init();
     Eval::init_tables();
 
-    Board board(STARTING_FEN);
-    std::cout << Eval::evaluate(board) << std::endl;
+    Search::Search search;
+    search.start();
 
     return 0;
 }
