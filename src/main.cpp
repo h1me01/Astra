@@ -7,6 +7,8 @@ int main() {
     Zobrist::init();
     Eval::init_tables();
 
+    Board board(STARTING_FEN);
+
     UCI::UCI uci;
     uci.loop();
 

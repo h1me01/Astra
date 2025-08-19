@@ -28,11 +28,13 @@ void Search::start(Limits limits) {
 Score Search::negamax(int depth, Score alpha, Score beta) {
     pv_table[ply].length = ply;
 
-    if(depth != root_depth && is_limit_reached(depth))
-        return 0;
+    if(depth != root_depth) {
+        if(is_limit_reached(depth))
+            return 0;
+    }
 
     if(depth == 0)
-        return Eval::evaluate(board);
+        return quiescence(alpha, beta);
 
     Score best_score = -VALUE_INFINITE;
 
@@ -40,6 +42,8 @@ Score Search::negamax(int depth, Score alpha, Score beta) {
     legal_moves.gen<LEGALS>(board);
 
     for(const Move &move : legal_moves) {
+        total_nodes++;
+
         make_move(move);
         Score score = -negamax(depth - 1, -beta, -alpha);
         unmake_move(move);
@@ -63,6 +67,46 @@ Score Search::negamax(int depth, Score alpha, Score beta) {
     // check for mate/stalemate
     if(!legal_moves.size())
         return board.in_check() ? ply - VALUE_MATE : VALUE_DRAW;
+
+    return best_score;
+}
+
+Score Search::quiescence(Score alpha, Score beta) {
+    if(is_limit_reached(0))
+        return 0;
+
+    Score best_score = Eval::evaluate(board);
+    if(best_score >= beta)
+        return best_score;
+    if(best_score > alpha)
+        alpha = best_score;
+
+    MoveList legal_moves;
+    legal_moves.gen<NOISY>(board);
+
+    for(const Move &move : legal_moves) {
+        if(!board.is_legal(move))
+            continue;
+
+        total_nodes++;
+
+        make_move(move);
+        Score score = -quiescence(-beta, -alpha);
+        unmake_move(move);
+
+        if(is_limit_reached(0))
+            return 0;
+
+        if(score > best_score) {
+            best_score = score;
+
+            if(score > alpha)
+                alpha = score;
+
+            if(alpha >= beta)
+                break; // cut-off
+        }
+    }
 
     return best_score;
 }

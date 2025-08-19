@@ -59,6 +59,7 @@ class Search {
     void print_uci_info(Score score) const;
 
     Score negamax(int depth, Score alpha, Score beta);
+    Score quiescence(Score alpha, Score beta);
 };
 
 } // namespace Search
