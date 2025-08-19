@@ -31,6 +31,8 @@ Score Search::negamax(int depth, Score alpha, Score beta) {
     if(depth != root_depth) {
         if(is_limit_reached(depth))
             return 0;
+        if(board.is_draw(ply))
+            return VALUE_DRAW;
     }
 
     if(depth == 0)
@@ -74,6 +76,9 @@ Score Search::negamax(int depth, Score alpha, Score beta) {
 Score Search::quiescence(Score alpha, Score beta) {
     if(is_limit_reached(0))
         return 0;
+
+    if(board.is_draw(ply))
+        return VALUE_DRAW;
 
     Score best_score = Eval::evaluate(board);
     if(best_score >= beta)

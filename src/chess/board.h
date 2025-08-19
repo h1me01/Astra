@@ -130,14 +130,6 @@ inline U64 Board::attackers_to(Color c, Square sq, const U64 occ) const {
     return attacks;
 }
 
-inline bool Board::is_repetition(int ply) const {
-    for(int i = 0; i < ply; i++) {
-        if(states[i].hash == states[ply].hash)
-            return true;
-    }
-    return false;
-}
-
 // doesn't include stalemate
 inline bool Board::is_draw(int ply) const {
     int num_pieces = pop_count(occupancy());
