@@ -8,9 +8,23 @@
 namespace Chess {
 
 using U64 = uint64_t;
+using Score = int16_t;
 
 const std::string PIECE_STR = "PNBRQKpnbrqk.";
 const std::string STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+
+constexpr int MAX_PLY = 128;
+
+constexpr Score VALUE_DRAW = 0;
+constexpr Score VALUE_NONE = 32002;
+constexpr Score VALUE_INFINITE = 32001;
+
+constexpr Score VALUE_MATE = 32000;
+constexpr Score VALUE_MATE_IN_MAX_PLY = VALUE_MATE - MAX_PLY;
+
+constexpr Score VALUE_TB = VALUE_MATE_IN_MAX_PLY - 1;
+constexpr Score VALUE_TB_WIN_IN_MAX_PLY = VALUE_TB - MAX_PLY;
+constexpr Score VALUE_TB_LOSS_IN_MAX_PLY = -VALUE_TB_WIN_IN_MAX_PLY;
 
 constexpr int NUM_COLORS = 2;
 enum Color {
