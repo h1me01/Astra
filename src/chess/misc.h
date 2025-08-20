@@ -34,6 +34,10 @@ constexpr bool valid_piece(Piece pc) {
     return pc >= WHITE_PAWN && pc <= BLACK_KING;
 }
 
+constexpr bool valid_score(Score score) {
+    return score != VALUE_NONE;
+}
+
 // gets opposite color
 constexpr Color operator~(Color c) {
     return Color(c ^ BLACK);
@@ -106,6 +110,20 @@ constexpr Square rel_sq(Color c, Square sq) {
 constexpr Rank rel_rank(Color c, Rank r) {
     assert(r >= RANK_1 && r <= RANK_8);
     return c == WHITE ? r : Rank(RANK_8 - r);
+}
+
+inline bool is_loss(const Score score) {
+    assert(valid_score(score));
+    return score <= VALUE_TB_LOSS_IN_MAX_PLY;
+}
+
+inline bool is_win(const Score score) {
+    assert(valid_score(score));
+    return score >= VALUE_TB_WIN_IN_MAX_PLY;
+}
+
+inline bool is_decisive(const Score score) {
+    return is_loss(score) || is_win(score);
 }
 
 } // namespace Chess

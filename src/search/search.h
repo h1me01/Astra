@@ -3,6 +3,7 @@
 #include "../chess/board.h"
 
 #include "timeman.h"
+#include "tt.h"
 
 using namespace Chess;
 

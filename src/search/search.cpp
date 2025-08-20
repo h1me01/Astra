@@ -7,7 +7,11 @@ namespace Search {
 
 void Search::start(Limits limits) {
     this->limits = limits;
+    ply = 0;
+
     Move best_move = NO_MOVE;
+
+    tt.increment();
 
     for(root_depth = 1; root_depth <= MAX_PLY; root_depth++) {
         Score alpha = -VALUE_INFINITE;
@@ -28,7 +32,14 @@ void Search::start(Limits limits) {
 Score Search::negamax(int depth, Score alpha, Score beta) {
     pv_table[ply].length = ply;
 
-    if(depth != root_depth) {
+    const bool root_node = ply == 0;
+    const Score old_alpha = alpha;
+    const U64 hash = board.get_hash();
+
+    Score best_score = -VALUE_INFINITE;
+    Move best_move = NO_MOVE;
+
+    if(!root_node) {
         if(is_limit_reached(depth))
             return 0;
         if(board.is_draw(ply))
@@ -44,7 +55,19 @@ Score Search::negamax(int depth, Score alpha, Score beta) {
     if(depth == 0)
         return quiescence(alpha, beta);
 
-    Score best_score = -VALUE_INFINITE;
+    // look up in transposition table
+    bool tt_hit = false;
+    TTEntry *ent = tt.lookup(hash, &tt_hit);
+    Score tt_score = ent->get_score(ply);
+
+    if(!root_node                                    //
+       && tt_hit                                     //
+       && ent->depth >= depth                        //
+       && valid_score(tt_score)                      //
+       && valid_tt_score(tt_score, beta, ent->bound) //
+    ) {
+        return tt_score;
+    }
 
     MoveList legal_moves;
     legal_moves.gen<LEGALS>(board);
@@ -64,6 +87,7 @@ Score Search::negamax(int depth, Score alpha, Score beta) {
 
             if(score > alpha) {
                 alpha = score;
+                best_move = move;
                 update_pv(move);
             }
 
@@ -76,6 +100,24 @@ Score Search::negamax(int depth, Score alpha, Score beta) {
     if(!legal_moves.size())
         return board.in_check() ? ply - VALUE_MATE : VALUE_DRAW;
 
+    // store in transposition table
+    Bound bound = EXACT_BOUND;
+    if(best_score >= beta)
+        bound = LOWER_BOUND;
+    else if(best_score <= old_alpha)
+        bound = UPPER_BOUND;
+
+    if(best_move.is_valid()) {
+        ent->store(     //
+            hash,       //
+            best_move,  //
+            best_score, //
+            bound,      //
+            depth,      //
+            ply         //
+        );
+    }
+
     return best_score;
 }
 
@@ -86,11 +128,23 @@ Score Search::quiescence(Score alpha, Score beta) {
     if(board.is_draw(ply))
         return VALUE_DRAW;
 
+    const U64 hash = board.get_hash();
+    Move best_move = NO_MOVE;
+
     Score best_score = Eval::evaluate(board);
     if(best_score >= beta)
         return best_score;
     if(best_score > alpha)
         alpha = best_score;
+
+    // look up in transposition table
+    bool tt_hit = false;
+    TTEntry *ent = tt.lookup(hash, &tt_hit);
+    Score tt_score = ent->get_score(ply);
+
+    if(tt_hit && valid_score(tt_score) && valid_tt_score(tt_score, beta, ent->bound)) {
+        return tt_score;
+    }
 
     MoveList legal_moves;
     legal_moves.gen<NOISY>(board);
@@ -111,13 +165,26 @@ Score Search::quiescence(Score alpha, Score beta) {
         if(score > best_score) {
             best_score = score;
 
-            if(score > alpha)
+            if(score > alpha) {
                 alpha = score;
+                best_move = move;
+            }
 
             if(alpha >= beta)
                 break; // cut-off
         }
     }
+
+    Bound bound = (best_score >= beta) ? LOWER_BOUND : UPPER_BOUND;
+
+    ent->store(     //
+        hash,       //
+        best_move,  //
+        best_score, //
+        bound,      //
+        0,          // depth
+        ply         //
+    );
 
     return best_score;
 }
@@ -143,6 +210,7 @@ void Search::print_uci_info(Score score) const {
 
     std::cout << " nodes " << total_nodes                           //
               << " nps " << total_nodes * 1000 / (elapsed_time + 1) //
+              << " hashfull " << tt.hashfull()                      //
               << " time " << elapsed_time                           //
               << " pv " << pv_line[0];
 

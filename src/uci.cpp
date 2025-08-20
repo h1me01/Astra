@@ -29,7 +29,9 @@ void Options::print() const {
     }
 }
 
-void Options::apply() {}
+void Options::apply() {
+    Search::tt.init(std::stoi(get("Hash")));
+}
 
 void Options::set(std::istringstream &is) {
     std::vector<std::string> tokens = split(is.str(), ' ');
@@ -69,6 +71,8 @@ void Options::set(std::istringstream &is) {
 UCI::UCI() : board(STARTING_FEN) {
     std::cout << "Astra by Semih Oezalp" << std::endl;
 
+    options.add("Hash", Option("spin", "16", "16", 1, 8192));
+
     options.apply();
 }
 
@@ -87,7 +91,7 @@ void UCI::loop() {
         } else if(token == "isready")
             std::cout << "readyok" << std::endl;
         else if(token == "ucinewgame") {
-            // nothing to do here
+            Search::tt.clear();
         } else if(token == "position")
             update_position(is);
         else if(token == "go")
