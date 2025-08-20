@@ -1,3 +1,6 @@
+#include <cmath>
+#include <algorithm>
+
 #include "../chess/movegen.h"
 #include "../eval/eval.h"
 
@@ -5,6 +8,18 @@
 #include "search.h"
 
 namespace Search {
+
+int REDUCTIONS[MAX_PLY][MAX_MOVES];
+
+void init_reductions() {
+    REDUCTIONS[0][0] = 0;
+
+    for(int depth = 1; depth < MAX_PLY; depth++)
+        for(int moves = 1; moves < MAX_MOVES; moves++)
+            REDUCTIONS[depth][moves] = 1 + log(depth) * log(moves) / 1.75;
+}
+
+// Search
 
 void Search::start(Limits limits) {
     this->limits = limits;
@@ -23,7 +38,7 @@ void Search::start(Limits limits) {
         Score alpha = -VALUE_INFINITE;
         Score beta = VALUE_INFINITE;
 
-        Score score = negamax(root_depth, alpha, beta, s);
+        Score score = negamax<NodeType::ROOT>(root_depth, alpha, beta, s);
 
         if(is_limit_reached(root_depth))
             break;
@@ -35,12 +50,19 @@ void Search::start(Limits limits) {
     std::cout << "bestmove " << best_move << std::endl;
 }
 
+template <NodeType nt> //
 Score Search::negamax(int depth, Score alpha, Score beta, Stack *s) {
+
+    constexpr bool root_node = (nt == NodeType::ROOT);
+    constexpr bool pv_node = (nt != NodeType::NON_PV);
+
+    assert(s->ply >= 0);
+    assert(pv_node || (alpha == beta - 1));
     assert(valid_score(alpha + 1) && valid_score(beta - 1) && alpha < beta);
 
-    pv_table[s->ply].length = s->ply;
+    if(pv_node)
+        pv_table[s->ply].length = s->ply;
 
-    const bool root_node = s->ply == 0;
     const Score old_alpha = alpha;
     const U64 hash = board.get_hash();
 
@@ -63,14 +85,14 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *s) {
     }
 
     if(depth == 0)
-        return quiescence(alpha, beta, s);
+        return quiescence<nt>(alpha, beta, s);
 
     // look up in transposition table
     bool tt_hit = false;
     TTEntry *ent = tt.lookup(hash, &tt_hit);
     Score tt_score = ent->get_score(s->ply);
 
-    if(!root_node                                    //
+    if(!pv_node                                      //
        && tt_hit                                     //
        && ent->depth >= depth                        //
        && valid_score(tt_score)                      //
@@ -100,8 +122,36 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *s) {
         else if(q_count < 64)
             q_moves[q_count++] = move;
 
+        int new_depth = depth - 1;
+
         board.make_move(move);
-        Score score = -negamax(depth - 1, -beta, -alpha, s + 1);
+
+        Score score = VALUE_NONE;
+
+        // late move reductions
+        if(depth >= 2 && made_moves >= 3 && (!pv_node || !move.is_cap())) {
+            int r = REDUCTIONS[depth][made_moves];
+
+            r -= move.is_cap();
+
+            r -= pv_node;
+
+            r -= board.in_check();
+
+            const int lmr_depth = std::clamp(new_depth - r, 1, new_depth + 1);
+
+            score = -negamax<NodeType::NON_PV>(lmr_depth, -alpha - 1, -alpha, s + 1);
+
+            if(score > alpha && lmr_depth < new_depth)
+                score = -negamax<NodeType::NON_PV>(new_depth, -alpha - 1, -alpha, s + 1);
+        } else if(!pv_node || made_moves > 1) {
+            score = -negamax<NodeType::NON_PV>(new_depth, -alpha - 1, -alpha, s + 1);
+        }
+
+        // principal variation search
+        if(pv_node && (score > alpha || made_moves == 1))
+            score = -negamax<NodeType::PV>(new_depth, -beta, -alpha, s + 1);
+
         board.unmake_move(move);
 
         assert(valid_score(score));
@@ -115,7 +165,9 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *s) {
             if(score > alpha) {
                 alpha = score;
                 best_move = move;
-                update_pv(move, s->ply);
+
+                if(pv_node)
+                    update_pv(move, s->ply);
             }
 
             if(alpha >= beta) {
@@ -163,7 +215,13 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *s) {
     return best_score;
 }
 
+template <NodeType nt> //
 Score Search::quiescence(Score alpha, Score beta, Stack *s) {
+
+    constexpr bool pv_node = (nt != NodeType::NON_PV);
+
+    assert(s->ply >= 0);
+    assert(pv_node || (alpha == beta - 1));
     assert(valid_score(alpha + 1) && valid_score(beta - 1) && alpha < beta);
 
     if(is_limit_reached(0))
@@ -186,7 +244,11 @@ Score Search::quiescence(Score alpha, Score beta, Stack *s) {
     TTEntry *ent = tt.lookup(hash, &tt_hit);
     Score tt_score = ent->get_score(s->ply);
 
-    if(tt_hit && valid_score(tt_score) && valid_tt_score(tt_score, beta, ent->bound)) {
+    if(!pv_node                                      //
+       && tt_hit                                     //
+       && valid_score(tt_score)                      //
+       && valid_tt_score(tt_score, beta, ent->bound) //
+    ) {
         return tt_score;
     }
 
@@ -204,7 +266,7 @@ Score Search::quiescence(Score alpha, Score beta, Stack *s) {
         s->move = move;
 
         board.make_move(move);
-        Score score = -quiescence(-beta, -alpha, s + 1);
+        Score score = -quiescence<nt>(-beta, -alpha, s + 1);
         board.unmake_move(move);
 
         assert(valid_score(score));

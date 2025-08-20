@@ -2,14 +2,22 @@
 
 #include "../chess/board.h"
 
+#include "history.h"
 #include "stack.h"
 #include "timeman.h"
 #include "tt.h"
-#include "history.h"
 
 using namespace Chess;
 
 namespace Search {
+
+void init_reductions();
+
+enum class NodeType { //
+    ROOT,
+    PV,
+    NON_PV
+};
 
 struct PVLine {
     Move pv[MAX_PLY + 1];
@@ -51,8 +59,11 @@ class Search {
 
     void print_uci_info(Score score) const;
 
-    Score negamax(int depth, Score alpha, Score beta, Stack* s);
-    Score quiescence(Score alpha, Score beta, Stack* s);
+    template <NodeType nt> //
+    Score negamax(int depth, Score alpha, Score beta, Stack *s);
+
+    template <NodeType nt> //
+    Score quiescence(Score alpha, Score beta, Stack *s);
 };
 
 } // namespace Search
