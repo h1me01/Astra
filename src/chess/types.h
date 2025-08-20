@@ -1,9 +1,9 @@
 #pragma once
 
+#include <cassert>
 #include <cstdint>
 #include <iostream>
 #include <string>
-#include <cassert>
 
 namespace Chess {
 
@@ -12,6 +12,8 @@ using Score = int16_t;
 
 const std::string PIECE_STR = "PNBRQKpnbrqk.";
 const std::string STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+
+const int PIECE_VALUES[] = {100, 325, 325, 500, 900, 0, 0};
 
 constexpr int MAX_PLY = 128;
 
@@ -117,14 +119,14 @@ class Move {
 
   public:
     // default move (a1a1)
-    Move() : data(0) {}
+    Move() : data(0), score(0) {}
 
-    explicit Move(uint16_t m) : data(m) {}
+    explicit Move(uint16_t m) : data(m), score(0) {}
 
-    Move(const Move &other) : data(other.data) {}
+    Move(const Move &other) : data(other.data), score(other.score) {}
 
     Move(Square from, Square to, MoveType mt) //
-        : data((mt << 12) | (to << 6) | from) {}
+        : data((mt << 12) | (to << 6) | from), score(0) {}
 
     Square from() const {
         return Square(data & 0x3f);
@@ -146,6 +148,14 @@ class Move {
 
     uint16_t raw() const {
         return data;
+    }
+
+    void set_score(int score) {
+        this->score = score;
+    }
+
+    int get_score() const {
+        return score;
     }
 
     bool operator==(const Move &m) const {
@@ -184,6 +194,7 @@ class Move {
     // next 6 bits represent the to square
     // last 4 bits represent the move type
     uint16_t data;
+    int score;
 };
 
 const Move NO_MOVE{};

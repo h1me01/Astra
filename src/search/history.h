@@ -13,13 +13,13 @@ int history_bonus(int depth);
 class History {
   public:
     void update(const Board &board,    //
-                const Move &move,            //
-                Stack *ss,             //
+                const Move &move,      //
+                Stack *s,              //
                 Move *q_moves, int qc, //
                 Move *c_moves, int cc, //
                 int depth);
 
-    void update_hh(Color c, const Move& move, int bonus);
+    void update_hh(Color c, const Move &move, int bonus);
     void update_nh(const Board &board, const Move &move, int bonus);
 
     Move get_counter(Move move) const;

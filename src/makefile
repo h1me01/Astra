@@ -22,13 +22,15 @@ CHESS_SRC := chess/bitboard.cpp \
              chess/board.cpp \
              chess/misc.cpp \
              chess/perft.cpp \
-             chess/zobrist.cpp 
+             chess/zobrist.cpp \
+             chess/see.cpp
 
 EVAL_SRC := eval/eval.cpp 
 
 SEARCH_SRC := search/search.cpp \
               search/tt.cpp \
-              search/history.cpp 
+              search/history.cpp \
+              search/movepicker.cpp 
 
 MAIN_SRC := main.cpp \
             uci.cpp

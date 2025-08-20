@@ -1,6 +1,7 @@
 #include "../chess/movegen.h"
 #include "../eval/eval.h"
 
+#include "movepicker.h"
 #include "search.h"
 
 namespace Search {
@@ -35,6 +36,8 @@ void Search::start(Limits limits) {
 }
 
 Score Search::negamax(int depth, Score alpha, Score beta, Stack *s) {
+    assert(valid_score(alpha + 1) && valid_score(beta - 1) && alpha < beta);
+
     pv_table[s->ply].length = s->ply;
 
     const bool root_node = s->ply == 0;
@@ -76,14 +79,18 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *s) {
         return tt_score;
     }
 
-    MoveList legal_moves;
-    legal_moves.gen<LEGALS>(board);
+    MovePicker mp(N_SEARCH, board, history, s, ent->move);
+    Move move = NO_MOVE;
 
-    int q_count = 0, c_count = 0;
+    int made_moves = 0, q_count = 0, c_count = 0;
 
     Move q_moves[64], c_moves[64];
 
-    for(const Move &move : legal_moves) {
+    while((move = mp.next()) != NO_MOVE) {
+        if(!board.is_legal(move))
+            continue;
+
+        made_moves++;
         total_nodes++;
 
         s->move = move;
@@ -96,6 +103,8 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *s) {
         board.make_move(move);
         Score score = -negamax(depth - 1, -beta, -alpha, s + 1);
         board.unmake_move(move);
+
+        assert(valid_score(score));
 
         if(is_limit_reached(depth))
             return 0;
@@ -124,8 +133,12 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *s) {
     }
 
     // check for mate/stalemate
-    if(!legal_moves.size())
-        return board.in_check() ? s->ply - VALUE_MATE : VALUE_DRAW;
+    if(made_moves == 0) {
+        if(board.in_check())
+            return s->ply - VALUE_MATE;
+        else
+            return VALUE_DRAW;
+    }
 
     // store in transposition table
     Bound bound = EXACT_BOUND;
@@ -145,10 +158,14 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *s) {
         );
     }
 
+    assert(valid_score(best_score));
+
     return best_score;
 }
 
 Score Search::quiescence(Score alpha, Score beta, Stack *s) {
+    assert(valid_score(alpha + 1) && valid_score(beta - 1) && alpha < beta);
+
     if(is_limit_reached(0))
         return 0;
 
@@ -173,13 +190,15 @@ Score Search::quiescence(Score alpha, Score beta, Stack *s) {
         return tt_score;
     }
 
-    MoveList legal_moves;
-    legal_moves.gen<NOISY>(board);
+    MovePicker mp(Q_SEARCH, board, history, s, ent->move);
+    Move move = NO_MOVE;
 
-    for(const Move &move : legal_moves) {
+    int made_moves = 0;
+    while((move = mp.next()) != NO_MOVE) {
         if(!board.is_legal(move))
             continue;
 
+        made_moves++;
         total_nodes++;
 
         s->move = move;
@@ -187,6 +206,8 @@ Score Search::quiescence(Score alpha, Score beta, Stack *s) {
         board.make_move(move);
         Score score = -quiescence(-beta, -alpha, s + 1);
         board.unmake_move(move);
+
+        assert(valid_score(score));
 
         if(is_limit_reached(0))
             return 0;
@@ -202,7 +223,14 @@ Score Search::quiescence(Score alpha, Score beta, Stack *s) {
             if(alpha >= beta)
                 break; // cut-off
         }
+
+        // if we are not losing after being in check, it is safe to skip all quiet moves
+        if(!is_loss(best_score))
+            mp.skip_quiets();
     }
+
+    if(board.in_check() && made_moves == 0)
+        return s->ply - VALUE_MATE;
 
     Bound bound = (best_score >= beta) ? LOWER_BOUND : UPPER_BOUND;
 
@@ -214,6 +242,8 @@ Score Search::quiescence(Score alpha, Score beta, Stack *s) {
         0,          // depth
         s->ply      //
     );
+
+    assert(valid_score(best_score));
 
     return best_score;
 }

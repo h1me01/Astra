@@ -12,21 +12,21 @@ int adjusted_bonus(int value, int bonus) {
 
 // History
 
-void History::update(const Board &board,    //
-                     const Move &best, Stack *ss, //
-                     Move *q_moves, int qc, //
-                     Move *c_moves, int cc, //
-                     int depth              //
+void History::update(const Board &board,         //
+                     const Move &best, Stack *s, //
+                     Move *q_moves, int qc,      //
+                     Move *c_moves, int cc,      //
+                     int depth                   //
 ) {
     Color stm = board.get_stm();
     int bonus = history_bonus(depth);
 
     if(best.is_quiet()) {
-        Move prev_move = (ss - 1)->move;
+        Move prev_move = (s - 1)->move;
         if(prev_move.is_valid())
             counters[prev_move.from()][prev_move.to()] = best;
 
-        ss->killer = best;
+        s->killer = best;
 
         // idea from ethereal
         // only update quiet history if best move was important
@@ -54,7 +54,7 @@ void History::update(const Board &board,    //
     }
 }
 
-void History::update_hh(Color c, const Move& move, int bonus) {
+void History::update_hh(Color c, const Move &move, int bonus) {
     assert(move.is_valid());
     int16_t &value = hh[c][move.from()][move.to()];
     value += adjusted_bonus(value, bonus);

@@ -25,11 +25,12 @@ class Board {
     }
 
     bool is_legal(const Move &m) const;
-
     bool is_pseudolegal(const Move &m) const;
 
     bool is_repetition(int ply) const;
     bool is_draw(int ply) const;
+
+    bool see(Move &m, int threshold) const;
 
     void reset_ply() {
         states[0] = states[curr_ply];
