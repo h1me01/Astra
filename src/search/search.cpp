@@ -7,9 +7,14 @@ namespace Search {
 
 void Search::start(Limits limits) {
     this->limits = limits;
-    ply = 0;
 
     Move best_move = NO_MOVE;
+
+    // init stack
+    Stack stack[MAX_PLY + 1];
+    Stack *s = &stack[0];
+    for(int i = 0; i < MAX_PLY; i++)
+        stack[i].ply = i;
 
     tt.increment();
 
@@ -17,7 +22,7 @@ void Search::start(Limits limits) {
         Score alpha = -VALUE_INFINITE;
         Score beta = VALUE_INFINITE;
 
-        Score score = negamax(root_depth, alpha, beta);
+        Score score = negamax(root_depth, alpha, beta, s);
 
         if(is_limit_reached(root_depth))
             break;
@@ -29,36 +34,38 @@ void Search::start(Limits limits) {
     std::cout << "bestmove " << best_move << std::endl;
 }
 
-Score Search::negamax(int depth, Score alpha, Score beta) {
-    pv_table[ply].length = ply;
+Score Search::negamax(int depth, Score alpha, Score beta, Stack *s) {
+    pv_table[s->ply].length = s->ply;
 
-    const bool root_node = ply == 0;
+    const bool root_node = s->ply == 0;
     const Score old_alpha = alpha;
     const U64 hash = board.get_hash();
 
     Score best_score = -VALUE_INFINITE;
     Move best_move = NO_MOVE;
 
+    (s + 1)->killer = NO_MOVE;
+
     if(!root_node) {
         if(is_limit_reached(depth))
             return 0;
-        if(board.is_draw(ply))
+        if(board.is_draw(s->ply))
             return VALUE_DRAW;
 
         // mate distance pruning
-        alpha = std::max(alpha, Score(ply - VALUE_MATE));
-        beta = std::min(beta, Score(VALUE_MATE - ply - 1));
+        alpha = std::max(alpha, Score(s->ply - VALUE_MATE));
+        beta = std::min(beta, Score(VALUE_MATE - s->ply - 1));
         if(alpha >= beta)
             return alpha;
     }
 
     if(depth == 0)
-        return quiescence(alpha, beta);
+        return quiescence(alpha, beta, s);
 
     // look up in transposition table
     bool tt_hit = false;
     TTEntry *ent = tt.lookup(hash, &tt_hit);
-    Score tt_score = ent->get_score(ply);
+    Score tt_score = ent->get_score(s->ply);
 
     if(!root_node                                    //
        && tt_hit                                     //
@@ -72,12 +79,23 @@ Score Search::negamax(int depth, Score alpha, Score beta) {
     MoveList legal_moves;
     legal_moves.gen<LEGALS>(board);
 
+    int q_count = 0, c_count = 0;
+
+    Move q_moves[64], c_moves[64];
+
     for(const Move &move : legal_moves) {
         total_nodes++;
 
-        make_move(move);
-        Score score = -negamax(depth - 1, -beta, -alpha);
-        unmake_move(move);
+        s->move = move;
+
+        if(move.is_cap() && c_count < 64)
+            c_moves[c_count++] = move;
+        else if(q_count < 64)
+            q_moves[q_count++] = move;
+
+        board.make_move(move);
+        Score score = -negamax(depth - 1, -beta, -alpha, s + 1);
+        board.unmake_move(move);
 
         if(is_limit_reached(depth))
             return 0;
@@ -88,17 +106,26 @@ Score Search::negamax(int depth, Score alpha, Score beta) {
             if(score > alpha) {
                 alpha = score;
                 best_move = move;
-                update_pv(move);
+                update_pv(move, s->ply);
             }
 
-            if(alpha >= beta)
+            if(alpha >= beta) {
+                history.update(       //
+                    board,            //
+                    move, s,          //
+                    q_moves, q_count, //
+                    c_moves, c_count, //
+                    depth             //
+                );
+
                 break; // cut-off
+            }
         }
     }
 
     // check for mate/stalemate
     if(!legal_moves.size())
-        return board.in_check() ? ply - VALUE_MATE : VALUE_DRAW;
+        return board.in_check() ? s->ply - VALUE_MATE : VALUE_DRAW;
 
     // store in transposition table
     Bound bound = EXACT_BOUND;
@@ -114,18 +141,18 @@ Score Search::negamax(int depth, Score alpha, Score beta) {
             best_score, //
             bound,      //
             depth,      //
-            ply         //
+            s->ply      //
         );
     }
 
     return best_score;
 }
 
-Score Search::quiescence(Score alpha, Score beta) {
+Score Search::quiescence(Score alpha, Score beta, Stack *s) {
     if(is_limit_reached(0))
         return 0;
 
-    if(board.is_draw(ply))
+    if(board.is_draw(s->ply))
         return VALUE_DRAW;
 
     const U64 hash = board.get_hash();
@@ -140,7 +167,7 @@ Score Search::quiescence(Score alpha, Score beta) {
     // look up in transposition table
     bool tt_hit = false;
     TTEntry *ent = tt.lookup(hash, &tt_hit);
-    Score tt_score = ent->get_score(ply);
+    Score tt_score = ent->get_score(s->ply);
 
     if(tt_hit && valid_score(tt_score) && valid_tt_score(tt_score, beta, ent->bound)) {
         return tt_score;
@@ -155,9 +182,11 @@ Score Search::quiescence(Score alpha, Score beta) {
 
         total_nodes++;
 
-        make_move(move);
-        Score score = -quiescence(-beta, -alpha);
-        unmake_move(move);
+        s->move = move;
+
+        board.make_move(move);
+        Score score = -quiescence(-beta, -alpha, s + 1);
+        board.unmake_move(move);
 
         if(is_limit_reached(0))
             return 0;
@@ -183,13 +212,13 @@ Score Search::quiescence(Score alpha, Score beta) {
         best_score, //
         bound,      //
         0,          // depth
-        ply         //
+        s->ply      //
     );
 
     return best_score;
 }
 
-void Search::update_pv(const Move &move) {
+void Search::update_pv(const Move &move, int ply) {
     pv_table[ply][ply] = move;
     for(int nply = ply + 1; nply < pv_table[ply + 1].length; nply++)
         pv_table[ply][nply] = pv_table[ply + 1][nply];

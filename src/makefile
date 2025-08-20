@@ -27,7 +27,8 @@ CHESS_SRC := chess/bitboard.cpp \
 EVAL_SRC := eval/eval.cpp 
 
 SEARCH_SRC := search/search.cpp \
-              search/tt.cpp
+              search/tt.cpp \
+              search/history.cpp 
 
 MAIN_SRC := main.cpp \
             uci.cpp

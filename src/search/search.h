@@ -2,8 +2,10 @@
 
 #include "../chess/board.h"
 
+#include "stack.h"
 #include "timeman.h"
 #include "tt.h"
+#include "history.h"
 
 using namespace Chess;
 
@@ -24,7 +26,7 @@ struct PVLine {
 
 class Search {
   public:
-    Search(Board &board) : ply{0}, total_nodes{0}, board{board} {}
+    Search(Board &board) : total_nodes{0}, board{board} {}
 
     void start(Limits limits);
 
@@ -34,33 +36,23 @@ class Search {
 
   private:
     int root_depth;
-    int ply;
     U64 total_nodes;
 
     Limits limits;
     TimeMan tm;
+    History history;
 
     Board &board;
     PVLine pv_table[MAX_PLY + 1];
 
-    void make_move(const Move &m) {
-        board.make_move(m);
-        ply++;
-    }
-
-    void unmake_move(const Move &m) {
-        board.unmake_move(m);
-        ply--;
-    }
-
-    void update_pv(const Move &move);
+    void update_pv(const Move &move, int ply);
 
     bool is_limit_reached(int depth) const;
 
     void print_uci_info(Score score) const;
 
-    Score negamax(int depth, Score alpha, Score beta);
-    Score quiescence(Score alpha, Score beta);
+    Score negamax(int depth, Score alpha, Score beta, Stack* s);
+    Score quiescence(Score alpha, Score beta, Stack* s);
 };
 
 } // namespace Search

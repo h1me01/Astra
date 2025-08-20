@@ -15,7 +15,7 @@ struct Time {
 struct Limits {
     Time time;
     U64 nodes = 0;
-    int depth = MAX_PLY - 1;
+    int depth = MAX_PLY;
     bool infinite = false;
 };
 
