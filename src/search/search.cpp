@@ -227,6 +227,14 @@ movesloop:
             if(q_count > (3 + depth * depth) / (2 - improving))
                 mp.skip_quiets();
 
+            // futility pruning
+            if(!move.is_cap()                                    //
+               && lmr_depth < 9                                  //
+               && s->static_eval + 98 + lmr_depth * 107 <= alpha //
+            ) {
+                mp.skip_quiets();
+            }
+
             // history pruning
             if(!move.is_cap() && lmr_depth < 5 && history_score < -6775 * depth) {
                 mp.skip_quiets();
