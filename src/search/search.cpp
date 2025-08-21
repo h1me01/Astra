@@ -1,8 +1,8 @@
-#include <cmath>
 #include <algorithm>
+#include <cmath>
 
 #include "../chess/movegen.h"
-#include "../eval/eval.h"
+#include "../nnue/nnue.h"
 
 #include "movepicker.h"
 #include "search.h"
@@ -233,7 +233,7 @@ Score Search::quiescence(Score alpha, Score beta, Stack *s) {
     const U64 hash = board.get_hash();
     Move best_move = NO_MOVE;
 
-    Score best_score = Eval::evaluate(board);
+    Score best_score = evaluate();
     if(best_score >= beta)
         return best_score;
     if(best_score > alpha)
@@ -308,6 +308,11 @@ Score Search::quiescence(Score alpha, Score beta, Stack *s) {
     assert(valid_score(best_score));
 
     return best_score;
+}
+
+Score Search::evaluate() const {
+    int eval = NNUE::nnue.forward(board);
+    return std::clamp(eval, int(-VALUE_MATE_IN_MAX_PLY), int(VALUE_MATE_IN_MAX_PLY));
 }
 
 void Search::update_pv(const Move &move, int ply) {

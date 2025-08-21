@@ -1,6 +1,9 @@
 
 ROOT := $(realpath $(dir $(abspath $(lastword $(MAKEFILE_LIST)))))
 
+# Allow custom EVALFILE path via command line
+EVALFILE ?= $(ROOT)/weights.nnue
+
 # Compiler and flags
 CXX := g++
 CXXFLAGS := -s \
@@ -14,24 +17,26 @@ CXXFLAGS := -s \
             -pthread \
             -fno-exceptions \
             -flto \
-            -march=native 
+            -march=native \
+            -DNNUE_PATH=\"$(EVALFILE)\" # nnue path
 LDFLAGS := -lstdc++
 
 # Source files
 CHESS_SRC := chess/bitboard.cpp \
              chess/board.cpp \
+             chess/see.cpp \
              chess/misc.cpp \
              chess/perft.cpp \
-             chess/zobrist.cpp \
-             chess/see.cpp
+             chess/zobrist.cpp
 
-EVAL_SRC := eval/eval.cpp 
+EVAL_SRC := nnue/nnue.cpp \
+            nnue/accum.cpp
 
-SEARCH_SRC := search/search.cpp \
-              search/tt.cpp \
-              search/history.cpp \
-              search/movepicker.cpp 
-
+SEARCH_SRC := search/history.cpp \
+              search/movepicker.cpp \
+              search/search.cpp \
+              search/tt.cpp
+             
 MAIN_SRC := main.cpp \
             uci.cpp
 
@@ -62,4 +67,4 @@ $(TARGET_SUFFIX): $(SRC)
 clean:
 	$(RM) $(TARGET_SUFFIX)
 
-.PHONY: all clean pgo
+.PHONY: all clean

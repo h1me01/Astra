@@ -34,26 +34,29 @@ std::pair<Square, Square> get_castle_rook_squares(Color c, Square to) {
 
 // class board
 
-Board::Board(const std::string &fen) {
-    set_fen(fen);
+Board::Board(const std::string &fen, bool update_nnue) {
+    set_fen(fen, update_nnue);
 }
 
 Board &Board::operator=(const Board &other) {
     if(this != &other) {
         stm = other.stm;
         curr_ply = other.curr_ply;
+        accums_idx = other.accums_idx;
 
         std::copy(std::begin(other.board), std::end(other.board), std::begin(board));
         std::copy(std::begin(other.piece_bb), std::end(other.piece_bb), std::begin(piece_bb));
 
         states = other.states;
+        accums = other.accums;
     }
 
     return *this;
 }
 
-void Board::set_fen(const std::string &fen) {
+void Board::set_fen(const std::string &fen, bool update_nnue) {
     curr_ply = 0;
+    accums_idx = 0;
     std::memset(piece_bb, 0, sizeof(piece_bb));
 
     for(auto &i : board)
@@ -100,6 +103,9 @@ void Board::set_fen(const std::string &fen) {
     init_slider_blockers();
 
     info.hash = Zobrist::get_hash(*this);
+
+    if(update_nnue)
+        reset_accum();
 }
 
 void Board::print() const {
@@ -334,7 +340,7 @@ bool Board::is_repetition(int ply) const {
     return false;
 }
 
-void Board::make_move(const Move &m) {
+void Board::make_move(const Move &m, bool update_nnue) {
     const MoveType mt = m.type();
     const Square from = m.from();
     const Square to = m.to();
@@ -359,6 +365,12 @@ void Board::make_move(const Move &m) {
     // update hash
     info.hash ^= Zobrist::side;
 
+    if(update_nnue) {
+        accums_idx++;
+        assert(accums_idx < MAX_PLY + 1);
+        accums[accums_idx].reset();
+    }
+
     if(mt == CASTLING) {
         assert(pt == KING);
 
@@ -370,14 +382,14 @@ void Board::make_move(const Move &m) {
         // update hash of moving rook
         info.hash ^= Zobrist::get_psq(rook, rook_from) ^ Zobrist::get_psq(rook, rook_to);
 
-        move_piece(rook_from, rook_to);
+        move_piece(rook_from, rook_to, update_nnue);
     }
 
     if(captured != NO_PIECE) {
         Square cap_sq = mt == EN_PASSANT ? Square(to ^ 8) : to;
 
         info.hash ^= Zobrist::get_psq(captured, cap_sq); // remove captured piece from hash
-        remove_piece(cap_sq);
+        remove_piece(cap_sq, update_nnue);
     }
 
     // update hash of moving piece
@@ -398,7 +410,7 @@ void Board::make_move(const Move &m) {
         info.hash ^= Zobrist::get_castle(info.castle_rights.get_hash_idx());
     }
 
-    move_piece(from, to);
+    move_piece(from, to, update_nnue);
 
     if(pt == PAWN) {
         // set ep square if double push can be captured by enemy pawn
@@ -417,8 +429,8 @@ void Board::make_move(const Move &m) {
             info.hash ^= Zobrist::get_psq(pc, to) ^ Zobrist::get_psq(prom_pc, to);
 
             // add promoted piece and remove pawn
-            remove_piece(to);
-            put_piece(prom_pc, to);
+            remove_piece(to, update_nnue);
+            put_piece(prom_pc, to, update_nnue);
         }
     }
 
@@ -440,6 +452,9 @@ void Board::unmake_move(const Move &m) {
     assert(m.is_valid());
     assert(piece_at(to) != NO_PIECE);
     assert(piece_at(from) == NO_PIECE);
+
+    if(accums_idx > 0)
+        accums_idx--;
 
     if(m.is_prom()) {
         remove_piece(to);

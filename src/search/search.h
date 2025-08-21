@@ -53,17 +53,19 @@ class Search {
     Board &board;
     PVLine pv_table[MAX_PLY + 1];
 
-    void update_pv(const Move &move, int ply);
-
-    bool is_limit_reached(int depth) const;
-
-    void print_uci_info(Score score) const;
-
     template <NodeType nt> //
     Score negamax(int depth, Score alpha, Score beta, Stack *s);
 
     template <NodeType nt> //
     Score quiescence(Score alpha, Score beta, Stack *s);
+
+    Score evaluate() const;
+
+    void update_pv(const Move &move, int ply);
+
+    bool is_limit_reached(int depth) const;
+
+    void print_uci_info(Score score) const;
 };
 
 } // namespace Search

@@ -1,14 +1,12 @@
 #include "chess/board.h"
-#include "eval/eval.h"
+#include "nnue/nnue.h"
 #include "uci.h"
 
 int main() {
     Chess::init_lookup_tables();
     Zobrist::init();
-    Eval::init_tables();
+    NNUE::nnue.init();
     Search::init_reductions();
-
-    Board board(STARTING_FEN);
 
     UCI::UCI uci;
     uci.loop();

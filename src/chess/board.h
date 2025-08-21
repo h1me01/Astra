@@ -1,7 +1,9 @@
 #pragma once
 
 #include <array>
+#include <memory>
 
+#include "../nnue/accum.h"
 #include "state_info.h"
 #include "zobrist.h"
 
@@ -9,14 +11,16 @@ namespace Chess {
 
 class Board {
   public:
-    Board(const std::string &fen);
+    Board(const std::string &fen, bool update_nnue = true);
 
     Board &operator=(const Board &other);
 
     void print() const;
 
-    void make_move(const Move &m);
+    void make_move(const Move &m, bool update_nnue = true);
     void unmake_move(const Move &m);
+
+    void reset_accum();
 
     void perft(int depth);
 
@@ -37,7 +41,7 @@ class Board {
         curr_ply = 0;
     }
 
-    void set_fen(const std::string &fen);
+    void set_fen(const std::string &fen, bool update_nnue = true);
 
     std::string get_fen() const;
 
@@ -97,6 +101,14 @@ class Board {
         return states[curr_ply];
     }
 
+    NNUE::Accum &get_accum() {
+        return accums[accums_idx];
+    }
+
+    const NNUE::Accum &get_accum() const {
+        return accums[accums_idx];
+    }
+
   private:
     std::array<StateInfo, 512> states;
 
@@ -105,13 +117,24 @@ class Board {
     Piece board[NUM_SQUARES];
     U64 piece_bb[NUM_PIECES];
 
-    void put_piece(Piece pc, Square sq);
-    void remove_piece(Square sq);
-    void move_piece(Square from, Square to);
+    int accums_idx;
+    std::array<NNUE::Accum, MAX_PLY + 1> accums;
+    std::unique_ptr<NNUE::AccumTable> accum_table = std::make_unique<NNUE::AccumTable>(NNUE::AccumTable());
+
+    void put_piece(Piece pc, Square sq, bool update_nnue = false);
+    void remove_piece(Square sq, bool update_nnue = false);
+    void move_piece(Square from, Square to, bool update_nnue = false);
 
     void init_threats();
     void init_slider_blockers();
 };
+
+inline void Board::reset_accum() {
+    accums_idx = 0;
+    accum_table->reset();
+    accum_table->refresh(*this, WHITE);
+    accum_table->refresh(*this, BLACK);
+}
 
 inline U64 Board::occupancy(Color c = BOTH_COLORS) const {
     U64 occ = 0;
@@ -152,16 +175,25 @@ inline bool Board::is_draw(int ply) const {
     return states[curr_ply].fmr_counter > 99 || is_repetition(ply);
 }
 
-inline void Board::put_piece(Piece pc, Square sq) {
+inline void Board::put_piece(Piece pc, Square sq, bool update_nnue) {
     assert(valid_sq(sq));
     assert(valid_piece(pc));
 
     board[sq] = pc;
     piece_bb[pc] |= square_bb(sq);
     states[curr_ply].occ[piece_color(pc)] ^= square_bb(sq);
+
+    if(!update_nnue)
+        return;
+
+    NNUE::Accum &acc = get_accum();
+    NNUE::Accum &prev_acc = accums[accums_idx - 1];
+
+    NNUE::nnue.put(acc, prev_acc, pc, sq, king_sq(WHITE), WHITE);
+    NNUE::nnue.put(acc, prev_acc, pc, sq, king_sq(BLACK), BLACK);
 }
 
-inline void Board::remove_piece(Square sq) {
+inline void Board::remove_piece(Square sq, bool update_nnue) {
     assert(valid_sq(sq));
 
     Piece pc = board[sq];
@@ -170,9 +202,18 @@ inline void Board::remove_piece(Square sq) {
     piece_bb[pc] ^= square_bb(sq);
     board[sq] = NO_PIECE;
     states[curr_ply].occ[piece_color(pc)] ^= square_bb(sq);
+
+    if(!update_nnue)
+        return;
+
+    NNUE::Accum &acc = get_accum();
+    NNUE::Accum &prev_acc = accums[accums_idx - 1];
+
+    NNUE::nnue.remove(acc, prev_acc, pc, sq, king_sq(WHITE), WHITE);
+    NNUE::nnue.remove(acc, prev_acc, pc, sq, king_sq(BLACK), BLACK);
 }
 
-inline void Board::move_piece(Square from, Square to) {
+inline void Board::move_piece(Square from, Square to, bool update_nnue) {
     assert(valid_sq(to));
     assert(valid_sq(from));
 
@@ -183,6 +224,23 @@ inline void Board::move_piece(Square from, Square to) {
     board[to] = pc;
     board[from] = NO_PIECE;
     states[curr_ply].occ[piece_color(pc)] ^= square_bb(from) | square_bb(to);
+
+    if(!update_nnue)
+        return;
+
+    NNUE::Accum &acc = get_accum();
+    NNUE::Accum &prev_acc = accums[accums_idx - 1];
+
+    if(NNUE::needs_refresh(pc, from, to)) {
+        // other side doesn't need a refresh
+        NNUE::nnue.move(acc, prev_acc, pc, from, to, king_sq(~stm), ~stm);
+
+        accum_table->refresh(*this, stm);
+        return;
+    }
+
+    NNUE::nnue.move(acc, prev_acc, pc, from, to, king_sq(WHITE), WHITE);
+    NNUE::nnue.move(acc, prev_acc, pc, from, to, king_sq(BLACK), BLACK);
 }
 
 } // namespace Chess

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "misc.h"
 #include "bitboard.h"
+#include "misc.h"
 
 namespace Chess {
 
