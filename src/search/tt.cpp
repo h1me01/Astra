@@ -8,7 +8,7 @@ namespace Search {
 
 // TTEntry
 
-void TTEntry::store(U64 hash, Move move, Score score, Bound bound, int depth, int ply) {
+void TTEntry::store(U64 hash, Move move, Score score, Score eval, Bound bound, int depth, int ply) {
     if(valid_score(score)) {
         if(is_win(score))
             score += ply;
@@ -22,6 +22,7 @@ void TTEntry::store(U64 hash, Move move, Score score, Bound bound, int depth, in
         this->depth = depth;
         this->move = move;
         this->score = score;
+        this->eval = eval;
         this->bound = bound;
     }
 }

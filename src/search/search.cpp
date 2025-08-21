@@ -70,9 +70,12 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *s) {
         return quiescence<nt>(alpha, beta, s);
 
     const Score old_alpha = alpha;
+    const bool in_check = board.in_check();
     const U64 hash = board.get_hash();
 
     Score best_score = -VALUE_INFINITE;
+    Score raw_eval;
+
     Move best_move = NO_MOVE;
 
     (s + 1)->killer = NO_MOVE;
@@ -100,6 +103,15 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *s) {
        && valid_tt_score(tt_score, beta, ent->bound) //
     ) {
         return tt_score;
+    }
+
+    // set eval and static eval
+    if(in_check) {
+        raw_eval = VALUE_NONE;
+    } else if(tt_hit) {
+        raw_eval = valid_score(ent->eval) ? ent->eval : evaluate();
+    } else {
+        raw_eval = evaluate();
     }
 
     MovePicker mp(N_SEARCH, board, history, s, ent->move);
@@ -218,6 +230,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *s) {
             hash,       //
             best_move,  //
             best_score, //
+            raw_eval,   //
             bound,      //
             depth,      //
             s->ply      //
@@ -248,17 +261,9 @@ Score Search::quiescence(Score alpha, Score beta, Stack *s) {
     const U64 hash = board.get_hash();
 
     Move best_move = NO_MOVE;
-    Score best_score;
 
-    if(in_check) {
-        best_score = -VALUE_MATE;
-    } else {
-        best_score = evaluate();
-        if(best_score >= beta)
-            return best_score;
-        if(best_score > alpha)
-            alpha = best_score;
-    }
+    Score best_score = -VALUE_INFINITE;
+    Score raw_eval;
 
     // look up in transposition table
     bool tt_hit = false;
@@ -271,6 +276,18 @@ Score Search::quiescence(Score alpha, Score beta, Stack *s) {
        && valid_tt_score(tt_score, beta, ent->bound) //
     ) {
         return tt_score;
+    }
+
+    if(in_check) {
+        raw_eval = VALUE_NONE;
+    } else {
+        raw_eval = (tt_hit && valid_score(ent->eval)) ? ent->eval : evaluate();
+        best_score = raw_eval;
+
+        if(best_score >= beta)
+            return best_score;
+        if(best_score > alpha)
+            alpha = best_score;
     }
 
     MovePicker mp(Q_SEARCH, board, history, s, ent->move);
@@ -330,6 +347,7 @@ Score Search::quiescence(Score alpha, Score beta, Stack *s) {
         hash,       //
         best_move,  //
         best_score, //
+        raw_eval,   //
         bound,      //
         0,          // depth
         s->ply      //

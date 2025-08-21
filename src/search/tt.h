@@ -19,6 +19,7 @@ struct TTEntry {
     uint8_t depth = 0;
     Move move = NO_MOVE;
     Score score = VALUE_NONE;
+    Score eval = VALUE_NONE;
     Bound bound = NO_BOUND;
 
     Score get_score(int ply) const {
@@ -31,7 +32,7 @@ struct TTEntry {
         return score;
     }
 
-    void store(U64 hash, Move move, Score score, Bound bound, int depth, int ply);
+    void store(U64 hash, Move move, Score score, Score eval, Bound bound, int depth, int ply);
 };
 
 class TTable {
