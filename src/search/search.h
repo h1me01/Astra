@@ -55,6 +55,8 @@ class Search {
 
     U64 move_nodes[NUM_SQUARES][NUM_SQUARES];
 
+    Score aspiration(int depth, Score prev_score, Stack* s);
+
     template <NodeType nt> //
     Score negamax(int depth, Score alpha, Score beta, Stack *s);
 

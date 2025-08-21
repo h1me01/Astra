@@ -42,10 +42,7 @@ void Search::start(Limits limits) {
     Score scores[MAX_PLY];
 
     for(root_depth = 1; root_depth <= MAX_PLY; root_depth++) {
-        Score alpha = -VALUE_INFINITE;
-        Score beta = VALUE_INFINITE;
-
-        Score score = negamax<NodeType::ROOT>(root_depth, alpha, beta, s);
+        Score score = aspiration(root_depth, prev_score, s);
 
         if(is_limit_reached(root_depth))
             break;
@@ -70,6 +67,42 @@ void Search::start(Limits limits) {
     }
 
     std::cout << "bestmove " << best_move << std::endl;
+}
+
+Score Search::aspiration(int depth, Score prev_score, Stack *s) {
+    Score score;
+    Score alpha = -VALUE_INFINITE;
+    Score beta = VALUE_INFINITE;
+
+    int delta = 11;
+    if(depth >= 4) {
+        alpha = std::max(prev_score - delta, int(-VALUE_INFINITE));
+        beta = std::min(prev_score + delta, int(VALUE_INFINITE));
+    }
+
+    int fail_high_count = 0;
+    while(true) {
+        score = negamax<NodeType::ROOT>(std::max(1, root_depth - fail_high_count), alpha, beta, s);
+
+        if(is_limit_reached(depth))
+            return 0;
+
+        if(score <= alpha) {
+            beta = (alpha + beta) / 2;
+            alpha = std::max(alpha - delta, int(-VALUE_INFINITE));
+            fail_high_count = 0;
+        } else if(score >= beta) {
+            beta = std::min(beta + delta, int(VALUE_INFINITE));
+            if(!is_decisive(score))
+                fail_high_count++;
+        } else {
+            break;
+        }
+
+        delta += delta / 3;
+    }
+
+    return score;
 }
 
 template <NodeType nt> //
