@@ -74,7 +74,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *s) {
     const U64 hash = board.get_hash();
 
     Score best_score = -VALUE_INFINITE;
-    Score raw_eval;
+    Score raw_eval, eval;
 
     Move best_move = NO_MOVE;
 
@@ -107,12 +107,29 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *s) {
 
     // set eval and static eval
     if(in_check) {
-        raw_eval = VALUE_NONE;
+        raw_eval = eval = VALUE_NONE;
+        goto movesloop;
     } else if(tt_hit) {
-        raw_eval = valid_score(ent->eval) ? ent->eval : evaluate();
+        raw_eval = eval = valid_score(ent->eval) ? ent->eval : evaluate();
+
+        if(valid_score(tt_score) && valid_tt_score(tt_score, eval + 1, ent->bound))
+            eval = tt_score;
     } else {
-        raw_eval = evaluate();
+        raw_eval = eval = evaluate();
     }
+
+    // razoring
+    if(!pv_node                      //
+       && !is_win(alpha)             //
+       && depth < 5                  //
+       && eval + 258 * depth < alpha //
+    ) {
+        Score score = quiescence<NodeType::NON_PV>(alpha, beta, s);
+        if(score <= alpha)
+            return score;
+    }
+
+movesloop:
 
     MovePicker mp(N_SEARCH, board, history, s, ent->move);
     Move move = NO_MOVE;
