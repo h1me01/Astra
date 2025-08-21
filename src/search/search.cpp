@@ -217,12 +217,21 @@ movesloop:
 
         made_moves++;
 
+        int history_score = move.is_quiet() ? history.get_qh(board, s, move) //
+                                            : history.get_nh(board, move);
+
         if(!root_node && !is_loss(best_score)) {
-            const int lmr_depth = std::max(0, depth - REDUCTIONS[depth][made_moves]);
+            const int lmr_depth = std::max(0, depth - REDUCTIONS[depth][made_moves] + history_score / 7848);
 
             // late move pruning
             if(q_count > (3 + depth * depth) / (2 - improving))
                 mp.skip_quiets();
+
+            // history pruning
+            if(!move.is_cap() && lmr_depth < 5 && history_score < -6775 * depth) {
+                mp.skip_quiets();
+                continue;
+            }
 
             // see pruning
             int see_depth = move.is_cap() ? depth : lmr_depth * lmr_depth;

@@ -27,6 +27,7 @@ class History {
 
     int get_hh(Color stm, Move move) const;
     int get_nh(const Board &board, Move &move) const;
+    int get_qh(const Board &board, const Stack *ss, Move &move) const;
 
     int16_t conth[2][NUM_PIECES + 1][NUM_SQUARES + 1][NUM_PIECES + 1][NUM_SQUARES + 1];
 
@@ -60,6 +61,21 @@ inline int History::get_nh(const Board &board, Move &move) const {
     assert(valid_piece_type(captured) || (move.type() >= PQ_KNIGHT && move.type() <= PQ_QUEEN));
 
     return nh[pc][move.to()][captured];
+}
+
+inline int History::get_qh(const Board &board, const Stack *ss, Move &move) const {
+    Square from = move.from();
+    Square to = move.to();
+    Piece pc = board.piece_at(from);
+
+    assert(valid_sq(to));
+    assert(valid_sq(from));
+    assert(valid_piece(pc));
+
+    return get_hh(board.get_stm(), move) +    //
+           (int) (*(ss - 1)->conth)[pc][to] + //
+           (int) (*(ss - 2)->conth)[pc][to] + //
+           (int) (*(ss - 4)->conth)[pc][to];
 }
 
 } // namespace Search
