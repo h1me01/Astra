@@ -324,7 +324,7 @@ bool Board::is_pseudolegal(const Move &m) const {
 
 bool Board::is_repetition(int ply) const {
     const StateInfo &info = states[curr_ply];
-    const int distance = std::min(curr_ply, info.fmr_counter);
+    const int distance = std::min(info.plies_from_null, info.fmr_counter);
 
     int rep = 0;
     for(int i = curr_ply - 4; i >= 0 && i >= curr_ply - distance; i -= 2) {
@@ -357,6 +357,7 @@ void Board::make_move(const Move &m, bool update_nnue) {
     StateInfo &info = states[curr_ply];
 
     info.fmr_counter++;
+    info.plies_from_null++;
 
     // reset half move clock if pawn move or capture
     if(pt == PAWN || captured != NO_PIECE)
@@ -476,6 +477,32 @@ void Board::unmake_move(const Move &m) {
     }
 
     curr_ply--;
+}
+
+void Board::make_nullmove() {
+    curr_ply++;
+    states[curr_ply] = StateInfo(states[curr_ply - 1]);
+    StateInfo &info = states[curr_ply];
+
+    info.fmr_counter++;
+    info.plies_from_null = 0;
+
+    if(info.ep_sq != NO_SQUARE) {
+        info.hash ^= Zobrist::get_ep(info.ep_sq); // remove ep square from hash
+        info.ep_sq = NO_SQUARE;
+    }
+
+    info.hash ^= Zobrist::side;
+
+    stm = ~stm;
+
+    init_threats();
+    init_slider_blockers();
+}
+
+void Board::unmake_nullmove() {
+    curr_ply--;
+    stm = ~stm;
 }
 
 void Board::update_accums() {

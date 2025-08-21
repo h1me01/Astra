@@ -198,5 +198,6 @@ class Move {
 };
 
 const Move NO_MOVE{};
+const Move NULL_MOVE{65};
 
 } // namespace Chess

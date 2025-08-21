@@ -20,6 +20,9 @@ class Board {
     void make_move(const Move &m, bool update_nnue = true);
     void unmake_move(const Move &m);
 
+    void make_nullmove();
+    void unmake_nullmove();
+
     void reset_accum();
     void update_accums();
 
@@ -35,10 +38,12 @@ class Board {
     bool is_repetition(int ply) const;
     bool is_draw(int ply) const;
 
+    bool nonpawnmat(Color c) const;
     bool see(Move &m, int threshold) const;
 
     void reset_ply() {
         states[0] = states[curr_ply];
+        states[0].plies_from_null = 0;
         curr_ply = 0;
     }
 
@@ -195,6 +200,11 @@ inline bool Board::is_draw(int ply) const {
     }
 
     return states[curr_ply].fmr_counter > 99 || is_repetition(ply);
+}
+
+// checks if there is any non-pawn material on the board of the current side to move
+inline bool Board::nonpawnmat(Color c) const {
+    return get_piecebb(c, KNIGHT) | get_piecebb(c, BISHOP) | get_piecebb(c, ROOK) | get_piecebb(c, QUEEN);
 }
 
 inline void Board::put_piece(Piece pc, Square sq, bool update_nnue) {

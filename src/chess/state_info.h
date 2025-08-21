@@ -17,6 +17,7 @@ struct StateInfo {
     U64 occ[NUM_COLORS] = {};
     U64 threats[NUM_PIECE_TYPES] = {};
     int fmr_counter; // fifty move rule
+    int plies_from_null;
 
     U64 checkers = 0;
     U64 danger = 0;

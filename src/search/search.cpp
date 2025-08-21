@@ -70,6 +70,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *s) {
         return quiescence<nt>(alpha, beta, s);
 
     const Score old_alpha = alpha;
+    const Color stm = board.get_stm();
     const bool in_check = board.in_check();
     const U64 hash = board.get_hash();
 
@@ -144,6 +145,33 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *s) {
        && eval - (106 * depth - 89 * improving) >= beta //
     ) {
         return (eval + beta) / 2;
+    }
+
+    // null move pruning
+    if(!pv_node                                     //
+       && depth >= 4                                //
+       && eval >= beta                              //
+       && !is_loss(beta)                            //
+       && board.nonpawnmat(stm)                     //
+       && (s - 1)->move != NULL_MOVE                //
+       && s->static_eval + 25 * depth - 161 >= beta //
+    ) {
+        int R = 4           //
+                + depth / 3 //
+                + std::min(4, (eval - beta) / 217);
+
+        s->move = NULL_MOVE;
+
+        board.make_nullmove();
+        Score score = -negamax<NodeType::NON_PV>(depth - R, -beta, -beta + 1, s + 1);
+        board.unmake_nullmove();
+
+        if(score >= beta) {
+            // don't return unproven mate scores
+            if(is_win(score))
+                score = beta;
+            return score;
+        }
     }
 
 movesloop:
