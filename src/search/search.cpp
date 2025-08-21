@@ -194,6 +194,10 @@ movesloop:
         if(!root_node && !is_loss(best_score)) {
             const int lmr_depth = std::max(0, depth - REDUCTIONS[depth][made_moves]);
 
+            // late move pruning
+            if(q_count > (3 + depth * depth) / (2 - improving))
+                mp.skip_quiets();
+
             // see pruning
             int see_depth = move.is_cap() ? depth : lmr_depth * lmr_depth;
             int see_margin = move.is_cap() ? 97 : 17;
