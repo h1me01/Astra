@@ -35,7 +35,8 @@ EVAL_SRC := nnue/nnue.cpp \
 SEARCH_SRC := search/history.cpp \
               search/movepicker.cpp \
               search/search.cpp \
-              search/tt.cpp
+              search/tt.cpp \
+              search/threads.cpp
              
 MAIN_SRC := main.cpp \
             uci.cpp

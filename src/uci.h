@@ -44,6 +44,8 @@ class Options {
         return "";
     }
 
+    int num_workers = 1; // default number of threads
+
   private:
     std::unordered_map<std::string, Option> options;
 };

@@ -6,6 +6,7 @@ int main() {
     Chess::init_lookup_tables();
     Zobrist::init();
     NNUE::nnue.init();
+
     Search::init_reductions();
 
     UCI::UCI uci;

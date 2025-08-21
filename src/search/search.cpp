@@ -6,6 +6,7 @@
 
 #include "movepicker.h"
 #include "search.h"
+#include "threads.h"
 
 namespace Search {
 
@@ -21,10 +22,13 @@ void init_reductions() {
 
 // Search
 
-void Search::start(Limits limits) {
+void Search::start(const Board &board, Limits limits) {
     tm.start();
-    tt.increment();
 
+    if(id == 0)
+        tt.increment();
+
+    this->board = board;
     this->limits = limits;
 
     Move best_move = NO_MOVE;
@@ -50,14 +54,14 @@ void Search::start(Limits limits) {
         best_move = get_best_move();
         print_uci_info(score);
 
-        if(                                                                            //
-            root_depth >= 5                                                            //
-            && tm.should_stop(                                                         //
-                   limits,                                                             //
-                   stability,                                                          //
-                   prev_score - score,                                                 //
-                   scores[root_depth - 3] - score,                                     //
-                   move_nodes[best_move.from()][best_move.to()] / double(total_nodes)) //
+        if(id == 0                                                                    //
+           && root_depth >= 5                                                         //
+           && tm.should_stop(                                                         //
+                  limits,                                                             //
+                  stability,                                                          //
+                  prev_score - score,                                                 //
+                  scores[root_depth - 3] - score,                                     //
+                  move_nodes[best_move.from()][best_move.to()] / double(total_nodes)) //
         ) {
             break;
         }
@@ -66,7 +70,10 @@ void Search::start(Limits limits) {
         scores[root_depth] = score;
     }
 
-    std::cout << "bestmove " << best_move << std::endl;
+    if(id == 0)
+        std::cout << "bestmove " << best_move << std::endl;
+
+    threads.stop();
 }
 
 Score Search::aspiration(int depth, Score prev_score, Stack *s) {
@@ -517,7 +524,7 @@ Score Search::quiescence(Score alpha, Score beta, Stack *s) {
     return best_score;
 }
 
-Score Search::evaluate() const {
+Score Search::evaluate() {
     int eval = NNUE::nnue.forward(board);
     return std::clamp(eval, int(-VALUE_MATE_IN_MAX_PLY), int(VALUE_MATE_IN_MAX_PLY));
 }
@@ -530,7 +537,12 @@ void Search::update_pv(const Move &move, int ply) {
 }
 
 void Search::print_uci_info(Score score) const {
+    if(id != 0)
+        return; // only main thread prints UCI info
+
     const int64_t elapsed_time = tm.elapsed_time();
+    const U64 total_thread_nodes = threads.get_total_nodes();
+
     const PVLine &pv_line = pv_table[0];
 
     std::cout << "info depth " << root_depth //
@@ -541,10 +553,10 @@ void Search::print_uci_info(Score score) const {
     else
         std::cout << "cp " << Score(score / 2.5);
 
-    std::cout << " nodes " << total_nodes                           //
-              << " nps " << total_nodes * 1000 / (elapsed_time + 1) //
-              << " hashfull " << tt.hashfull()                      //
-              << " time " << elapsed_time                           //
+    std::cout << " nodes " << total_thread_nodes                           //
+              << " nps " << total_thread_nodes * 1000 / (elapsed_time + 1) //
+              << " hashfull " << tt.hashfull()                             //
+              << " time " << elapsed_time                                  //
               << " pv " << pv_line[0];
 
     // print rest of the pv
@@ -555,6 +567,11 @@ void Search::print_uci_info(Score score) const {
 }
 
 bool Search::is_limit_reached(int depth) const {
+    if(threads.is_stopped())
+        return true;
+    if(id != 0)
+        return false; // only main thread checks limits
+
     if(limits.infinite)
         return false;
     if(depth > limits.depth)

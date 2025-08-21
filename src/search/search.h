@@ -34,12 +34,18 @@ struct PVLine {
 
 class Search {
   public:
-    Search(Board &board) : total_nodes{0}, board{board} {}
+    int id = 0;
 
-    void start(Limits limits);
+    Search() : total_nodes{0} {}
+
+    void start(const Board &board, Limits limits);
 
     Move get_best_move() const {
         return pv_table[0][0];
+    }
+
+    U64 get_total_nodes() const {
+        return total_nodes;
     }
 
   private:
@@ -50,12 +56,12 @@ class Search {
     TimeMan tm;
     History history;
 
-    Board &board;
+    Board board{STARTING_FEN};
     PVLine pv_table[MAX_PLY + 1];
 
     U64 move_nodes[NUM_SQUARES][NUM_SQUARES];
 
-    Score aspiration(int depth, Score prev_score, Stack* s);
+    Score aspiration(int depth, Score prev_score, Stack *s);
 
     template <NodeType nt> //
     Score negamax(int depth, Score alpha, Score beta, Stack *s);
@@ -63,7 +69,7 @@ class Search {
     template <NodeType nt> //
     Score quiescence(Score alpha, Score beta, Stack *s);
 
-    Score evaluate() const;
+    Score evaluate();
 
     void update_pv(const Move &move, int ply);
 

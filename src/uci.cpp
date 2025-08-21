@@ -3,6 +3,7 @@
 #include <cctype>    // std::isdigit
 #include <cstring>   // strncmp
 
+#include "search/threads.h"
 #include "uci.h"
 
 namespace UCI {
@@ -30,6 +31,7 @@ void Options::print() const {
 }
 
 void Options::apply() {
+    num_workers = std::stoi(get("Threads"));
     Search::tt.init(std::stoi(get("Hash")));
 }
 
@@ -72,6 +74,7 @@ UCI::UCI() : board(STARTING_FEN) {
     std::cout << "Astra by Semih Oezalp" << std::endl;
 
     options.add("Hash", Option("spin", "16", "16", 1, 8192));
+    options.add("Threads", Option("spin", "1", "1", 1, 128));
     options.add("MoveOverhead", Option("spin", "10", "10", 1, 10000));
 
     options.apply();
@@ -93,6 +96,7 @@ void UCI::loop() {
             std::cout << "readyok" << std::endl;
         else if(token == "ucinewgame") {
             Search::tt.clear();
+            Search::threads.force_stop();
         } else if(token == "position")
             update_position(is);
         else if(token == "go")
@@ -102,9 +106,12 @@ void UCI::loop() {
             options.apply();
         } else if(token == "d")
             board.print();
-        else if(token == "quit")
+        else if(token == "stop")
+            Search::threads.force_stop();
+        else if(token == "quit") {
+            Search::threads.force_stop();
             break;
-        else
+        } else
             std::cout << "Unknown Command" << std::endl;
     }
 }
@@ -139,6 +146,7 @@ void UCI::update_position(std::istringstream &is) {
 }
 
 void UCI::go(std::istringstream &is) {
+    Search::threads.force_stop();
     Search::Limits limits;
 
     int64_t w_time = 0, b_time = 0, move_time = 0;
@@ -195,8 +203,7 @@ void UCI::go(std::istringstream &is) {
     }
 
     // start search
-    Search::Search *search = new Search::Search{board};
-    search->start(limits);
+    Search::threads.launch_workers(board, limits, options.num_workers);
 }
 
 Move UCI::get_move(const std::string &str_move) const {
