@@ -21,6 +21,7 @@ class Board {
     void unmake_move(const Move &m);
 
     void reset_accum();
+    void update_accums();
 
     void perft(int depth);
 
@@ -187,10 +188,7 @@ inline void Board::put_piece(Piece pc, Square sq, bool update_nnue) {
         return;
 
     NNUE::Accum &acc = get_accum();
-    NNUE::Accum &prev_acc = accums[accums_idx - 1];
-
-    NNUE::nnue.put(acc, prev_acc, pc, sq, king_sq(WHITE), WHITE);
-    NNUE::nnue.put(acc, prev_acc, pc, sq, king_sq(BLACK), BLACK);
+    acc.put_piece(pc, sq, king_sq(WHITE), king_sq(BLACK));
 }
 
 inline void Board::remove_piece(Square sq, bool update_nnue) {
@@ -207,10 +205,7 @@ inline void Board::remove_piece(Square sq, bool update_nnue) {
         return;
 
     NNUE::Accum &acc = get_accum();
-    NNUE::Accum &prev_acc = accums[accums_idx - 1];
-
-    NNUE::nnue.remove(acc, prev_acc, pc, sq, king_sq(WHITE), WHITE);
-    NNUE::nnue.remove(acc, prev_acc, pc, sq, king_sq(BLACK), BLACK);
+    acc.remove_piece(pc, sq, king_sq(WHITE), king_sq(BLACK));
 }
 
 inline void Board::move_piece(Square from, Square to, bool update_nnue) {
@@ -229,18 +224,10 @@ inline void Board::move_piece(Square from, Square to, bool update_nnue) {
         return;
 
     NNUE::Accum &acc = get_accum();
-    NNUE::Accum &prev_acc = accums[accums_idx - 1];
+    acc.move_piece(pc, from, to, king_sq(WHITE), king_sq(BLACK));
 
-    if(NNUE::needs_refresh(pc, from, to)) {
-        // other side doesn't need a refresh
-        NNUE::nnue.move(acc, prev_acc, pc, from, to, king_sq(~stm), ~stm);
-
-        accum_table->refresh(*this, stm);
-        return;
-    }
-
-    NNUE::nnue.move(acc, prev_acc, pc, from, to, king_sq(WHITE), WHITE);
-    NNUE::nnue.move(acc, prev_acc, pc, from, to, king_sq(BLACK), BLACK);
+    if(NNUE::needs_refresh(pc, from, to))
+        acc.set_refresh(piece_color(pc));
 }
 
 } // namespace Chess

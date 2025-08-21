@@ -115,6 +115,8 @@ void NNUE::init_accum(Accum &acc) const {
 }
 
 int32_t NNUE::forward(Board &board) const {
+    board.update_accums();
+
     Color stm = board.get_stm();
     Accum &acc = board.get_accum();
 

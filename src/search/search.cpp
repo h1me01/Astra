@@ -60,8 +60,14 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *s) {
     assert(pv_node || (alpha == beta - 1));
     assert(valid_score(alpha + 1) && valid_score(beta - 1) && alpha < beta);
 
+    if(is_limit_reached(depth))
+        return 0;
+
     if(pv_node)
         pv_table[s->ply].length = s->ply;
+
+    if(depth <= 0)
+        return quiescence<nt>(alpha, beta, s);
 
     const Score old_alpha = alpha;
     const U64 hash = board.get_hash();
@@ -72,8 +78,6 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *s) {
     (s + 1)->killer = NO_MOVE;
 
     if(!root_node) {
-        if(is_limit_reached(depth))
-            return 0;
         if(board.is_draw(s->ply))
             return VALUE_DRAW;
 
@@ -83,9 +87,6 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *s) {
         if(alpha >= beta)
             return alpha;
     }
-
-    if(depth == 0)
-        return quiescence<nt>(alpha, beta, s);
 
     // look up in transposition table
     bool tt_hit = false;

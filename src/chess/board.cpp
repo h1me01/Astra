@@ -478,6 +478,34 @@ void Board::unmake_move(const Move &m) {
     curr_ply--;
 }
 
+void Board::update_accums() {
+    NNUE::Accum &acc = get_accum();
+
+    for(Color view : {WHITE, BLACK}) {
+        if(acc.is_initialized(view))
+            continue;
+
+        assert(accums_idx > 0);
+
+        // apply lazy update
+        for(int i = accums_idx; i >= 0; i--) {
+            if(accums[i].needs_refresh(view)) {
+                accum_table->refresh(*this, view);
+                break;
+            }
+
+            if(accums[i].is_initialized(view)) {
+                for(int j = i + 1; j <= accums_idx; j++)
+                    accums[j].update(accums[j - 1], view);
+                break;
+            }
+        }
+    }
+
+    assert(acc.is_initialized(WHITE));
+    assert(acc.is_initialized(BLACK));
+}
+
 // private member
 
 void Board::init_threats() {
