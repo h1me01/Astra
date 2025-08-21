@@ -277,6 +277,8 @@ movesloop:
 
             r -= board.in_check();
 
+            r -= history_score / (move.is_cap() ? 3886 : 7489);
+
             const int lmr_depth = std::clamp(new_depth - r, 1, new_depth + 1);
 
             score = -negamax<NodeType::NON_PV>(lmr_depth, -alpha - 1, -alpha, s + 1);
