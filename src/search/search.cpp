@@ -233,14 +233,21 @@ Score Search::quiescence(Score alpha, Score beta, Stack *s) {
     if(board.is_draw(s->ply))
         return VALUE_DRAW;
 
+    const bool in_check = board.in_check();
     const U64 hash = board.get_hash();
+    
     Move best_move = NO_MOVE;
+    Score best_score;
 
-    Score best_score = evaluate();
-    if(best_score >= beta)
-        return best_score;
-    if(best_score > alpha)
-        alpha = best_score;
+    if(in_check) {
+        best_score = -VALUE_MATE;
+    } else {
+        best_score = evaluate();
+        if(best_score >= beta)
+            return best_score;
+        if(best_score > alpha)
+            alpha = best_score;
+    }
 
     // look up in transposition table
     bool tt_hit = false;
