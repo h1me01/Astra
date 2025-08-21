@@ -136,6 +136,16 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *s) {
     else if(valid_score((s - 4)->static_eval))
         improving = s->static_eval > (s - 4)->static_eval;
 
+    // reverse futility pruning
+    if(!pv_node                                         //
+       && !is_win(eval)                                 //
+       && !is_loss(beta)                                //
+       && depth < 11                                    //
+       && eval - (106 * depth - 89 * improving) >= beta //
+    ) {
+        return (eval + beta) / 2;
+    }
+
 movesloop:
 
     MovePicker mp(N_SEARCH, board, history, s, ent->move);
