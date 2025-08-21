@@ -72,6 +72,7 @@ UCI::UCI() : board(STARTING_FEN) {
     std::cout << "Astra by Semih Oezalp" << std::endl;
 
     options.add("Hash", Option("spin", "16", "16", 1, 8192));
+    options.add("MoveOverhead", Option("spin", "10", "10", 1, 10000));
 
     options.apply();
 }
@@ -177,8 +178,21 @@ void UCI::go(std::istringstream &is) {
         }
     }
 
-    if(move_time != 0)
+    Color stm = board.get_stm();
+    const int64_t time_left = (stm == WHITE) ? w_time : b_time;
+    const int inc = (stm == WHITE) ? w_inc : b_inc;
+
+    if(move_time != 0) {
+        limits.time.optimum = move_time;
         limits.time.maximum = move_time;
+    } else if(time_left != 0) {
+        limits.time = Search::TimeMan::get_optimum( //
+            time_left,                              //
+            inc,                                    //
+            std::max(moves_to_go, 0),               //
+            std::stoi(options.get("MoveOverhead"))  //
+        );
+    }
 
     // start search
     Search::Search *search = new Search::Search{board};

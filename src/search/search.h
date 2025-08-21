@@ -53,6 +53,8 @@ class Search {
     Board &board;
     PVLine pv_table[MAX_PLY + 1];
 
+    U64 move_nodes[NUM_SQUARES][NUM_SQUARES];
+
     template <NodeType nt> //
     Score negamax(int depth, Score alpha, Score beta, Stack *s);
 

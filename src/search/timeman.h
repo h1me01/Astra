@@ -1,21 +1,21 @@
 #pragma once
 
+#include <algorithm>
 #include <chrono>
-
-#include "../chess/types.h"
-
-using namespace Chess;
+#include <cmath>
 
 namespace Search {
 
 struct Time {
+    int64_t optimum = 0;
     int64_t maximum = 0;
 };
 
 struct Limits {
     Time time;
     U64 nodes = 0;
-    int depth = MAX_PLY;
+    int depth = MAX_PLY - 1;
+    int multipv = 1;
     bool infinite = false;
 };
 
@@ -35,6 +35,49 @@ class TimeMan {
 
     int64_t elapsed_time() const {
         return std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now() - start_time).count();
+    }
+
+    bool should_stop(Limits limits,           //
+                     int stability,           //
+                     Score prev_result_diff,  //
+                     Score pprev_result_diff, //
+                     double node_ratio        //
+    ) const {
+        if(!limits.time.optimum)
+            return false;
+
+        double stability_factor = (141 / 100.0) - stability * (57 / 1000.0);
+
+        // adjust time optimum based on last score
+        double result_change_factor = (62 / 100.0)                       //
+                                      + (13 / 1000.0) * prev_result_diff //
+                                      + (26 / 1000.0) * pprev_result_diff;
+
+        result_change_factor = std::clamp(result_change_factor, 73 / 100.0, 134 / 100.0);
+
+        // adjust time optimum based on node count
+        double not_best_nodes = 1.0 - node_ratio;
+        double node_count_factor = not_best_nodes * (200 / 100.0) + (49 / 100.0);
+
+        // check if we should stop
+        return (elapsed_time() > limits.time.optimum * stability_factor * result_change_factor * node_count_factor);
+    }
+
+    static Time get_optimum(int64_t time_left, int inc, int moves_to_go, int overhead) {
+        Time time;
+
+        int mtg = std::min(50, moves_to_go ? moves_to_go : 50);
+        int64_t adj_time = std::max(1LL, time_left + inc * (mtg - 1) - overhead * (mtg + 2));
+
+        double scale = std::min(                                //
+            moves_to_go ? 1.034612 / mtg : 0.029935,            //
+            (moves_to_go ? 0.88 : 0.213) * time_left / adj_time //
+        );
+
+        time.optimum = time_left * scale;
+        time.maximum = time_left * 0.8 - overhead;
+
+        return time;
     }
 };
 

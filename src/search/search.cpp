@@ -16,12 +16,15 @@ void init_reductions() {
 
     for(int depth = 1; depth < MAX_PLY; depth++)
         for(int moves = 1; moves < MAX_MOVES; moves++)
-            REDUCTIONS[depth][moves] = 1 + log(depth) * log(moves) / 1.75;
+            REDUCTIONS[depth][moves] = 1.07 + log(depth) * log(moves) / 3.25;
 }
 
 // Search
 
 void Search::start(Limits limits) {
+    tm.start();
+    tt.increment();
+
     this->limits = limits;
 
     Move best_move = NO_MOVE;
@@ -34,7 +37,9 @@ void Search::start(Limits limits) {
         stack[i].conth = &history.conth[0][NO_PIECE][NO_SQUARE];
     }
 
-    tt.increment();
+    int stability = 0;
+    Score prev_score = VALUE_NONE;
+    Score scores[MAX_PLY];
 
     for(root_depth = 1; root_depth <= MAX_PLY; root_depth++) {
         Score alpha = -VALUE_INFINITE;
@@ -47,6 +52,21 @@ void Search::start(Limits limits) {
 
         best_move = get_best_move();
         print_uci_info(score);
+
+        if(                                                                            //
+            root_depth >= 5                                                            //
+            && tm.should_stop(                                                         //
+                   limits,                                                             //
+                   stability,                                                          //
+                   prev_score - score,                                                 //
+                   scores[root_depth - 3] - score,                                     //
+                   move_nodes[best_move.from()][best_move.to()] / double(total_nodes)) //
+        ) {
+            break;
+        }
+
+        prev_score = score;
+        scores[root_depth] = score;
     }
 
     std::cout << "bestmove " << best_move << std::endl;
@@ -193,6 +213,8 @@ movesloop:
 
         tt.prefetch(board.key_after(move));
 
+        U64 start_nodes = total_nodes;
+
         made_moves++;
 
         if(!root_node && !is_loss(best_score)) {
@@ -258,6 +280,10 @@ movesloop:
 
         if(is_limit_reached(depth))
             return 0;
+
+        if(root_node) {
+            move_nodes[move.from()][move.to()] += total_nodes - start_nodes;
+        }
 
         if(score > best_score) {
             best_score = score;
