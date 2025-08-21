@@ -3,8 +3,15 @@
 #include <array>
 #include <cassert>
 #include <cstring>
+#include <immintrin.h>
 
 #include "../chess/misc.h"
+
+#if defined(__AVX512F__)
+#define ALIGNMENT 64
+#else
+#define ALIGNMENT 32
+#endif
 
 using namespace Chess;
 
@@ -84,10 +91,10 @@ class NNUE {
 
   private:
     // (12x768->1536)x2->1
-    int16_t ft_weights[INPUT_SIZE * FT_SIZE];
-    int16_t ft_biases[FT_SIZE];
-    int16_t l1_weights[2 * FT_SIZE * L1_SIZE];
-    int16_t l1_biases[L1_SIZE];
+    alignas(ALIGNMENT) int16_t ft_weights[INPUT_SIZE * FT_SIZE];
+    alignas(ALIGNMENT) int16_t ft_biases[FT_SIZE];
+    alignas(ALIGNMENT) int16_t l1_weights[2 * FT_SIZE * L1_SIZE];
+    alignas(ALIGNMENT) int16_t l1_biases[L1_SIZE];
 };
 
 // global variable
