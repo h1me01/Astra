@@ -11,6 +11,8 @@ struct Stack {
     
     Move move = NO_MOVE;
     Move killer = NO_MOVE;
+
+    Score static_eval = VALUE_NONE;
 };
 
 } // namespace Search

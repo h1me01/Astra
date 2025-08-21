@@ -78,6 +78,8 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *s) {
 
     Move best_move = NO_MOVE;
 
+    bool improving = false;
+
     (s + 1)->killer = NO_MOVE;
 
     if(!root_node) {
@@ -107,15 +109,15 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *s) {
 
     // set eval and static eval
     if(in_check) {
-        raw_eval = eval = VALUE_NONE;
+        raw_eval = eval = s->static_eval = VALUE_NONE;
         goto movesloop;
     } else if(tt_hit) {
-        raw_eval = eval = valid_score(ent->eval) ? ent->eval : evaluate();
+        raw_eval = eval = s->static_eval = valid_score(ent->eval) ? ent->eval : evaluate();
 
         if(valid_score(tt_score) && valid_tt_score(tt_score, eval + 1, ent->bound))
             eval = tt_score;
     } else {
-        raw_eval = eval = evaluate();
+        raw_eval = eval = s->static_eval = evaluate();
     }
 
     // razoring
@@ -128,6 +130,11 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *s) {
         if(score <= alpha)
             return score;
     }
+
+    if(valid_score((s - 2)->static_eval))
+        improving = s->static_eval > (s - 2)->static_eval;
+    else if(valid_score((s - 4)->static_eval))
+        improving = s->static_eval > (s - 4)->static_eval;
 
 movesloop:
 
@@ -174,6 +181,8 @@ movesloop:
         // late move reductions
         if(depth >= 2 && made_moves >= 3 && (!pv_node || !move.is_cap())) {
             int r = REDUCTIONS[depth][made_moves];
+
+            r += !improving;
 
             r -= move.is_cap();
 
@@ -296,9 +305,9 @@ Score Search::quiescence(Score alpha, Score beta, Stack *s) {
     }
 
     if(in_check) {
-        raw_eval = VALUE_NONE;
+        raw_eval = s->static_eval = VALUE_NONE;
     } else {
-        raw_eval = (tt_hit && valid_score(ent->eval)) ? ent->eval : evaluate();
+        raw_eval = s->static_eval = (tt_hit && valid_score(ent->eval)) ? ent->eval : evaluate();
         best_score = raw_eval;
 
         if(best_score >= beta)
