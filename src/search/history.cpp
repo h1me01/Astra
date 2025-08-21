@@ -32,6 +32,7 @@ void History::update(const Board &board,         //
         // only update quiet history if best move was important
         if(depth > 3 || qc > 1) {
             update_hh(stm, best, bonus);
+            update_conth(best, s, bonus);
 
             // quiet maluses
             for(int i = 0; i < qc; i++) {
@@ -39,6 +40,7 @@ void History::update(const Board &board,         //
                 if(quiet == best)
                     continue;
                 update_hh(stm, quiet, -bonus);
+                update_conth(quiet, s, -bonus);
             }
         }
     } else {
@@ -72,6 +74,20 @@ void History::update_nh(const Board &board, const Move &move, int bonus) {
 
     int16_t &value = nh[pc][to][captured];
     value += adjusted_bonus(value, bonus);
+}
+
+void History::update_conth(const Move &move, Stack *s, int bonus) {
+    assert(move.is_valid());
+
+    for(int offset : {1, 2, 4, 6}) {
+        if((s - offset)->move.is_valid()) {
+            Piece pc = (s - offset)->moved_piece;
+            assert(valid_piece(pc));
+
+            int16_t &value = (*(s - offset)->conth)[pc][move.to()];
+            value += adjusted_bonus(value, bonus);
+        }
+    }
 }
 
 } // namespace Search

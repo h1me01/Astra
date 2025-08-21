@@ -181,8 +181,8 @@ void UCI::go(std::istringstream &is) {
         limits.time.maximum = move_time;
 
     // start search
-    Search::Search search{board};
-    search.start(limits);
+    Search::Search *search = new Search::Search{board};
+    search->start(limits);
 }
 
 Move UCI::get_move(const std::string &str_move) const {

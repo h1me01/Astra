@@ -149,6 +149,10 @@ void MovePicker::score_quiets() {
         assert(valid_piece_type(pt));
 
         int score = history.get_hh(board.get_stm(), ml_main[i]);
+        score += (int) (*(s - 1)->conth)[pc][to];
+        score += (int) (*(s - 2)->conth)[pc][to];
+        score += (int) (*(s - 4)->conth)[pc][to];
+        score += (int) (*(s - 6)->conth)[pc][to];
 
         if(pt != PAWN && pt != KING) {
             U64 danger;

@@ -27,10 +27,12 @@ void Search::start(Limits limits) {
     Move best_move = NO_MOVE;
 
     // init stack
-    Stack stack[MAX_PLY + 1];
-    Stack *s = &stack[0];
-    for(int i = 0; i < MAX_PLY; i++)
-        stack[i].ply = i;
+    Stack stack[MAX_PLY + 7]; // +6 for continuation history, +1 for safety
+    Stack *s = &stack[6];
+    for(int i = 0; i < MAX_PLY + 7; i++) {
+        stack[i].ply = i - 6;
+        stack[i].conth = &history.conth[0][NO_PIECE][NO_SQUARE];
+    }
 
     tt.increment();
 
@@ -161,6 +163,8 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *s) {
                 + std::min(4, (eval - beta) / 217);
 
         s->move = NULL_MOVE;
+        s->moved_piece = NO_PIECE;
+        s->conth = &history.conth[0][NO_PIECE][NO_SQUARE];
 
         board.make_nullmove();
         Score score = -negamax<NodeType::NON_PV>(depth - R, -beta, -beta + 1, s + 1);
@@ -208,6 +212,8 @@ movesloop:
         total_nodes++;
 
         s->move = move;
+        s->moved_piece = board.piece_at(move.from());
+        s->conth = &history.conth[move.is_cap()][s->moved_piece][move.to()];
 
         if(move.is_cap() && c_count < 64)
             c_moves[c_count++] = move;
@@ -384,6 +390,8 @@ Score Search::quiescence(Score alpha, Score beta, Stack *s) {
         total_nodes++;
 
         s->move = move;
+        s->moved_piece = board.piece_at(move.from());
+        s->conth = &history.conth[move.is_cap()][s->moved_piece][move.to()];
 
         board.make_move(move);
         Score score = -quiescence<nt>(-beta, -alpha, s + 1);

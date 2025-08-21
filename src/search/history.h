@@ -21,11 +21,14 @@ class History {
 
     void update_hh(Color c, const Move &move, int bonus);
     void update_nh(const Board &board, const Move &move, int bonus);
+    void update_conth(const Move &move, Stack *ss, int bonus);
 
     Move get_counter(Move move) const;
 
     int get_hh(Color stm, Move move) const;
     int get_nh(const Board &board, Move &move) const;
+
+    int16_t conth[2][NUM_PIECES + 1][NUM_SQUARES + 1][NUM_PIECES + 1][NUM_SQUARES + 1];
 
   private:
     Move counters[NUM_SQUARES][NUM_SQUARES];
