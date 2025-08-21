@@ -116,6 +116,17 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *s) {
         tt.prefetch(board.key_after(move));
 
         made_moves++;
+
+        if(!root_node && !is_loss(best_score)) {
+            const int lmr_depth = std::max(0, depth - REDUCTIONS[depth][made_moves]);
+
+            // see pruning
+            int see_depth = move.is_cap() ? depth : lmr_depth * lmr_depth;
+            int see_margin = move.is_cap() ? 97 : 17;
+            if(!board.see(move, see_depth * -see_margin))
+                continue;
+        }
+
         total_nodes++;
 
         s->move = move;
@@ -235,7 +246,7 @@ Score Search::quiescence(Score alpha, Score beta, Stack *s) {
 
     const bool in_check = board.in_check();
     const U64 hash = board.get_hash();
-    
+
     Move best_move = NO_MOVE;
     Score best_score;
 
@@ -273,6 +284,13 @@ Score Search::quiescence(Score alpha, Score beta, Stack *s) {
         tt.prefetch(board.key_after(move));
 
         made_moves++;
+
+        if(!is_loss(best_score)) {
+
+            if(!board.see(move, 0))
+                continue;
+        }
+
         total_nodes++;
 
         s->move = move;
