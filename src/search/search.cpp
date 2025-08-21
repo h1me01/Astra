@@ -331,7 +331,7 @@ Score Search::quiescence(Score alpha, Score beta, Stack *s) {
     Move best_move = NO_MOVE;
 
     Score best_score = -VALUE_INFINITE;
-    Score raw_eval;
+    Score raw_eval, futility;
 
     // look up in transposition table
     bool tt_hit = false;
@@ -347,10 +347,11 @@ Score Search::quiescence(Score alpha, Score beta, Stack *s) {
     }
 
     if(in_check) {
-        raw_eval = s->static_eval = VALUE_NONE;
+        futility = raw_eval = s->static_eval = VALUE_NONE;
     } else {
         raw_eval = s->static_eval = (tt_hit && valid_score(ent->eval)) ? ent->eval : evaluate();
         best_score = raw_eval;
+        futility = best_score + 114;
 
         if(best_score >= beta)
             return best_score;
@@ -371,6 +372,10 @@ Score Search::quiescence(Score alpha, Score beta, Stack *s) {
         made_moves++;
 
         if(!is_loss(best_score)) {
+            if(!in_check && !move.is_quiet() && futility <= alpha && !board.see(move, 1)) {
+                best_score = std::max(best_score, futility);
+                continue;
+            }
 
             if(!board.see(move, 0))
                 continue;
