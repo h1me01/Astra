@@ -113,6 +113,8 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *s) {
         if(!board.is_legal(move))
             continue;
 
+        tt.prefetch(board.key_after(move));
+
         made_moves++;
         total_nodes++;
 
@@ -260,6 +262,8 @@ Score Search::quiescence(Score alpha, Score beta, Stack *s) {
     while((move = mp.next()) != NO_MOVE) {
         if(!board.is_legal(move))
             continue;
+
+        tt.prefetch(board.key_after(move));
 
         made_moves++;
         total_nodes++;
