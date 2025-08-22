@@ -159,13 +159,27 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *s) {
     // look up in transposition table
     bool tt_hit = false;
     TTEntry *ent = tt.lookup(hash, &tt_hit);
-    Score tt_score = ent->get_score(s->ply);
 
-    if(!pv_node                                      //
-       && tt_hit                                     //
-       && ent->depth >= depth                        //
-       && valid_score(tt_score)                      //
-       && valid_tt_score(tt_score, beta, ent->bound) //
+    Move tt_move = NO_MOVE;
+    Bound tt_bound = NO_BOUND;
+    Score tt_score = VALUE_NONE;
+    Score tt_eval = VALUE_NONE;
+    int tt_depth = 0;
+    bool tt_pv = pv_node;
+
+    if(tt_hit) {
+        tt_move = ent->get_move();
+        tt_bound = ent->get_bound();
+        tt_score = ent->get_score(s->ply);
+        tt_eval = ent->get_eval();
+        tt_depth = ent->get_depth();
+        tt_pv |= ent->get_tt_pv();
+    }
+
+    if(!pv_node                                    //
+       && tt_depth >= depth                        //
+       && valid_score(tt_score)                    //
+       && valid_tt_score(tt_score, beta, tt_bound) //
     ) {
         return tt_score;
     }
@@ -174,13 +188,13 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *s) {
     if(in_check) {
         raw_eval = eval = s->static_eval = VALUE_NONE;
         goto movesloop;
-    } else if(tt_hit) {
-        raw_eval = eval = s->static_eval = valid_score(ent->eval) ? ent->eval : evaluate();
-
-        if(valid_score(tt_score) && valid_tt_score(tt_score, eval + 1, ent->bound))
-            eval = tt_score;
     } else {
-        raw_eval = eval = s->static_eval = evaluate();
+        raw_eval = valid_score(tt_eval) ? tt_eval : evaluate();
+        eval = s->static_eval = raw_eval;
+
+        if(valid_score(tt_score) && valid_tt_score(tt_score, eval + 1, tt_bound)) {
+            eval = tt_score;
+        }
     }
 
     // razoring
@@ -240,7 +254,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *s) {
 
 movesloop:
 
-    MovePicker mp(N_SEARCH, board, history, s, ent->move);
+    MovePicker mp(N_SEARCH, board, history, s, tt_move);
     Move move = NO_MOVE;
 
     int made_moves = 0, q_count = 0, c_count = 0;
@@ -384,17 +398,16 @@ movesloop:
     else if(best_score <= old_alpha)
         bound = UPPER_BOUND;
 
-    if(best_move.is_valid()) {
-        ent->store(     //
-            hash,       //
-            best_move,  //
-            best_score, //
-            raw_eval,   //
-            bound,      //
-            depth,      //
-            s->ply      //
-        );
-    }
+    ent->store(     //
+        hash,       //
+        best_move,  //
+        best_score, //
+        raw_eval,   //
+        bound,      //
+        depth,      //
+        s->ply,     //
+        tt_pv       //
+    );
 
     assert(valid_score(best_score));
 
@@ -427,30 +440,45 @@ Score Search::quiescence(Score alpha, Score beta, Stack *s) {
     // look up in transposition table
     bool tt_hit = false;
     TTEntry *ent = tt.lookup(hash, &tt_hit);
-    Score tt_score = ent->get_score(s->ply);
 
-    if(!pv_node                                      //
-       && tt_hit                                     //
-       && valid_score(tt_score)                      //
-       && valid_tt_score(tt_score, beta, ent->bound) //
-    ) {
+    Move tt_move = NO_MOVE;
+    Bound tt_bound = NO_BOUND;
+    Score tt_score = VALUE_NONE;
+    Score tt_eval = VALUE_NONE;
+    bool tt_pv = false;
+
+    if(tt_hit) {
+        tt_move = ent->get_move();
+        tt_bound = ent->get_bound();
+        tt_score = ent->get_score(s->ply);
+        tt_eval = ent->get_eval();
+        tt_pv |= ent->get_tt_pv();
+    }
+
+    if(!pv_node && valid_score(tt_score) && valid_tt_score(tt_score, beta, tt_bound)) {
         return tt_score;
     }
 
     if(in_check) {
         futility = raw_eval = s->static_eval = VALUE_NONE;
     } else {
-        raw_eval = s->static_eval = (tt_hit && valid_score(ent->eval)) ? ent->eval : evaluate();
-        best_score = raw_eval;
+        raw_eval = valid_score(tt_eval) ? tt_eval : evaluate();
+        best_score = s->static_eval = raw_eval;
         futility = best_score + 114;
 
+        if(valid_score(tt_score) && valid_tt_score(tt_score, best_score + 1, tt_bound)) {
+            best_score = tt_score;
+        }
+
+        // stand pat
         if(best_score >= beta)
             return best_score;
+
         if(best_score > alpha)
             alpha = best_score;
     }
 
-    MovePicker mp(Q_SEARCH, board, history, s, ent->move);
+    MovePicker mp(Q_SEARCH, board, history, s, tt_move);
     Move move = NO_MOVE;
 
     int made_moves = 0;
@@ -516,7 +544,8 @@ Score Search::quiescence(Score alpha, Score beta, Stack *s) {
         raw_eval,   //
         bound,      //
         0,          // depth
-        s->ply      //
+        s->ply,     //
+        tt_pv       //
     );
 
     assert(valid_score(best_score));

@@ -33,6 +33,7 @@ void Options::print() const {
 
 void Options::apply() {
     num_workers = std::stoi(get("Threads"));
+    Search::tt.set_num_workers(num_workers);
     Search::tt.init(std::stoi(get("Hash")));
 }
 
