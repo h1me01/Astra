@@ -14,7 +14,7 @@ class ThreadPool {
 
     U64 get_total_nodes() const;
 
-    void launch_workers(const Board& board, Limits limit, int worker_count);
+    void launch_workers(const Board &board, Limits limit, int worker_count);
 
     void stop() {
         stop_flag.store(true);

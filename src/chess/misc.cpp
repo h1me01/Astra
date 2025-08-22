@@ -60,8 +60,10 @@ PieceType prom_type(const MoveType mt) {
 }
 
 std::ostream &operator<<(std::ostream &os, const Move &m) {
-    if(!m.is_valid())
+    if(m == NO_MOVE)
         os << "NO MOVE";
+    else if(m == NULL_MOVE)
+        os << "NULL MOVE";
     else
         os << SQSTR[m.from()] << SQSTR[m.to()];
 

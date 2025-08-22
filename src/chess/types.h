@@ -116,7 +116,6 @@ enum MoveType
 constexpr int MAX_MOVES = 128;
 
 class Move {
-
   public:
     // default move (a1a1)
     Move() : data(0), score(0) {}
@@ -164,6 +163,14 @@ class Move {
 
     bool operator!=(const Move &m) const {
         return data != m.data;
+    }
+
+    explicit operator bool() const {
+        return is_valid();
+    }
+
+    bool operator!() const {
+        return !is_valid();
     }
 
     bool is_valid() const {

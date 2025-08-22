@@ -172,7 +172,7 @@ inline U64 Board::attackers_to(Color c, Square sq, const U64 occ) const {
 inline U64 Board::key_after(Move m) const {
     U64 new_hash = states[curr_ply].hash;
 
-    if(!m.is_valid())
+    if(!m)
         return new_hash ^ Zobrist::side;
 
     Square from = m.from();

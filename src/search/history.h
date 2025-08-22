@@ -111,7 +111,7 @@ inline int History::get_contcorr(const Stack *s) const {
     Piece prev_p = (s - 1)->moved_piece;
     Piece pprev_p = (s - 2)->moved_piece;
 
-    if(!prev_move.is_valid() || !pprev_move.is_valid())
+    if(!prev_move || !pprev_move)
         return 0;
 
     return cont_corr[prev_p][prev_move.to()][pprev_p][pprev_move.to()];

@@ -39,10 +39,7 @@ MovePicker::MovePicker(SearchType st,          //
         killer = s->killer;
 
         Move prev_move = (s - 1)->move;
-        if(prev_move.is_valid())
-            counter = history.get_counter(prev_move);
-        else
-            counter = NO_MOVE;
+        counter = prev_move ? history.get_counter(prev_move) : NO_MOVE;
     }
 }
 

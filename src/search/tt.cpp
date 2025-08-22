@@ -47,7 +47,7 @@ void TTEntry::store( //
 ) {
     uint16_t hash16 = (uint16_t) hash;
 
-    if(move.is_valid() || this->hash != hash16)
+    if(move || this->hash != hash16)
         this->move = move.raw();
 
     if(valid_score(score)) {

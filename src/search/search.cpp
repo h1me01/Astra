@@ -164,7 +164,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *s, bool cut_nod
 
     // look up in transposition table
     bool tt_hit = false;
-    TTEntry *ent = !s->skipped.is_valid() ? tt.lookup(hash, &tt_hit) : nullptr;
+    TTEntry *ent = !s->skipped ? tt.lookup(hash, &tt_hit) : nullptr;
 
     Move tt_move = NO_MOVE;
     Bound tt_bound = NO_BOUND;
@@ -194,7 +194,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *s, bool cut_nod
     if(in_check) {
         raw_eval = eval = s->static_eval = VALUE_NONE;
         goto movesloop;
-    } else if(s->skipped.is_valid())
+    } else if(s->skipped)
         raw_eval = eval = s->static_eval;
     else {
         raw_eval = valid_score(tt_eval) ? tt_eval : evaluate();
@@ -217,7 +217,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *s, bool cut_nod
     }
 
     // update quiet history
-    if((s - 1)->move.is_valid()             //
+    if((s - 1)->move                        //
        && !(s - 1)->move.is_cap()           //
        && valid_score((s - 1)->static_eval) //
     ) {
@@ -249,9 +249,9 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *s, bool cut_nod
     // reverse futility pruning
     if(!pv_node                                         //
        && depth < 11                                    //
+       && !s->skipped                                   //
        && !is_win(eval)                                 //
        && !is_loss(beta)                                //
-       && !s->skipped.is_valid()                        //
        && eval - (106 * depth - 89 * improving) >= beta //
     ) {
         return (eval + beta) / 2;
@@ -260,10 +260,10 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *s, bool cut_nod
     // null move pruning
     if(!pv_node                                     //
        && depth >= 4                                //
+       && !s->skipped                               //
        && eval >= beta                              //
        && !is_loss(beta)                            //
        && board.nonpawnmat(stm)                     //
-       && !s->skipped.is_valid()                    //
        && (s - 1)->move != NULL_MOVE                //
        && s->static_eval + 25 * depth - 161 >= beta //
     ) {
@@ -288,7 +288,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *s, bool cut_nod
     }
 
     // internal iterative reduction
-    if(!s->skipped.is_valid() && depth >= 4 && !tt_move.is_valid() && (pv_node || cut_node)) {
+    if(!s->skipped && depth >= 4 && !tt_move && (pv_node || cut_node)) {
         depth--;
     }
 
@@ -296,8 +296,8 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *s, bool cut_nod
     beta_cut = beta + 237;
     if(!pv_node                                           //
        && depth > 4                                       //
+       && !s->skipped                                     //
        && !is_decisive(beta)                              //
-       && !s->skipped.is_valid()                          //
        && !(tt_depth >= depth - 3 && tt_score < beta_cut) //
     ) {
         MovePicker mp(PC_SEARCH, board, history, s, tt_move);
@@ -404,8 +404,8 @@ movesloop:
 
         if(!root_node                 //
            && depth >= 6              //
+           && !s->skipped             //
            && move == tt_move         //
-           && !s->skipped.is_valid()  //
            && tt_depth >= depth - 3   //
            && valid_score(tt_score)   //
            && !is_decisive(tt_score)  //
@@ -445,7 +445,7 @@ movesloop:
 
             r += 2 * cut_node;
 
-            r += tt_move.is_valid() ? tt_move.is_cap() : 0;
+            r += tt_move ? tt_move.is_cap() : 0;
 
             r -= tt_pv;
 
@@ -518,7 +518,7 @@ movesloop:
 
     // check for mate/stalemate
     if(made_moves == 0) {
-        if(s->skipped.is_valid())
+        if(s->skipped)
             return alpha;
         else if(in_check)
             return s->ply - VALUE_MATE;
@@ -533,7 +533,7 @@ movesloop:
     else if(best_score <= old_alpha)
         bound = UPPER_BOUND;
 
-    if(!s->skipped.is_valid()) {
+    if(!s->skipped) {
         ent->store(     //
             hash,       //
             best_move,  //
@@ -548,7 +548,7 @@ movesloop:
 
     // update correction histories
     if(!in_check                                            //
-       && (!best_move.is_valid() || !best_move.is_cap())    //
+       && (!best_move || !best_move.is_cap())               //
        && valid_tt_score(best_score, s->static_eval, bound) //
     ) {
         history.update_matcorr(board, raw_eval, best_score, depth);

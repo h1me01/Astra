@@ -30,7 +30,7 @@ void History::update(const Board &board,         //
 
     if(best.is_quiet()) {
         Move prev_move = (s - 1)->move;
-        if(prev_move.is_valid())
+        if(prev_move)
             counters[prev_move.from()][prev_move.to()] = best;
 
         s->killer = best;
@@ -64,13 +64,13 @@ void History::update(const Board &board,         //
 }
 
 void History::update_hh(Color c, const Move &move, int bonus) {
-    assert(move.is_valid());
+    assert(move);
     int16_t &value = hh[c][move.from()][move.to()];
     value += adjusted_bonus(value, bonus);
 }
 
 void History::update_nh(const Board &board, const Move &move, int bonus) {
-    assert(move.is_valid());
+    assert(move);
 
     Square to = move.to();
     PieceType captured = (move.type() == EN_PASSANT) ? PAWN : piece_type(board.piece_at(to));
@@ -84,10 +84,10 @@ void History::update_nh(const Board &board, const Move &move, int bonus) {
 }
 
 void History::update_conth(const Move &move, Stack *s, int bonus) {
-    assert(move.is_valid());
+    assert(move);
 
     for(int offset : {1, 2, 4, 6}) {
-        if((s - offset)->move.is_valid()) {
+        if((s - offset)->move) {
             Piece pc = (s - offset)->moved_piece;
             assert(valid_piece(pc));
 
@@ -113,7 +113,7 @@ void History::update_contcorr(Score raw_eval, Score real_score, int depth, const
     Piece prev_pc = (s - 1)->moved_piece;
     Piece pprev_pc = (s - 2)->moved_piece;
 
-    if(!prev_move.is_valid() || !pprev_move.is_valid())
+    if(!prev_move || !pprev_move)
         return;
 
     update_corr(cont_corr[prev_pc][prev_move.to()][pprev_pc][pprev_move.to()], real_score - raw_eval, depth);

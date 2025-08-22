@@ -2,7 +2,7 @@
 
 namespace Search {
 
-void ThreadPool::launch_workers(const Board& board, Limits limits, int worker_count) {
+void ThreadPool::launch_workers(const Board &board, Limits limits, int worker_count) {
     start();
 
     threads.clear();
@@ -12,9 +12,8 @@ void ThreadPool::launch_workers(const Board& board, Limits limits, int worker_co
         auto thread = std::make_unique<Search>();
         thread->id = i;
 
-        running_threads.emplace_back([thread_ptr = thread.get(), &board, limits]() mutable {
-            thread_ptr->start(board, limits);
-        });
+        running_threads.emplace_back(
+            [thread_ptr = thread.get(), &board, limits]() mutable { thread_ptr->start(board, limits); });
 
         threads.emplace_back(std::move(thread));
     }

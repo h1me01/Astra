@@ -34,8 +34,6 @@ struct PVLine {
 
 class Search {
   public:
-    int id = 0;
-
     Search() : total_nodes{0} {}
 
     void start(const Board &board, Limits limits);
@@ -47,6 +45,8 @@ class Search {
     U64 get_total_nodes() const {
         return total_nodes;
     }
+
+    int id = 0;
 
   private:
     int root_depth;

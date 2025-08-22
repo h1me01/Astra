@@ -178,7 +178,7 @@ bool Board::is_legal(const Move &m) const {
     const Square ksq = king_sq(stm);
     const Piece from_pc = piece_at(from);
 
-    assert(m.is_valid());
+    assert(m);
     assert(from_pc != NO_PIECE);
     assert(piece_at(ksq) == make_piece(stm, KING));
 
@@ -233,7 +233,7 @@ bool Board::is_pseudolegal(const Move &m) const {
     const U64 them_bb = occupancy(~stm);
     const U64 occ = us_bb | them_bb;
 
-    if(!m.is_valid())
+    if(!m)
         return false;
     if(from_pc == NO_PIECE)
         return false;
@@ -356,7 +356,7 @@ void Board::make_move(const Move &m, bool update_nnue) {
     const PieceType pt = piece_type(pc);
     const Piece captured = mt == EN_PASSANT ? make_piece(~stm, PAWN) : piece_at(to);
 
-    assert(m.is_valid());
+    assert(m);
     assert(valid_piece(pc));
     assert(piece_type(captured) != KING);
 
@@ -469,7 +469,7 @@ void Board::unmake_move(const Move &m) {
     const Square to = m.to();
     const Piece captured = states[curr_ply].captured;
 
-    assert(m.is_valid());
+    assert(m);
     assert(piece_at(to) != NO_PIECE);
     assert(piece_at(from) == NO_PIECE);
 

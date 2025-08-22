@@ -3,7 +3,7 @@
 namespace Chess {
 
 bool Board::see(Move &m, int threshold) const {
-    assert(m.is_valid());
+    assert(m);
 
     if(m.is_prom() || m.type() == EN_PASSANT || m.type() == CASTLING)
         return true;
