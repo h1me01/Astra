@@ -610,6 +610,9 @@ Score Search::quiescence(int depth, Score alpha, Score beta, Stack *s) {
 
         // stand pat
         if(best_score >= beta) {
+            if(!is_decisive(best_score))
+                best_score = (best_score + beta) / 2;
+
             if(!tt_hit) {
                 ent->store(     //
                     hash,       //
@@ -686,6 +689,9 @@ Score Search::quiescence(int depth, Score alpha, Score beta, Stack *s) {
 
     if(board.in_check() && made_moves == 0)
         return s->ply - VALUE_MATE;
+
+    if(best_score >= beta && !is_decisive(best_score))
+        best_score = (best_score + beta) / 2;
 
     Bound bound = (best_score >= beta) ? LOWER_BOUND : UPPER_BOUND;
 
