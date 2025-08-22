@@ -459,8 +459,19 @@ movesloop:
 
             score = -negamax<NodeType::NON_PV>(lmr_depth, -alpha - 1, -alpha, s + 1, true);
 
-            if(score > alpha && lmr_depth < new_depth)
+            if(score > alpha && lmr_depth < new_depth) {
                 score = -negamax<NodeType::NON_PV>(new_depth, -alpha - 1, -alpha, s + 1, !cut_node);
+
+                if(!move.is_cap()) {
+                    int bonus = 0;
+                    if(score <= alpha)
+                        bonus = -history_bonus(new_depth);
+                    else if(score >= beta)
+                        bonus = history_bonus(new_depth);
+
+                    history.update_conth(move, s, bonus);
+                }
+            }
         } else if(!pv_node || made_moves > 1) {
             score = -negamax<NodeType::NON_PV>(new_depth, -alpha - 1, -alpha, s + 1, !cut_node);
         }
