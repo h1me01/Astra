@@ -190,7 +190,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *s) {
         goto movesloop;
     } else {
         raw_eval = valid_score(tt_eval) ? tt_eval : evaluate();
-        eval = s->static_eval = adjust_eval(raw_eval);
+        eval = s->static_eval = adjust_eval(raw_eval, s);
 
         if(valid_score(tt_score) && valid_tt_score(tt_score, eval + 1, tt_bound)) {
             eval = tt_score;
@@ -473,6 +473,7 @@ movesloop:
        && valid_tt_score(best_score, s->static_eval, bound) //
     ) {
         history.update_matcorr(board, raw_eval, best_score, depth);
+        history.update_contcorr(raw_eval, best_score, depth, s);
     }
 
     assert(valid_score(best_score));
@@ -529,7 +530,7 @@ Score Search::quiescence(int depth, Score alpha, Score beta, Stack *s) {
         futility = raw_eval = s->static_eval = VALUE_NONE;
     } else {
         raw_eval = valid_score(tt_eval) ? tt_eval : evaluate();
-        best_score = s->static_eval = adjust_eval(raw_eval);
+        best_score = s->static_eval = adjust_eval(raw_eval, s);
         futility = best_score + 114;
 
         if(valid_score(tt_score) && valid_tt_score(tt_score, best_score + 1, tt_bound)) {
@@ -638,8 +639,8 @@ Score Search::evaluate() {
     return std::clamp(eval, int(-VALUE_MATE_IN_MAX_PLY), int(VALUE_MATE_IN_MAX_PLY));
 }
 
-Score Search::adjust_eval(Score eval) const {
-    eval += history.get_matcorr(board) / 256;
+Score Search::adjust_eval(Score eval, Stack *s) const {
+    eval += (history.get_matcorr(board) + history.get_contcorr(s)) / 256;
 
     return std::clamp(                       //
         eval,                                //

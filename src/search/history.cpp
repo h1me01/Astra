@@ -106,4 +106,17 @@ void History::update_matcorr(const Board &board, Score raw_eval, Score real_scor
     update_corr(b_non_pawn_corr[stm][corr_idx(board.get_nonpawn_hash(BLACK))], diff, depth);
 }
 
+void History::update_contcorr(Score raw_eval, Score real_score, int depth, const Stack *s) {
+    const Move prev_move = (s - 1)->move;
+    const Move pprev_move = (s - 2)->move;
+
+    Piece prev_pc = (s - 1)->moved_piece;
+    Piece pprev_pc = (s - 2)->moved_piece;
+
+    if(!prev_move.is_valid() || !pprev_move.is_valid())
+        return;
+
+    update_corr(cont_corr[prev_pc][prev_move.to()][pprev_pc][pprev_move.to()], real_score - raw_eval, depth);
+}
+
 } // namespace Search
