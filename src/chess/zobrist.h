@@ -35,7 +35,8 @@ U64 get_psq(Piece pc, Square sq);
 U64 get_castle(int idx);
 U64 get_ep(Square sq);
 
-U64 get_hash(const Board &board);
+U64 get_pawn(const Board &board);
+U64 get_nonpawn(const Board &board, Color c);
 
 } // namespace Zobrist
 

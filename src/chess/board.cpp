@@ -102,7 +102,15 @@ void Board::set_fen(const std::string &fen, bool update_nnue) {
     init_threats();
     init_slider_blockers();
 
-    info.hash = Zobrist::get_hash(*this);
+    info.pawn_hash = Zobrist::get_pawn(*this);
+    info.non_pawn_hash[WHITE] = Zobrist::get_nonpawn(*this, WHITE);
+    info.non_pawn_hash[BLACK] = Zobrist::get_nonpawn(*this, BLACK);
+
+    info.hash = info.pawn_hash ^ info.non_pawn_hash[WHITE] ^ info.non_pawn_hash[BLACK];
+
+    info.hash ^= Zobrist::side;
+    info.hash ^= Zobrist::get_ep(info.ep_sq);
+    info.hash ^= Zobrist::get_castle(info.castle_rights.get_hash_idx());
 
     if(update_nnue)
         reset_accum();
@@ -382,6 +390,7 @@ void Board::make_move(const Move &m, bool update_nnue) {
 
         // update hash of moving rook
         info.hash ^= Zobrist::get_psq(rook, rook_from) ^ Zobrist::get_psq(rook, rook_to);
+        info.non_pawn_hash[stm] ^= Zobrist::get_psq(rook, rook_from) ^ Zobrist::get_psq(rook, rook_to);
 
         move_piece(rook_from, rook_to, update_nnue);
     }
@@ -391,10 +400,21 @@ void Board::make_move(const Move &m, bool update_nnue) {
 
         info.hash ^= Zobrist::get_psq(captured, cap_sq); // remove captured piece from hash
         remove_piece(cap_sq, update_nnue);
+
+        if(piece_type(captured) == PAWN)
+            info.pawn_hash ^= Zobrist::get_psq(captured, cap_sq);
+        else
+            info.non_pawn_hash[~stm] ^= Zobrist::get_psq(captured, cap_sq);
     }
 
     // update hash of moving piece
     info.hash ^= Zobrist::get_psq(pc, from) ^ Zobrist::get_psq(pc, to);
+    if(pt == PAWN)
+        info.pawn_hash ^= Zobrist::get_psq(pc, from) ^ Zobrist::get_psq(pc, to);
+    else
+        info.non_pawn_hash[stm] ^= Zobrist::get_psq(pc, from) ^ Zobrist::get_psq(pc, to);
+
+    move_piece(from, to, update_nnue);
 
     // reset ep square if it exists
     if(info.ep_sq != NO_SQUARE) {
@@ -411,8 +431,6 @@ void Board::make_move(const Move &m, bool update_nnue) {
         info.hash ^= Zobrist::get_castle(info.castle_rights.get_hash_idx());
     }
 
-    move_piece(from, to, update_nnue);
-
     if(pt == PAWN) {
         // set ep square if double push can be captured by enemy pawn
         auto ep_sq = Square(to ^ 8);
@@ -428,6 +446,7 @@ void Board::make_move(const Move &m, bool update_nnue) {
 
             // update hash of promoting piece
             info.hash ^= Zobrist::get_psq(pc, to) ^ Zobrist::get_psq(prom_pc, to);
+            info.pawn_hash ^= Zobrist::get_psq(pc, to);
 
             // add promoted piece and remove pawn
             remove_piece(to, update_nnue);

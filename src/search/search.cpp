@@ -190,7 +190,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *s) {
         goto movesloop;
     } else {
         raw_eval = valid_score(tt_eval) ? tt_eval : evaluate();
-        eval = s->static_eval = raw_eval;
+        eval = s->static_eval = adjust_eval(raw_eval);
 
         if(valid_score(tt_score) && valid_tt_score(tt_score, eval + 1, tt_bound)) {
             eval = tt_score;
@@ -467,6 +467,14 @@ movesloop:
         tt_pv       //
     );
 
+    // update correction histories
+    if(!in_check                                            //
+       && (!best_move.is_valid() || !best_move.is_cap())    //
+       && valid_tt_score(best_score, s->static_eval, bound) //
+    ) {
+        history.update_matcorr(board, raw_eval, best_score, depth);
+    }
+
     assert(valid_score(best_score));
 
     return best_score;
@@ -521,7 +529,7 @@ Score Search::quiescence(int depth, Score alpha, Score beta, Stack *s) {
         futility = raw_eval = s->static_eval = VALUE_NONE;
     } else {
         raw_eval = valid_score(tt_eval) ? tt_eval : evaluate();
-        best_score = s->static_eval = raw_eval;
+        best_score = s->static_eval = adjust_eval(raw_eval);
         futility = best_score + 114;
 
         if(valid_score(tt_score) && valid_tt_score(tt_score, best_score + 1, tt_bound)) {
@@ -628,6 +636,16 @@ Score Search::quiescence(int depth, Score alpha, Score beta, Stack *s) {
 Score Search::evaluate() {
     int eval = NNUE::nnue.forward(board);
     return std::clamp(eval, int(-VALUE_MATE_IN_MAX_PLY), int(VALUE_MATE_IN_MAX_PLY));
+}
+
+Score Search::adjust_eval(Score eval) const {
+    eval += history.get_matcorr(board) / 256;
+
+    return std::clamp(                       //
+        eval,                                //
+        Score(VALUE_TB_LOSS_IN_MAX_PLY + 1), //
+        Score(VALUE_TB_WIN_IN_MAX_PLY - 1)   //
+    );
 }
 
 void Search::update_pv(const Move &move, int ply) {

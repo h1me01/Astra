@@ -70,6 +70,7 @@ class Search {
     Score quiescence(int depth, Score alpha, Score beta, Stack *s);
 
     Score evaluate();
+    Score adjust_eval(Score eval) const;
 
     void update_pv(const Move &move, int ply);
 

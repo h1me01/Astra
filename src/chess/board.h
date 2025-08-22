@@ -95,6 +95,15 @@ class Board {
         return states[curr_ply].hash;
     }
 
+    U64 get_pawn_hash() const {
+        return states[curr_ply].pawn_hash;
+    }
+
+    U64 get_nonpawn_hash(Color c) const {
+        assert(valid_color(c));
+        return states[curr_ply].non_pawn_hash[c];
+    }
+
     Square king_sq(Color c) const {
         return lsb(get_piecebb(c, KING));
     }

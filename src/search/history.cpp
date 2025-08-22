@@ -1,3 +1,5 @@
+#include <algorithm>
+
 #include "history.h"
 
 namespace Search {
@@ -8,6 +10,11 @@ int history_bonus(int depth) {
 
 int adjusted_bonus(int value, int bonus) {
     return bonus - value * std::abs(bonus) / 16384;
+}
+
+void update_corr(int16_t &value, int diff, int depth) {
+    const int bonus = std::clamp(diff * depth / 8, -256, 256);
+    value = bonus - int(value) * std::abs(bonus) / 1024;
 }
 
 // History
@@ -88,6 +95,15 @@ void History::update_conth(const Move &move, Stack *s, int bonus) {
             value += adjusted_bonus(value, bonus);
         }
     }
+}
+
+void History::update_matcorr(const Board &board, Score raw_eval, Score real_score, int depth) {
+    Color stm = board.get_stm();
+    int diff = real_score - raw_eval;
+
+    update_corr(pawn_corr[stm][corr_idx(board.get_pawn_hash())], diff, depth);
+    update_corr(w_non_pawn_corr[stm][corr_idx(board.get_nonpawn_hash(WHITE))], diff, depth);
+    update_corr(b_non_pawn_corr[stm][corr_idx(board.get_nonpawn_hash(BLACK))], diff, depth);
 }
 
 } // namespace Search

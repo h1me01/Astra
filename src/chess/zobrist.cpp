@@ -43,20 +43,26 @@ U64 get_ep(Square sq) {
     return ep[sq_file(sq)];
 }
 
-U64 get_hash(const Board &board) {
+U64 get_pawn(const Board &board) {
     U64 hash = 0;
 
     for(Color c : {WHITE, BLACK}) {
-        for(PieceType pt : {PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING}) {
-            U64 pieces = board.get_piecebb(c, pt);
-            while(pieces)
-                hash ^= get_psq(make_piece(c, pt), pop_lsb(pieces));
-        }
+        U64 pawns = board.get_piecebb(c, PAWN);
+        while(pawns)
+            hash ^= get_psq(make_piece(c, PAWN), pop_lsb(pawns));
     }
 
-    hash ^= side;
-    hash ^= get_castle(board.get_state().castle_rights.get_hash_idx());
-    hash ^= get_ep(board.get_state().ep_sq);
+    return hash;
+}
+
+U64 get_nonpawn(const Board &board, Color c) {
+    U64 hash = 0;
+
+    for(PieceType pt : {KNIGHT, BISHOP, ROOK, QUEEN, KING}) {
+        U64 pieces = board.get_piecebb(c, pt);
+        while(pieces)
+            hash ^= get_psq(make_piece(c, pt), pop_lsb(pieces));
+    }
 
     return hash;
 }
