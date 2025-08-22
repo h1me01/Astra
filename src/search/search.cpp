@@ -425,6 +425,8 @@ movesloop:
                 return sbeta;
             else if(tt_score >= beta)
                 extensions = -3;
+            else if(cut_node)
+                extensions = -2;
         }
 
         total_nodes++;
