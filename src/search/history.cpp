@@ -8,6 +8,10 @@ int history_bonus(int depth) {
     return std::min(2000, 270 * depth - 30);
 }
 
+int history_malus(int depth) {
+    return std::min(1634, 325 * depth + 98);
+}
+
 int adjusted_bonus(int value, int bonus) {
     return bonus - value * std::abs(bonus) / 16384;
 }
@@ -26,7 +30,9 @@ void History::update(const Board &board,         //
                      int depth                   //
 ) {
     Color stm = board.get_stm();
+
     int bonus = history_bonus(depth);
+    int malus = history_malus(depth);
 
     if(best.is_quiet()) {
         Move prev_move = (s - 1)->move;
@@ -47,9 +53,10 @@ void History::update(const Board &board,         //
                 Move quiet = q_moves[i];
                 if(quiet == best)
                     continue;
-                update_hh(stm, quiet, -bonus);
-                update_conth(quiet, s, -bonus);
-                update_ph(board, quiet, -bonus);
+
+                update_hh(stm, quiet, -malus);
+                update_conth(quiet, s, -malus);
+                update_ph(board, quiet, -malus);
             }
         }
     } else {
@@ -61,7 +68,7 @@ void History::update(const Board &board,         //
         Move cap = c_moves[i];
         if(cap == best)
             continue;
-        update_nh(board, cap, -bonus);
+        update_nh(board, cap, -malus);
     }
 }
 
