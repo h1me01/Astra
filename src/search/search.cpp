@@ -389,6 +389,8 @@ movesloop:
 
             r -= board.in_check();
 
+            r -= tt_depth >= depth;
+
             r -= history_score / (move.is_cap() ? 3886 : 7489);
 
             const int lmr_depth = std::clamp(new_depth - r, 1, new_depth + 1);
