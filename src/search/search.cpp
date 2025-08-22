@@ -32,6 +32,19 @@ void Search::start(const Board &board, Limits limits) {
     total_nodes = 0;
     tb_hits = 0;
 
+    MoveList<> legals;
+    legals.gen<LEGALS>(board);
+
+    if(legals.size() == 0) {
+        std::cout << "Position has no legal moves" << std::endl;
+        return;
+    }
+
+    for(int i = 0; i < legals.size(); i++)
+        rootmoves.add({legals[i], 0, 0, 0, {}});
+
+    const int multipv_size = std::min(limits.multipv, rootmoves.size());
+
     if(id == 0)
         tt.increment();
 
@@ -46,31 +59,34 @@ void Search::start(const Board &board, Limits limits) {
     }
 
     int stability = 0;
-    Score prev_score = VALUE_NONE;
     Score scores[MAX_PLY];
 
     for(root_depth = 1; root_depth <= MAX_PLY; root_depth++) {
-        Score score = aspiration(root_depth, prev_score, s);
+        for(multipv_idx = 0; multipv_idx < multipv_size; multipv_idx++)
+            aspiration(root_depth, s);
 
         if(is_limit_reached(root_depth))
             break;
 
-        best_move = get_best_move();
-        print_uci_info(score);
+        // print final pv info
+        for(multipv_idx = 0; multipv_idx < multipv_size; multipv_idx++)
+            print_uci_info();
 
-        if(id == 0                                                                    //
-           && root_depth >= 5                                                         //
-           && tm.should_stop(                                                         //
-                  limits,                                                             //
-                  stability,                                                          //
-                  prev_score - score,                                                 //
-                  scores[root_depth - 3] - score,                                     //
-                  move_nodes[best_move.from()][best_move.to()] / double(total_nodes)) //
+        Score score = rootmoves[0].score;
+        best_move = rootmoves[0].move;
+
+        if(id == 0                                          //
+           && root_depth >= 5                               //
+           && tm.should_stop(                               //
+                  limits,                                   //
+                  stability,                                //
+                  scores[root_depth - 1] - score,           //
+                  scores[root_depth - 3] - score,           //
+                  rootmoves[0].nodes / double(total_nodes)) //
         ) {
             break;
         }
 
-        prev_score = score;
         scores[root_depth] = score;
     }
 
@@ -80,15 +96,16 @@ void Search::start(const Board &board, Limits limits) {
     threads.stop();
 }
 
-Score Search::aspiration(int depth, Score prev_score, Stack *s) {
+Score Search::aspiration(int depth, Stack *s) {
     Score score;
     Score alpha = -VALUE_INFINITE;
     Score beta = VALUE_INFINITE;
 
     int delta = 11;
     if(depth >= 4) {
-        alpha = std::max(prev_score - delta, int(-VALUE_INFINITE));
-        beta = std::min(prev_score + delta, int(VALUE_INFINITE));
+        Score avg_score = rootmoves[multipv_idx].avg_score;
+        alpha = std::max(avg_score - delta, int(-VALUE_INFINITE));
+        beta = std::min(avg_score + delta, int(VALUE_INFINITE));
     }
 
     int fail_high_count = 0;
@@ -97,6 +114,8 @@ Score Search::aspiration(int depth, Score prev_score, Stack *s) {
 
         if(is_limit_reached(depth))
             return 0;
+
+        sort_rootmoves(multipv_idx);
 
         if(score <= alpha) {
             beta = (alpha + beta) / 2;
@@ -112,6 +131,8 @@ Score Search::aspiration(int depth, Score prev_score, Stack *s) {
 
         delta += delta / 3;
     }
+
+    sort_rootmoves(0);
 
     return score;
 }
@@ -414,6 +435,8 @@ movesloop:
     while((move = mp.next()) != NO_MOVE) {
         if(move == s->skipped || !board.is_legal(move))
             continue;
+        if(root_node && !found_rootmove(move))
+            continue;
 
         tt.prefetch(board.key_after(move));
 
@@ -550,7 +573,28 @@ movesloop:
             return 0;
 
         if(root_node) {
-            move_nodes[move.from()][move.to()] += total_nodes - start_nodes;
+            RootMove *rm = &rootmoves[0];
+            for(int i = 1; i < rootmoves.size(); i++) {
+                if(rootmoves[i].move == move) {
+                    rm = &rootmoves[i];
+                    break;
+                }
+            }
+
+            rm->nodes += total_nodes - start_nodes;
+            rm->avg_score = !valid_score(rm->avg_score) ? score : (rm->avg_score + score) / 2;
+
+            if(made_moves == 1 || score > alpha) {
+                rm->score = score;
+                // copy pv line
+                rm->pv[0] = move;
+
+                rm->pv.length = pv_table[s->ply + 1].length;
+                for(int i = 1; i < rm->pv.length; i++)
+                    rm->pv[i] = pv_table[s->ply + 1][i];
+            } else {
+                rm->score = -VALUE_INFINITE;
+            }
         }
 
         if(score > best_score) {
@@ -560,7 +604,7 @@ movesloop:
                 alpha = score;
                 best_move = move;
 
-                if(pv_node)
+                if(pv_node && !root_node)
                     update_pv(move, s->ply);
             }
 
@@ -598,7 +642,7 @@ movesloop:
     else if(best_score <= old_alpha)
         bound = UPPER_BOUND;
 
-    if(!s->skipped) {
+    if(!s->skipped && (!root_node || multipv_idx == 0)) {
         ent->store(     //
             hash,       //
             best_move,  //
@@ -809,44 +853,6 @@ Score Search::adjust_eval(Score eval, Stack *s) const {
     );
 }
 
-void Search::update_pv(const Move &move, int ply) {
-    pv_table[ply][ply] = move;
-    for(int nply = ply + 1; nply < pv_table[ply + 1].length; nply++)
-        pv_table[ply][nply] = pv_table[ply + 1][nply];
-    pv_table[ply].length = pv_table[ply + 1].length;
-}
-
-void Search::print_uci_info(Score score) const {
-    if(id != 0)
-        return; // only main thread prints UCI info
-
-    const int64_t elapsed_time = tm.elapsed_time();
-    const U64 total_thread_nodes = threads.get_total_nodes();
-
-    const PVLine &pv_line = pv_table[0];
-
-    std::cout << "info depth " << root_depth //
-              << " score ";                  //
-
-    if(std::abs(score) >= VALUE_MATE_IN_MAX_PLY)
-        std::cout << "mate " << (VALUE_MATE - std::abs(score) + 1) / 2 * (score > 0 ? 1 : -1);
-    else
-        std::cout << "cp " << Score(score / 2.5);
-
-    std::cout << " nodes " << total_thread_nodes                           //
-              << " nps " << total_thread_nodes * 1000 / (elapsed_time + 1) //
-              << " tbhits " << threads.get_tb_hits()                       //
-              << " hashfull " << tt.hashfull()                             //
-              << " time " << elapsed_time                                  //
-              << " pv " << pv_line[0];
-
-    // print rest of the pv
-    for(int i = 1; i < pv_line.length; i++)
-        std::cout << " " << pv_line[i];
-
-    std::cout << std::endl;
-}
-
 bool Search::is_limit_reached(int depth) const {
     if(threads.is_stopped())
         return true;
@@ -863,6 +869,66 @@ bool Search::is_limit_reached(int depth) const {
         return true;
 
     return false;
+}
+
+void Search::sort_rootmoves(int offset) {
+    assert(offset >= 0);
+
+    for(int i = offset; i < rootmoves.size(); i++) {
+        int best = i;
+        for(int j = i + 1; j < rootmoves.size(); j++)
+            if(rootmoves[j].score > rootmoves[i].score)
+                best = j;
+
+        if(best != i)
+            std::swap(rootmoves[i], rootmoves[best]);
+    }
+}
+
+bool Search::found_rootmove(const Move &move) {
+    for(int i = multipv_idx; i < rootmoves.size(); i++)
+        if(rootmoves[i].move == move)
+            return true;
+    return false;
+}
+
+void Search::update_pv(const Move &move, int ply) {
+    pv_table[ply][ply] = move;
+    for(int nply = ply + 1; nply < pv_table[ply + 1].length; nply++)
+        pv_table[ply][nply] = pv_table[ply + 1][nply];
+    pv_table[ply].length = pv_table[ply + 1].length;
+}
+
+void Search::print_uci_info() const {
+    if(id != 0)
+        return; // only main thread prints UCI info
+
+    const int64_t elapsed_time = tm.elapsed_time();
+    const U64 total_nodes = threads.get_total_nodes();
+    const Score score = rootmoves[multipv_idx].score;
+    const PVLine &pv_line = rootmoves[multipv_idx].pv;
+
+    std::cout << "info depth " << root_depth    //
+              << " multipv " << multipv_idx + 1 //
+              << " score ";                     //
+
+    if(std::abs(score) >= VALUE_MATE_IN_MAX_PLY)
+        std::cout << "mate " << (VALUE_MATE - std::abs(score) + 1) / 2 * (score > 0 ? 1 : -1);
+    else
+        std::cout << "cp " << Score(score / 2.5); // normalize
+
+    std::cout << " nodes " << total_nodes                           //
+              << " nps " << total_nodes * 1000 / (elapsed_time + 1) //
+              << " tbhits " << threads.get_tb_hits()                //
+              << " hashfull " << tt.hashfull()                      //
+              << " time " << elapsed_time                           //
+              << " pv " << rootmoves[multipv_idx].move;
+
+    // print rest of the pv
+    for(int i = 1; i < pv_line.length; i++)
+        std::cout << " " << pv_line[i];
+
+    std::cout << std::endl;
 }
 
 } // namespace Search

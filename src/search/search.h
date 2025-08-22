@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../chess/board.h"
+#include "../chess/movegen.h"
 
 #include "history.h"
 #include "stack.h"
@@ -32,15 +33,19 @@ struct PVLine {
     }
 };
 
+struct RootMove {
+    Move move = NO_MOVE;
+    Score score = -VALUE_INFINITE;
+    Score avg_score = VALUE_NONE;
+    U64 nodes = 0;
+    PVLine pv;
+};
+
 class Search {
   public:
     Search() : total_nodes{0}, tb_hits{0} {}
 
     void start(const Board &board, Limits limits);
-
-    Move get_best_move() const {
-        return pv_table[0][0];
-    }
 
     U64 get_total_nodes() const {
         return total_nodes;
@@ -55,6 +60,7 @@ class Search {
 
   private:
     int root_depth;
+    int multipv_idx;
 
     U64 total_nodes;
     U64 tb_hits;
@@ -66,9 +72,9 @@ class Search {
     Board board{STARTING_FEN};
     PVLine pv_table[MAX_PLY + 1];
 
-    U64 move_nodes[NUM_SQUARES][NUM_SQUARES];
+    MoveList<RootMove> rootmoves;
 
-    Score aspiration(int depth, Score prev_score, Stack *s);
+    Score aspiration(int depth, Stack *s);
 
     template <NodeType nt> //
     Score negamax(int depth, Score alpha, Score beta, Stack *s, bool cut_node);
@@ -79,11 +85,14 @@ class Search {
     Score evaluate();
     Score adjust_eval(Score eval, Stack *s) const;
 
-    void update_pv(const Move &move, int ply);
-
     bool is_limit_reached(int depth) const;
 
-    void print_uci_info(Score score) const;
+    void sort_rootmoves(int offset);
+    bool found_rootmove(const Move &move);
+
+    void update_pv(const Move &move, int ply);
+
+    void print_uci_info() const;
 };
 
 } // namespace Search

@@ -60,8 +60,8 @@ class MovePicker {
 
     Move tt_move, killer, counter;
 
-    MoveList ml_main;
-    MoveList ml_bad_noisy;
+    MoveList<> ml_main;
+    MoveList<> ml_bad_noisy;
 
     void score_quiets();
     void score_noisy();

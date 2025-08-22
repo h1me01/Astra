@@ -2,7 +2,7 @@
 
 namespace Search {
 
-void partial_insertion_sort(MoveList &ml, int idx) {
+void partial_insertion_sort(MoveList<> &ml, int idx) {
     assert(idx >= 0);
 
     int best_idx = idx;

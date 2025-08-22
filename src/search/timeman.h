@@ -39,8 +39,8 @@ class TimeMan {
 
     bool should_stop(Limits limits,           //
                      int stability,           //
-                     Score prev_result_diff,  //
-                     Score pprev_result_diff, //
+                     Score prev_score_diff,  //
+                     Score pprev_score_diff, //
                      double node_ratio        //
     ) const {
         if(!limits.time.optimum)
@@ -50,8 +50,8 @@ class TimeMan {
 
         // adjust time optimum based on last score
         double result_change_factor = (62 / 100.0)                       //
-                                      + (13 / 1000.0) * prev_result_diff //
-                                      + (26 / 1000.0) * pprev_result_diff;
+                                      + (13 / 1000.0) * prev_score_diff //
+                                      + (26 / 1000.0) * pprev_score_diff;
 
         result_change_factor = std::clamp(result_change_factor, 73 / 100.0, 134 / 100.0);
 

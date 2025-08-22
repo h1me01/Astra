@@ -208,16 +208,22 @@ inline Move *gen_legals(const Board &board, Move *ml) {
     return ml;
 }
 
+template <typename Type = Move> //
 class MoveList {
   public:
     MoveList() : last(list) {}
 
-    constexpr Move &operator[](int i) {
+    constexpr Type &operator[](int i) {
+        return list[i];
+    }
+
+    constexpr const Type &operator[](int i) const {
         return list[i];
     }
 
     template <GenType gt> //
     void gen(const Board &board) {
+        static_assert(std::is_same<Type, Move>::value, "MoveList type must be Move to generate moves.");
         last = list; // reset the list
 
         if(gt == LEGALS)
@@ -230,16 +236,16 @@ class MoveList {
                                             : gen_all<BLACK, gt>(board, list);
     }
 
-    void add(Move m) {
+    void add(Type m) {
         assert(last < list + MAX_MOVES);
         *last++ = m;
     }
 
-    const Move *begin() const {
+    const Type *begin() const {
         return list;
     }
 
-    const Move *end() const {
+    const Type *end() const {
         return last;
     }
 
@@ -248,8 +254,8 @@ class MoveList {
     }
 
   private:
-    Move list[MAX_MOVES];
-    Move *last;
+    Type list[MAX_MOVES];
+    Type *last;
 };
 
 } // namespace Chess

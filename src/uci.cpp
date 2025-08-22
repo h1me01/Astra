@@ -90,6 +90,7 @@ UCI::UCI() : board(STARTING_FEN) {
 
     options.add("Hash", Option("spin", "16", "16", 1, 8192));
     options.add("Threads", Option("spin", "1", "1", 1, 128));
+    options.add("MultiPV", Option("spin", "1", "1", 1, 218));
     options.add("MoveOverhead", Option("spin", "10", "10", 1, 10000));
     options.add("SyzygyPath", Option("string", "", "", 0, 0));
 
@@ -224,6 +225,8 @@ void UCI::go(std::istringstream &is) {
             std::stoi(options.get("MoveOverhead"))  //
         );
     }
+
+    limits.multipv = std::stoi(options.get("MultiPV"));
 
     // start search
     Search::threads.launch_workers(board, limits, options.num_workers, options.use_tb);
