@@ -10,7 +10,8 @@ namespace Search {
 
 enum SearchType : int { //
     N_SEARCH,
-    Q_SEARCH
+    Q_SEARCH,
+    PC_SEARCH
 };
 
 enum Stage : int {
@@ -38,6 +39,8 @@ class MovePicker {
     void skip_quiets() {
         m_skip_quiets = true;
     }
+
+    int see_cutoff = 0;
 
   private:
     int idx;

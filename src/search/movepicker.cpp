@@ -20,9 +20,11 @@ MovePicker::MovePicker(SearchType st,          //
                        const History &history, //
                        const Stack *s,         //
                        const Move &tt_move)
-    : st(st), board(board), history(history), s(s), tt_move(tt_move) {
+    : st(st), board(board), history(history), s(s) {
 
-    if(st == Q_SEARCH) {
+    if(st == PC_SEARCH)
+        stage = GEN_NOISY;
+    else if(st == Q_SEARCH) {
         if(board.in_check()) {
             stage = PLAY_TT_MOVE;
             this->tt_move = tt_move;
@@ -31,10 +33,15 @@ MovePicker::MovePicker(SearchType st,          //
         }
     } else {
         stage = PLAY_TT_MOVE;
-        this->tt_move = tt_move;
 
+        this->tt_move = tt_move;
         killer = s->killer;
-        counter = (s - 1)->move.is_valid() ? history.get_counter((s - 1)->move) : NO_MOVE;
+
+        Move prev_move = (s - 1)->move;
+        if(prev_move.is_valid())
+            counter = history.get_counter(prev_move);
+        else
+            counter = NO_MOVE;
     }
 }
 
@@ -64,7 +71,7 @@ Move MovePicker::next() {
                 continue;
 
             // we want to play captures first in qsearch, doesn't matter if its see is fails
-            int threshold = -move.get_score() / 32;
+            int threshold = (st == N_SEARCH) ? -move.get_score() / 32 : see_cutoff;
             if(st != Q_SEARCH && (move.is_underprom() || !board.see(move, threshold))) {
                 ml_bad_noisy.add(move);
                 continue;
@@ -72,6 +79,9 @@ Move MovePicker::next() {
 
             return move;
         }
+
+        if(st == PC_SEARCH)
+            return NO_MOVE;
 
         if(st == Q_SEARCH && !board.in_check())
             return NO_MOVE;
@@ -148,7 +158,7 @@ void MovePicker::score_quiets() {
         assert(valid_piece(pc));
         assert(valid_piece_type(pt));
 
-        int score = history.get_hh(board.get_stm(), ml_main[i]);
+        int score = 2 * history.get_hh(board.get_stm(), ml_main[i]);
         score += (int) (*(s - 1)->conth)[pc][to];
         score += (int) (*(s - 2)->conth)[pc][to];
         score += (int) (*(s - 4)->conth)[pc][to];

@@ -137,7 +137,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *s) {
     const U64 hash = board.get_hash();
 
     Score best_score = -VALUE_INFINITE;
-    Score raw_eval, eval;
+    Score raw_eval, eval, beta_cut;
 
     Move best_move = NO_MOVE;
 
@@ -260,6 +260,53 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *s) {
             if(is_win(score))
                 score = beta;
             return score;
+        }
+    }
+
+    // probcut
+    beta_cut = beta + 237;
+    if(!pv_node                                           //
+       && depth > 4                                       //
+       && !is_decisive(beta)                              //
+       && !(tt_depth >= depth - 3 && tt_score < beta_cut) //
+    ) {
+        MovePicker mp(PC_SEARCH, board, history, s, tt_move);
+        mp.see_cutoff = beta_cut > s->static_eval;
+
+        Move move = NO_MOVE;
+        while((move = mp.next()) != NO_MOVE) {
+            if(!board.is_legal(move))
+                continue;
+
+            tt.prefetch(board.key_after(move));
+
+            total_nodes++;
+            s->move = move;
+            s->moved_piece = board.piece_at(move.from());
+            s->conth = &history.conth[move.is_cap()][s->moved_piece][move.to()];
+
+            board.make_move(move);
+            Score score = -quiescence<NodeType::NON_PV>(-beta_cut, -beta_cut + 1, s + 1);
+
+            if(score >= beta_cut)
+                score = -negamax<NodeType::NON_PV>(depth - 4, -beta_cut, -beta_cut + 1, s + 1);
+
+            board.unmake_move(move);
+
+            if(score >= beta_cut) {
+                ent->store(      //
+                    hash,        //
+                    move,        //
+                    score,       //
+                    raw_eval,    //
+                    LOWER_BOUND, //
+                    depth - 3,   //
+                    s->ply,      //
+                    tt_pv        //
+                );
+
+                return score;
+            }
         }
     }
 
