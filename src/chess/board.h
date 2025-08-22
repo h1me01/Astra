@@ -6,6 +6,7 @@
 #include "../nnue/accum.h"
 #include "state_info.h"
 #include "zobrist.h"
+#include "cuckoo.h"
 
 namespace Chess {
 
@@ -39,7 +40,9 @@ class Board {
     bool is_draw(int ply) const;
 
     bool nonpawnmat(Color c) const;
+
     bool see(Move &m, int threshold) const;
+    bool has_upcoming_repetition(int ply);
 
     void reset_ply() {
         states[0] = states[curr_ply];

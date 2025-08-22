@@ -26,7 +26,9 @@ CHESS_SRC := chess/bitboard.cpp \
              chess/see.cpp \
              chess/misc.cpp \
              chess/perft.cpp \
-             chess/zobrist.cpp
+             chess/zobrist.cpp \
+             chess/cuckoo.cpp \
+             chess/upcoming_repetition.cpp
 
 EVAL_SRC := nnue/nnue.cpp \
             nnue/accum.cpp

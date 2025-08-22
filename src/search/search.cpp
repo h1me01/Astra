@@ -23,7 +23,7 @@ void init_reductions() {
 
 // Search
 
-void Search::start(const Board &board, Limits limits) {        
+void Search::start(const Board &board, Limits limits) {
     tm.start();
 
     this->board = board;
@@ -160,6 +160,13 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *s, bool cut_nod
             return in_check ? VALUE_DRAW : evaluate();
         if(board.is_draw(s->ply))
             return VALUE_DRAW;
+
+        // check for upcoming repetition
+        if(alpha < VALUE_DRAW && board.has_upcoming_repetition(s->ply)) {
+            alpha = VALUE_DRAW;
+            if(alpha >= beta)
+                return alpha;
+        }
 
         // mate distance pruning
         alpha = std::max(alpha, Score(s->ply - VALUE_MATE));
@@ -632,6 +639,13 @@ Score Search::quiescence(int depth, Score alpha, Score beta, Stack *s) {
 
     if(board.is_draw(s->ply))
         return VALUE_DRAW;
+
+    // check for upcoming repetition
+    if(alpha < VALUE_DRAW && board.has_upcoming_repetition(s->ply)) {
+        alpha = VALUE_DRAW;
+        if(alpha >= beta)
+            return alpha;
+    }
 
     const bool in_check = board.in_check();
     const U64 hash = board.get_hash();
