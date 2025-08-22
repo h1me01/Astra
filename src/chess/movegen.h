@@ -7,7 +7,8 @@ namespace Chess {
 enum GenType : int { //
     NOISY = 0,
     QUIETS = 1,
-    LEGALS = 2
+    QUIET_CHECKS = 2,
+    LEGALS = 3
 };
 
 template <GenType gt, Direction d, MoveType mt> //
@@ -165,6 +166,23 @@ Move *gen_all(const Board &board, Move *ml) {
     return ml;
 }
 
+template <Color us> //
+Move *gen_quiet_checkers(const Board &board, Move *ml) {
+    constexpr Color them = ~us;
+    const Square opp_ksq = board.king_sq(them);
+    const U64 occ = board.occupancy();
+    const U64 bishop_attacks = get_attacks(BISHOP, opp_ksq, occ);
+    const U64 rook_attacks = get_attacks(ROOK, opp_ksq, occ);
+
+    ml = gen_pawnmoves<us, QUIETS>(board, ml, get_pawn_attacks(them, opp_ksq));
+    ml = gen_piecemoves<us, KNIGHT, QUIETS>(board, ml, get_attacks(KNIGHT, opp_ksq));
+    ml = gen_piecemoves<us, BISHOP, QUIETS>(board, ml, bishop_attacks);
+    ml = gen_piecemoves<us, ROOK, QUIETS>(board, ml, rook_attacks);
+    ml = gen_piecemoves<us, QUEEN, QUIETS>(board, ml, bishop_attacks | rook_attacks);
+
+    return ml;
+}
+
 inline Move *gen_legals(const Board &board, Move *ml) {
     const Color us = board.get_stm();
     const Square ksq = board.king_sq(us);
@@ -204,6 +222,9 @@ class MoveList {
 
         if(gt == LEGALS)
             last = gen_legals(board, list);
+        else if(gt == QUIET_CHECKS)
+            last = board.get_stm() == WHITE ? gen_quiet_checkers<WHITE>(board, list) //
+                                            : gen_quiet_checkers<BLACK>(board, list);
         else
             last = board.get_stm() == WHITE ? gen_all<WHITE, gt>(board, list) //
                                             : gen_all<BLACK, gt>(board, list);

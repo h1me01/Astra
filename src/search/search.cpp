@@ -129,7 +129,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *s) {
         pv_table[s->ply].length = s->ply;
 
     if(depth <= 0)
-        return quiescence<nt>(alpha, beta, s);
+        return quiescence<nt>(0, alpha, beta, s);
 
     const Score old_alpha = alpha;
     const Color stm = board.get_stm();
@@ -214,7 +214,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *s) {
        && depth < 5                  //
        && eval + 258 * depth < alpha //
     ) {
-        Score score = quiescence<NodeType::NON_PV>(alpha, beta, s);
+        Score score = quiescence<NodeType::NON_PV>(0, alpha, beta, s);
         if(score <= alpha)
             return score;
     }
@@ -286,7 +286,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *s) {
             s->conth = &history.conth[move.is_cap()][s->moved_piece][move.to()];
 
             board.make_move(move);
-            Score score = -quiescence<NodeType::NON_PV>(-beta_cut, -beta_cut + 1, s + 1);
+            Score score = -quiescence<NodeType::NON_PV>(0, -beta_cut, -beta_cut + 1, s + 1);
 
             if(score >= beta_cut)
                 score = -negamax<NodeType::NON_PV>(depth - 4, -beta_cut, -beta_cut + 1, s + 1);
@@ -473,7 +473,7 @@ movesloop:
 }
 
 template <NodeType nt> //
-Score Search::quiescence(Score alpha, Score beta, Stack *s) {
+Score Search::quiescence(int depth, Score alpha, Score beta, Stack *s) {
 
     constexpr bool pv_node = (nt != NodeType::NON_PV);
 
@@ -549,7 +549,8 @@ Score Search::quiescence(Score alpha, Score beta, Stack *s) {
         if(best_score > alpha)
             alpha = best_score;
     }
-    MovePicker mp(Q_SEARCH, board, history, s, tt_move);
+
+    MovePicker mp(Q_SEARCH, board, history, s, tt_move, depth >= -1);
     Move move = NO_MOVE;
 
     int made_moves = 0;
@@ -578,7 +579,7 @@ Score Search::quiescence(Score alpha, Score beta, Stack *s) {
         s->conth = &history.conth[move.is_cap()][s->moved_piece][move.to()];
 
         board.make_move(move);
-        Score score = -quiescence<nt>(-beta, -alpha, s + 1);
+        Score score = -quiescence<nt>(depth - 1, -beta, -alpha, s + 1);
         board.unmake_move(move);
 
         assert(valid_score(score));

@@ -67,7 +67,7 @@ class Search {
     Score negamax(int depth, Score alpha, Score beta, Stack *s);
 
     template <NodeType nt> //
-    Score quiescence(Score alpha, Score beta, Stack *s);
+    Score quiescence(int depth, Score alpha, Score beta, Stack *s);
 
     Score evaluate();
 

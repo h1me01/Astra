@@ -23,6 +23,9 @@ enum Stage : int {
     GEN_QUIETS,
     PLAY_QUIETS,
     PLAY_BAD_NOISY,
+
+    GEN_QUIET_CHECKERS,
+    PLAY_QUIET_CHECKERS,
 };
 
 class MovePicker {
@@ -31,7 +34,8 @@ class MovePicker {
                const Board &board,     //
                const History &history, //
                const Stack *s,         //
-               const Move &tt_move     //
+               const Move &tt_move,    //
+               bool gen_checks = false //
     );
 
     Move next();
@@ -51,6 +55,7 @@ class MovePicker {
     const History &history;
     const Stack *s;
 
+    bool gen_checks;
     bool m_skip_quiets = false;
 
     Move tt_move, killer, counter;

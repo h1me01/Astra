@@ -19,8 +19,9 @@ MovePicker::MovePicker(SearchType st,          //
                        const Board &board,     //
                        const History &history, //
                        const Stack *s,         //
-                       const Move &tt_move)
-    : st(st), board(board), history(history), s(s) {
+                       const Move &tt_move,    //
+                       bool gen_checks)
+    : st(st), board(board), history(history), s(s), gen_checks(gen_checks) {
 
     if(st == PC_SEARCH)
         stage = GEN_NOISY;
@@ -83,8 +84,11 @@ Move MovePicker::next() {
         if(st == PC_SEARCH)
             return NO_MOVE;
 
-        if(st == Q_SEARCH && !board.in_check())
-            return NO_MOVE;
+        if(st == Q_SEARCH && !board.in_check()) {
+            if(!gen_checks)
+                return NO_MOVE; // no more moves
+            goto quiet_checkers;
+        }
 
         // in evasion qsearch we can falltrough the killer and counter since we did not set them
         stage = PLAY_KILLER;
@@ -138,6 +142,21 @@ Move MovePicker::next() {
         }
 
         return NO_MOVE;
+    case GEN_QUIET_CHECKERS:
+    quiet_checkers:
+        idx = 0;
+        stage = PLAY_QUIET_CHECKERS;
+        ml_main.gen<QUIET_CHECKS>(board);
+        [[fallthrough]];
+    case PLAY_QUIET_CHECKERS:
+        while(idx < ml_main.size()) {
+            partial_insertion_sort(ml_main, idx);
+            Move move = ml_main[idx];
+            idx++;
+            return move;
+        }
+
+        return NO_MOVE; // no more moves
     default:
         assert(false);
         return NO_MOVE;
