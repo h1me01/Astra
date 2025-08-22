@@ -338,7 +338,7 @@ movesloop:
 
             r -= move.is_cap();
 
-            r -= pv_node;
+            r -= tt_pv;
 
             r -= board.in_check();
 
