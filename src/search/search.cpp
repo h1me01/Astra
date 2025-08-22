@@ -444,7 +444,7 @@ movesloop:
 
         made_moves++;
 
-        int history_score = move.is_quiet() ? history.get_qh(board, s, move) //
+        int history_score = move.is_quiet() ? history.get_qh(board, move, s) //
                                             : history.get_nh(board, move);
 
         if(!root_node && !is_loss(best_score)) {

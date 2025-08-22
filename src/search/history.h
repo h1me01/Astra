@@ -9,6 +9,7 @@ using namespace Chess;
 namespace Search {
 
 constexpr size_t CORR_SIZE = 16384;
+constexpr size_t PAWN_HIST_SIZE = 512;
 
 int history_bonus(int depth);
 
@@ -23,19 +24,22 @@ class History {
 
     void update_hh(Color c, const Move &move, int bonus);
     void update_nh(const Board &board, const Move &move, int bonus);
-    void update_conth(const Move &move, Stack *ss, int bonus);
+    void update_ph(const Board &board, const Move &move, int bonus);
+
+    void update_conth(const Move &move, Stack *s, int bonus);
 
     void update_matcorr(const Board &board, Score raw_eval, Score real_score, int depth);
-    void update_contcorr(Score raw_eval, Score real_score, int depth, const Stack *ss);
+    void update_contcorr(Score raw_eval, Score real_score, int depth, const Stack *s);
 
     Move get_counter(Move move) const;
 
     int get_hh(Color stm, Move move) const;
     int get_nh(const Board &board, Move &move) const;
-    int get_qh(const Board &board, const Stack *ss, Move &move) const;
+    int get_qh(const Board &board, Move &move, const Stack *s) const;
+    int get_ph(const Board &board, Move &move) const;
 
     int get_matcorr(const Board &board) const;
-    int get_contcorr(const Stack *ss) const;
+    int get_contcorr(const Stack *s) const;
 
     int16_t conth[2][NUM_PIECES + 1][NUM_SQUARES + 1][NUM_PIECES + 1][NUM_SQUARES + 1];
 
@@ -45,11 +49,17 @@ class History {
     int16_t hh[NUM_COLORS][NUM_SQUARES][NUM_SQUARES];
     int16_t nh[NUM_PIECES][NUM_SQUARES][NUM_PIECE_TYPES + 1];
 
+    int16_t ph[PAWN_HIST_SIZE][NUM_PIECES][NUM_SQUARES];
+
     int16_t pawn_corr[NUM_COLORS][CORR_SIZE];
     int16_t w_non_pawn_corr[NUM_COLORS][CORR_SIZE];
     int16_t b_non_pawn_corr[NUM_COLORS][CORR_SIZE];
 
     int16_t cont_corr[NUM_PIECES][NUM_SQUARES][NUM_PIECES][NUM_SQUARES];
+
+    int ph_idx(U64 hash) const {
+        return hash % PAWN_HIST_SIZE;
+    }
 
     int corr_idx(U64 hash) const {
         return hash % CORR_SIZE;
@@ -81,7 +91,7 @@ inline int History::get_nh(const Board &board, Move &move) const {
     return nh[pc][move.to()][captured];
 }
 
-inline int History::get_qh(const Board &board, const Stack *s, Move &move) const {
+inline int History::get_qh(const Board &board, Move &move, const Stack *s) const {
     Square from = move.from();
     Square to = move.to();
     Piece pc = board.piece_at(from);
@@ -91,9 +101,17 @@ inline int History::get_qh(const Board &board, const Stack *s, Move &move) const
     assert(valid_piece(pc));
 
     return get_hh(board.get_stm(), move) +   //
+           get_ph(board, move) +             //
            (int) (*(s - 1)->conth)[pc][to] + //
            (int) (*(s - 2)->conth)[pc][to] + //
            (int) (*(s - 4)->conth)[pc][to];
+}
+
+inline int History::get_ph(const Board &board, Move &move) const {
+    Piece pc = board.piece_at(move.from());
+    assert(valid_piece(pc));
+    assert(valid_sq(move.to()));
+    return ph[ph_idx(board.get_pawn_hash())][pc][move.to()];
 }
 
 inline int History::get_matcorr(const Board &board) const {

@@ -39,6 +39,7 @@ void History::update(const Board &board,         //
         // only update quiet history if best move was important
         if(depth > 3 || qc > 1) {
             update_hh(stm, best, bonus);
+            update_ph(board, best, bonus);
             update_conth(best, s, bonus);
 
             // quiet maluses
@@ -48,6 +49,7 @@ void History::update(const Board &board,         //
                     continue;
                 update_hh(stm, quiet, -bonus);
                 update_conth(quiet, s, -bonus);
+                update_ph(board, quiet, -bonus);
             }
         }
     } else {
@@ -80,6 +82,14 @@ void History::update_nh(const Board &board, const Move &move, int bonus) {
     assert(valid_piece_type(captured) || (move.type() >= PQ_KNIGHT && move.type() <= PQ_QUEEN));
 
     int16_t &value = nh[pc][to][captured];
+    value += adjusted_bonus(value, bonus);
+}
+
+void History::update_ph(const Board &board, const Move &move, int bonus) {
+    assert(move);
+    Piece pc = board.piece_at(move.from());
+    assert(valid_piece(pc));
+    int16_t &value = ph[ph_idx(board.get_pawn_hash())][pc][move.to()];
     value += adjusted_bonus(value, bonus);
 }
 
