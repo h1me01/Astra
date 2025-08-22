@@ -383,7 +383,7 @@ movesloop:
 
             r += !improving;
 
-            r -= move.is_cap();
+            r += tt_move.is_valid() ? tt_move.is_cap() : 0;
 
             r -= tt_pv;
 
