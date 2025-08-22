@@ -6,6 +6,7 @@
 
 #include "movepicker.h"
 #include "search.h"
+#include "syzygy.h"
 #include "threads.h"
 
 namespace Search {
@@ -22,14 +23,17 @@ void init_reductions() {
 
 // Search
 
-void Search::start(const Board &board, Limits limits) {
+void Search::start(const Board &board, Limits limits) {        
     tm.start();
-
-    if(id == 0)
-        tt.increment();
 
     this->board = board;
     this->limits = limits;
+
+    total_nodes = 0;
+    tb_hits = 0;
+
+    if(id == 0)
+        tt.increment();
 
     Move best_move = NO_MOVE;
 
@@ -140,6 +144,8 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *s, bool cut_nod
     const U64 hash = board.get_hash();
 
     Score best_score = -VALUE_INFINITE;
+    Score max_score = VALUE_INFINITE;
+
     Score raw_eval, eval, beta_cut;
 
     Move best_move = NO_MOVE;
@@ -188,6 +194,55 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *s, bool cut_nod
        && valid_tt_score(tt_score, beta, tt_bound) //
     ) {
         return tt_score;
+    }
+
+    // tablebase probing
+    if(use_tb && !root_node && !s->skipped) {
+        auto tb_result = probe_wdl(board);
+
+        if(tb_result != TB_RESULT_FAILED) {
+            Bound tb_bound;
+            Score tb_score;
+            tb_hits++;
+
+            if(tb_result == TB_LOSS) {
+                tb_score = s->ply - VALUE_TB;
+                tb_bound = UPPER_BOUND;
+            } else if(tb_result == TB_WIN) {
+                tb_score = VALUE_TB - s->ply;
+                tb_bound = LOWER_BOUND;
+            } else {
+                tb_score = VALUE_DRAW;
+                tb_bound = EXACT_BOUND;
+            }
+
+            if(tb_bound == EXACT_BOUND                           //
+               || (tb_bound == LOWER_BOUND && tb_score >= beta)  //
+               || (tb_bound == UPPER_BOUND && tb_score <= alpha) //
+            ) {
+                ent->store(     //
+                    hash,       //
+                    NO_MOVE,    //
+                    tb_score,   //
+                    VALUE_NONE, // eval
+                    tb_bound,   //
+                    depth,      //
+                    s->ply,     //
+                    tt_pv       //
+                );
+
+                return tb_score;
+            }
+
+            if(pv_node) {
+                if(tb_bound == LOWER_BOUND) {
+                    best_score = tb_score;
+                    alpha = std::max(alpha, best_score);
+                } else {
+                    max_score = tb_score;
+                }
+            }
+        }
     }
 
     // set eval and static eval
@@ -526,6 +581,9 @@ movesloop:
             return VALUE_DRAW;
     }
 
+    if(pv_node)
+        best_score = std::min(best_score, max_score);
+
     // store in transposition table
     Bound bound = EXACT_BOUND;
     if(best_score >= beta)
@@ -763,6 +821,7 @@ void Search::print_uci_info(Score score) const {
 
     std::cout << " nodes " << total_thread_nodes                           //
               << " nps " << total_thread_nodes * 1000 / (elapsed_time + 1) //
+              << " tbhits " << threads.get_tb_hits()                       //
               << " hashfull " << tt.hashfull()                             //
               << " time " << elapsed_time                                  //
               << " pv " << pv_line[0];

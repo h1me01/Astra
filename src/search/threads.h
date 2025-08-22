@@ -13,8 +13,9 @@ class ThreadPool {
     bool is_stopped() const;
 
     U64 get_total_nodes() const;
+    U64 get_tb_hits() const;
 
-    void launch_workers(const Board &board, Limits limit, int worker_count);
+    void launch_workers(const Board &board, Limits limit, int worker_count, bool use_tb);
 
     void stop() {
         stop_flag.store(true);

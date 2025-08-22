@@ -44,6 +44,7 @@ class Options {
         return "";
     }
 
+    bool use_tb = false;
     int num_workers = 1; // default number of threads
 
   private:

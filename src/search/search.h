@@ -34,7 +34,7 @@ struct PVLine {
 
 class Search {
   public:
-    Search() : total_nodes{0} {}
+    Search() : total_nodes{0}, tb_hits{0} {}
 
     void start(const Board &board, Limits limits);
 
@@ -46,11 +46,18 @@ class Search {
         return total_nodes;
     }
 
+    U64 get_tb_hits() const {
+        return tb_hits;
+    }
+
     int id = 0;
+    bool use_tb = false;
 
   private:
     int root_depth;
+
     U64 total_nodes;
+    U64 tb_hits;
 
     Limits limits;
     TimeMan tm;

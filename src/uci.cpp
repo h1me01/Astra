@@ -4,6 +4,7 @@
 #include <cstring>   // strncmp
 
 #include "bench.h"
+#include "fathom/tbprobe.h"
 #include "search/threads.h"
 #include "uci.h"
 
@@ -32,6 +33,18 @@ void Options::print() const {
 }
 
 void Options::apply() {
+    auto path = get("SyzygyPath");
+    if(!path.empty() && path != "<empty>" && !use_tb) {
+        bool success = tb_init(path.c_str());
+
+        if(success && TB_LARGEST > 0) {
+            use_tb = true;
+            std::cout << "info string Successfully loaded syzygy path" << std::endl;
+        } else {
+            std::cout << "info string Failed to load syzygy path " << path << std::endl;
+        }
+    }
+
     num_workers = std::stoi(get("Threads"));
     Search::tt.set_num_workers(num_workers);
     Search::tt.init(std::stoi(get("Hash")));
@@ -78,6 +91,7 @@ UCI::UCI() : board(STARTING_FEN) {
     options.add("Hash", Option("spin", "16", "16", 1, 8192));
     options.add("Threads", Option("spin", "1", "1", 1, 128));
     options.add("MoveOverhead", Option("spin", "10", "10", 1, 10000));
+    options.add("SyzygyPath", Option("string", "", "", 0, 0));
 
     options.apply();
 }
@@ -212,7 +226,7 @@ void UCI::go(std::istringstream &is) {
     }
 
     // start search
-    Search::threads.launch_workers(board, limits, options.num_workers);
+    Search::threads.launch_workers(board, limits, options.num_workers, options.use_tb);
 }
 
 Move UCI::get_move(const std::string &str_move) const {
