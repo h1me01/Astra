@@ -2,7 +2,7 @@
 #include "nnue/nnue.h"
 #include "uci.h"
 
-int main() {
+int main(int argc, char **argv) {
     Chess::init_lookup_tables();
     Zobrist::init();
     NNUE::nnue.init();
@@ -10,7 +10,7 @@ int main() {
     Search::init_reductions();
 
     UCI::UCI uci;
-    uci.loop();
+    uci.loop(argc, argv);
 
     return 0;
 }

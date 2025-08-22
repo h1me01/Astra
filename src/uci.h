@@ -54,7 +54,7 @@ class UCI {
   public:
     UCI();
 
-    void loop();
+    void loop(int argc, char **argv);
 
   private:
     Board board;

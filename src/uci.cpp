@@ -3,6 +3,7 @@
 #include <cctype>    // std::isdigit
 #include <cstring>   // strncmp
 
+#include "bench.h"
 #include "search/threads.h"
 #include "uci.h"
 
@@ -80,7 +81,12 @@ UCI::UCI() : board(STARTING_FEN) {
     options.apply();
 }
 
-void UCI::loop() {
+void UCI::loop(int argc, char **argv) {
+    if(argc > 1 && strncmp(argv[1], "bench", 5) == 0) {
+        Bench::bench(13);
+        return;
+    }
+
     std::string line, token;
     while(std::getline(std::cin, line)) {
         std::istringstream is(line);
@@ -101,6 +107,8 @@ void UCI::loop() {
             update_position(is);
         else if(token == "go")
             go(is);
+        else if(token == "bench")
+            Bench::bench(13);
         else if(token == "setoption") {
             options.set(is);
             options.apply();
