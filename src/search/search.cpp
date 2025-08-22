@@ -194,6 +194,17 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *s) {
 
         if(valid_score(tt_score) && valid_tt_score(tt_score, eval + 1, tt_bound)) {
             eval = tt_score;
+        } else if(!tt_hit) {
+            ent->store(     //
+                hash,       //
+                NO_MOVE,    //
+                VALUE_NONE, // score
+                raw_eval,   //
+                NO_BOUND,   //
+                0,          // depth
+                s->ply,     //
+                tt_pv       //
+            );
         }
     }
 
@@ -471,13 +482,26 @@ Score Search::quiescence(Score alpha, Score beta, Stack *s) {
         }
 
         // stand pat
-        if(best_score >= beta)
+        if(best_score >= beta) {
+            if(!tt_hit) {
+                ent->store(     //
+                    hash,       //
+                    NO_MOVE,    //
+                    VALUE_NONE, // score
+                    raw_eval,   //
+                    NO_BOUND,   //
+                    0,          // depth
+                    s->ply,     //
+                    false       // tt_pv
+                );
+            }
+
             return best_score;
+        }
 
         if(best_score > alpha)
             alpha = best_score;
     }
-
     MovePicker mp(Q_SEARCH, board, history, s, tt_move);
     Move move = NO_MOVE;
 
