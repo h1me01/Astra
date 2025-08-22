@@ -208,6 +208,20 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *s) {
         }
     }
 
+    // update quiet history
+    if((s - 1)->move.is_valid()             //
+       && !(s - 1)->move.is_cap()           //
+       && valid_score((s - 1)->static_eval) //
+    ) {
+        int bonus = std::clamp(                                 //
+            -53 * (s->static_eval + (s - 1)->static_eval) / 16, //
+            -72,                                                //
+            286                                                 //
+        );
+
+        history.update_hh(~stm, (s - 1)->move, bonus);
+    }
+
     // razoring
     if(!pv_node                      //
        && !is_win(alpha)             //
