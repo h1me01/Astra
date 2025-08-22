@@ -131,6 +131,8 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *s) {
     if(depth <= 0)
         return quiescence<nt>(0, alpha, beta, s);
 
+    depth = std::min(depth, MAX_PLY - 1);
+
     const Score old_alpha = alpha;
     const Color stm = board.get_stm();
     const bool in_check = board.in_check();
@@ -144,8 +146,11 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *s) {
     bool improving = false;
 
     (s + 1)->killer = NO_MOVE;
+    (s + 1)->skipped = NO_MOVE;
 
     if(!root_node) {
+        if(s->ply >= MAX_PLY - 1)
+            return in_check ? VALUE_DRAW : evaluate();
         if(board.is_draw(s->ply))
             return VALUE_DRAW;
 
@@ -158,7 +163,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *s) {
 
     // look up in transposition table
     bool tt_hit = false;
-    TTEntry *ent = tt.lookup(hash, &tt_hit);
+    TTEntry *ent = !s->skipped.is_valid() ? tt.lookup(hash, &tt_hit) : nullptr;
 
     Move tt_move = NO_MOVE;
     Bound tt_bound = NO_BOUND;
@@ -188,7 +193,9 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *s) {
     if(in_check) {
         raw_eval = eval = s->static_eval = VALUE_NONE;
         goto movesloop;
-    } else {
+    } else if(s->skipped.is_valid())
+        raw_eval = eval = s->static_eval;
+    else {
         raw_eval = valid_score(tt_eval) ? tt_eval : evaluate();
         eval = s->static_eval = adjust_eval(raw_eval, s);
 
@@ -222,6 +229,11 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *s) {
         history.update_hh(~stm, (s - 1)->move, bonus);
     }
 
+    if(valid_score((s - 2)->static_eval))
+        improving = s->static_eval > (s - 2)->static_eval;
+    else if(valid_score((s - 4)->static_eval))
+        improving = s->static_eval > (s - 4)->static_eval;
+
     // razoring
     if(!pv_node                      //
        && !is_win(alpha)             //
@@ -233,16 +245,12 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *s) {
             return score;
     }
 
-    if(valid_score((s - 2)->static_eval))
-        improving = s->static_eval > (s - 2)->static_eval;
-    else if(valid_score((s - 4)->static_eval))
-        improving = s->static_eval > (s - 4)->static_eval;
-
     // reverse futility pruning
     if(!pv_node                                         //
+       && depth < 11                                    //
        && !is_win(eval)                                 //
        && !is_loss(beta)                                //
-       && depth < 11                                    //
+       && !s->skipped.is_valid()                        //
        && eval - (106 * depth - 89 * improving) >= beta //
     ) {
         return (eval + beta) / 2;
@@ -254,6 +262,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *s) {
        && eval >= beta                              //
        && !is_loss(beta)                            //
        && board.nonpawnmat(stm)                     //
+       && !s->skipped.is_valid()                    //
        && (s - 1)->move != NULL_MOVE                //
        && s->static_eval + 25 * depth - 161 >= beta //
     ) {
@@ -282,6 +291,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *s) {
     if(!pv_node                                           //
        && depth > 4                                       //
        && !is_decisive(beta)                              //
+       && !s->skipped.is_valid()                          //
        && !(tt_depth >= depth - 3 && tt_score < beta_cut) //
     ) {
         MovePicker mp(PC_SEARCH, board, history, s, tt_move);
@@ -334,7 +344,7 @@ movesloop:
     Move q_moves[64], c_moves[64];
 
     while((move = mp.next()) != NO_MOVE) {
-        if(!board.is_legal(move))
+        if(move == s->skipped || !board.is_legal(move))
             continue;
 
         tt.prefetch(board.key_after(move));
@@ -374,8 +384,6 @@ movesloop:
                 continue;
         }
 
-        total_nodes++;
-
         s->move = move;
         s->moved_piece = board.piece_at(move.from());
         s->conth = &history.conth[move.is_cap()][s->moved_piece][move.to()];
@@ -385,7 +393,37 @@ movesloop:
         else if(q_count < 64)
             q_moves[q_count++] = move;
 
-        int new_depth = depth - 1;
+        // singular extensions
+        int extensions = 0;
+
+        if(!root_node                 //
+           && depth >= 6              //
+           && move == tt_move         //
+           && !s->skipped.is_valid()  //
+           && tt_depth >= depth - 3   //
+           && valid_score(tt_score)   //
+           && !is_decisive(tt_score)  //
+           && tt_bound & LOWER_BOUND  //
+           && s->ply < 2 * root_depth //
+        ) {
+            Score sbeta = tt_score - 6 * depth / 8;
+            s->skipped = move;
+            Score score = negamax<NodeType::NON_PV>((depth - 1) / 2, sbeta - 1, sbeta, s);
+            s->skipped = NO_MOVE;
+
+            if(score < sbeta) {
+                extensions = 1;
+                if(!pv_node && score < sbeta - 14)
+                    extensions = 2 + (move.is_quiet() && score < sbeta - 74);
+            } else if(sbeta >= beta)
+                return sbeta;
+            else if(tt_score >= beta)
+                extensions = -3;
+        }
+
+        total_nodes++;
+
+        int new_depth = depth - 1 + extensions;
 
         board.make_move(move);
 
@@ -459,7 +497,9 @@ movesloop:
 
     // check for mate/stalemate
     if(made_moves == 0) {
-        if(board.in_check())
+        if(s->skipped.is_valid())
+            return alpha;
+        else if(in_check)
             return s->ply - VALUE_MATE;
         else
             return VALUE_DRAW;
@@ -472,16 +512,18 @@ movesloop:
     else if(best_score <= old_alpha)
         bound = UPPER_BOUND;
 
-    ent->store(     //
-        hash,       //
-        best_move,  //
-        best_score, //
-        raw_eval,   //
-        bound,      //
-        depth,      //
-        s->ply,     //
-        tt_pv       //
-    );
+    if(!s->skipped.is_valid()) {
+        ent->store(     //
+            hash,       //
+            best_move,  //
+            best_score, //
+            raw_eval,   //
+            bound,      //
+            depth,      //
+            s->ply,     //
+            tt_pv       //
+        );
+    }
 
     // update correction histories
     if(!in_check                                            //
@@ -514,6 +556,9 @@ Score Search::quiescence(int depth, Score alpha, Score beta, Stack *s) {
 
     const bool in_check = board.in_check();
     const U64 hash = board.get_hash();
+
+    if(s->ply >= MAX_PLY - 1)
+        return in_check ? VALUE_DRAW : evaluate();
 
     Move best_move = NO_MOVE;
 

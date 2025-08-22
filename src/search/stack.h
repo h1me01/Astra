@@ -13,6 +13,7 @@ struct Stack {
 
     Move move = NO_MOVE;
     Move killer = NO_MOVE;
+    Move skipped = NO_MOVE;
 
     Piece moved_piece = NO_PIECE;
 
