@@ -6,6 +6,7 @@
 #include "bench.h"
 #include "fathom/tbprobe.h"
 #include "search/threads.h"
+#include "search/tune_params.h"
 #include "uci.h"
 
 namespace UCI {
@@ -30,6 +31,14 @@ void Options::print() const {
         else
             std::cout << std::endl;
     }
+
+#ifdef TUNE
+    for(auto param : Astra::params)
+        std::cout << "option name " << param->name         //
+                  << " type spin default " << param->value //
+                  << " min " << param->min                 //
+                  << " max " << param->max << std::endl;
+#endif
 }
 
 void Options::apply() {
@@ -63,8 +72,16 @@ void Options::set(std::istringstream &is) {
     if(value == "<empty>" || value.empty())
         return;
 
+#ifdef TUNE
+    Astra::set_param(name, std::stoi(value));
+    Astra::init_reductions();
+#endif
+
     if(!options.count(name)) {
+#ifndef TUNE
         std::cout << "Unknown option: " << name << std::endl;
+#endif
+        return;
     }
 
     if(options[name].type != "spin") {
@@ -125,6 +142,8 @@ void UCI::loop(int argc, char **argv) {
             go(is);
         else if(token == "bench")
             Bench::bench(13);
+        else if(token == "tune")
+            Search::params_to_spsa();
         else if(token == "setoption") {
             options.set(is);
             options.apply();

@@ -17,11 +17,11 @@ bool Board::see(Move &m, int threshold) const {
 
     assert(attacker != NO_PIECE_TYPE);
 
-    int swap = PIECE_VALUES[victim] - threshold;
+    int swap = PIECE_VALUES_SEE[victim] - threshold;
     if(swap < 0)
         return false;
 
-    swap = PIECE_VALUES[attacker] - swap;
+    swap = PIECE_VALUES_SEE[attacker] - swap;
 
     if(swap <= 0)
         return true;
@@ -53,26 +53,26 @@ bool Board::see(Move &m, int threshold) const {
         res ^= 1;
 
         if((bb = stm_attacker & get_piecebb(curr_stm, PAWN))) {
-            if((swap = PIECE_VALUES[PAWN] - swap) < res)
+            if((swap = PIECE_VALUES_SEE[PAWN] - swap) < res)
                 break;
             occ ^= (bb & -bb);
             attackers |= get_attacks(BISHOP, to, occ) & diag;
         } else if((bb = stm_attacker & get_piecebb(curr_stm, KNIGHT))) {
-            if((swap = PIECE_VALUES[KNIGHT] - swap) < res)
+            if((swap = PIECE_VALUES_SEE[KNIGHT] - swap) < res)
                 break;
             occ ^= (bb & -bb);
         } else if((bb = stm_attacker & get_piecebb(curr_stm, BISHOP))) {
-            if((swap = PIECE_VALUES[BISHOP] - swap) < res)
+            if((swap = PIECE_VALUES_SEE[BISHOP] - swap) < res)
                 break;
             occ ^= (bb & -bb);
             attackers |= get_attacks(BISHOP, to, occ) & diag;
         } else if((bb = stm_attacker & get_piecebb(curr_stm, ROOK))) {
-            if((swap = PIECE_VALUES[ROOK] - swap) < res)
+            if((swap = PIECE_VALUES_SEE[ROOK] - swap) < res)
                 break;
             occ ^= (bb & -bb);
             attackers |= get_attacks(ROOK, to, occ) & orth;
         } else if((bb = stm_attacker & get_piecebb(curr_stm, QUEEN))) {
-            swap = PIECE_VALUES[QUEEN] - swap;
+            swap = PIECE_VALUES_SEE[QUEEN] - swap;
             assert(swap >= res);
 
             occ ^= (bb & -bb);

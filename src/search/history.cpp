@@ -1,15 +1,16 @@
 #include <algorithm>
 
 #include "history.h"
+#include "tune_params.h"
 
 namespace Search {
 
 int history_bonus(int depth) {
-    return std::min(2000, 270 * depth - 30);
+    return std::min(int(max_history_bonus), history_bonus_mult * depth + history_bonus_minus);
 }
 
 int history_malus(int depth) {
-    return std::min(1634, 325 * depth + 98);
+    return std::min(int(max_history_malus), history_malus_mult * depth + history_malus_minus);
 }
 
 int adjusted_bonus(int value, int bonus) {
