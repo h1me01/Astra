@@ -1,4 +1,3 @@
-
 ROOT := $(realpath $(dir $(abspath $(lastword $(MAKEFILE_LIST)))))
 
 # Allow custom EVALFILE path via command line
@@ -39,7 +38,8 @@ SEARCH_SRC := search/history.cpp \
               search/threads.cpp
              
 MAIN_SRC := main.cpp \
-            uci.cpp
+            uci.cpp \
+            bench.cpp
 
 SRC := $(CHESS_SRC) $(EVAL_SRC) $(SEARCH_SRC) $(MAIN_SRC)
 TARGET = $(if $(EXE),$(EXE),astra)
