@@ -89,7 +89,7 @@ Score Search::aspiration(int depth, Score prev_score, Stack *s) {
 
     int fail_high_count = 0;
     while(true) {
-        score = negamax<NodeType::ROOT>(std::max(1, root_depth - fail_high_count), alpha, beta, s);
+        score = negamax<NodeType::ROOT>(std::max(1, root_depth - fail_high_count), alpha, beta, s, false);
 
         if(is_limit_reached(depth))
             return 0;
@@ -113,12 +113,13 @@ Score Search::aspiration(int depth, Score prev_score, Stack *s) {
 }
 
 template <NodeType nt> //
-Score Search::negamax(int depth, Score alpha, Score beta, Stack *s) {
+Score Search::negamax(int depth, Score alpha, Score beta, Stack *s, bool cut_node) {
 
     constexpr bool root_node = (nt == NodeType::ROOT);
     constexpr bool pv_node = (nt != NodeType::NON_PV);
 
     assert(s->ply >= 0);
+    assert(!(pv_node && cut_node));
     assert(pv_node || (alpha == beta - 1));
     assert(valid_score(alpha + 1) && valid_score(beta - 1) && alpha < beta);
 
@@ -275,7 +276,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *s) {
         s->conth = &history.conth[0][NO_PIECE][NO_SQUARE];
 
         board.make_nullmove();
-        Score score = -negamax<NodeType::NON_PV>(depth - R, -beta, -beta + 1, s + 1);
+        Score score = -negamax<NodeType::NON_PV>(depth - R, -beta, -beta + 1, s + 1, !cut_node);
         board.unmake_nullmove();
 
         if(score >= beta) {
@@ -287,7 +288,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *s) {
     }
 
     // internal iterative reduction
-    if(!s->skipped.is_valid() && depth >= 4 && !tt_move.is_valid() && pv_node) {
+    if(!s->skipped.is_valid() && depth >= 4 && !tt_move.is_valid() && (pv_node || cut_node)) {
         depth--;
     }
 
@@ -318,7 +319,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *s) {
             Score score = -quiescence<NodeType::NON_PV>(0, -beta_cut, -beta_cut + 1, s + 1);
 
             if(score >= beta_cut)
-                score = -negamax<NodeType::NON_PV>(depth - 4, -beta_cut, -beta_cut + 1, s + 1);
+                score = -negamax<NodeType::NON_PV>(depth - 4, -beta_cut, -beta_cut + 1, s + 1, !cut_node);
 
             board.unmake_move(move);
 
@@ -413,7 +414,7 @@ movesloop:
         ) {
             Score sbeta = tt_score - 6 * depth / 8;
             s->skipped = move;
-            Score score = negamax<NodeType::NON_PV>((depth - 1) / 2, sbeta - 1, sbeta, s);
+            Score score = negamax<NodeType::NON_PV>((depth - 1) / 2, sbeta - 1, sbeta, s, cut_node);
             s->skipped = NO_MOVE;
 
             if(score < sbeta) {
@@ -440,6 +441,8 @@ movesloop:
 
             r += !improving;
 
+            r += 2 * cut_node;
+
             r += tt_move.is_valid() ? tt_move.is_cap() : 0;
 
             r -= tt_pv;
@@ -452,17 +455,17 @@ movesloop:
 
             const int lmr_depth = std::clamp(new_depth - r, 1, new_depth + 1);
 
-            score = -negamax<NodeType::NON_PV>(lmr_depth, -alpha - 1, -alpha, s + 1);
+            score = -negamax<NodeType::NON_PV>(lmr_depth, -alpha - 1, -alpha, s + 1, true);
 
             if(score > alpha && lmr_depth < new_depth)
-                score = -negamax<NodeType::NON_PV>(new_depth, -alpha - 1, -alpha, s + 1);
+                score = -negamax<NodeType::NON_PV>(new_depth, -alpha - 1, -alpha, s + 1, !cut_node);
         } else if(!pv_node || made_moves > 1) {
-            score = -negamax<NodeType::NON_PV>(new_depth, -alpha - 1, -alpha, s + 1);
+            score = -negamax<NodeType::NON_PV>(new_depth, -alpha - 1, -alpha, s + 1, !cut_node);
         }
 
         // principal variation search
         if(pv_node && (score > alpha || made_moves == 1))
-            score = -negamax<NodeType::PV>(new_depth, -beta, -alpha, s + 1);
+            score = -negamax<NodeType::PV>(new_depth, -beta, -alpha, s + 1, false);
 
         board.unmake_move(move);
 

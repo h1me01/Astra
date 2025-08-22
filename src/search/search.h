@@ -64,13 +64,13 @@ class Search {
     Score aspiration(int depth, Score prev_score, Stack *s);
 
     template <NodeType nt> //
-    Score negamax(int depth, Score alpha, Score beta, Stack *s);
+    Score negamax(int depth, Score alpha, Score beta, Stack *s, bool cut_node);
 
     template <NodeType nt> //
     Score quiescence(int depth, Score alpha, Score beta, Stack *s);
 
     Score evaluate();
-    Score adjust_eval(Score eval, Stack* s) const;
+    Score adjust_eval(Score eval, Stack *s) const;
 
     void update_pv(const Move &move, int ply);
 
