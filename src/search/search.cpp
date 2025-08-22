@@ -286,6 +286,11 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *s) {
         }
     }
 
+    // internal iterative reduction
+    if(!s->skipped.is_valid() && depth >= 4 && !tt_move.is_valid() && pv_node) {
+        depth--;
+    }
+
     // probcut
     beta_cut = beta + 237;
     if(!pv_node                                           //
