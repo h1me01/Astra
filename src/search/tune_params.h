@@ -98,6 +98,8 @@ PARAM(zws_margin, 69, 10, 160);
 PARAM(hp_qdiv, 6478, 1, 16384);
 PARAM(hp_cdiv, 4932, 1, 16384);
 
+PARAM(hbonus_margin, 76, 10, 200);
+
 PARAM(qfp_margin, 106, 40, 280);
 PARAM(qsee_margin, -20, -200, 50);
 

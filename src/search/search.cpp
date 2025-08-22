@@ -484,15 +484,6 @@ movesloop:
                 continue;
         }
 
-        s->move = move;
-        s->moved_piece = board.piece_at(move.from());
-        s->conth = &history.conth[move.is_cap()][s->moved_piece][move.to()];
-
-        if(move.is_cap() && c_count < 64)
-            c_moves[c_count++] = move;
-        else if(q_count < 64)
-            q_moves[q_count++] = move;
-
         // singular extensions
         int extensions = 0;
 
@@ -522,6 +513,15 @@ movesloop:
             else if(cut_node)
                 extensions = -2;
         }
+
+        s->move = move;
+        s->moved_piece = board.piece_at(move.from());
+        s->conth = &history.conth[move.is_cap()][s->moved_piece][move.to()];
+
+        if(move.is_cap() && c_count < 64)
+            c_moves[c_count++] = move;
+        else if(q_count < 64)
+            q_moves[q_count++] = move;
 
         total_nodes++;
 
@@ -622,12 +622,12 @@ movesloop:
             }
 
             if(alpha >= beta) {
-                history.update(       //
-                    board,            //
-                    move, s,          //
-                    q_moves, q_count, //
-                    c_moves, c_count, //
-                    depth             //
+                history.update(                                 //
+                    board,                                      //
+                    move, s,                                    //
+                    q_moves, q_count,                           //
+                    c_moves, c_count,                           //
+                    depth + (best_score > beta + hbonus_margin) //
                 );
 
                 break; // cut-off
