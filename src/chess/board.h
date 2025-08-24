@@ -24,7 +24,6 @@ class Board {
     void make_nullmove();
     void undo_nullmove();
 
-    void reset_accums();
     void update_accums();
 
     void perft(int depth);
@@ -49,11 +48,8 @@ class Board {
     U64 attackers_to(Color c, Square sq, U64 occ) const;
     U64 key_after(Move m) const;
 
-    void reset_ply() {
-        states[0] = states[curr_ply];
-        states[0].plies_from_null = 0;
-        curr_ply = 0;
-    }
+    void reset_accums();
+    void reset_ply();
 
     U64 get_piecebb(Color c, PieceType pt) const {
         assert(valid_color(c));
@@ -129,14 +125,13 @@ class Board {
     }
 
   private:
-    std::array<StateInfo, 512> states;
-
     Color stm;
     int curr_ply;
     Piece board[NUM_SQUARES];
     U64 piece_bb[NUM_PIECES];
 
     NNUE::AccumList accum_list;
+    std::array<StateInfo, 512> states;
 
     void put_piece(Piece pc, Square sq, bool update_nnue = false);
     void remove_piece(Square sq, bool update_nnue = false);
@@ -148,6 +143,12 @@ class Board {
 
 inline void Board::reset_accums() {
     accum_list.reset();
+}
+
+inline void Board::reset_ply() {
+    states[0] = states[curr_ply];
+    states[0].plies_from_null = 0;
+    curr_ply = 0;
 }
 
 inline int Board::get_phase() const {
@@ -199,22 +200,6 @@ inline U64 Board::key_after(Move m) const {
 
 // doesn't include stalemate
 inline bool Board::is_draw(int ply) const {
-    int num_pieces = pop_count(get_occupancy());
-    int num_knights = pop_count(get_piecebb(WHITE, KNIGHT) | get_piecebb(BLACK, KNIGHT));
-    int num_bishops = pop_count(get_piecebb(WHITE, BISHOP) | get_piecebb(BLACK, BISHOP));
-
-    if(num_pieces == 2)
-        return true;
-    if(num_pieces == 3 && (num_knights == 1 || num_bishops == 1))
-        return true;
-
-    if(num_pieces == 4) {
-        if(num_knights == 2)
-            return true;
-        if(num_bishops == 2 && pop_count(get_piecebb(WHITE, BISHOP)) == 1)
-            return true;
-    }
-
     return states[curr_ply].fmr_counter > 99 || is_repetition(ply);
 }
 
