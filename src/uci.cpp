@@ -11,6 +11,8 @@
 
 namespace UCI {
 
+const std::string version = "6.1.1";
+
 // helper
 
 bool is_integer(const std::string &s) {
@@ -130,7 +132,7 @@ void UCI::loop(int argc, char **argv) {
         is >> std::skipws >> token;
 
         if(token == "uci") {
-            std::cout << "id name Astra" << std::endl;
+            std::cout << "id name Astra " << version << std::endl;
             std::cout << "id author Semih Oezalp" << std::endl;
             options.print();
             std::cout << "uciok" << std::endl;
