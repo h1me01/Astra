@@ -69,7 +69,7 @@ class TimeMan {
         Time time;
 
         int mtg = std::min(50, moves_to_go ? moves_to_go : 50);
-        int64_t adj_time = std::max(1LL, time_left + inc * (mtg - 1) - overhead * (mtg + 2));
+        int64_t adj_time = std::max(static_cast<int64_t>(1LL), time_left + inc * (mtg - 1) - overhead * (mtg + 2));
 
         double scale = std::min(                                //
             moves_to_go ? 1.034612 / mtg : 0.029935,            //
