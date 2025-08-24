@@ -35,7 +35,7 @@ const int PIECE_VALUES_SEE[] = {
     0                         //
 };
 
-constexpr int MAX_PLY = 128;
+constexpr int MAX_PLY = 246;
 
 constexpr Score VALUE_DRAW = 0;
 constexpr Score VALUE_NONE = 32002;

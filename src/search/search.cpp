@@ -54,9 +54,9 @@ void Search::start(const Board &board, Limits limits) {
     Move prev_best_move = NO_MOVE;
 
     // init stack
-    Stack stack[MAX_PLY + 7]; // +6 for continuation history, +1 for safety
+    Stack stack[MAX_PLY + 6]; // +6 for continuation history
     Stack *s = &stack[6];
-    for(int i = 0; i < MAX_PLY + 7; i++) {
+    for(int i = 0; i < MAX_PLY + 6; i++) {
         stack[i].ply = i - 6;
         stack[i].conth = &history.conth[0][NO_PIECE][NO_SQUARE];
     }
@@ -64,7 +64,7 @@ void Search::start(const Board &board, Limits limits) {
     int stability = 0;
     Score scores[MAX_PLY];
 
-    for(root_depth = 1; root_depth <= MAX_PLY; root_depth++) {
+    for(root_depth = 1; root_depth < MAX_PLY; root_depth++) {
         for(multipv_idx = 0; multipv_idx < multipv_size; multipv_idx++)
             aspiration(root_depth, s);
 
