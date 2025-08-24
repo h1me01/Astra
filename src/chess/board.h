@@ -24,7 +24,7 @@ class Board {
     void make_nullmove();
     void undo_nullmove();
 
-    void reset_accum();
+    void reset_accums();
     void update_accums();
 
     void perft(int depth);
@@ -121,11 +121,11 @@ class Board {
     }
 
     NNUE::Accum &get_accum() {
-        return accums[accums_idx];
+        return accum_list.back();
     }
 
     const NNUE::Accum &get_accum() const {
-        return accums[accums_idx];
+        return accum_list.back();
     }
 
   private:
@@ -136,9 +136,7 @@ class Board {
     Piece board[NUM_SQUARES];
     U64 piece_bb[NUM_PIECES];
 
-    int accums_idx;
-    std::array<NNUE::Accum, MAX_PLY + 1> accums;
-    std::unique_ptr<NNUE::AccumTable> accum_table = std::make_unique<NNUE::AccumTable>(NNUE::AccumTable());
+    NNUE::AccumList accum_list;
 
     void put_piece(Piece pc, Square sq, bool update_nnue = false);
     void remove_piece(Square sq, bool update_nnue = false);
@@ -148,11 +146,8 @@ class Board {
     void init_slider_blockers();
 };
 
-inline void Board::reset_accum() {
-    accums_idx = 0;
-    accum_table->reset();
-    accum_table->refresh(*this, WHITE);
-    accum_table->refresh(*this, BLACK);
+inline void Board::reset_accums() {
+    accum_list.reset();
 }
 
 inline int Board::get_phase() const {

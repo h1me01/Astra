@@ -42,13 +42,11 @@ Board &Board::operator=(const Board &other) {
     if(this != &other) {
         stm = other.stm;
         curr_ply = other.curr_ply;
-        accums_idx = other.accums_idx;
+        states = other.states;
+        accum_list.copy(other.accum_list, this);
 
         std::copy(std::begin(other.board), std::end(other.board), std::begin(board));
         std::copy(std::begin(other.piece_bb), std::end(other.piece_bb), std::begin(piece_bb));
-
-        states = other.states;
-        accums = other.accums;
     }
 
     return *this;
@@ -56,7 +54,7 @@ Board &Board::operator=(const Board &other) {
 
 void Board::set_fen(const std::string &fen, bool update_nnue) {
     curr_ply = 0;
-    accums_idx = 0;
+    accum_list.set_board(this);
     std::memset(piece_bb, 0, sizeof(piece_bb));
 
     for(auto &i : board)
@@ -114,7 +112,7 @@ void Board::set_fen(const std::string &fen, bool update_nnue) {
     info.hash ^= Zobrist::get_castle(info.castle_rights.get_hash_idx());
 
     if(update_nnue)
-        reset_accum();
+        reset_accums();
 }
 
 void Board::print() const {
@@ -375,11 +373,8 @@ void Board::make_move(const Move &m, bool update_nnue) {
     // update hash
     info.hash ^= Zobrist::get_side();
 
-    if(update_nnue) {
-        accums_idx++;
-        assert(accums_idx < MAX_PLY + 1);
-        accums[accums_idx].reset();
-    }
+    if(update_nnue)
+        accum_list.push();
 
     if(mt == CASTLING) {
         assert(pt == KING);
@@ -474,8 +469,7 @@ void Board::undo_move(const Move &m) {
     assert(piece_at(to) != NO_PIECE);
     assert(piece_at(from) == NO_PIECE);
 
-    if(accums_idx > 0)
-        accums_idx--;
+    accum_list.pop();
 
     if(m.is_prom()) {
         remove_piece(to);
@@ -532,18 +526,20 @@ void Board::update_accums() {
         if(acc.is_initialized(view))
             continue;
 
+        const int accums_idx = accum_list.get_idx();
+
         assert(accums_idx > 0);
 
         // apply lazy update
         for(int i = accums_idx; i >= 0; i--) {
-            if(accums[i].needs_refresh(view)) {
-                accum_table->refresh(*this, view);
+            if(accum_list[i].needs_refresh(view)) {
+                accum_list.refresh(view);
                 break;
             }
 
-            if(accums[i].is_initialized(view)) {
+            if(accum_list[i].is_initialized(view)) {
                 for(int j = i + 1; j <= accums_idx; j++)
-                    accums[j].update(accums[j - 1], view);
+                    accum_list[j].update(accum_list[j - 1], view);
                 break;
             }
         }

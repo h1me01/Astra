@@ -2,6 +2,7 @@
 
 #include <array>
 #include <cassert>
+#include <memory>
 
 #include "nnue.h"
 
@@ -98,6 +99,81 @@ class AccumTable {
 
   private:
     AccumEntry entries[NUM_COLORS][2 * BUCKET_SIZE];
+};
+
+class AccumList {
+  public:
+    AccumList() : idx(0), board(nullptr), data{} {}
+
+    AccumList &copy(const AccumList &other, Board *new_board) {
+        if(this != &other) {
+            idx = other.idx;
+            board = new_board;
+            data = other.data;
+            accum_table = std::make_unique<AccumTable>(*other.accum_table);
+        }
+        return *this;
+    }
+
+    void set_board(Board *new_board) {
+        board = new_board;
+    }
+
+    void pop() {
+        if(idx > 0)
+            idx--;
+    }
+
+    void push() {
+        assert(idx < MAX_PLY);
+        idx++;
+        data[idx].reset();
+    }
+
+    void reset() {
+        assert(board != nullptr);
+
+        idx = 0;
+        accum_table->reset();
+        accum_table->refresh(*board, WHITE);
+        accum_table->refresh(*board, BLACK);
+    }
+
+    void refresh(Color view) {
+        assert(board != nullptr);
+        accum_table->refresh(*board, view);
+    }
+
+    Accum &operator[](int i) {
+        assert(i >= 0 && i <= MAX_PLY);
+        return data[i];
+    }
+
+    const Accum &operator[](int i) const {
+        assert(i >= 0 && i <= MAX_PLY);
+        return data[i];
+    }
+
+    Accum &back() {
+        assert(idx >= 0 && idx <= MAX_PLY);
+        return data[idx];
+    }
+
+    const Accum &back() const {
+        assert(idx >= 0 && idx <= MAX_PLY);
+        return data[idx];
+    }
+
+    int get_idx() const {
+        return idx;
+    }
+
+  private:
+    int idx;
+    Board *board;
+
+    std::array<Accum, MAX_PLY + 1> data;
+    std::unique_ptr<AccumTable> accum_table = std::make_unique<AccumTable>(AccumTable());
 };
 
 } // namespace NNUE

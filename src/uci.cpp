@@ -191,7 +191,7 @@ void UCI::update_position(std::istringstream &is) {
             board.reset_ply();
     }
 
-    board.reset_accum();
+    board.reset_accums();
 }
 
 void UCI::go(std::istringstream &is) {
