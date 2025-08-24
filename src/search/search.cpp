@@ -854,6 +854,9 @@ Score Search::quiescence(int depth, Score alpha, Score beta, Stack *s) {
 
 Score Search::evaluate() {
     int eval = NNUE::nnue.forward(board);
+
+    eval = (128 + board.get_phase()) * eval / 128;
+
     return std::clamp(eval, int(-VALUE_MATE_IN_MAX_PLY), int(VALUE_MATE_IN_MAX_PLY));
 }
 

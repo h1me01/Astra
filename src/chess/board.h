@@ -29,6 +29,8 @@ class Board {
 
     void perft(int depth);
 
+    int get_phase() const;
+
     bool is_legal(const Move &m) const;
     bool is_pseudolegal(const Move &m) const;
 
@@ -151,6 +153,14 @@ inline void Board::reset_accum() {
     accum_table->reset();
     accum_table->refresh(*this, WHITE);
     accum_table->refresh(*this, BLACK);
+}
+
+inline int Board::get_phase() const {
+    int phase = 3 * pop_count(piece_bb[WHITE_KNIGHT] | piece_bb[BLACK_KNIGHT]);
+    phase += 3 * pop_count(piece_bb[WHITE_BISHOP] | piece_bb[BLACK_BISHOP]);
+    phase += 5 * pop_count(piece_bb[WHITE_ROOK] | piece_bb[BLACK_ROOK]);
+    phase += 10 * pop_count(piece_bb[WHITE_QUEEN] | piece_bb[BLACK_QUEEN]);
+    return phase;
 }
 
 inline U64 Board::get_occupancy(Color c = BOTH_COLORS) const {
