@@ -5,7 +5,7 @@ namespace Chess {
 bool Board::has_upcoming_repetition(int ply) {
     assert(ply > 0);
 
-    const U64 occ = occupancy();
+    const U64 occ = get_occupancy();
 
     const StateInfo &info = states[curr_ply];
     StateInfo *prev = &states[curr_ply - 1];

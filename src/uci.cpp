@@ -12,11 +12,13 @@
 namespace UCI {
 
 // helper
+
 bool is_integer(const std::string &s) {
     return !s.empty() && std::all_of(s.begin(), s.end(), ::isdigit);
 }
 
-// options class
+// Options
+
 void Options::print() const {
     for(const auto &elem : options) {
         Option option = elem.second;
@@ -33,7 +35,7 @@ void Options::print() const {
     }
 
 #ifdef TUNE
-    for(auto param : Astra::params)
+    for(auto param : Search::params)
         std::cout << "option name " << param->name         //
                   << " type spin default " << param->value //
                   << " min " << param->min                 //
@@ -54,8 +56,8 @@ void Options::apply() {
         }
     }
 
-    num_workers = std::stoi(get("Threads"));
-    Search::tt.set_num_workers(num_workers);
+    worker_count = std::stoi(get("Threads"));
+    Search::tt.set_worker_count(worker_count);
     Search::tt.init(std::stoi(get("Hash")));
 }
 
@@ -73,8 +75,8 @@ void Options::set(std::istringstream &is) {
         return;
 
 #ifdef TUNE
-    Astra::set_param(name, std::stoi(value));
-    Astra::init_reductions();
+    Search::set_param(name, std::stoi(value));
+    Search::init_reductions();
 #endif
 
     if(!options.count(name)) {
@@ -101,15 +103,16 @@ void Options::set(std::istringstream &is) {
         std::cout << "Invalid range of value for option " << name << std::endl;
 }
 
-// uci class
+// UCI
+
 UCI::UCI() : board(STARTING_FEN) {
     std::cout << "Astra by Semih Oezalp" << std::endl;
 
-    options.add("Hash", Option("spin", "16", "16", 1, 8192));
-    options.add("Threads", Option("spin", "1", "1", 1, 128));
-    options.add("MultiPV", Option("spin", "1", "1", 1, 218));
-    options.add("MoveOverhead", Option("spin", "10", "10", 1, 10000));
     options.add("SyzygyPath", Option("string", "", "", 0, 0));
+    options.add("MoveOverhead", Option("spin", "10", "10", 1, 10000));
+    options.add("MultiPV", Option("spin", "1", "1", 1, 218));
+    options.add("Threads", Option("spin", "1", "1", 1, 128));
+    options.add("Hash", Option("spin", "16", "16", 1, 8192));
 
     options.apply();
 }
@@ -153,6 +156,7 @@ void UCI::loop(int argc, char **argv) {
             Search::threads.force_stop();
         else if(token == "quit") {
             Search::threads.force_stop();
+            tb_free();
             break;
         } else
             std::cout << "Unknown Command" << std::endl;
@@ -173,7 +177,7 @@ void UCI::update_position(std::istringstream &is) {
         return;
     }
 
-    board.set_fen(fen);
+    board.set_fen(fen, false);
     while(is >> token) {
         if(token == "moves")
             continue;
@@ -248,7 +252,7 @@ void UCI::go(std::istringstream &is) {
     limits.multipv = std::stoi(options.get("MultiPV"));
 
     // start search
-    Search::threads.launch_workers(board, limits, options.num_workers, options.use_tb);
+    Search::threads.launch_workers(board, limits, options.worker_count, options.use_tb);
 }
 
 Move UCI::get_move(const std::string &str_move) const {

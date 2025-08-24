@@ -1,5 +1,4 @@
 #include "chess/board.h"
-#include "nnue/nnue.h"
 #include "uci.h"
 
 int main(int argc, char **argv) {
@@ -7,7 +6,6 @@ int main(int argc, char **argv) {
     Zobrist::init();
     Cuckoo::init();
     NNUE::nnue.init();
-
     Search::init_reductions();
 
     UCI::UCI uci;

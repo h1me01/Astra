@@ -30,7 +30,8 @@ void freeAlign(void *ptr) {
     _mm_free(ptr);
 }
 
-// struct TTEntry
+// TTEntry
+
 int TTEntry::relative_age() const {
     return (AGE_CYCLE + tt.get_age() - agepvbound) & AGE_MASK;
 }
@@ -68,7 +69,8 @@ void TTEntry::store( //
     }
 }
 
-// class TTable
+// TTable
+
 TTable::TTable(U64 size_mb) : buckets(nullptr) {
     init(size_mb);
 }
@@ -92,19 +94,19 @@ void TTable::init(U64 size_mb) {
 void TTable::clear() {
     age = 0;
 
-    const U64 chunk_size = bucket_size / num_workers;
+    const U64 chunk_size = bucket_size / worker_count;
 
     std::vector<std::thread> threads;
-    threads.reserve(num_workers);
+    threads.reserve(worker_count);
 
-    for(int i = 0; i < num_workers; i++) {
+    for(int i = 0; i < worker_count; i++) {
         threads.emplace_back([this, i, chunk_size]() {
             for(U64 j = 0; j < chunk_size; ++j)
                 buckets[i * chunk_size + j] = TTBucket{};
         });
     }
 
-    const U64 cleared = chunk_size * num_workers;
+    const U64 cleared = chunk_size * worker_count;
     if(cleared < bucket_size)
         for(U64 i = cleared; i < bucket_size; ++i)
             buckets[i] = TTBucket{};

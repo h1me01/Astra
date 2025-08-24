@@ -12,9 +12,6 @@ void Board::perft(int depth) {
     }
 
     auto perft = [&](Board &b, int d, auto &&perft_ref) -> U64 {
-        if(d == 0)
-            return 1;
-
         MoveList<> ml;
         ml.gen<LEGALS>(b);
 
@@ -25,7 +22,7 @@ void Board::perft(int depth) {
         for(const Move &move : ml) {
             b.make_move(move);
             nodes += perft_ref(b, d - 1, perft_ref);
-            b.unmake_move(move);
+            b.undo_move(move);
         }
         return nodes;
     };
@@ -40,7 +37,7 @@ void Board::perft(int depth) {
     for(const Move &move : ml) {
         make_move(move);
         U64 nodes = perft(*this, depth - 1, perft);
-        unmake_move(move);
+        undo_move(move);
 
         total_nodes += nodes;
         std::cout << move << ": " << nodes << std::endl;

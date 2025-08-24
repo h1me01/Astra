@@ -4,8 +4,8 @@
 namespace Search {
 
 unsigned int probe_wdl(const Board &board) {
-    U64 w_occ = board.occupancy(WHITE);
-    U64 b_occ = board.occupancy(BLACK);
+    U64 w_occ = board.get_occupancy(WHITE);
+    U64 b_occ = board.get_occupancy(BLACK);
     U64 occ = w_occ | b_occ;
 
     if(pop_count(occ) > signed(TB_LARGEST))

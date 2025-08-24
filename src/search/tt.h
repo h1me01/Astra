@@ -121,8 +121,8 @@ class TTable {
         age += AGE_STEP;
     }
 
-    void set_num_workers(int num_workers) {
-        this->num_workers = num_workers;
+    void set_worker_count(int num_workers) {
+        this->worker_count = num_workers;
     }
 
     int get_age() const {
@@ -134,7 +134,7 @@ class TTable {
     U64 bucket_size;
     TTBucket *buckets;
 
-    int num_workers = 1;
+    int worker_count = 1;
 };
 
 inline bool valid_tt_score(Score tt_score, Score score, Bound bound) {

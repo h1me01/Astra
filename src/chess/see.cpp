@@ -26,7 +26,7 @@ bool Board::see(Move &m, int threshold) const {
     if(swap <= 0)
         return true;
 
-    U64 occ = occupancy() ^ square_bb(from) ^ square_bb(to);
+    U64 occ = get_occupancy() ^ square_bb(from) ^ square_bb(to);
     U64 attackers = attackers_to(WHITE, to, occ) | attackers_to(BLACK, to, occ);
 
     const U64 diag = diag_sliders(WHITE) | diag_sliders(BLACK);
@@ -41,7 +41,7 @@ bool Board::see(Move &m, int threshold) const {
         curr_stm = ~curr_stm;
         attackers &= occ;
 
-        if(!(stm_attacker = (attackers & occupancy(curr_stm))))
+        if(!(stm_attacker = (attackers & get_occupancy(curr_stm))))
             break;
 
         if(info.pinners[~stm] & occ) {
@@ -78,7 +78,7 @@ bool Board::see(Move &m, int threshold) const {
             occ ^= (bb & -bb);
             attackers |= (get_attacks(BISHOP, to, occ) & diag) | (get_attacks(ROOK, to, occ) & orth);
         } else {
-            return (attackers & ~occupancy(curr_stm)) ? res ^ 1 : res;
+            return (attackers & ~get_occupancy(curr_stm)) ? res ^ 1 : res;
         }
     }
 

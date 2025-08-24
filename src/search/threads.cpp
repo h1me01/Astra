@@ -32,25 +32,6 @@ void ThreadPool::force_stop() {
     running_threads.clear();
 }
 
-bool ThreadPool::is_stopped() const {
-    return stop_flag.load(std::memory_order_relaxed);
-}
-
-U64 ThreadPool::get_total_nodes() const {
-    U64 total_nodes = 0;
-    for(const auto &t : threads)
-        total_nodes += t->get_total_nodes();
-    return total_nodes;
-}
-
-U64 ThreadPool::get_tb_hits() const {
-    U64 total_tb_hits = 0;
-    for(const auto &t : threads)
-        total_tb_hits += t->get_tb_hits();
-    return total_tb_hits;
-}
-
-// global variable
 ThreadPool threads;
 
 } // namespace Search

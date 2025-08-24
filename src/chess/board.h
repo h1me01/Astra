@@ -4,9 +4,9 @@
 #include <memory>
 
 #include "../nnue/accum.h"
+#include "cuckoo.h"
 #include "state_info.h"
 #include "zobrist.h"
-#include "cuckoo.h"
 
 namespace Chess {
 
@@ -19,19 +19,15 @@ class Board {
     void print() const;
 
     void make_move(const Move &m, bool update_nnue = true);
-    void unmake_move(const Move &m);
+    void undo_move(const Move &m);
 
     void make_nullmove();
-    void unmake_nullmove();
+    void undo_nullmove();
 
     void reset_accum();
     void update_accums();
 
     void perft(int depth);
-
-    bool in_check() const {
-        return states[curr_ply].checkers > 0;
-    }
 
     bool is_legal(const Move &m) const;
     bool is_pseudolegal(const Move &m) const;
@@ -39,24 +35,23 @@ class Board {
     bool is_repetition(int ply) const;
     bool is_draw(int ply) const;
 
-    bool nonpawnmat(Color c) const;
+    bool nonpawn_mat(Color c) const;
 
     bool see(Move &m, int threshold) const;
     bool has_upcoming_repetition(int ply);
+
+    void set_fen(const std::string &fen, bool update_nnue = true);
+    std::string get_fen() const;
+
+    U64 get_occupancy(Color c) const;
+    U64 attackers_to(Color c, Square sq, U64 occ) const;
+    U64 key_after(Move m) const;
 
     void reset_ply() {
         states[0] = states[curr_ply];
         states[0].plies_from_null = 0;
         curr_ply = 0;
     }
-
-    void set_fen(const std::string &fen, bool update_nnue = true);
-
-    std::string get_fen() const;
-
-    U64 occupancy(Color c) const;
-    U64 attackers_to(Color c, Square sq, U64 occ) const;
-    U64 key_after(Move m) const;
 
     U64 get_piecebb(Color c, PieceType pt) const {
         assert(valid_color(c));
@@ -80,6 +75,10 @@ class Board {
 
     U64 orth_sliders(Color c) const {
         return get_piecebb(c, ROOK) | get_piecebb(c, QUEEN);
+    }
+
+    bool in_check() const {
+        return states[curr_ply].checkers > 0;
     }
 
     Color get_stm() const {
@@ -154,7 +153,7 @@ inline void Board::reset_accum() {
     accum_table->refresh(*this, BLACK);
 }
 
-inline U64 Board::occupancy(Color c = BOTH_COLORS) const {
+inline U64 Board::get_occupancy(Color c = BOTH_COLORS) const {
     U64 occ = 0;
     if(c != BLACK)
         occ |= states[curr_ply].occ[WHITE];
@@ -176,7 +175,7 @@ inline U64 Board::key_after(Move m) const {
     U64 new_hash = states[curr_ply].hash;
 
     if(!m)
-        return new_hash ^ Zobrist::side;
+        return new_hash ^ Zobrist::get_side();
 
     Square from = m.from();
     Square to = m.to();
@@ -188,14 +187,14 @@ inline U64 Board::key_after(Move m) const {
         new_hash ^= Zobrist::get_psq(captured, to);
 
     new_hash ^= Zobrist::get_psq(pc, from) ^ Zobrist::get_psq(pc, to);
-    new_hash ^= Zobrist::side;
+    new_hash ^= Zobrist::get_side();
 
     return new_hash;
 }
 
 // doesn't include stalemate
 inline bool Board::is_draw(int ply) const {
-    int num_pieces = pop_count(occupancy());
+    int num_pieces = pop_count(get_occupancy());
     int num_knights = pop_count(get_piecebb(WHITE, KNIGHT) | get_piecebb(BLACK, KNIGHT));
     int num_bishops = pop_count(get_piecebb(WHITE, BISHOP) | get_piecebb(BLACK, BISHOP));
 
@@ -215,7 +214,7 @@ inline bool Board::is_draw(int ply) const {
 }
 
 // checks if there is any non-pawn material on the board of the current side to move
-inline bool Board::nonpawnmat(Color c) const {
+inline bool Board::nonpawn_mat(Color c) const {
     return get_piecebb(c, KNIGHT) | get_piecebb(c, BISHOP) | get_piecebb(c, ROOK) | get_piecebb(c, QUEEN);
 }
 

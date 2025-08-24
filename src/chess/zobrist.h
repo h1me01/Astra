@@ -11,7 +11,6 @@ class PRNG {
   public:
     explicit PRNG(U64 seed) : s(seed) {}
 
-    // generate psuedorandom number
     template <typename T> T rand() {
         return T(rand64());
     }
@@ -27,13 +26,12 @@ class PRNG {
 
 namespace Zobrist {
 
-extern U64 side;
-
 void init();
 
-U64 get_psq(Piece pc, Square sq);
-U64 get_castle(int idx);
+U64 get_side();
 U64 get_ep(Square sq);
+U64 get_castle(int idx);
+U64 get_psq(Piece pc, Square sq);
 
 U64 get_pawn(const Board &board);
 U64 get_nonpawn(const Board &board, Color c);

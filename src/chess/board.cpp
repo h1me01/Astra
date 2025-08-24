@@ -102,13 +102,14 @@ void Board::set_fen(const std::string &fen, bool update_nnue) {
     init_threats();
     init_slider_blockers();
 
+    // initialize Zobrist hashes
     info.pawn_hash = Zobrist::get_pawn(*this);
     info.non_pawn_hash[WHITE] = Zobrist::get_nonpawn(*this, WHITE);
     info.non_pawn_hash[BLACK] = Zobrist::get_nonpawn(*this, BLACK);
 
     info.hash = info.pawn_hash ^ info.non_pawn_hash[WHITE] ^ info.non_pawn_hash[BLACK];
 
-    info.hash ^= Zobrist::side;
+    info.hash ^= Zobrist::get_side();
     info.hash ^= Zobrist::get_ep(info.ep_sq);
     info.hash ^= Zobrist::get_castle(info.castle_rights.get_hash_idx());
 
@@ -184,7 +185,7 @@ bool Board::is_legal(const Move &m) const {
 
     if(m.type() == EN_PASSANT) {
         Square cap_sq = Square(to ^ 8);
-        U64 occ = (occupancy() ^ square_bb(from) ^ square_bb(cap_sq)) | square_bb(to);
+        U64 occ = (get_occupancy() ^ square_bb(from) ^ square_bb(cap_sq)) | square_bb(to);
 
         assert(piece_at(cap_sq) == make_piece(~stm, PAWN));
         assert(piece_at(to) == NO_PIECE);
@@ -202,7 +203,7 @@ bool Board::is_legal(const Move &m) const {
     if(m.type() == CASTLING) {
         Direction step = (to == rel_sq(stm, g1)) ? WEST : EAST;
         for(Square sq = to; sq != from; sq += step)
-            if(attackers_to(~stm, sq, occupancy()))
+            if(attackers_to(~stm, sq, get_occupancy()))
                 return false;
 
         return true;
@@ -210,7 +211,7 @@ bool Board::is_legal(const Move &m) const {
 
     // make sure king doesn't move to checking squares
     if(piece_type(from_pc) == KING)
-        return !(attackers_to(~stm, to, occupancy() ^ square_bb(from)));
+        return !(attackers_to(~stm, to, get_occupancy() ^ square_bb(from)));
 
     // only legal if not pinned or moving in the direction of the pin
     return !(states[curr_ply].blockers[stm] & square_bb(from)) || (line(from, to) & square_bb(ksq));
@@ -229,8 +230,8 @@ bool Board::is_pseudolegal(const Move &m) const {
 
     const MoveType mt = m.type();
 
-    const U64 us_bb = occupancy(stm);
-    const U64 them_bb = occupancy(~stm);
+    const U64 us_bb = get_occupancy(stm);
+    const U64 them_bb = get_occupancy(~stm);
     const U64 occ = us_bb | them_bb;
 
     if(!m)
@@ -372,7 +373,7 @@ void Board::make_move(const Move &m, bool update_nnue) {
         info.fmr_counter = 0;
 
     // update hash
-    info.hash ^= Zobrist::side;
+    info.hash ^= Zobrist::get_side();
 
     if(update_nnue) {
         accums_idx++;
@@ -461,7 +462,7 @@ void Board::make_move(const Move &m, bool update_nnue) {
     init_slider_blockers();
 }
 
-void Board::unmake_move(const Move &m) {
+void Board::undo_move(const Move &m) {
     stm = ~stm;
 
     const MoveType mt = m.type();
@@ -511,7 +512,7 @@ void Board::make_nullmove() {
         info.ep_sq = NO_SQUARE;
     }
 
-    info.hash ^= Zobrist::side;
+    info.hash ^= Zobrist::get_side();
 
     stm = ~stm;
 
@@ -519,7 +520,7 @@ void Board::make_nullmove() {
     init_slider_blockers();
 }
 
-void Board::unmake_nullmove() {
+void Board::undo_nullmove() {
     curr_ply--;
     stm = ~stm;
 }
@@ -557,7 +558,7 @@ void Board::update_accums() {
 void Board::init_threats() {
     StateInfo &info = states[curr_ply];
     Color them = ~stm;
-    U64 occ = occupancy() ^ square_bb(king_sq(stm)); // king must be excluded so we don't block the slider attacks
+    U64 occ = get_occupancy() ^ square_bb(king_sq(stm)); // king must be excluded so we don't block the slider attacks
 
     U64 danger = 0;
     U64 threat = 0;
@@ -579,7 +580,7 @@ void Board::init_threats() {
     }
 
     info.danger = danger;
-    info.checkers = attackers_to(them, king_sq(stm), occupancy());
+    info.checkers = attackers_to(them, king_sq(stm), get_occupancy());
 }
 
 void Board::init_slider_blockers() {
@@ -595,14 +596,14 @@ void Board::init_slider_blockers() {
         U64 cands = (get_attacks(ROOK, ksq) & orth_sliders(~c)) | //
                     (get_attacks(BISHOP, ksq) & diag_sliders(~c));
 
-        const U64 occ = occupancy() ^ cands;
+        const U64 occ = get_occupancy() ^ cands;
         while(cands) {
             Square sq = pop_lsb(cands);
             U64 b = between_bb(ksq, sq) & occ;
 
             if(pop_count(b) == 1) {
                 info.blockers[c] |= b;
-                if(b & occupancy(c))
+                if(b & get_occupancy(c))
                     info.pinners[~c] |= square_bb(sq);
             }
         }

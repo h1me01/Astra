@@ -24,7 +24,7 @@ void init() {
                         continue;
 
                     Move move = Move(sq1, sq2, QUIET);
-                    U64 hash = Zobrist::get_psq(p, sq1) ^ Zobrist::get_psq(p, sq2) ^ Zobrist::side;
+                    U64 hash = Zobrist::get_psq(p, sq1) ^ Zobrist::get_psq(p, sq2) ^ Zobrist::get_side();
 
                     int i = cuckoo_h1(hash);
                     while(true) {

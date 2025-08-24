@@ -13,7 +13,7 @@ void partial_insertion_sort(MoveList<> &ml, int idx) {
     std::swap(ml[idx], ml[best_idx]);
 }
 
-// MovePicker class
+// MovePicker
 
 MovePicker::MovePicker(SearchType st,          //
                        const Board &board,     //
@@ -64,7 +64,6 @@ Move MovePicker::next() {
             Move move = ml_main[idx];
             idx++;
 
-            // skip tt move only when in negamax search
             if(move == tt_move)
                 continue;
 
@@ -116,7 +115,6 @@ Move MovePicker::next() {
             Move move = ml_main[idx];
             idx++;
 
-            // skip tt move, killer, and counter
             if(move == tt_move || move == killer || move == counter)
                 continue;
 

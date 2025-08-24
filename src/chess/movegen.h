@@ -32,8 +32,8 @@ Move *gen_pawnmoves(const Board &board, Move *ml, const U64 targets) {
     constexpr Direction up_right = (us == WHITE ? NORTH_EAST : SOUTH_WEST);
     constexpr Direction up_left = (us == WHITE ? NORTH_WEST : SOUTH_EAST);
 
-    const U64 them_bb = board.occupancy(them);
-    const U64 occ = board.occupancy(us) | them_bb;
+    const U64 them_bb = board.get_occupancy(them);
+    const U64 occ = board.get_occupancy(us) | them_bb;
     const U64 empty_sqs = ~occ;
 
     const U64 pawns = board.get_piecebb(us, PAWN);
@@ -102,8 +102,8 @@ Move *gen_pawnmoves(const Board &board, Move *ml, const U64 targets) {
 
 template <Color us, PieceType pt, GenType gt> //
 Move *gen_piecemoves(const Board &board, Move *ml, const U64 targets) {
-    const U64 them_bb = board.occupancy(~us);
-    const U64 occ = board.occupancy(us) | them_bb;
+    const U64 them_bb = board.get_occupancy(~us);
+    const U64 occ = board.get_occupancy(us) | them_bb;
 
     U64 piece = board.get_piecebb(us, pt);
     while(piece) {
@@ -131,8 +131,8 @@ Move *gen_all(const Board &board, Move *ml) {
     const StateInfo &info = board.get_state();
     const Square ksq = board.king_sq(us);
 
-    const U64 us_bb = board.occupancy(us);
-    const U64 them_bb = board.occupancy(~us);
+    const U64 us_bb = board.get_occupancy(us);
+    const U64 them_bb = board.get_occupancy(~us);
     const U64 occ = us_bb | them_bb;
 
     const U64 checkers = info.checkers;
@@ -170,7 +170,7 @@ template <Color us> //
 Move *gen_quiet_checkers(const Board &board, Move *ml) {
     constexpr Color them = ~us;
     const Square opp_ksq = board.king_sq(them);
-    const U64 occ = board.occupancy();
+    const U64 occ = board.get_occupancy();
     const U64 bishop_attacks = get_attacks(BISHOP, opp_ksq, occ);
     const U64 rook_attacks = get_attacks(ROOK, opp_ksq, occ);
 
@@ -186,7 +186,7 @@ Move *gen_quiet_checkers(const Board &board, Move *ml) {
 inline Move *gen_legals(const Board &board, Move *ml) {
     const Color us = board.get_stm();
     const Square ksq = board.king_sq(us);
-    const U64 pinned = board.get_state().blockers[us] & board.occupancy(us);
+    const U64 pinned = board.get_state().blockers[us] & board.get_occupancy(us);
 
     Move *curr = ml;
 

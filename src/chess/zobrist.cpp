@@ -4,10 +4,10 @@
 
 namespace Chess::Zobrist {
 
-U64 psq[NUM_PIECES][NUM_SQUARES];
-U64 castle[16];
-U64 ep[8];
 U64 side;
+U64 ep[8];
+U64 castle[16];
+U64 psq[NUM_PIECES][NUM_SQUARES];
 
 void init() {
     PRNG rng(1070372);
@@ -24,6 +24,10 @@ void init() {
         castle[i] = rng.rand<U64>();
 
     side = rng.rand<U64>();
+}
+
+U64 get_side() {
+    return side;
 }
 
 U64 get_psq(Piece pc, Square sq) {

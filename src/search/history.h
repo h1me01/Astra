@@ -81,7 +81,7 @@ inline int History::get_hh(Color stm, Move move) const {
 }
 
 inline int History::get_nh(const Board &board, Move &move) const {
-    PieceType captured = move.type() == EN_PASSANT ? PAWN : piece_type(board.piece_at(move.to()));
+    PieceType captured = (move.type() == EN_PASSANT) ? PAWN : piece_type(board.piece_at(move.to()));
     Piece pc = board.piece_at(move.from());
 
     assert(valid_piece(pc));

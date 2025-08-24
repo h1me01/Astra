@@ -31,11 +31,11 @@ class Options {
     void print() const;
     void apply();
 
+    void set(std::istringstream &is);
+
     void add(std::string name, const Option &option) {
         options[name] = option;
     }
-
-    void set(std::istringstream &is);
 
     std::string get(std::string str) const {
         auto it = options.find(str);
@@ -45,7 +45,7 @@ class Options {
     }
 
     bool use_tb = false;
-    int num_workers = 1; // default number of threads
+    int worker_count = 1; // default number of threads
 
   private:
     std::unordered_map<std::string, Option> options;

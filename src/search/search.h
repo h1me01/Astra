@@ -72,7 +72,7 @@ class Search {
     Board board{STARTING_FEN};
     PVLine pv_table[MAX_PLY + 1];
 
-    MoveList<RootMove> rootmoves;
+    MoveList<RootMove> root_moves;
 
     Score aspiration(int depth, Stack *s);
 

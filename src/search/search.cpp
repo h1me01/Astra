@@ -43,9 +43,9 @@ void Search::start(const Board &board, Limits limits) {
     }
 
     for(int i = 0; i < legals.size(); i++)
-        rootmoves.add({legals[i], 0, 0, 0, {}});
+        root_moves.add({legals[i], 0, 0, 0, {}});
 
-    const int multipv_size = std::min(limits.multipv, rootmoves.size());
+    const int multipv_size = std::min(limits.multipv, root_moves.size());
 
     if(id == 0)
         tt.increment();
@@ -75,22 +75,22 @@ void Search::start(const Board &board, Limits limits) {
         for(multipv_idx = 0; multipv_idx < multipv_size; multipv_idx++)
             print_uci_info();
 
-        Score score = rootmoves[0].score;
-        best_move = rootmoves[0].move;
+        Score score = root_moves[0].score;
+        best_move = root_moves[0].move;
 
         if(best_move == prev_best_move)
-            stability = std::min(stability + 1, tm_stability_max);
+            stability = std::min(stability + 1, int(tm_stability_max));
         else
             stability = 0;
 
-        if(id == 0                                          //
-           && root_depth >= 5                               //
-           && tm.should_stop(                               //
-                  limits,                                   //
-                  stability,                                //
-                  scores[root_depth - 1] - score,           //
-                  scores[root_depth - 3] - score,           //
-                  rootmoves[0].nodes / double(total_nodes)) //
+        if(id == 0                                           //
+           && root_depth >= 5                                //
+           && tm.should_stop(                                //
+                  limits,                                    //
+                  stability,                                 //
+                  scores[root_depth - 1] - score,            //
+                  scores[root_depth - 3] - score,            //
+                  root_moves[0].nodes / double(total_nodes)) //
         ) {
             break;
         }
@@ -112,7 +112,7 @@ Score Search::aspiration(int depth, Stack *s) {
 
     int delta = asp_delta;
     if(depth >= asp_depth) {
-        Score avg_score = rootmoves[multipv_idx].avg_score;
+        Score avg_score = root_moves[multipv_idx].avg_score;
         alpha = std::max(avg_score - delta, int(-VALUE_INFINITE));
         beta = std::min(avg_score + delta, int(VALUE_INFINITE));
     }
@@ -168,6 +168,13 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *s, bool cut_nod
 
     depth = std::min(depth, MAX_PLY - 1);
 
+    // check for upcoming repetition
+    if(!root_node && alpha < VALUE_DRAW && board.has_upcoming_repetition(s->ply)) {
+        alpha = VALUE_DRAW;
+        if(alpha >= beta)
+            return alpha;
+    }
+
     const Score old_alpha = alpha;
     const Color stm = board.get_stm();
     const bool in_check = board.in_check();
@@ -175,7 +182,6 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *s, bool cut_nod
 
     Score best_score = -VALUE_INFINITE;
     Score max_score = VALUE_INFINITE;
-
     Score raw_eval, eval, beta_cut;
 
     Move best_move = NO_MOVE;
@@ -188,15 +194,9 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *s, bool cut_nod
     if(!root_node) {
         if(s->ply >= MAX_PLY - 1)
             return in_check ? VALUE_DRAW : evaluate();
+
         if(board.is_draw(s->ply))
             return VALUE_DRAW;
-
-        // check for upcoming repetition
-        if(alpha < VALUE_DRAW && board.has_upcoming_repetition(s->ply)) {
-            alpha = VALUE_DRAW;
-            if(alpha >= beta)
-                return alpha;
-        }
 
         // mate distance pruning
         alpha = std::max(alpha, Score(s->ply - VALUE_MATE));
@@ -356,7 +356,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *s, bool cut_nod
        && !s->skipped                                                //
        && eval >= beta                                               //
        && !is_loss(beta)                                             //
-       && board.nonpawnmat(stm)                                      //
+       && board.nonpawn_mat(stm)                                     //
        && (s - 1)->move != NULL_MOVE                                 //
        && s->static_eval + nmp_depth_mult * depth - nmp_base >= beta //
     ) {
@@ -370,7 +370,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *s, bool cut_nod
 
         board.make_nullmove();
         Score score = -negamax<NodeType::NON_PV>(depth - R, -beta, -beta + 1, s + 1, !cut_node);
-        board.unmake_nullmove();
+        board.undo_nullmove();
 
         if(score >= beta) {
             // don't return unproven mate scores
@@ -414,7 +414,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *s, bool cut_nod
             if(score >= beta_cut)
                 score = -negamax<NodeType::NON_PV>(depth - 4, -beta_cut, -beta_cut + 1, s + 1, !cut_node);
 
-            board.unmake_move(move);
+            board.undo_move(move);
 
             if(score >= beta_cut) {
                 ent->store(      //
@@ -579,7 +579,7 @@ movesloop:
         if(pv_node && (score > alpha || made_moves == 1))
             score = -negamax<NodeType::PV>(new_depth, -beta, -alpha, s + 1, false);
 
-        board.unmake_move(move);
+        board.undo_move(move);
 
         assert(valid_score(score));
 
@@ -587,10 +587,10 @@ movesloop:
             return 0;
 
         if(root_node) {
-            RootMove *rm = &rootmoves[0];
-            for(int i = 1; i < rootmoves.size(); i++) {
-                if(rootmoves[i].move == move) {
-                    rm = &rootmoves[i];
+            RootMove *rm = &root_moves[0];
+            for(int i = 1; i < root_moves.size(); i++) {
+                if(root_moves[i].move == move) {
+                    rm = &root_moves[i];
                     break;
                 }
             }
@@ -804,7 +804,7 @@ Score Search::quiescence(int depth, Score alpha, Score beta, Stack *s) {
 
         board.make_move(move);
         Score score = -quiescence<nt>(depth - 1, -beta, -alpha, s + 1);
-        board.unmake_move(move);
+        board.undo_move(move);
 
         assert(valid_score(score));
 
@@ -888,20 +888,20 @@ bool Search::is_limit_reached(int depth) const {
 void Search::sort_rootmoves(int offset) {
     assert(offset >= 0);
 
-    for(int i = offset; i < rootmoves.size(); i++) {
+    for(int i = offset; i < root_moves.size(); i++) {
         int best = i;
-        for(int j = i + 1; j < rootmoves.size(); j++)
-            if(rootmoves[j].score > rootmoves[i].score)
+        for(int j = i + 1; j < root_moves.size(); j++)
+            if(root_moves[j].score > root_moves[i].score)
                 best = j;
 
         if(best != i)
-            std::swap(rootmoves[i], rootmoves[best]);
+            std::swap(root_moves[i], root_moves[best]);
     }
 }
 
 bool Search::found_rootmove(const Move &move) {
-    for(int i = multipv_idx; i < rootmoves.size(); i++)
-        if(rootmoves[i].move == move)
+    for(int i = multipv_idx; i < root_moves.size(); i++)
+        if(root_moves[i].move == move)
             return true;
     return false;
 }
@@ -919,8 +919,8 @@ void Search::print_uci_info() const {
 
     const int64_t elapsed_time = tm.elapsed_time();
     const U64 total_nodes = threads.get_total_nodes();
-    const Score score = rootmoves[multipv_idx].score;
-    const PVLine &pv_line = rootmoves[multipv_idx].pv;
+    const Score score = root_moves[multipv_idx].score;
+    const PVLine &pv_line = root_moves[multipv_idx].pv;
 
     std::cout << "info depth " << root_depth    //
               << " multipv " << multipv_idx + 1 //
@@ -936,7 +936,7 @@ void Search::print_uci_info() const {
               << " tbhits " << threads.get_tb_hits()                //
               << " hashfull " << tt.hashfull()                      //
               << " time " << elapsed_time                           //
-              << " pv " << rootmoves[multipv_idx].move;
+              << " pv " << root_moves[multipv_idx].move;
 
     // print rest of the pv
     for(int i = 1; i < pv_line.length; i++)
