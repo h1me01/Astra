@@ -160,8 +160,10 @@ class Move {
     }
 
     Move &operator=(const Move &m) {
-        if(this != &m)
+        if(this != &m) {
             data = m.data;
+            score = m.score;
+        }
         return *this;
     }
 
