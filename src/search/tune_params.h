@@ -90,7 +90,7 @@ PARAM(see_quiet_margin, 17, -100, 100);
 
 PARAM(double_ext_margin, 14, 1, 30);
 PARAM(tripple_ext_margin, 74, 10, 250);
-PARAM(zws_margin, 56, 10, 160);
+PARAM(zws_margin, 43, 10, 160);
 
 PARAM(hp_depth_mult, 6775, 2500, 12500);
 PARAM(hp_qdiv, 7489, 1, 16384);

@@ -554,8 +554,8 @@ movesloop:
 
             score = -negamax<NodeType::NON_PV>(lmr_depth, -alpha - 1, -alpha, s + 1, true);
 
-            if(score > alpha && lmr_depth < new_depth) {
-                new_depth += (score > best_score + zws_margin);
+            if(score > alpha) {
+                new_depth += (score > best_score + zws_margin + 2 * new_depth);
                 new_depth -= (score < best_score + new_depth);
 
                 if(lmr_depth < new_depth)
