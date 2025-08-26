@@ -117,6 +117,9 @@ void NNUE::init_accum(Accum &acc) const {
 int32_t NNUE::forward(Board &board) const {
     board.update_accums();
 
+    const int bucket = (pop_count(board.get_occupancy()) - 2) / 4;
+    assert(0 <= bucket && bucket < L1_SIZE);
+
     Color stm = board.get_stm();
     Accum &acc = board.get_accum();
 
@@ -127,7 +130,7 @@ int32_t NNUE::forward(Board &board) const {
     const auto acc_opp = (const avx_type *) acc.get_data(~stm);
 
     avx_type res{};
-    const auto weights = (const avx_type *) (l1_weights);
+    const auto weights = (const avx_type *) (l1_weights + bucket * FT_SIZE * 2);
 
     for(int i = 0; i < FT_SIZE / div; i++) {
         res = add_epi32(res, fma(acc_stm[i], weights[i]));
@@ -142,9 +145,10 @@ int32_t NNUE::forward(Board &board) const {
     int16_t *acc_stm = acc.get_data(stm);
     int16_t *acc_opp = acc.get_data(~stm);
 
+    const int offset = bucket * FT_SIZE * 2;
     for(int i = 0; i < FT_SIZE; i++) {
-        output += fma(acc_stm[i], l1_weights[i]);
-        output += fma(acc_opp[i], l1_weights[FT_SIZE + i]);
+        output += fma(acc_stm[i], l1_weights[i + offset]);
+        output += fma(acc_opp[i], l1_weights[FT_SIZE + i + offset]);
     }
 
     output = output / FT_QUANT + l1_biases[0];

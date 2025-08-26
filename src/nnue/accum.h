@@ -88,8 +88,8 @@ class AccumEntry {
     }
 
   private:
-    U64 piece_bb[NUM_COLORS][NUM_PIECE_TYPES];
     Accum acc;
+    U64 piece_bb[NUM_COLORS][NUM_PIECE_TYPES];
 };
 
 class AccumTable {
