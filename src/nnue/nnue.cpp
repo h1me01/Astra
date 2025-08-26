@@ -137,7 +137,7 @@ int32_t NNUE::forward(Board &board) const {
         res = add_epi32(res, fma(acc_opp[i], weights[i + FT_SIZE / div]));
     }
 
-    int32_t output = hor_sum(res) / FT_QUANT + l1_biases[0];
+    int32_t output = hor_sum(res) / FT_QUANT + l1_biases[bucket];
     return (output * EVAL_SCALE) / (FT_QUANT * L1_QUANT);
 #else
     int32_t output = 0;
@@ -151,7 +151,7 @@ int32_t NNUE::forward(Board &board) const {
         output += fma(acc_opp[i], l1_weights[FT_SIZE + i + offset]);
     }
 
-    output = output / FT_QUANT + l1_biases[0];
+    output = output / FT_QUANT + l1_biases[bucket];
     return (output * EVAL_SCALE) / (FT_QUANT * L1_QUANT);
 #endif
 }
