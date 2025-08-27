@@ -532,7 +532,7 @@ void Board::update_accums() {
         if(acc.is_initialized(view))
             continue;
 
-        const int accums_idx = accum_list.get_idx();        
+        const int accums_idx = accum_list.get_idx();
         assert(accums_idx > 0);
 
         // apply lazy update

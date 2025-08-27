@@ -58,7 +58,7 @@ class UCI {
     void loop(int argc, char **argv);
 
   private:
-    Board board{STARTING_FEN, false};
+    Board board{};
     Options options;
 
     void update_position(std::istringstream &is);
