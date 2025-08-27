@@ -24,7 +24,6 @@ LDFLAGS := -lstdc++
 CHESS_SRC := chess/bitboard.cpp \
              chess/board.cpp \
              chess/see.cpp \
-             chess/misc.cpp \
              chess/perft.cpp \
              chess/zobrist.cpp \
              chess/cuckoo.cpp \

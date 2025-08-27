@@ -21,13 +21,34 @@ struct DirtyPiece {
 
 class Accum {
   public:
-    void reset();
-
-    void put_piece(Piece pc, Square to, Square wksq, Square bksq);
-    void remove_piece(Piece pc, Square from, Square wksq, Square bksq);
-    void move_piece(Piece pc, Square from, Square to, Square wksq, Square bksq);
-
     void update(Accum &prev, Color view);
+
+    void reset() {
+        initialized[WHITE] = m_needs_refresh[WHITE] = false;
+        initialized[BLACK] = m_needs_refresh[BLACK] = false;
+        num_dpcs = 0;
+    }
+
+    void put_piece(Piece pc, Square to, Square wksq, Square bksq) {
+        assert(num_dpcs < 4);
+        this->wksq = wksq;
+        this->bksq = bksq;
+        dpcs[num_dpcs++] = DirtyPiece(pc, NO_SQUARE, to);
+    }
+
+    void remove_piece(Piece pc, Square from, Square wksq, Square bksq) {
+        assert(num_dpcs < 4);
+        this->wksq = wksq;
+        this->bksq = bksq;
+        dpcs[num_dpcs++] = DirtyPiece(pc, from, NO_SQUARE);
+    }
+
+    void move_piece(Piece pc, Square from, Square to, Square wksq, Square bksq) {
+        assert(num_dpcs < 4);
+        this->wksq = wksq;
+        this->bksq = bksq;
+        dpcs[num_dpcs++] = DirtyPiece(pc, from, to);
+    }
 
     void mark_as_initialized(Color view) {
         this->initialized[view] = true;

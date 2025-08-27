@@ -61,33 +61,9 @@ class NNUE {
 
     int32_t forward(Board &board) const;
 
-    void put(        //
-        Accum &acc,  //
-        Accum &prev, //
-        Piece pc,    //
-        Square psq,  //
-        Square ksq,  //
-        Color view   //
-    ) const;
-
-    void remove(     //
-        Accum &acc,  //
-        Accum &prev, //
-        Piece pc,    //
-        Square psq,  //
-        Square ksq,  //
-        Color view   //
-    ) const;
-
-    void move(       //
-        Accum &acc,  //
-        Accum &prev, //
-        Piece pc,    //
-        Square from, //
-        Square to,   //
-        Square ksq,  //
-        Color view   //
-    ) const;
+    void put(Accum &acc, Accum &prev, Piece pc, Square psq, Square ksq, Color view) const;
+    void remove(Accum &acc, Accum &prev, Piece pc, Square psq, Square ksq, Color view) const;
+    void move(Accum &acc, Accum &prev, Piece pc, Square from, Square to, Square ksq, Color view) const;
 
   private:
     // (12x768->1536)x2->8x1

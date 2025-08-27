@@ -12,13 +12,13 @@ namespace Chess {
 
 class Board {
   public:
-    Board(const std::string &fen, bool update_nnue = true);
+    Board(const std::string &fen = STARTING_FEN, bool init_accum = true);
 
     Board &operator=(const Board &other);
 
     void print() const;
 
-    void make_move(const Move &m, bool update_nnue = true);
+    void make_move(const Move &m, bool update_accum = true);
     void undo_move(const Move &m);
 
     void make_nullmove();
@@ -41,14 +41,14 @@ class Board {
     bool see(Move &m, int threshold) const;
     bool has_upcoming_repetition(int ply);
 
-    void set_fen(const std::string &fen, bool update_nnue = true);
+    void set_fen(const std::string &fen, bool init_accum = true);
     std::string get_fen() const;
 
     U64 get_occupancy(Color c) const;
     U64 attackers_to(Color c, Square sq, U64 occ) const;
     U64 key_after(Move m) const;
 
-    void reset_accums();
+    void reset_accum_list();
     void reset_ply();
 
     U64 get_piecebb(Color c, PieceType pt) const {
@@ -130,18 +130,19 @@ class Board {
     Piece board[NUM_SQUARES];
     U64 piece_bb[NUM_PIECES];
 
+    bool update_accum_list;
     NNUE::AccumList accum_list;
     std::array<StateInfo, 512> states;
 
-    void put_piece(Piece pc, Square sq, bool update_nnue = false);
-    void remove_piece(Square sq, bool update_nnue = false);
-    void move_piece(Square from, Square to, bool update_nnue = false);
+    void put_piece(Piece pc, Square sq, bool update_accum = false);
+    void remove_piece(Square sq, bool update_accum = false);
+    void move_piece(Square from, Square to, bool update_accum = false);
 
     void init_threats();
     void init_slider_blockers();
 };
 
-inline void Board::reset_accums() {
+inline void Board::reset_accum_list() {
     accum_list.reset();
 }
 

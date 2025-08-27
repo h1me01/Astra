@@ -34,8 +34,8 @@ std::pair<Square, Square> get_castle_rook_squares(Color c, Square to) {
 
 // class board
 
-Board::Board(const std::string &fen, bool update_nnue) {
-    set_fen(fen, update_nnue);
+Board::Board(const std::string &fen, bool init_accum) {
+    set_fen(fen, init_accum);
 }
 
 Board &Board::operator=(const Board &other) {
@@ -52,7 +52,7 @@ Board &Board::operator=(const Board &other) {
     return *this;
 }
 
-void Board::set_fen(const std::string &fen, bool update_nnue) {
+void Board::set_fen(const std::string &fen, bool init_accum) {
     curr_ply = 0;
     accum_list.set_board(this);
     std::memset(piece_bb, 0, sizeof(piece_bb));
@@ -69,7 +69,7 @@ void Board::set_fen(const std::string &fen, bool update_nnue) {
         return;
     }
 
-    stm = fen_parts[1] == "w" ? WHITE : BLACK;
+    stm = (fen_parts[1] == "w") ? WHITE : BLACK;
 
     for(const char c : fen_parts[2]) {
         switch(c) {
@@ -83,7 +83,7 @@ void Board::set_fen(const std::string &fen, bool update_nnue) {
         }
     }
 
-    info.ep_sq = fen_parts[3] == "-" ? NO_SQUARE : sq_from(fen_parts[3]);
+    info.ep_sq = (fen_parts[3] == "-") ? NO_SQUARE : sq_from(fen_parts[3]);
     info.fmr_counter = std::stoi(fen_parts[4]);
 
     // place pieces on the board
@@ -97,9 +97,6 @@ void Board::set_fen(const std::string &fen, bool update_nnue) {
             put_piece(Piece(PIECE_STR.find(c)), Square(sqr++));
     }
 
-    init_threats();
-    init_slider_blockers();
-
     // initialize Zobrist hashes
     info.pawn_hash = Zobrist::get_pawn(*this);
     info.non_pawn_hash[WHITE] = Zobrist::get_nonpawn(*this, WHITE);
@@ -111,8 +108,11 @@ void Board::set_fen(const std::string &fen, bool update_nnue) {
     info.hash ^= Zobrist::get_ep(info.ep_sq);
     info.hash ^= Zobrist::get_castle(info.castle_rights.get_hash_idx());
 
-    if(update_nnue)
-        reset_accums();
+    init_threats();
+    init_slider_blockers();
+
+    if(init_accum)
+        reset_accum_list();
 }
 
 void Board::print() const {
@@ -125,7 +125,7 @@ void Board::print() const {
                 s = r * 8 + f;
             else
                 s = (7 - r) * 8 + (7 - f);
-            std::cout << " | " << PIECE_STR[board[s]];
+            std::cout << " | " << board[s];
         }
         std::cout << " | " << (1 + r) << "\n +---+---+---+---+---+---+---+---+\n";
     }
@@ -147,7 +147,7 @@ std::string Board::get_fen() const {
             if(p == NO_PIECE)
                 empty++;
             else {
-                fen << (empty == 0 ? "" : std::to_string(empty)) << PIECE_STR[p];
+                fen << (empty == 0 ? "" : std::to_string(empty)) << p;
                 empty = 0;
             }
         }
@@ -158,14 +158,17 @@ std::string Board::get_fen() const {
             fen << '/';
     }
 
-    fen << (stm == WHITE ? " w " : " b ")                      //
-        << (info.castle_rights.kingside(WHITE) ? "K" : "")     //
-        << (info.castle_rights.queenside(WHITE) ? "Q" : "")    //
-        << (info.castle_rights.kingside(BLACK) ? "k" : "")     //
-        << (info.castle_rights.queenside(BLACK) ? "q" : "")    //
-        << (castle_notation_helper(fen) ? " " : "- ")          //
-        << (info.ep_sq == NO_SQUARE ? "-" : SQSTR[info.ep_sq]) //
-        << " " << info.fmr_counter                             //
+    std::ostringstream oss;
+    oss << info.ep_sq;
+
+    fen << (stm == WHITE ? " w " : " b ")                   //
+        << (info.castle_rights.kingside(WHITE) ? "K" : "")  //
+        << (info.castle_rights.queenside(WHITE) ? "Q" : "") //
+        << (info.castle_rights.kingside(BLACK) ? "k" : "")  //
+        << (info.castle_rights.queenside(BLACK) ? "q" : "") //
+        << (castle_notation_helper(fen) ? " " : "- ")       //
+        << (info.ep_sq == NO_SQUARE ? "-" : oss.str())      //
+        << " " << info.fmr_counter                          //
         << " " << (curr_ply == 0 ? 1 : (curr_ply + 1) / 2);
 
     return fen.str();
@@ -347,13 +350,13 @@ bool Board::is_repetition(int ply) const {
     return false;
 }
 
-void Board::make_move(const Move &m, bool update_nnue) {
+void Board::make_move(const Move &m, bool update_accum) {
     const MoveType mt = m.type();
     const Square from = m.from();
     const Square to = m.to();
     const Piece pc = piece_at(from);
     const PieceType pt = piece_type(pc);
-    const Piece captured = mt == EN_PASSANT ? make_piece(~stm, PAWN) : piece_at(to);
+    const Piece captured = (mt == EN_PASSANT) ? make_piece(~stm, PAWN) : piece_at(to);
 
     assert(m);
     assert(valid_piece(pc));
@@ -373,7 +376,7 @@ void Board::make_move(const Move &m, bool update_nnue) {
     // update hash
     info.hash ^= Zobrist::get_side();
 
-    if(update_nnue)
+    if(update_accum)
         accum_list.push();
 
     if(mt == CASTLING) {
@@ -388,14 +391,14 @@ void Board::make_move(const Move &m, bool update_nnue) {
         info.hash ^= Zobrist::get_psq(rook, rook_from) ^ Zobrist::get_psq(rook, rook_to);
         info.non_pawn_hash[stm] ^= Zobrist::get_psq(rook, rook_from) ^ Zobrist::get_psq(rook, rook_to);
 
-        move_piece(rook_from, rook_to, update_nnue);
+        move_piece(rook_from, rook_to, update_accum);
     }
 
-    if(captured != NO_PIECE) {
-        Square cap_sq = mt == EN_PASSANT ? Square(to ^ 8) : to;
+    if(valid_piece(captured)) {
+        Square cap_sq = (mt == EN_PASSANT) ? Square(to ^ 8) : to;
 
         info.hash ^= Zobrist::get_psq(captured, cap_sq); // remove captured piece from hash
-        remove_piece(cap_sq, update_nnue);
+        remove_piece(cap_sq, update_accum);
 
         if(piece_type(captured) == PAWN)
             info.pawn_hash ^= Zobrist::get_psq(captured, cap_sq);
@@ -410,7 +413,7 @@ void Board::make_move(const Move &m, bool update_nnue) {
     else
         info.non_pawn_hash[stm] ^= Zobrist::get_psq(pc, from) ^ Zobrist::get_psq(pc, to);
 
-    move_piece(from, to, update_nnue);
+    move_piece(from, to, update_accum);
 
     // reset ep square if it exists
     if(info.ep_sq != NO_SQUARE) {
@@ -445,8 +448,8 @@ void Board::make_move(const Move &m, bool update_nnue) {
             info.pawn_hash ^= Zobrist::get_psq(pc, to);
 
             // add promoted piece and remove pawn
-            remove_piece(to, update_nnue);
-            put_piece(prom_pc, to, update_nnue);
+            remove_piece(to, update_accum);
+            put_piece(prom_pc, to, update_accum);
         }
     }
 
@@ -520,14 +523,16 @@ void Board::undo_nullmove() {
 }
 
 void Board::update_accums() {
+    assert(accum_list[0].is_initialized(WHITE));
+    assert(accum_list[0].is_initialized(BLACK));
+
     NNUE::Accum &acc = get_accum();
 
     for(Color view : {WHITE, BLACK}) {
         if(acc.is_initialized(view))
             continue;
 
-        const int accums_idx = accum_list.get_idx();
-
+        const int accums_idx = accum_list.get_idx();        
         assert(accums_idx > 0);
 
         // apply lazy update

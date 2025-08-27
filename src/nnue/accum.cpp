@@ -5,34 +5,6 @@ namespace NNUE {
 
 // Accum
 
-void Accum::reset() {
-    initialized[WHITE] = m_needs_refresh[WHITE] = false;
-    initialized[BLACK] = m_needs_refresh[BLACK] = false;
-
-    num_dpcs = 0;
-}
-
-void Accum::put_piece(Piece pc, Square to, Square wksq, Square bksq) {
-    assert(num_dpcs < 4);
-    this->wksq = wksq;
-    this->bksq = bksq;
-    dpcs[num_dpcs++] = DirtyPiece(pc, NO_SQUARE, to);
-}
-
-void Accum::remove_piece(Piece pc, Square from, Square wksq, Square bksq) {
-    assert(num_dpcs < 4);
-    this->wksq = wksq;
-    this->bksq = bksq;
-    dpcs[num_dpcs++] = DirtyPiece(pc, from, NO_SQUARE);
-}
-
-void Accum::move_piece(Piece pc, Square from, Square to, Square wksq, Square bksq) {
-    assert(num_dpcs < 4);
-    this->wksq = wksq;
-    this->bksq = bksq;
-    dpcs[num_dpcs++] = DirtyPiece(pc, from, to);
-}
-
 void Accum::update(Accum &prev, Color view) {
     for(int i = 0; i < num_dpcs; i++) {
         DirtyPiece dpc = dpcs[i];
@@ -86,10 +58,10 @@ void AccumTable::refresh(Board &board, Color view) {
         }
     }
 
-    Accum &acc = board.get_accum();
-    acc.mark_as_initialized(view);
+    Accum &accum = board.get_accum();
 
-    memcpy(acc.get_data(view), entry_acc.get_data(view), sizeof(int16_t) * FT_SIZE);
+    memcpy(accum.get_data(view), entry_acc.get_data(view), sizeof(int16_t) * FT_SIZE);
+    accum.mark_as_initialized(view);
 }
 
 } // namespace NNUE

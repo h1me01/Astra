@@ -107,7 +107,7 @@ void Options::set(std::istringstream &is) {
 
 // UCI
 
-UCI::UCI() : board(STARTING_FEN) {
+UCI::UCI() {
     std::cout << "Astra by Semih Oezalp" << std::endl;
 
     options.add("SyzygyPath", Option("string", "", "", 0, 0));
@@ -191,7 +191,7 @@ void UCI::update_position(std::istringstream &is) {
             board.reset_ply();
     }
 
-    board.reset_accums();
+    board.reset_accum_list();
 }
 
 void UCI::go(std::istringstream &is) {

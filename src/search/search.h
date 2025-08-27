@@ -69,7 +69,7 @@ class Search {
     TimeMan tm;
     History history;
 
-    Board board{STARTING_FEN};
+    Board board{STARTING_FEN, false};
     PVLine pv_table[MAX_PLY + 1];
 
     MoveList<RootMove> root_moves;
