@@ -225,6 +225,8 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *s, bool cut_nod
         tt_pv |= ent->get_tt_pv();
     }
 
+    const bool tt_move_noisy = tt_move && !tt_move.is_quiet();
+
     if(!pv_node                                    //
        && tt_depth >= depth                        //
        && board.get_fmr() < 90                     //
@@ -540,7 +542,7 @@ movesloop:
 
             r += 2 * cut_node;
 
-            r += tt_move ? tt_move.is_cap() : 0;
+            r += tt_move_noisy;
 
             r -= tt_pv;
 
