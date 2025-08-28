@@ -70,14 +70,6 @@ constexpr int NUM_PIECE_TYPES = 6;
 enum PieceType { PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING, NO_PIECE_TYPE };
 
 // clang-format off
-constexpr PieceType PIECE_TO_PIECE_TYPE[] = {
-    PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING,         
-    PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING,         
-    NO_PIECE_TYPE 
-};
-// clang-format on
-
-// clang-format off
 constexpr int NUM_PIECES = 12;
 enum Piece {
     WHITE_PAWN, WHITE_KNIGHT, WHITE_BISHOP, WHITE_ROOK, WHITE_QUEEN, WHITE_KING,
@@ -203,6 +195,33 @@ class Move {
     bool is_cap() const {
         assert(is_valid());
         return type() == CAPTURE || type() == EN_PASSANT || type() >= PC_KNIGHT;
+    }
+
+    bool is_castling() const {
+        return type() == CASTLING;
+    }
+
+    bool is_ep() const {
+        return type() == EN_PASSANT;
+    }
+
+    PieceType prom_type() const {
+        switch(type()) {
+        case PQ_KNIGHT:
+        case PC_KNIGHT:
+            return KNIGHT;
+        case PQ_BISHOP:
+        case PC_BISHOP:
+            return BISHOP;
+        case PQ_ROOK:
+        case PC_ROOK:
+            return ROOK;
+        case PQ_QUEEN:
+        case PC_QUEEN:
+            return QUEEN;
+        default:
+            return NO_PIECE_TYPE;
+        }
     }
 
   private:

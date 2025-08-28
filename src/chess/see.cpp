@@ -5,7 +5,7 @@ namespace Chess {
 bool Board::see(Move &m, int threshold) const {
     assert(m);
 
-    if(m.is_prom() || m.type() == EN_PASSANT || m.type() == CASTLING)
+    if(m.is_prom() || m.is_ep() || m.is_castling())
         return true;
 
     const StateInfo &info = states[curr_ply];
@@ -15,7 +15,7 @@ bool Board::see(Move &m, int threshold) const {
     const PieceType attacker = piece_type(piece_at(from));
     const PieceType victim = piece_type(piece_at(to));
 
-    assert(attacker != NO_PIECE_TYPE);
+    assert(valid_piece_type(attacker));
 
     int swap = PIECE_VALUES_SEE[victim] - threshold;
     if(swap < 0)

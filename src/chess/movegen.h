@@ -75,7 +75,7 @@ Move *gen_pawnmoves(const Board &board, Move *ml, const U64 targets) {
 
         // en passant
         Square ep_sq = board.get_state().ep_sq;
-        if(ep_sq != NO_SQUARE) {
+        if(valid_sq(ep_sq)) {
             assert(sq_rank(ep_sq) == rel_rank(us, RANK_6));
 
             b1 = pawns_non7 & get_pawn_attacks(them, ep_sq);
@@ -194,11 +194,7 @@ inline Move *gen_legals(const Board &board, Move *ml) {
                        : gen_all<BLACK, LEGALS>(board, ml);
 
     while(curr != ml) {
-        if(((pinned & square_bb(curr->from())) //
-            || curr->from() == ksq             //
-            || curr->type() == EN_PASSANT)     //
-           && !board.is_legal(*curr)           //
-        ) {
+        if(((pinned & square_bb(curr->from())) || curr->is_ep() || curr->from() == ksq) && !board.is_legal(*curr)) {
             *curr = *(--ml);
         } else {
             ++curr;

@@ -200,9 +200,7 @@ void MovePicker::score_quiets() {
 
 void MovePicker::score_noisy() {
     for(int i = 0; i < ml_main.size(); i++) {
-        PieceType captured = (ml_main[i].type() == EN_PASSANT) ? PAWN //
-                                                               : piece_type(board.piece_at(ml_main[i].to()));
-
+        PieceType captured = ml_main[i].is_ep() ? PAWN : piece_type(board.piece_at(ml_main[i].to()));
         int score = history.get_nh(board, ml_main[i]);
 
         score += 16 * PIECE_VALUES[captured];

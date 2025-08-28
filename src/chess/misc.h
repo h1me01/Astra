@@ -46,25 +46,6 @@ inline Square sq_from(std::string_view square_str) {
     return Square(index);
 }
 
-inline PieceType prom_type(const MoveType mt) {
-    switch(mt) {
-    case PQ_KNIGHT:
-    case PC_KNIGHT:
-        return KNIGHT;
-    case PQ_BISHOP:
-    case PC_BISHOP:
-        return BISHOP;
-    case PQ_ROOK:
-    case PC_ROOK:
-        return ROOK;
-    case PQ_QUEEN:
-    case PC_QUEEN:
-        return QUEEN;
-    default:
-        return NO_PIECE_TYPE;
-    }
-}
-
 inline std::ostream &operator<<(std::ostream &os, Square sq) {
     // clang-format off
     const std::string SQSTR[] =
@@ -96,7 +77,7 @@ inline std::ostream &operator<<(std::ostream &os, const Move &m) {
         os << m.from() << m.to();
 
     if(m.is_prom()) {
-        const PieceType pt = prom_type(m.type());
+        const PieceType pt = m.prom_type();
         os << Piece(pt + 6);
     }
 
@@ -133,12 +114,19 @@ constexpr Piece make_piece(Color c, PieceType pt) {
 }
 
 constexpr PieceType piece_type(Piece pc) {
+    // clang-format off
+    constexpr PieceType PIECE_TO_PIECE_TYPE[] = {
+        PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING,         
+        PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING,         
+        NO_PIECE_TYPE 
+    };
+    // clang-format on
     return PIECE_TO_PIECE_TYPE[pc];
 }
 
 constexpr Color piece_color(Piece pc) {
-    assert(pc != NO_PIECE);
-    return pc < 6 ? WHITE : BLACK;
+    assert(valid_piece(pc));
+    return Color(pc > 5);
 }
 
 inline Square &operator++(Square &s) {

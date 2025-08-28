@@ -264,7 +264,7 @@ Move UCI::get_move(const std::string &str_move) const {
     Piece captured = board.piece_at(to);
     MoveType mt = QUIET;
 
-    if(captured != NO_PIECE)
+    if(valid_piece(captured))
         mt = CAPTURE;
 
     if(piece_type(pc) == PAWN) {
@@ -273,7 +273,7 @@ Move UCI::get_move(const std::string &str_move) const {
         else if(sq_rank(to) == RANK_1 || sq_rank(to) == RANK_8) {
             char prom_t = tolower(str_move[4]); // piece type
 
-            mt = (captured != NO_PIECE) ? PC_QUEEN : PQ_QUEEN;
+            mt = valid_piece(captured) ? PC_QUEEN : PQ_QUEEN;
             if(prom_t == 'r')
                 mt = MoveType(mt - 1);
             else if(prom_t == 'b')

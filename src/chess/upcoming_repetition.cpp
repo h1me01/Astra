@@ -33,7 +33,7 @@ bool Board::has_upcoming_repetition(int ply) {
         if(ply > i)
             return true;
 
-        Piece pc = piece_at(from) != NO_PIECE ? piece_at(from) : piece_at(to);
+        Piece pc = valid_piece(piece_at(from)) ? piece_at(from) : piece_at(to);
         if(piece_color(pc) != stm)
             continue;
 

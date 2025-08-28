@@ -83,10 +83,10 @@ void History::update_nh(const Board &board, const Move &move, int bonus) {
     assert(move);
 
     Square to = move.to();
-    PieceType captured = (move.type() == EN_PASSANT) ? PAWN : piece_type(board.piece_at(to));
+    PieceType captured = move.is_ep() ? PAWN : piece_type(board.piece_at(to));
     Piece pc = board.piece_at(move.from());
 
-    assert(pc != NO_PIECE);
+    assert(valid_piece(pc));
     assert(valid_piece_type(captured) || (move.type() >= PQ_KNIGHT && move.type() <= PQ_QUEEN));
 
     int16_t &value = nh[pc][to][captured];

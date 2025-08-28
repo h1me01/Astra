@@ -10,9 +10,9 @@ void Accum::update(Accum &prev, Color view) {
         DirtyPiece dpc = dpcs[i];
         Square ksq = (view == WHITE) ? wksq : bksq;
 
-        if(dpc.from == NO_SQUARE)
+        if(!valid_sq(dpc.from))
             nnue.put(*this, prev, dpc.pc, dpc.to, ksq, view);
-        else if(dpc.to == NO_SQUARE)
+        else if(!valid_sq(dpc.to))
             nnue.remove(*this, prev, dpc.pc, dpc.from, ksq, view);
         else
             nnue.move(*this, prev, dpc.pc, dpc.from, dpc.to, ksq, view);

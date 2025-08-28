@@ -190,7 +190,7 @@ inline U64 Board::key_after(Move m) const {
     Piece pc = piece_at(from);
     Piece captured = piece_at(to);
 
-    if(captured != NO_PIECE)
+    if(valid_piece(captured))
         new_hash ^= Zobrist::get_psq(captured, to);
 
     new_hash ^= Zobrist::get_psq(pc, from) ^ Zobrist::get_psq(pc, to);
@@ -209,7 +209,7 @@ inline bool Board::nonpawn_mat(Color c) const {
     return get_piecebb(c, KNIGHT) | get_piecebb(c, BISHOP) | get_piecebb(c, ROOK) | get_piecebb(c, QUEEN);
 }
 
-inline void Board::put_piece(Piece pc, Square sq, bool update_nnue) {
+inline void Board::put_piece(Piece pc, Square sq, bool update_accum) {
     assert(valid_sq(sq));
     assert(valid_piece(pc));
 
@@ -217,31 +217,31 @@ inline void Board::put_piece(Piece pc, Square sq, bool update_nnue) {
     piece_bb[pc] |= square_bb(sq);
     states[curr_ply].occ[piece_color(pc)] ^= square_bb(sq);
 
-    if(!update_nnue)
+    if(!update_accum)
         return;
 
     NNUE::Accum &acc = get_accum();
     acc.put_piece(pc, sq, king_sq(WHITE), king_sq(BLACK));
 }
 
-inline void Board::remove_piece(Square sq, bool update_nnue) {
+inline void Board::remove_piece(Square sq, bool update_accum) {
     assert(valid_sq(sq));
 
     Piece pc = board[sq];
-    assert(pc != NO_PIECE);
+    assert(valid_piece(pc));
 
     piece_bb[pc] ^= square_bb(sq);
     board[sq] = NO_PIECE;
     states[curr_ply].occ[piece_color(pc)] ^= square_bb(sq);
 
-    if(!update_nnue)
+    if(!update_accum)
         return;
 
     NNUE::Accum &acc = get_accum();
     acc.remove_piece(pc, sq, king_sq(WHITE), king_sq(BLACK));
 }
 
-inline void Board::move_piece(Square from, Square to, bool update_nnue) {
+inline void Board::move_piece(Square from, Square to, bool update_accum) {
     assert(valid_sq(to));
     assert(valid_sq(from));
 
@@ -253,7 +253,7 @@ inline void Board::move_piece(Square from, Square to, bool update_nnue) {
     board[from] = NO_PIECE;
     states[curr_ply].occ[piece_color(pc)] ^= square_bb(from) | square_bb(to);
 
-    if(!update_nnue)
+    if(!update_accum)
         return;
 
     NNUE::Accum &acc = get_accum();
