@@ -3,6 +3,7 @@
 #include <iostream>
 #include <memory>
 #include <string>
+#include <thread>
 #include <vector>
 
 #include "bench.h"
@@ -51,8 +52,6 @@ const std::vector<std::string> bench_positions{
 };
 
 void bench(int depth) {
-    Search::tt.clear();
-
     U64 nodes = 0;
     Search::Limits limits;
     limits.depth = depth;
@@ -62,14 +61,18 @@ void bench(int depth) {
     for(const auto &fen : bench_positions) {
         std::cout << "\nPosition: " << fen << std::endl;
 
-        Search::threads.start();
+        Search::tt.clear();
 
-        std::unique_ptr<Search::Search> search(new Search::Search());
         std::unique_ptr<Board> board = std::make_unique<Board>(fen);
 
-        search->start(*board, limits);
+        Search::threads.force_stop();
+        Search::threads.launch_workers(*board, limits, 1, false);
 
-        nodes += search->get_total_nodes();
+        // wait till all threads are stopped
+        while(!Search::threads.is_stopped()) {
+        }
+
+        nodes += Search::threads.get_total_nodes();
     }
 
     auto end = std::chrono::high_resolution_clock::now();

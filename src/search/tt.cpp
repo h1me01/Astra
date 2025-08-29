@@ -12,7 +12,7 @@
 
 namespace Search {
 
-void *allocAlign(size_t size) {
+void *alloc_align(size_t size) {
 #if defined(__linux__)
     constexpr size_t alignment = 2 * 1024 * 1024;
 #else
@@ -26,7 +26,7 @@ void *allocAlign(size_t size) {
     return ptr;
 }
 
-void freeAlign(void *ptr) {
+void free_align(void *ptr) {
     _mm_free(ptr);
 }
 
@@ -76,17 +76,17 @@ TTable::TTable(U64 size_mb) : buckets(nullptr) {
 }
 
 TTable::~TTable() {
-    freeAlign(buckets);
+    free_align(buckets);
 }
 
 void TTable::init(U64 size_mb) {
     if(buckets)
-        freeAlign(buckets);
+        free_align(buckets);
 
     U64 size_bytes = size_mb * 1024 * 1024;
     bucket_size = size_bytes / sizeof(TTBucket);
 
-    buckets = (TTBucket *) allocAlign(size_bytes);
+    buckets = (TTBucket *) alloc_align(size_bytes);
 
     clear();
 }
