@@ -207,9 +207,9 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *s, bool cut_nod
 
     // look up in transposition table
     bool tt_hit = false;
-    TTEntry *ent = !s->skipped ? tt.lookup(hash, &tt_hit) : nullptr;
+    TTEntry *ent = tt.lookup(hash, &tt_hit);
 
-    Move tt_move = NO_MOVE;
+    Move tt_move = root_node ? root_moves[multipv_idx].move : tt_hit ? ent->get_move() : NO_MOVE;
     Bound tt_bound = NO_BOUND;
     Score tt_score = VALUE_NONE;
     Score tt_eval = VALUE_NONE;
@@ -217,7 +217,6 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *s, bool cut_nod
     bool tt_pv = pv_node;
 
     if(tt_hit) {
-        tt_move = ent->get_move();
         tt_bound = ent->get_bound();
         tt_score = ent->get_score(s->ply);
         tt_eval = ent->get_eval();
@@ -228,6 +227,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *s, bool cut_nod
     const bool tt_move_noisy = tt_move && !tt_move.is_quiet();
 
     if(!pv_node                                    //
+       && !s->skipped                              //
        && tt_depth >= depth                        //
        && board.get_fmr() < 90                     //
        && valid_score(tt_score)                    //
@@ -343,7 +343,6 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *s, bool cut_nod
 
     // reverse futility pruning
     if(!pv_node                                                                    //
-       && !s->skipped                                                              //
        && !is_win(eval)                                                            //
        && !is_loss(beta)                                                           //
        && depth < rfp_depth                                                        //
@@ -383,7 +382,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *s, bool cut_nod
     }
 
     // internal iterative reduction
-    if(!s->skipped && depth >= 4 && !tt_move && (pv_node || cut_node)) {
+    if(depth >= 4 && !tt_move && (pv_node || cut_node)) {
         depth--;
     }
 
@@ -391,7 +390,6 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *s, bool cut_nod
     beta_cut = beta + prob_cut_margin;
     if(!pv_node                                           //
        && depth > 4                                       //
-       && !s->skipped                                     //
        && !is_decisive(beta)                              //
        && !(tt_depth >= depth - 3 && tt_score < beta_cut) //
     ) {
