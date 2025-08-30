@@ -226,13 +226,13 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *s, bool cut_nod
 
     const bool tt_move_noisy = tt_move && !tt_move.is_quiet();
 
-    if(!pv_node                                    //
-       && !s->skipped                              //
-       && board.get_fmr() < 90                     //
-       && valid_score(tt_score)                    //
-       && cut_node == (tt_score >= beta)           //
-       && tt_depth > depth - (tt_score <= beta)    //
-       && valid_tt_score(tt_score, beta, tt_bound) //
+    if(!pv_node                                         //
+       && !s->skipped                                   //
+       && board.get_fmr() < 90                          //
+       && valid_score(tt_score)                         //
+       && tt_depth > depth - (tt_score <= beta)         //
+       && valid_tt_score(tt_score, beta, tt_bound)      //
+       && (cut_node == (tt_score >= beta) || depth > 5) //
     ) {
         return tt_score;
     }
