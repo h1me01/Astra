@@ -93,8 +93,8 @@ PARAM(tripple_ext_margin, 86, 10, 250);
 PARAM(zws_margin, 49, 10, 160);
 
 PARAM(hp_depth_mult, 6285, 2500, 12500);
-PARAM(hp_qdiv, 7259, 1, 16384);
-PARAM(hp_cdiv, 4537, 1, 16384);
+PARAM(hp_quiet_div, 7259, 1, 16384);
+PARAM(hp_noisy_div, 4537, 1, 16384);
 PARAM(hbonus_margin, 60, 10, 200);
 
 PARAM(qfp_margin, 116, 40, 280);

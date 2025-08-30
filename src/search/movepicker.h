@@ -44,6 +44,14 @@ class MovePicker {
         m_skip_quiets = true;
     }
 
+    Move get_killer() const {
+        return killer;
+    }
+
+    Move get_counter() const {
+        return counter;
+    }
+
     int see_cutoff = 0;
 
   private:

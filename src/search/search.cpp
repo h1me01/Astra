@@ -536,7 +536,7 @@ movesloop:
         Score score = VALUE_NONE;
 
         // late move reductions
-        if(depth >= 2 && made_moves >= lmr_min_moves && (!tt_pv || !move.is_cap())) {
+        if(depth >= 2 && made_moves >= lmr_min_moves && (!tt_pv || move.is_quiet())) {
             int r = REDUCTIONS[depth][made_moves];
 
             r += !improving;
@@ -551,7 +551,7 @@ movesloop:
 
             r -= tt_depth >= depth;
 
-            r -= history_score / (move.is_cap() ? hp_cdiv : hp_qdiv);
+            r -= history_score / (move.is_quiet() ? hp_quiet_div : hp_noisy_div);
 
             const int lmr_depth = std::clamp(new_depth - r, 1, new_depth + 1);
 
