@@ -41,21 +41,21 @@ class History {
     int get_matcorr(const Board &board) const;
     int get_contcorr(const Stack *s) const;
 
-    int16_t conth[2][NUM_PIECES + 1][NUM_SQUARES + 1][NUM_PIECES + 1][NUM_SQUARES + 1];
+    int16_t conth[2][NUM_PIECES + 1][NUM_SQUARES + 1][NUM_PIECES + 1][NUM_SQUARES + 1]{};
 
   private:
-    Move counters[NUM_SQUARES][NUM_SQUARES];
+    Move counters[NUM_SQUARES][NUM_SQUARES]{};
 
-    int16_t hh[NUM_COLORS][NUM_SQUARES][NUM_SQUARES];
-    int16_t nh[NUM_PIECES][NUM_SQUARES][NUM_PIECE_TYPES + 1];
+    int16_t hh[NUM_COLORS][NUM_SQUARES][NUM_SQUARES]{};
+    int16_t nh[NUM_PIECES][NUM_SQUARES][NUM_PIECE_TYPES + 1]{};
 
-    int16_t ph[PAWN_HIST_SIZE][NUM_PIECES][NUM_SQUARES];
+    int16_t ph[PAWN_HIST_SIZE][NUM_PIECES][NUM_SQUARES]{};
 
-    int16_t pawn_corr[NUM_COLORS][CORR_SIZE];
-    int16_t w_non_pawn_corr[NUM_COLORS][CORR_SIZE];
-    int16_t b_non_pawn_corr[NUM_COLORS][CORR_SIZE];
+    int16_t pawn_corr[NUM_COLORS][CORR_SIZE]{};
+    int16_t w_non_pawn_corr[NUM_COLORS][CORR_SIZE]{};
+    int16_t b_non_pawn_corr[NUM_COLORS][CORR_SIZE]{};
 
-    int16_t cont_corr[NUM_PIECES][NUM_SQUARES][NUM_PIECES][NUM_SQUARES];
+    int16_t cont_corr[NUM_PIECES][NUM_SQUARES][NUM_PIECES][NUM_SQUARES]{};
 
     int ph_idx(U64 hash) const {
         return hash % PAWN_HIST_SIZE;

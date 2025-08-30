@@ -61,10 +61,9 @@ void bench(int depth) {
     for(const auto &fen : bench_positions) {
         std::cout << "\nPosition: " << fen << std::endl;
 
-        Search::tt.clear();
-
         std::unique_ptr<Board> board = std::make_unique<Board>(fen);
 
+        Search::tt.clear();
         Search::threads.force_stop();
         Search::threads.launch_workers(*board, limits, 1, false);
 
