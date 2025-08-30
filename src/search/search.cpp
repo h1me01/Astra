@@ -228,10 +228,10 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *s, bool cut_nod
 
     if(!pv_node                                    //
        && !s->skipped                              //
-       && tt_depth >= depth                        //
        && board.get_fmr() < 90                     //
        && valid_score(tt_score)                    //
        && cut_node == (tt_score >= beta)           //
+       && tt_depth > depth - (tt_score <= beta)    //
        && valid_tt_score(tt_score, beta, tt_bound) //
     ) {
         return tt_score;
