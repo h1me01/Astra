@@ -5,7 +5,7 @@
 #include "accum.h"
 #include "nnue.h"
 
-#include "incbin.h"
+#include "../third_party/incbin/incbin.h"
 
 #define INCBIN_STYLE INCBIN_STYLE_CAMEL
 

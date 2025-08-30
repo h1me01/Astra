@@ -85,6 +85,8 @@ class Search {
     Score evaluate();
     Score adjust_eval(Score eval, Stack *s) const;
 
+    unsigned int probe_wdl() const;
+
     bool is_limit_reached(int depth) const;
 
     void sort_rootmoves(int offset);

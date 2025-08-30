@@ -3,10 +3,10 @@
 
 #include "../chess/movegen.h"
 #include "../nnue/nnue.h"
+#include "../third_party/fathom/src/tbprobe.h"
 
 #include "movepicker.h"
 #include "search.h"
-#include "syzygy.h"
 #include "threads.h"
 #include "tune_params.h"
 
@@ -239,7 +239,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *s, bool cut_nod
 
     // tablebase probing
     if(use_tb && !root_node && !s->skipped) {
-        auto tb_result = probe_wdl(board);
+        auto tb_result = probe_wdl();
 
         if(tb_result != TB_RESULT_FAILED) {
             Bound tb_bound;
@@ -870,6 +870,39 @@ Score Search::adjust_eval(Score eval, Stack *s) const {
         eval,                                //
         Score(VALUE_TB_LOSS_IN_MAX_PLY + 1), //
         Score(VALUE_TB_WIN_IN_MAX_PLY - 1)   //
+    );
+}
+
+unsigned int Search::probe_wdl() const {
+    U64 w_occ = board.get_occupancy(WHITE);
+    U64 b_occ = board.get_occupancy(BLACK);
+    U64 occ = w_occ | b_occ;
+
+    if(pop_count(occ) > signed(TB_LARGEST))
+        return TB_RESULT_FAILED;
+
+    U64 pawns = board.get_piecebb(WHITE, PAWN) | board.get_piecebb(BLACK, PAWN);
+    U64 knights = board.get_piecebb(WHITE, KNIGHT) | board.get_piecebb(BLACK, KNIGHT);
+    U64 bishops = board.get_piecebb(WHITE, BISHOP) | board.get_piecebb(BLACK, BISHOP);
+    U64 rooks = board.get_piecebb(WHITE, ROOK) | board.get_piecebb(BLACK, ROOK);
+    U64 queens = board.get_piecebb(WHITE, QUEEN) | board.get_piecebb(BLACK, QUEEN);
+    U64 kings = board.get_piecebb(WHITE, KING) | board.get_piecebb(BLACK, KING);
+
+    Square ep_sq = board.get_state().ep_sq;
+
+    return tb_probe_wdl(                       //
+        w_occ,                                 //
+        b_occ,                                 //
+        kings,                                 //
+        queens,                                //
+        rooks,                                 //
+        bishops,                               //
+        knights,                               //
+        pawns,                                 //
+        board.get_fmr(),                       //
+        board.get_state().castle_rights.any(), //
+        valid_sq(ep_sq) ? ep_sq : 0,           //
+        board.get_stm() == WHITE               //
     );
 }
 

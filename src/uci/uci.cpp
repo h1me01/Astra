@@ -3,10 +3,11 @@
 #include <cctype>    // std::isdigit
 #include <cstring>   // strncmp
 
-#include "bench.h"
-#include "fathom/tbprobe.h"
-#include "search/threads.h"
-#include "search/tune_params.h"
+#include "../bench/bench.h"
+#include "../search/threads.h"
+#include "../search/tune_params.h"
+#include "../third_party/fathom/src/tbprobe.h"
+
 #include "uci.h"
 
 namespace UCI {

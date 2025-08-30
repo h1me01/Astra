@@ -6,8 +6,8 @@
 #include <thread>
 #include <vector>
 
+#include "../search/threads.h"
 #include "bench.h"
-#include "search/threads.h"
 
 namespace Bench {
 

@@ -1,4 +1,4 @@
-#include "uci.h"
+#include "uci/uci.h"
 
 int main(int argc, char **argv) {
     Chess::init_lookup_tables();

@@ -37,14 +37,13 @@ SEARCH_SRC := search/history.cpp \
               search/search.cpp \
               search/tt.cpp \
               search/threads.cpp \
-              search/syzygy.cpp \
               search/tune_params.cpp
 
-SYZYGY_SRC := fathom/tbprobe.c
+SYZYGY_SRC := third_party/fathom/src/tbprobe.c
 
 MAIN_SRC := main.cpp \
-            uci.cpp \
-            bench.cpp
+            uci/uci.cpp \
+            bench/bench.cpp
 
 SRC := $(CHESS_SRC) $(EVAL_SRC) $(SEARCH_SRC) $(SYZYGY_SRC) $(MAIN_SRC)
 TARGET = $(if $(EXE),$(EXE),astra)
