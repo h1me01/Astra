@@ -318,7 +318,8 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *s, bool cut_nod
         improving = s->static_eval > (s - 4)->static_eval;
 
     // update quiet history
-    if((s - 1)->move                        //
+    if(!s->skipped                          //
+       && (s - 1)->move                     //
        && !(s - 1)->move.is_cap()           //
        && valid_score((s - 1)->static_eval) //
     ) {
@@ -344,6 +345,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *s, bool cut_nod
 
     // reverse futility pruning
     if(!pv_node                                                                    //
+       && !s->skipped                                                              //
        && !is_win(eval)                                                            //
        && !is_loss(beta)                                                           //
        && depth < rfp_depth                                                        //
