@@ -551,8 +551,6 @@ movesloop:
 
             r -= (tt_depth >= depth);
 
-            r -= (mp.get_killer() == move || mp.get_counter() == move);
-
             r -= history_score / (move.is_quiet() ? hp_quiet_div : hp_noisy_div);
 
             const int lmr_depth = std::clamp(new_depth - r, 1, new_depth + 1);
