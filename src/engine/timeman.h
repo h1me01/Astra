@@ -6,7 +6,7 @@
 
 #include "tune_params.h"
 
-namespace Search {
+namespace Engine {
 
 struct Time {
     int64_t optimum = 0;
@@ -83,4 +83,4 @@ class TimeMan {
     }
 };
 
-} // namespace Search
+} // namespace Engine

@@ -6,7 +6,7 @@
 
 using namespace Chess;
 
-namespace Search {
+namespace Engine {
 
 enum SearchType : int { //
     N_SEARCH,
@@ -75,4 +75,4 @@ class MovePicker {
     void score_noisy();
 };
 
-} // namespace Search
+} // namespace Engine

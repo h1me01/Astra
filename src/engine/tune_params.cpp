@@ -3,7 +3,7 @@
 
 #include "tune_params.h"
 
-namespace Search {
+namespace Engine {
 
 Param::Param(std::string name, int value, int min, int max) //
     : name(std::move(name)), value(value), min(min), max(max) {
@@ -42,4 +42,4 @@ void params_to_spsa() {
     }
 }
 
-} // namespace Search
+} // namespace Engine

@@ -10,7 +10,7 @@
 #include "threads.h"
 #include "tune_params.h"
 
-namespace Search {
+namespace Engine {
 
 int REDUCTIONS[MAX_PLY][MAX_MOVES];
 
@@ -984,4 +984,4 @@ void Search::print_uci_info() const {
     std::cout << std::endl;
 }
 
-} // namespace Search
+} // namespace Engine

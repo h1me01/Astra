@@ -10,7 +10,7 @@
 
 using namespace Chess;
 
-namespace Search {
+namespace Engine {
 
 void init_reductions();
 
@@ -97,4 +97,4 @@ class Search {
     void print_uci_info() const;
 };
 
-} // namespace Search
+} // namespace Engine

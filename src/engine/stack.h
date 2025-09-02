@@ -4,7 +4,7 @@
 
 using namespace Chess;
 
-namespace Search {
+namespace Engine {
 
 using ContH = int16_t[NUM_PIECES + 1][NUM_SQUARES + 1];
 
@@ -22,4 +22,4 @@ struct Stack {
     ContH *conth;
 };
 
-} // namespace Search
+} // namespace Engine

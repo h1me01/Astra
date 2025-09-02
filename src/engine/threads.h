@@ -5,7 +5,7 @@
 
 using namespace Chess;
 
-namespace Search {
+namespace Engine {
 
 class ThreadPool {
   public:
@@ -48,4 +48,4 @@ class ThreadPool {
 
 extern ThreadPool threads;
 
-} // namespace Search
+} // namespace Engine

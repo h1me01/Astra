@@ -10,7 +10,7 @@
 
 #include "tt.h"
 
-namespace Search {
+namespace Engine {
 
 void *alloc_align(size_t size) {
 #if defined(__linux__)
@@ -157,4 +157,4 @@ int TTable::hashfull() const {
 
 TTable tt(16);
 
-} // namespace Search
+} // namespace Engine

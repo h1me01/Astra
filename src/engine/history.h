@@ -6,12 +6,13 @@
 
 using namespace Chess;
 
-namespace Search {
+namespace Engine {
 
 constexpr size_t CORR_SIZE = 16384;
 constexpr size_t PAWN_HIST_SIZE = 512;
 
 int history_bonus(int depth);
+int history_malus(int depth);
 
 class History {
   public:
@@ -135,4 +136,4 @@ inline int History::get_contcorr(const Stack *s) const {
     return cont_corr[prev_p][prev_move.to()][pprev_p][pprev_move.to()];
 }
 
-} // namespace Search
+} // namespace Engine

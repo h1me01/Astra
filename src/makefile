@@ -32,12 +32,12 @@ CHESS_SRC := chess/bitboard.cpp \
 EVAL_SRC := nnue/nnue.cpp \
             nnue/accum.cpp
 
-SEARCH_SRC := search/history.cpp \
-              search/movepicker.cpp \
-              search/search.cpp \
-              search/tt.cpp \
-              search/threads.cpp \
-              search/tune_params.cpp
+ENGINE_SRC := engine/history.cpp \
+              engine/movepicker.cpp \
+              engine/search.cpp \
+              engine/tt.cpp \
+              engine/threads.cpp \
+              engine/tune_params.cpp
 
 SYZYGY_SRC := third_party/fathom/src/tbprobe.c
 
@@ -45,7 +45,7 @@ MAIN_SRC := main.cpp \
             uci/uci.cpp \
             bench/bench.cpp
 
-SRC := $(CHESS_SRC) $(EVAL_SRC) $(SEARCH_SRC) $(SYZYGY_SRC) $(MAIN_SRC)
+SRC := $(CHESS_SRC) $(EVAL_SRC) $(ENGINE_SRC) $(SYZYGY_SRC) $(MAIN_SRC)
 TARGET = $(if $(EXE),$(EXE),astra)
 
 ifeq ($(OS), Windows_NT)

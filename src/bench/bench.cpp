@@ -6,7 +6,7 @@
 #include <thread>
 #include <vector>
 
-#include "../search/threads.h"
+#include "../engine/threads.h"
 #include "bench.h"
 
 namespace Bench {
@@ -53,7 +53,7 @@ const std::vector<std::string> bench_positions{
 
 void bench(int depth) {
     U64 nodes = 0;
-    Search::Limits limits;
+    Engine::Limits limits;
     limits.depth = depth;
 
     auto start = std::chrono::high_resolution_clock::now();
@@ -63,15 +63,15 @@ void bench(int depth) {
 
         std::unique_ptr<Board> board = std::make_unique<Board>(fen);
 
-        Search::tt.clear();
-        Search::threads.force_stop();
-        Search::threads.launch_workers(*board, limits, 1, false);
+        Engine::tt.clear();
+        Engine::threads.force_stop();
+        Engine::threads.launch_workers(*board, limits, 1, false);
 
         // wait till all threads are stopped
-        while(!Search::threads.is_stopped()) {
+        while(!Engine::threads.is_stopped()) {
         }
 
-        nodes += Search::threads.get_total_nodes();
+        nodes += Engine::threads.get_total_nodes();
     }
 
     auto end = std::chrono::high_resolution_clock::now();

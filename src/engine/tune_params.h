@@ -5,7 +5,7 @@
 
 // #define TUNE
 
-namespace Search {
+namespace Engine {
 
 struct Param {
     std::string name;
@@ -111,4 +111,4 @@ PARAM(history_malus_mult, 261, 1, 1536);
 PARAM(history_malus_minus, 154, -500, 500);
 PARAM(max_history_malus, 1797, 1, 4096);
 
-} // namespace Search
+} // namespace Engine

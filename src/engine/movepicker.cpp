@@ -1,6 +1,6 @@
 #include "movepicker.h"
 
-namespace Search {
+namespace Engine {
 
 void partial_insertion_sort(MoveList<> &ml, int idx) {
     assert(idx >= 0);
@@ -210,4 +210,4 @@ void MovePicker::score_noisy() {
     }
 }
 
-} // namespace Search
+} // namespace Engine

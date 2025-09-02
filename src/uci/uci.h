@@ -3,7 +3,7 @@
 #include <fstream>
 #include <unordered_map>
 
-#include "../search/search.h"
+#include "../engine/search.h"
 
 namespace UCI {
 

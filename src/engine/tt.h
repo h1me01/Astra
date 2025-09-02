@@ -4,7 +4,7 @@
 
 using namespace Chess;
 
-namespace Search {
+namespace Engine {
 
 enum Bound : uint8_t { //
     NO_BOUND = 0,
@@ -143,4 +143,4 @@ inline bool valid_tt_score(Score tt_score, Score score, Bound bound) {
 
 extern TTable tt;
 
-} // namespace Search
+} // namespace Engine

@@ -4,8 +4,8 @@
 #include <cstring>   // strncmp
 
 #include "../bench/bench.h"
-#include "../search/threads.h"
-#include "../search/tune_params.h"
+#include "../engine/threads.h"
+#include "../engine/tune_params.h"
 #include "../third_party/fathom/src/tbprobe.h"
 
 #include "uci.h"
@@ -38,7 +38,7 @@ void Options::print() const {
     }
 
 #ifdef TUNE
-    for(auto param : Search::params)
+    for(auto param : Engine::params)
         std::cout << "option name " << param->name         //
                   << " type spin default " << param->value //
                   << " min " << param->min                 //
@@ -60,8 +60,8 @@ void Options::apply() {
     }
 
     worker_count = std::stoi(get("Threads"));
-    Search::tt.set_worker_count(worker_count);
-    Search::tt.init(std::stoi(get("Hash")));
+    Engine::tt.set_worker_count(worker_count);
+    Engine::tt.init(std::stoi(get("Hash")));
 }
 
 void Options::set(std::istringstream &is) {
@@ -78,8 +78,8 @@ void Options::set(std::istringstream &is) {
         return;
 
 #ifdef TUNE
-    Search::set_param(name, std::stoi(value));
-    Search::init_reductions();
+    Engine::set_param(name, std::stoi(value));
+    Engine::init_reductions();
 #endif
 
     if(!options.count(name)) {
@@ -140,8 +140,8 @@ void UCI::loop(int argc, char **argv) {
         } else if(token == "isready")
             std::cout << "readyok" << std::endl;
         else if(token == "ucinewgame") {
-            Search::tt.clear();
-            Search::threads.force_stop();
+            Engine::tt.clear();
+            Engine::threads.force_stop();
         } else if(token == "position")
             update_position(is);
         else if(token == "go")
@@ -149,16 +149,16 @@ void UCI::loop(int argc, char **argv) {
         else if(token == "bench")
             Bench::bench(13);
         else if(token == "tune")
-            Search::params_to_spsa();
+            Engine::params_to_spsa();
         else if(token == "setoption") {
             options.set(is);
             options.apply();
         } else if(token == "d")
             board.print();
         else if(token == "stop")
-            Search::threads.force_stop();
+            Engine::threads.force_stop();
         else if(token == "quit") {
-            Search::threads.force_stop();
+            Engine::threads.force_stop();
             tb_free();
             break;
         } else
@@ -196,8 +196,8 @@ void UCI::update_position(std::istringstream &is) {
 }
 
 void UCI::go(std::istringstream &is) {
-    Search::threads.force_stop();
-    Search::Limits limits;
+    Engine::threads.force_stop();
+    Engine::Limits limits;
 
     int64_t w_time = 0, b_time = 0, move_time = 0;
     int w_inc = 0, b_inc = 0, moves_to_go = 0;
@@ -244,7 +244,7 @@ void UCI::go(std::istringstream &is) {
         limits.time.optimum = move_time;
         limits.time.maximum = move_time;
     } else if(time_left != 0) {
-        limits.time = Search::TimeMan::get_optimum( //
+        limits.time = Engine::TimeMan::get_optimum( //
             time_left,                              //
             inc,                                    //
             std::max(moves_to_go, 0),               //
@@ -255,7 +255,7 @@ void UCI::go(std::istringstream &is) {
     limits.multipv = std::stoi(options.get("MultiPV"));
 
     // start search
-    Search::threads.launch_workers(board, limits, options.worker_count, options.use_tb);
+    Engine::threads.launch_workers(board, limits, options.worker_count, options.use_tb);
 }
 
 Move UCI::get_move(const std::string &str_move) const {

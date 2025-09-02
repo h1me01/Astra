@@ -1,6 +1,6 @@
 #include "threads.h"
 
-namespace Search {
+namespace Engine {
 
 void ThreadPool::launch_workers(const Board &board, Limits limits, int worker_count, bool use_tb) {
     start();
@@ -34,4 +34,4 @@ void ThreadPool::force_stop() {
 
 ThreadPool threads;
 
-} // namespace Search
+} // namespace Engine

@@ -3,7 +3,7 @@
 #include "history.h"
 #include "tune_params.h"
 
-namespace Search {
+namespace Engine {
 
 int history_bonus(int depth) {
     return std::min(int(max_history_bonus), history_bonus_mult * depth + history_bonus_minus);
@@ -137,4 +137,4 @@ void History::update_contcorr(Score raw_eval, Score real_score, int depth, const
     update_corr(cont_corr[prev_pc][prev_move.to()][pprev_pc][pprev_move.to()], real_score - raw_eval, depth);
 }
 
-} // namespace Search
+} // namespace Engine

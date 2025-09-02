@@ -5,7 +5,7 @@
 #include <iostream>
 #include <string>
 
-#include "../search/tune_params.h"
+#include "../engine/tune_params.h"
 
 namespace Chess {
 
@@ -16,21 +16,21 @@ const std::string PIECE_STR = "PNBRQKpnbrqk.";
 const std::string STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
 const int PIECE_VALUES[] = {
-    Search::pawn_value,   //
-    Search::knight_value, //
-    Search::bishop_value, //
-    Search::rook_value,   //
-    Search::queen_value,  //
+    Engine::pawn_value,   //
+    Engine::knight_value, //
+    Engine::bishop_value, //
+    Engine::rook_value,   //
+    Engine::queen_value,  //
     0,                    //
     0                     //
 };
 
 const int PIECE_VALUES_SEE[] = {
-    Search::pawn_value_see,   //
-    Search::knight_value_see, //
-    Search::bishop_value_see, //
-    Search::rook_value_see,   //
-    Search::queen_value_see,  //
+    Engine::pawn_value_see,   //
+    Engine::knight_value_see, //
+    Engine::bishop_value_see, //
+    Engine::rook_value_see,   //
+    Engine::queen_value_see,  //
     0,                        //
     0                         //
 };

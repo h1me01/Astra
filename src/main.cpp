@@ -5,7 +5,7 @@ int main(int argc, char **argv) {
     Zobrist::init();
     Cuckoo::init();
     NNUE::nnue.init();
-    Search::init_reductions();
+    Engine::init_reductions();
 
     UCI::UCI uci;
     uci.loop(argc, argv);
