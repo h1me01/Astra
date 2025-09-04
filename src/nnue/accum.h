@@ -70,6 +70,10 @@ class Accum {
         return data[view];
     }
 
+    int16_t *get_data(Color view) const {
+        return const_cast<int16_t *>(data[view]);
+    }
+
   private:
     Square wksq, bksq;
 

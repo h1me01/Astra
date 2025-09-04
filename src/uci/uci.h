@@ -14,11 +14,7 @@ struct Option {
     Option() : min(0), max(0) {}
 
     Option(std::string type, std::string default_val, std::string val, int min, int max)
-        : type(std::move(type)),               //
-          default_val(std::move(default_val)), //
-          val(std::move(val)),                 //
-          min(min),                            //
-          max(max) {};
+        : type(type), default_val(default_val), val(val), min(min), max(max) {}
 
     Option &operator=(const std::string &v) {
         val = v;
@@ -29,7 +25,7 @@ struct Option {
 class Options {
   public:
     void print() const;
-    void apply();
+    void apply(bool init_tt = true);
 
     void set(std::istringstream &is);
 
@@ -45,7 +41,6 @@ class Options {
     }
 
     bool use_tb = false;
-    int worker_count = 1; // default number of threads
 
   private:
     std::unordered_map<std::string, Option> options;
