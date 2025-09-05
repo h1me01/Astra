@@ -626,10 +626,10 @@ movesloop:
         }
 
         if(move != best_move) {
-            if(move.is_cap() && noisy.size() < 64)
-                noisy.add(move);
-            else if(!move.is_cap() && quiets.size() < 64)
+            if(move.is_quiet() && quiets.size() < 64)
                 quiets.add(move);
+            else if(!move.is_quiet() && noisy.size() < 64)
+                noisy.add(move);
         }
     }
 
