@@ -441,9 +441,8 @@ movesloop:
     MovePicker mp(N_SEARCH, board, history, s, tt_move);
     Move move = NO_MOVE;
 
-    int made_moves = 0, q_count = 0, c_count = 0;
-
-    Move q_moves[64], c_moves[64];
+    MoveList<> quiets, noisy;
+    int made_moves = 0;
 
     while((move = mp.next()) != NO_MOVE) {
         if(move == s->skipped || !board.is_legal(move))
@@ -464,7 +463,7 @@ movesloop:
             const int lmr_depth = std::max(0, depth - REDUCTIONS[depth][made_moves] + history_score / hp_div);
 
             // late move pruning
-            if(q_count > (3 + depth * depth) / (2 - improving))
+            if(quiets.size() > (3 + depth * depth) / (2 - improving))
                 mp.skip_quiets();
 
             // futility pruning
@@ -521,11 +520,6 @@ movesloop:
         s->move = move;
         s->moved_piece = board.piece_at(move.from());
         s->conth = &history.conth[move.is_cap()][s->moved_piece][move.to()];
-
-        if(move.is_cap() && c_count < 64)
-            c_moves[c_count++] = move;
-        else if(q_count < 64)
-            q_moves[q_count++] = move;
 
         total_nodes++;
 
@@ -626,16 +620,16 @@ movesloop:
             }
 
             if(alpha >= beta) {
-                history.update(                                 //
-                    board,                                      //
-                    move, s,                                    //
-                    q_moves, q_count,                           //
-                    c_moves, c_count,                           //
-                    depth + (best_score > beta + hbonus_margin) //
-                );
-
+                history.update(board, best_move, quiets, noisy, s, depth + (best_score > beta + hbonus_margin));
                 break; // cut-off
             }
+        }
+
+        if(move != best_move) {
+            if(move.is_cap() && noisy.size() < 64)
+                noisy.add(move);
+            else if(!move.is_cap() && quiets.size() < 64)
+                quiets.add(move);
         }
     }
 

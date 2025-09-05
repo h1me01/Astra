@@ -1,4 +1,3 @@
-
 #include <algorithm> // std::all_of
 #include <cctype>    // std::isdigit
 #include <cstring>   // strncmp
@@ -13,12 +12,6 @@
 namespace UCI {
 
 const std::string version = "6.1.1";
-
-// helper
-
-bool is_integer(const std::string &s) {
-    return !s.empty() && std::all_of(s.begin(), s.end(), ::isdigit);
-}
 
 // Options
 
@@ -37,16 +30,15 @@ void Options::print() const {
             std::cout << std::endl;
     }
 
-#ifdef TUNE
-    for(auto param : Engine::params)
+    for(auto param : Engine::params) {
         std::cout << "option name " << param->name         //
                   << " type spin default " << param->value //
                   << " min " << param->min                 //
                   << " max " << param->max << std::endl;
-#endif
+    }
 }
 
-void Options::apply() {
+void Options::apply(bool init_tt) {
     auto path = get("SyzygyPath");
     if(!path.empty() && path != "<empty>" && !use_tb) {
         bool success = tb_init(path.c_str());
@@ -59,9 +51,10 @@ void Options::apply() {
         }
     }
 
-    worker_count = std::stoi(get("Threads"));
-    Engine::tt.set_worker_count(worker_count);
-    Engine::tt.init(std::stoi(get("Hash")));
+    Engine::tt.set_worker_count(std::stoi(get("Threads")));
+
+    if(init_tt)
+        Engine::tt.init(std::stoi(get("Hash")));
 }
 
 void Options::set(std::istringstream &is) {
@@ -80,30 +73,32 @@ void Options::set(std::istringstream &is) {
 #ifdef TUNE
     Engine::set_param(name, std::stoi(value));
     Engine::init_reductions();
+    return;
 #endif
 
     if(!options.count(name)) {
-#ifndef TUNE
-        std::cout << "Unknown option: " << name << std::endl;
-#endif
+        std::cout << "Unknown option " << name << std::endl;
         return;
     }
+
+    int n;
 
     if(options[name].type != "spin") {
         options[name] = value;
-        return;
+        goto success;
+    } else {
+        n = std::stoi(value);
+        if(n >= options[name].min && n <= options[name].max) {
+            options[name] = value;
+            goto success;
+        } else {
+            std::cout << "Invalid range for option " << name << std::endl;
+            return;
+        }
     }
 
-    if(!is_integer(value)) {
-        std::cout << "Invalid value for option " << name << std::endl;
-        return;
-    }
-
-    int n = std::stoi(value);
-    if(n >= options[name].min && n <= options[name].max)
-        options[name] = value;
-    else
-        std::cout << "Invalid range of value for option " << name << std::endl;
+success:
+    apply(name == "Hash");
 }
 
 // UCI
@@ -150,10 +145,9 @@ void UCI::loop(int argc, char **argv) {
             Bench::bench(13);
         else if(token == "tune")
             Engine::params_to_spsa();
-        else if(token == "setoption") {
+        else if(token == "setoption")
             options.set(is);
-            options.apply();
-        } else if(token == "d")
+        else if(token == "d")
             board.print();
         else if(token == "stop")
             Engine::threads.force_stop();
@@ -255,7 +249,7 @@ void UCI::go(std::istringstream &is) {
     limits.multipv = std::stoi(options.get("MultiPV"));
 
     // start search
-    Engine::threads.launch_workers(board, limits, options.worker_count, options.use_tb);
+    Engine::threads.launch_workers(board, limits, std::stoi(options.get("Threads")), options.use_tb);
 }
 
 Move UCI::get_move(const std::string &str_move) const {

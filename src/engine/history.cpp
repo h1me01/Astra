@@ -24,53 +24,47 @@ void update_corr(int16_t &value, int diff, int depth) {
 
 // History
 
-void History::update(const Board &board,         //
-                     const Move &best, Stack *s, //
-                     Move *q_moves, int qc,      //
-                     Move *c_moves, int cc,      //
-                     int depth                   //
+void History::update(         //
+    const Board &board,       //
+    const Move &best_move,    //
+    const MoveList<> &quiets, //
+    const MoveList<> &noisy,  //
+    Stack *s,                 //
+    int depth                 //
 ) {
     Color stm = board.get_stm();
 
     int bonus = history_bonus(depth);
     int malus = history_malus(depth);
 
-    if(best.is_quiet()) {
+    if(best_move.is_quiet()) {
         Move prev_move = (s - 1)->move;
         if(prev_move)
-            counters[prev_move.from()][prev_move.to()] = best;
+            counters[prev_move.from()][prev_move.to()] = best_move;
 
-        s->killer = best;
+        s->killer = best_move;
 
         // idea from ethereal
         // only update quiet history if best move was important
-        if(depth > 3 || qc > 1) {
-            update_hh(stm, best, bonus);
-            update_ph(board, best, bonus);
-            update_conth(best, s, bonus);
+        if(depth > 3 || quiets.size() > 1) {
+            update_hh(stm, best_move, bonus);
+            update_ph(board, best_move, bonus);
+            update_conth(best_move, s, bonus);
 
             // quiet maluses
-            for(int i = 0; i < qc; i++) {
-                Move quiet = q_moves[i];
-                if(quiet == best)
-                    continue;
-
-                update_hh(stm, quiet, -malus);
-                update_conth(quiet, s, -malus);
-                update_ph(board, quiet, -malus);
+            for(const auto &m : quiets) {
+                update_hh(stm, m, -malus);
+                update_conth(m, s, -malus);
+                update_ph(board, m, -malus);
             }
         }
     } else {
-        update_nh(board, best, bonus);
+        update_nh(board, best_move, bonus);
     }
 
-    // capture maluses
-    for(int i = 0; i < cc; i++) {
-        Move cap = c_moves[i];
-        if(cap == best)
-            continue;
-        update_nh(board, cap, -malus);
-    }
+    // noisy maluses
+    for(const auto &m : noisy)
+        update_nh(board, m, -malus);
 }
 
 void History::update_hh(Color c, const Move &move, int bonus) {

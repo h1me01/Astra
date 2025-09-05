@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../chess/board.h"
+#include "../chess/movegen.h"
 
 #include "stack.h"
 
@@ -16,11 +17,11 @@ int history_malus(int depth);
 
 class History {
   public:
-    void update(const Board &board,    //
-                const Move &move,      //
-                Stack *s,              //
-                Move *q_moves, int qc, //
-                Move *c_moves, int cc, //
+    void update(const Board &board,       //
+                const Move &best_move,    //
+                const MoveList<> &quiets, //
+                const MoveList<> &noisy,  //
+                Stack *s,                 //
                 int depth);
 
     void update_hh(Color c, const Move &move, int bonus);
