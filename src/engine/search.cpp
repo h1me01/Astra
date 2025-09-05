@@ -625,11 +625,10 @@ movesloop:
             }
         }
 
-        if(move != best_move && made_moves < 32) {
-            if(move.is_quiet())
-                quiets.add(move);
-            else if(!move.is_quiet())
-                noisy.add(move);
+        if(move != best_move) {
+            auto &list = move.is_quiet() ? quiets : noisy;
+            if(list.size() < 64)
+                list.add(move);
         }
     }
 
