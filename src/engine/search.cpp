@@ -467,7 +467,8 @@ movesloop:
                 mp.skip_quiets();
 
             // futility pruning
-            if(!move.is_cap()                                             //
+            if(!in_check                                                  //
+               && !move.is_cap()                                          //
                && lmr_depth < fp_depth                                    //
                && s->static_eval + fp_base + lmr_depth * fp_mult <= alpha //
             ) {
