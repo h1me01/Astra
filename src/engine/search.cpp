@@ -557,11 +557,11 @@ movesloop:
 
             score = -negamax<NodeType::NON_PV>(lmr_depth, -alpha - 1, -alpha, s + 1, true);
 
-            if(score > alpha) {
+            if(score > alpha && new_depth > lmr_depth) {
                 new_depth += (score > best_score + zws_margin + 2 * new_depth);
                 new_depth -= (score < best_score + new_depth);
 
-                if(lmr_depth < new_depth)
+                if(new_depth > lmr_depth)
                     score = -negamax<NodeType::NON_PV>(new_depth, -alpha - 1, -alpha, s + 1, !cut_node);
 
                 if(!move.is_cap()) {
