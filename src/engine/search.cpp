@@ -467,12 +467,12 @@ movesloop:
                 mp.skip_quiets();
 
             // futility pruning
-            if(!in_check                                                  //
-               && !move.is_cap()                                          //
-               && lmr_depth < fp_depth                                    //
-               && s->static_eval + fp_base + lmr_depth * fp_mult <= alpha //
-            ) {
+            Score futility_value = s->static_eval + fp_base + lmr_depth * fp_mult;
+            if(!in_check && !move.is_cap() && lmr_depth < fp_depth && futility_value <= alpha) {
+                if(!is_win(best_score) && !is_decisive(best_score) && best_score <= futility_value)
+                    best_score = futility_value;
                 mp.skip_quiets();
+                continue;
             }
 
             // history pruning
