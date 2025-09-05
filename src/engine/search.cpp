@@ -626,9 +626,11 @@ movesloop:
         }
 
         if(move != best_move) {
-            if(move.is_cap() && noisy.size() < 64)
+            bool is_noisy = move.is_cap() || move.type() == PQ_QUEEN;
+
+            if(is_noisy && noisy.size() < 64)
                 noisy.add(move);
-            else if(!move.is_cap() && quiets.size() < 64)
+            else if(!is_noisy && quiets.size() < 64)
                 quiets.add(move);
         }
     }
