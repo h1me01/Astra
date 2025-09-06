@@ -45,6 +45,13 @@ class Search {
   public:
     Search() : total_nodes{0}, tb_hits{0} {}
 
+    // public variables
+
+    int id = 0;
+    bool use_tb = false;
+
+    // public functions
+
     void start(const Board &board, Limits limits);
 
     U64 get_total_nodes() const {
@@ -55,10 +62,9 @@ class Search {
         return tb_hits;
     }
 
-    int id = 0;
-    bool use_tb = false;
-
   private:
+    // private variables
+
     int root_depth;
     int multipv_idx;
 
@@ -73,6 +79,8 @@ class Search {
     PVLine pv_table[MAX_PLY + 1];
 
     MoveList<RootMove> root_moves;
+
+    // private functions
 
     Score aspiration(int depth, Stack *s);
 

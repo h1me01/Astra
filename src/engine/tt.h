@@ -20,8 +20,6 @@ constexpr int AGE_MASK = 0xF8;
 #pragma pack(push, 1)
 class TTEntry {
   public:
-    int relative_age() const;
-
     void store(      //
         U64 hash,    //
         Move move,   //
@@ -32,6 +30,8 @@ class TTEntry {
         int ply,     //
         bool pv      //
     );
+
+    int relative_age() const;
 
     void set_agepvbound(uint8_t age_pv_bound) {
         this->agepvbound = age_pv_bound;
@@ -107,6 +107,7 @@ class TTable {
     void clear();
 
     int hashfull() const;
+
     TTEntry *lookup(U64 hash, bool *hit) const;
 
     size_t index(U64 hash) const {

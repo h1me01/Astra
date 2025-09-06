@@ -475,7 +475,7 @@ movesloop:
                 const Score futility = s->static_eval + fp_base + r_depth * fp_mult;
 
                 if(!in_check && r_depth < fp_depth && futility <= alpha) {
-                    if(!is_win(best_score) && !is_decisive(best_score) && best_score <= futility) {
+                    if(best_score <= futility && !is_decisive(best_score) && !is_win(futility)) {
                         best_score = futility;
                     }
 

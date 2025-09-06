@@ -81,24 +81,23 @@ void Options::set(std::istringstream &is) {
         return;
     }
 
-    int n;
-
+    bool valid = false;
     if(options[name].type != "spin") {
         options[name] = value;
-        goto success;
+        valid = true;
     } else {
-        n = std::stoi(value);
+        int n = std::stoi(value);
         if(n >= options[name].min && n <= options[name].max) {
             options[name] = value;
-            goto success;
+            valid = true;
         } else {
             std::cout << "Invalid range for option " << name << std::endl;
             return;
         }
     }
 
-success:
-    apply(name == "Hash");
+    if(valid)
+        apply(name == "Hash");
 }
 
 // UCI
