@@ -162,22 +162,20 @@ Move MovePicker::next() {
 
 void MovePicker::score_quiets() {
     for(int i = 0; i < ml_main.size(); i++) {
-        const Piece pc = board.piece_at(ml_main[i].from());
+        const Move move = ml_main[i];
+        const Piece pc = board.piece_at(move.from());
         const PieceType pt = piece_type(pc);
-        const Square from = ml_main[i].from();
-        const Square to = ml_main[i].to();
+        const Square from = move.from();
+        const Square to = move.to();
 
         assert(valid_sq(to));
         assert(valid_sq(from));
         assert(valid_piece(pc));
         assert(valid_piece_type(pt));
 
-        int score = 2 * history.get_hh(board.get_stm(), ml_main[i]);
-        score += 2 * history.get_ph(board, ml_main[i]);
-        score += (int) (*(s - 1)->conth)[pc][to];
-        score += (int) (*(s - 2)->conth)[pc][to];
-        score += (int) (*(s - 4)->conth)[pc][to];
-        score += (int) (*(s - 6)->conth)[pc][to];
+        int score = 2 * (history.get_hh(board.get_stm(), move) + history.get_ph(board, move));
+        for(int i : {1, 2, 4, 6})
+            score += (int) (*(s - i)->conth)[pc][to];
 
         if(pt != PAWN && pt != KING) {
             U64 danger;
@@ -188,10 +186,11 @@ void MovePicker::score_quiets() {
             else
                 danger = board.get_threats(PAWN);
 
+            const int bonus = 16384 + 16384 * (pt == QUEEN);
             if(danger & square_bb(from))
-                score += 16384 + 16384 * (pt == QUEEN);
+                score += bonus;
             else if(danger & square_bb(to))
-                score -= (16384 + 16384 * (pt == QUEEN));
+                score -= bonus;
         }
 
         ml_main[i].set_score(score);

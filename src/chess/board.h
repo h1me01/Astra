@@ -125,6 +125,8 @@ class Board {
     }
 
   private:
+    // private variables
+
     Color stm;
     int curr_ply;
     Piece board[NUM_SQUARES];
@@ -133,6 +135,8 @@ class Board {
     bool update_accum_list;
     NNUE::AccumList accum_list;
     std::array<StateInfo, 512> states;
+
+    // private functions
 
     void put_piece(Piece pc, Square sq, bool update_accum = false);
     void remove_piece(Square sq, bool update_accum = false);

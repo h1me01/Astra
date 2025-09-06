@@ -30,24 +30,15 @@ class Accum {
     }
 
     void put_piece(Piece pc, Square to, Square wksq, Square bksq) {
-        assert(num_dpcs < 4);
-        this->wksq = wksq;
-        this->bksq = bksq;
-        dpcs[num_dpcs++] = DirtyPiece(pc, NO_SQUARE, to);
+        add_dirty_piece(pc, NO_SQUARE, to, wksq, bksq);
     }
 
     void remove_piece(Piece pc, Square from, Square wksq, Square bksq) {
-        assert(num_dpcs < 4);
-        this->wksq = wksq;
-        this->bksq = bksq;
-        dpcs[num_dpcs++] = DirtyPiece(pc, from, NO_SQUARE);
+        add_dirty_piece(pc, from, NO_SQUARE, wksq, bksq);
     }
 
     void move_piece(Piece pc, Square from, Square to, Square wksq, Square bksq) {
-        assert(num_dpcs < 4);
-        this->wksq = wksq;
-        this->bksq = bksq;
-        dpcs[num_dpcs++] = DirtyPiece(pc, from, to);
+        add_dirty_piece(pc, from, to, wksq, bksq);
     }
 
     void set_initialized(Color view) {
@@ -75,6 +66,8 @@ class Accum {
     }
 
   private:
+    // private variables
+
     Square wksq, bksq;
 
     bool initialized[NUM_COLORS] = {false, false};
@@ -83,13 +76,16 @@ class Accum {
     alignas(ALIGNMENT) int16_t data[NUM_COLORS][FT_SIZE];
 
     int num_dpcs = 0;
-    // an accumulator can update at max only 4 pieces per move:
-    // such case might be pawn captures piece on promotion rank:
-    //  1. remove captured piece
-    //  2. move pawn to target square
-    //  3. add promotion piece to target square
-    //  4. remove pawn from target square
-    DirtyPiece dpcs[4];
+    DirtyPiece dpcs[4]; // only 4 pieces at max can be updated per move
+
+    // private function
+
+    void add_dirty_piece(Piece pc, Square from, Square to, Square wksq, Square bksq) {
+        assert(num_dpcs < 4);
+        this->wksq = wksq;
+        this->bksq = bksq;
+        dpcs[num_dpcs++] = DirtyPiece(pc, from, to);
+    }
 };
 
 // idea from koivisto

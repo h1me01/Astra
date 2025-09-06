@@ -24,7 +24,14 @@ struct Option {
 
 class Options {
   public:
+    // public variables
+
+    bool use_tb = false;
+
+    // public functions
+
     void print() const;
+
     void apply(bool init_tt = true);
 
     void set(std::istringstream &is);
@@ -40,8 +47,6 @@ class Options {
         return "";
     }
 
-    bool use_tb = false;
-
   private:
     std::unordered_map<std::string, Option> options;
 };
@@ -53,8 +58,12 @@ class UCI {
     void loop(int argc, char **argv);
 
   private:
-    Board board{};
+    // private variables
+
+    Board board;
     Options options;
+
+    // private member functions
 
     void update_position(std::istringstream &is);
     void go(std::istringstream &is);

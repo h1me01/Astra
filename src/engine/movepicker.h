@@ -38,6 +38,12 @@ class MovePicker {
                bool gen_checks = false //
     );
 
+    // public variables
+
+    int see_cutoff = 0;
+
+    // public functions
+
     Move next();
 
     void skip_quiets() {
@@ -52,9 +58,9 @@ class MovePicker {
         return counter;
     }
 
-    int see_cutoff = 0;
-
   private:
+    // private variables
+
     int idx;
     Stage stage;
 
@@ -70,6 +76,8 @@ class MovePicker {
 
     MoveList<> ml_main;
     MoveList<> ml_bad_noisy;
+
+    // private functions
 
     void score_quiets();
     void score_noisy();

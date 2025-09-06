@@ -14,8 +14,8 @@ INCBIN(Weights, NNUE_PATH);
 #if defined(__AVX512F__)
 
 using vec_type = __m512i;
+constexpr int vec_div = 32;
 
-#define div (32)
 #define madd_epi16 _mm512_madd_epi16
 #define add_epi32 _mm512_add_epi32
 #define add_epi16 _mm512_add_epi16
@@ -28,8 +28,8 @@ using vec_type = __m512i;
 #elif defined(__AVX2__) || defined(__AVX__)
 
 using vec_type = __m256i;
+constexpr int vec_div = 16;
 
-#define div (16)
 #define madd_epi16 _mm256_madd_epi16
 #define add_epi32 _mm256_add_epi32
 #define add_epi16 _mm256_add_epi16
@@ -140,9 +140,9 @@ int32_t NNUE::forward(Board &board) const {
 #if defined(__AVX512F__) || defined(__AVX2__) || defined(__AVX__)
     vec_type res{};
 
-    for(int i = 0; i < FT_SIZE / div; i++) {
+    for(int i = 0; i < FT_SIZE / vec_div; i++) {
         res = add_epi32(res, fma(acc_stm[i], weights[i]));
-        res = add_epi32(res, fma(acc_opp[i], weights[i + FT_SIZE / div]));
+        res = add_epi32(res, fma(acc_opp[i], weights[i + FT_SIZE / vec_div]));
     }
 
     output = hor_sum(res);
@@ -166,7 +166,7 @@ void NNUE::put(Accum &acc, Accum &prev, Piece pc, Square psq, Square ksq, Color 
     const auto weights = (const vec_type *) (ft_weights + idx * FT_SIZE);
 
 #if defined(__AVX512F__) || defined(__AVX2__) || defined(__AVX__)
-    for(int i = 0; i < FT_SIZE / div; i++)
+    for(int i = 0; i < FT_SIZE / vec_div; i++)
         acc_data[i] = add_epi16(prev_data[i], weights[i]);
 #else
     for(int i = 0; i < FT_SIZE; i++)
@@ -185,7 +185,7 @@ void NNUE::remove(Accum &acc, Accum &prev, Piece pc, Square psq, Square ksq, Col
     const auto weights = (const vec_type *) (ft_weights + idx * FT_SIZE);
 
 #if defined(__AVX512F__) || defined(__AVX2__) || defined(__AVX__)
-    for(int i = 0; i < FT_SIZE / div; i++)
+    for(int i = 0; i < FT_SIZE / vec_div; i++)
         acc_data[i] = sub_epi16(prev_data[i], weights[i]);
 #else
     for(int i = 0; i < FT_SIZE; i++)
@@ -206,7 +206,7 @@ void NNUE::move(Accum &acc, Accum &prev, Piece pc, Square from, Square to, Squar
     const auto weights_to = (const vec_type *) (ft_weights + to_idx * FT_SIZE);
 
 #if defined(__AVX512F__) || defined(__AVX2__) || defined(__AVX__)
-    for(int i = 0; i < FT_SIZE / div; i++)
+    for(int i = 0; i < FT_SIZE / vec_div; i++)
         acc_data[i] = add_epi16(prev_data[i], sub_epi16(weights_to[i], weights_from[i]));
 #else
     for(int i = 0; i < FT_SIZE; i++)

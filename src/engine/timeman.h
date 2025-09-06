@@ -39,11 +39,12 @@ class TimeMan {
         return std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now() - start_time).count();
     }
 
-    bool should_stop(Limits limits,          //
-                     int stability,          //
-                     Score prev_score_diff,  //
-                     Score pprev_score_diff, //
-                     double node_ratio       //
+    bool should_stop(           //
+        Limits limits,          //
+        int stability,          //
+        Score prev_score_diff,  //
+        Score pprev_score_diff, //
+        double node_ratio       //
     ) const {
         if(!limits.time.optimum)
             return false;

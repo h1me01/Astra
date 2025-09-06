@@ -37,7 +37,7 @@ void Search::start(const Board &board, Limits limits) {
     MoveList<> legals;
     legals.gen<LEGALS>(board);
 
-    if(legals.size() == 0) {
+    if(!legals.size()) {
         std::cout << "Position has no legal moves" << std::endl;
         return;
     }
@@ -47,7 +47,7 @@ void Search::start(const Board &board, Limits limits) {
 
     const int multipv_size = std::min(limits.multipv, root_moves.size());
 
-    if(id == 0)
+    if(!id)
         tt.increment();
 
     Move best_move = NO_MOVE;
@@ -83,7 +83,7 @@ void Search::start(const Board &board, Limits limits) {
         else
             stability = 0;
 
-        if(id == 0                                           //
+        if(!id                                               //
            && root_depth >= 5                                //
            && tm.should_stop(                                //
                   limits,                                    //
@@ -99,7 +99,7 @@ void Search::start(const Board &board, Limits limits) {
         scores[root_depth] = score;
     }
 
-    if(id == 0)
+    if(!id)
         std::cout << "bestmove " << best_move << std::endl;
 
     threads.stop();
@@ -119,7 +119,7 @@ Score Search::aspiration(int depth, Stack *s) {
 
     int fail_high_count = 0;
     while(true) {
-        score = negamax<NodeType::ROOT>(std::max(1, root_depth - fail_high_count), alpha, beta, s, false);
+        score = negamax<NodeType::ROOT>(std::max(1, root_depth - fail_high_count), alpha, beta, s);
 
         if(is_limit_reached(depth))
             return 0;
@@ -469,12 +469,12 @@ movesloop:
                 if(!board.see(move, depth * see_cap_margin))
                     continue;
             } else {
-                const int lmr_depth = std::max(0, depth - reduction + history_score / history_div);
+                const int r_depth = std::max(0, depth - reduction + history_score / history_div);
 
                 // futility pruning
-                const Score futility = s->static_eval + fp_base + lmr_depth * fp_mult;
+                const Score futility = s->static_eval + fp_base + r_depth * fp_mult;
 
-                if(!in_check && lmr_depth < fp_depth && futility <= alpha) {
+                if(!in_check && r_depth < fp_depth && futility <= alpha) {
                     if(best_score <= futility && !is_decisive(best_score) && !is_win(futility)) {
                         best_score = futility;
                     }
@@ -484,13 +484,13 @@ movesloop:
                 }
 
                 // history pruning
-                if(lmr_depth < hp_depth && history_score < hp_depth_mult * depth) {
+                if(r_depth < hp_depth && history_score < hp_depth_mult * depth) {
                     mp.skip_quiets();
                     continue;
                 }
 
                 // see pruning
-                if(!board.see(move, lmr_depth * lmr_depth * see_quiet_margin))
+                if(!board.see(move, r_depth * r_depth * see_quiet_margin))
                     continue;
             }
         }
@@ -555,15 +555,15 @@ movesloop:
 
             r -= history_score / (move.is_quiet() ? quiet_history_div : noisy_history_div);
 
-            const int lmr_depth = std::clamp(new_depth - r, 1, new_depth + 1);
+            const int r_depth = std::clamp(new_depth - r, 1, new_depth + 1);
 
-            score = -negamax<NodeType::NON_PV>(lmr_depth, -alpha - 1, -alpha, s + 1, true);
+            score = -negamax<NodeType::NON_PV>(r_depth, -alpha - 1, -alpha, s + 1, true);
 
-            if(score > alpha && new_depth > lmr_depth) {
+            if(score > alpha && new_depth > r_depth) {
                 new_depth += (score > best_score + zws_margin + 2 * new_depth);
                 new_depth -= (score < best_score + new_depth);
 
-                if(new_depth > lmr_depth)
+                if(new_depth > r_depth)
                     score = -negamax<NodeType::NON_PV>(new_depth, -alpha - 1, -alpha, s + 1, !cut_node);
 
                 if(!move.is_cap()) {
@@ -582,7 +582,7 @@ movesloop:
 
         // principal variation search
         if(pv_node && (score > alpha || made_moves == 1))
-            score = -negamax<NodeType::PV>(new_depth, -beta, -alpha, s + 1, false);
+            score = -negamax<NodeType::PV>(new_depth, -beta, -alpha, s + 1);
 
         board.undo_move(move);
 
@@ -641,7 +641,7 @@ movesloop:
     }
 
     // check for mate/stalemate
-    if(made_moves == 0) {
+    if(!made_moves) {
         if(s->skipped)
             return alpha;
         else if(in_check)
@@ -660,7 +660,7 @@ movesloop:
     else if(best_score <= old_alpha)
         bound = UPPER_BOUND;
 
-    if(!s->skipped && (!root_node || multipv_idx == 0)) {
+    if(!s->skipped && !(root_node && multipv_idx)) {
         ent->store(     //
             hash,       //
             best_move,  //
@@ -834,7 +834,7 @@ Score Search::quiescence(int depth, Score alpha, Score beta, Stack *s) {
             mp.skip_quiets();
     }
 
-    if(board.in_check() && made_moves == 0)
+    if(board.in_check() && !made_moves)
         return s->ply - VALUE_MATE;
 
     if(best_score >= beta && !is_decisive(best_score))
