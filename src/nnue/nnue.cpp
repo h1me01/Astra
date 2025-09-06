@@ -173,7 +173,7 @@ void NNUE::put(Accum &acc, Accum &prev, Piece pc, Square psq, Square ksq, Color 
         acc_data[i] = prev_data[i] + weights[i];
 #endif
 
-    acc.mark_as_initialized(view);
+    acc.set_initialized(view);
 }
 
 void NNUE::remove(Accum &acc, Accum &prev, Piece pc, Square psq, Square ksq, Color view) const {
@@ -192,7 +192,7 @@ void NNUE::remove(Accum &acc, Accum &prev, Piece pc, Square psq, Square ksq, Col
         acc_data[i] = prev_data[i] - weights[i];
 #endif
 
-    acc.mark_as_initialized(view);
+    acc.set_initialized(view);
 }
 
 void NNUE::move(Accum &acc, Accum &prev, Piece pc, Square from, Square to, Square ksq, Color view) const {
@@ -213,7 +213,7 @@ void NNUE::move(Accum &acc, Accum &prev, Piece pc, Square from, Square to, Squar
         acc_data[i] = prev_data[i] + weights_to[i] - weights_from[i];
 #endif
 
-    acc.mark_as_initialized(view);
+    acc.set_initialized(view);
 }
 
 // global variable

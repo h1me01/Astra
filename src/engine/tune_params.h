@@ -59,7 +59,7 @@ PARAM(lmr_div, 292, 150, 500);
 PARAM(lmr_min_moves, 3, 1, 3);
 
 PARAM(static_h_mult, -45, -500, -1);
-PARAM(static_h_min, 61, 1, 1000);
+PARAM(static_h_min, -61, -1000, -1);
 PARAM(static_h_max, 262, 1, 1000);
 
 PARAM(rzr_depth, 5, 2, 20);
@@ -78,24 +78,24 @@ PARAM(nmp_rmin, 4, 1, 10);
 
 PARAM(prob_cut_margin, 229, 1, 500);
 
+PARAM(history_div, 8197, 1, 16384);
+
 PARAM(hp_depth, 6, 1, 15);
-PARAM(hp_div, 8197, 1, 16384);
+PARAM(hp_depth_mult, -6285, -12500, -2500);
 
 PARAM(fp_depth, 9, 2, 20);
 PARAM(fp_base, 110, 1, 300);
 PARAM(fp_mult, 108, 5, 200);
 
-PARAM(see_cap_margin, 101, 5, 200);
-PARAM(see_quiet_margin, 20, -100, 100);
+PARAM(see_cap_margin, -101, -200, -20);
+PARAM(see_quiet_margin, -20, -100, -1);
 
 PARAM(double_ext_margin, 13, 1, 30);
 PARAM(tripple_ext_margin, 86, 10, 250);
 PARAM(zws_margin, 49, 10, 160);
 
-PARAM(hp_depth_mult, 6285, 2500, 12500);
-PARAM(hp_quiet_div, 7259, 1, 16384);
-PARAM(hp_noisy_div, 4537, 1, 16384);
-PARAM(hbonus_margin, 60, 10, 200);
+PARAM(quiet_history_div, 7259, 1, 16384);
+PARAM(noisy_history_div, 4537, 1, 16384);
 
 PARAM(qfp_margin, 116, 40, 280);
 PARAM(qsee_margin, -16, -200, 50);
@@ -103,6 +103,7 @@ PARAM(qsee_margin, -16, -200, 50);
 PARAM(asp_delta, 11, 1, 30);
 PARAM(asp_depth, 4, 2, 6);
 
+PARAM(history_bonus_margin, 60, 10, 200);
 PARAM(history_bonus_mult, 303, 1, 1536);
 PARAM(history_bonus_minus, -72, -500, 500);
 PARAM(max_history_bonus, 2408, 1, 4096);

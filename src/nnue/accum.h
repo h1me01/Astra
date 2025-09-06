@@ -50,7 +50,7 @@ class Accum {
         dpcs[num_dpcs++] = DirtyPiece(pc, from, to);
     }
 
-    void mark_as_initialized(Color view) {
+    void set_initialized(Color view) {
         this->initialized[view] = true;
     }
 
