@@ -325,7 +325,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *s, bool cut_nod
     ) {
         int bonus = std::clamp(                                           //
             static_h_mult * (s->static_eval + (s - 1)->static_eval) / 16, //
-            int(-static_h_min),                                           //
+            int(static_h_min),                                            //
             int(static_h_max)                                             //
         );
 
@@ -456,36 +456,43 @@ movesloop:
 
         made_moves++;
 
-        int history_score = move.is_quiet() ? history.get_qh(board, move, s) //
-                                            : history.get_nh(board, move);
+        const int reduction = REDUCTIONS[depth][made_moves];
+        const int history_score = move.is_quiet() ? history.get_qh(board, move, s) : history.get_nh(board, move);
 
         if(!root_node && !is_loss(best_score)) {
-            const int lmr_depth = std::max(0, depth - REDUCTIONS[depth][made_moves] + history_score / hp_div);
-
             // late move pruning
             if(quiets.size() > (3 + depth * depth) / (2 - improving))
                 mp.skip_quiets();
 
-            // futility pruning
-            Score futility_value = s->static_eval + fp_base + lmr_depth * fp_mult;
-            if(!in_check && !move.is_cap() && lmr_depth < fp_depth && futility_value <= alpha) {
-                if(!is_win(best_score) && !is_decisive(best_score) && best_score <= futility_value)
-                    best_score = futility_value;
-                mp.skip_quiets();
-                continue;
-            }
+            if(move.is_cap()) {
+                // see pruning
+                if(!board.see(move, depth * see_cap_margin))
+                    continue;
+            } else {
+                const int lmr_depth = std::max(0, depth - reduction + history_score / history_div);
 
-            // history pruning
-            if(!move.is_cap() && lmr_depth < hp_depth && history_score < -hp_depth_mult * depth) {
-                mp.skip_quiets();
-                continue;
-            }
+                // futility pruning
+                const Score futility = s->static_eval + fp_base + lmr_depth * fp_mult;
 
-            // see pruning
-            int see_depth = move.is_cap() ? depth : lmr_depth * lmr_depth;
-            int see_margin = move.is_cap() ? see_cap_margin : see_quiet_margin;
-            if(!board.see(move, see_depth * -see_margin))
-                continue;
+                if(!in_check && lmr_depth < fp_depth && futility <= alpha) {
+                    if(!is_win(best_score) && !is_decisive(best_score) && best_score <= futility) {
+                        best_score = futility;
+                    }
+
+                    mp.skip_quiets();
+                    continue;
+                }
+
+                // history pruning
+                if(lmr_depth < hp_depth && history_score < hp_depth_mult * depth) {
+                    mp.skip_quiets();
+                    continue;
+                }
+
+                // see pruning
+                if(!board.see(move, lmr_depth * lmr_depth * see_quiet_margin))
+                    continue;
+            }
         }
 
         // singular extensions
@@ -532,7 +539,7 @@ movesloop:
 
         // late move reductions
         if(depth >= 2 && made_moves >= lmr_min_moves && (!tt_pv || move.is_quiet())) {
-            int r = REDUCTIONS[depth][made_moves];
+            int r = reduction;
 
             r += !improving;
 
@@ -546,7 +553,7 @@ movesloop:
 
             r -= (tt_depth >= depth);
 
-            r -= history_score / (move.is_quiet() ? hp_quiet_div : hp_noisy_div);
+            r -= history_score / (move.is_quiet() ? quiet_history_div : noisy_history_div);
 
             const int lmr_depth = std::clamp(new_depth - r, 1, new_depth + 1);
 
@@ -621,7 +628,7 @@ movesloop:
             }
 
             if(alpha >= beta) {
-                history.update(board, best_move, quiets, noisy, s, depth + (best_score > beta + hbonus_margin));
+                history.update(board, best_move, quiets, noisy, s, depth + (best_score > beta + history_bonus_margin));
                 break; // cut-off
             }
         }

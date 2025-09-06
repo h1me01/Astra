@@ -61,7 +61,7 @@ void AccumTable::refresh(Board &board, Color view) {
     Accum &accum = board.get_accum();
 
     memcpy(accum.get_data(view), entry_acc.get_data(view), sizeof(int16_t) * FT_SIZE);
-    accum.mark_as_initialized(view);
+    accum.set_initialized(view);
 }
 
 } // namespace NNUE

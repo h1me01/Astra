@@ -12,6 +12,11 @@ Param::Param(std::string name, int value, int min, int max) //
         return;
     }
 
+    if(min >= max) {
+        std::cerr << "Invalid range for search parameter " << name << std::endl;
+        return;
+    }
+
     params.push_back(this);
 }
 

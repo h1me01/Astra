@@ -179,7 +179,6 @@ void UCI::update_position(std::istringstream &is) {
         if(token == "moves")
             continue;
         board.make_move(get_move(token), false);
-
         // if half move clock gets reseted, then we can reset the history
         // since the last positions should not be considered in the repetition
         if(board.get_fmr() == 0)
@@ -204,7 +203,6 @@ void UCI::go(std::istringstream &is) {
                 std::cout << "No depth value provided for perft\n";
             else
                 board.perft(depth);
-
             return;
         } else if(token == "wtime")
             is >> w_time;
