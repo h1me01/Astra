@@ -791,6 +791,10 @@ Score Search::quiescence(int depth, Score alpha, Score beta, Stack *s) {
         made_moves++;
 
         if(!is_loss(best_score)) {
+            // if we are not losing while in check, we can skip quiet moves
+            if(in_check && move.is_quiet())
+                break;
+
             // futility pruning
             if(!in_check && !move.is_quiet() && futility <= alpha && !board.see(move, 1)) {
                 best_score = std::max(best_score, futility);
@@ -828,10 +832,6 @@ Score Search::quiescence(int depth, Score alpha, Score beta, Stack *s) {
             if(alpha >= beta)
                 break; // cut-off
         }
-
-        // if we are not losing after being in check, it is safe to skip all quiet moves
-        if(!is_loss(best_score))
-            mp.skip_quiets();
     }
 
     if(board.in_check() && !made_moves)
