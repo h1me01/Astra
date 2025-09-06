@@ -77,7 +77,7 @@ class Search {
     Score aspiration(int depth, Stack *s);
 
     template <NodeType nt> //
-    Score negamax(int depth, Score alpha, Score beta, Stack *s, bool cut_node);
+    Score negamax(int depth, Score alpha, Score beta, Stack *s, bool cut_node = false);
 
     template <NodeType nt> //
     Score quiescence(int depth, Score alpha, Score beta, Stack *s);
