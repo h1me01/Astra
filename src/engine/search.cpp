@@ -472,11 +472,15 @@ movesloop:
                 const int lmr_depth = std::max(0, depth - reduction + history_score / history_div);
 
                 // futility pruning
-                if(!in_check                                                  //
-                   && lmr_depth < fp_depth                                    //
-                   && s->static_eval + fp_base + lmr_depth * fp_mult <= alpha //
-                ) {
+                const Score futility = s->static_eval + fp_base + lmr_depth * fp_mult;
+
+                if(!in_check && lmr_depth < fp_depth && futility <= alpha) {
+                    if(best_score <= futility && !is_decisive(best_score) && !is_win(futility)) {
+                        best_score = futility;
+                    }
+
                     mp.skip_quiets();
+                    continue;
                 }
 
                 // history pruning
@@ -787,11 +791,13 @@ Score Search::quiescence(int depth, Score alpha, Score beta, Stack *s) {
         made_moves++;
 
         if(!is_loss(best_score)) {
+            // futility pruning
             if(!in_check && !move.is_quiet() && futility <= alpha && !board.see(move, 1)) {
                 best_score = std::max(best_score, futility);
                 continue;
             }
 
+            // see pruning
             if(!board.see(move, qsee_margin))
                 continue;
         }
