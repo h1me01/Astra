@@ -869,14 +869,14 @@ Score Search::evaluate() {
     return std::clamp(eval, int(-VALUE_MATE_IN_MAX_PLY), int(VALUE_MATE_IN_MAX_PLY));
 }
 
-Score Search::adjust_eval(Score eval, Stack *stack) const {
+Score Search::adjust_eval(int32_t eval, Stack *stack) const {
     eval = (eval * (200 - board.get_fmr())) / 200;
     eval += (history.get_matcorr(board) + history.get_contcorr(stack)) / 256;
 
-    return std::clamp(                       //
-        eval,                                //
-        Score(VALUE_TB_LOSS_IN_MAX_PLY + 1), //
-        Score(VALUE_TB_WIN_IN_MAX_PLY - 1)   //
+    return std::clamp(                         //
+        eval,                                  //
+        int32_t(VALUE_TB_LOSS_IN_MAX_PLY + 1), //
+        int32_t(VALUE_TB_WIN_IN_MAX_PLY - 1)   //
     );
 }
 
