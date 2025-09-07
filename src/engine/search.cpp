@@ -973,10 +973,20 @@ void Search::print_uci_info() const {
               << " multipv " << multipv_idx + 1 //
               << " score ";                     //
 
-    if(std::abs(score) >= VALUE_MATE_IN_MAX_PLY)
+    if(std::abs(score) >= VALUE_MATE_IN_MAX_PLY) {
         std::cout << "mate " << (VALUE_MATE - std::abs(score) + 1) / 2 * (score > 0 ? 1 : -1);
-    else
-        std::cout << "cp " << Score(score / 2.5); // normalize
+    } else {
+        int material = board.count<PAWN>()         //
+                       + 3 * board.count<KNIGHT>() //
+                       + 3 * board.count<BISHOP>() //
+                       + 5 * board.count<ROOK>()   //
+                       + 9 * board.count<QUEEN>();
+
+        double m = std::clamp(material, 17, 78) / 58.0;
+        double d = -13.5 * pow(m, 3) + 40.9 * pow(m, 2) - 36.8 * m + 386.8;
+
+        std::cout << "cp " << std::round(100 * int(score) / d);
+    }
 
     std::cout << " nodes " << total_nodes                           //
               << " nps " << total_nodes * 1000 / (elapsed_time + 1) //
