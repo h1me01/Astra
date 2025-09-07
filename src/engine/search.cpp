@@ -858,12 +858,19 @@ Score Search::quiescence(int depth, Score alpha, Score beta, Stack *stack) {
 Score Search::evaluate() {
     int eval = NNUE::nnue.forward(board);
 
-    eval = (128 + board.get_phase()) * eval / 128;
+    int material = 122 * board.count<PAWN>()     //
+                   + 401 * board.count<KNIGHT>() //
+                   + 427 * board.count<BISHOP>() //
+                   + 663 * board.count<ROOK>()   //
+                   + 1237 * board.count<QUEEN>();
+
+    eval = (230 + material / 42) * eval / 440;
 
     return std::clamp(eval, int(-VALUE_MATE_IN_MAX_PLY), int(VALUE_MATE_IN_MAX_PLY));
 }
 
 Score Search::adjust_eval(Score eval, Stack *stack) const {
+    eval = (eval * (200 - board.get_fmr())) / 200;
     eval += (history.get_matcorr(board) + history.get_contcorr(stack)) / 256;
 
     return std::clamp(                       //

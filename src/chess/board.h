@@ -28,8 +28,6 @@ class Board {
 
     void perft(int depth);
 
-    int get_phase() const;
-
     bool is_legal(const Move &m) const;
     bool is_pseudolegal(const Move &m) const;
 
@@ -124,6 +122,15 @@ class Board {
         return accum_list.back();
     }
 
+    template <PieceType pt> int count(Color c = BOTH_COLORS) const {
+        int count = 0;
+        if(c != BLACK)
+            count += pop_count(get_piecebb(WHITE, pt));
+        if(c != WHITE)
+            count += pop_count(get_piecebb(BLACK, pt));
+        return count;
+    }
+
   private:
     // private variables
 
@@ -154,14 +161,6 @@ inline void Board::reset_ply() {
     states[0] = states[curr_ply];
     states[0].plies_from_null = 0;
     curr_ply = 0;
-}
-
-inline int Board::get_phase() const {
-    int phase = 3 * pop_count(piece_bb[WHITE_KNIGHT] | piece_bb[BLACK_KNIGHT]);
-    phase += 3 * pop_count(piece_bb[WHITE_BISHOP] | piece_bb[BLACK_BISHOP]);
-    phase += 5 * pop_count(piece_bb[WHITE_ROOK] | piece_bb[BLACK_ROOK]);
-    phase += 10 * pop_count(piece_bb[WHITE_QUEEN] | piece_bb[BLACK_QUEEN]);
-    return phase;
 }
 
 inline U64 Board::get_occupancy(Color c = BOTH_COLORS) const {
