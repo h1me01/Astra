@@ -18,10 +18,10 @@ void partial_insertion_sort(MoveList<> &ml, int idx) {
 MovePicker::MovePicker(SearchType st,          //
                        const Board &board,     //
                        const History &history, //
-                       const Stack *s,         //
+                       const Stack *stack,     //
                        const Move &tt_move,    //
                        bool gen_checks)
-    : st(st), board(board), history(history), s(s), gen_checks(gen_checks) {
+    : st(st), board(board), history(history), stack(stack), gen_checks(gen_checks) {
 
     if(st == PC_SEARCH)
         stage = GEN_NOISY;
@@ -36,9 +36,9 @@ MovePicker::MovePicker(SearchType st,          //
         stage = PLAY_TT_MOVE;
 
         this->tt_move = tt_move;
-        killer = s->killer;
+        killer = stack->killer;
 
-        Move prev_move = (s - 1)->move;
+        Move prev_move = (stack - 1)->move;
         counter = prev_move ? history.get_counter(prev_move) : NO_MOVE;
     }
 }
@@ -175,7 +175,7 @@ void MovePicker::score_quiets() {
 
         int score = 2 * (history.get_hh(board.get_stm(), move) + history.get_ph(board, move));
         for(int i : {1, 2, 4, 6})
-            score += (int) (*(s - i)->conth)[pc][to];
+            score += (int) (*(stack - i)->conth)[pc][to];
 
         if(pt != PAWN && pt != KING) {
             U64 danger;

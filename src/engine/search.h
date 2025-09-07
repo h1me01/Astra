@@ -20,25 +20,15 @@ enum class NodeType { //
     NON_PV
 };
 
-struct PVLine {
-    Move pv[MAX_PLY + 1];
-    uint8_t length = 0;
+struct RootMove : Move {
+    RootMove() = default;
+    RootMove(Move m) : Move(m) {}
 
-    Move &operator[](int depth) {
-        return pv[depth];
-    }
+    // public variables
 
-    Move operator[](int depth) const {
-        return pv[depth];
-    }
-};
-
-struct RootMove {
-    Move move = NO_MOVE;
-    Score score = -VALUE_INFINITE;
-    Score avg_score = VALUE_NONE;
     U64 nodes = 0;
-    PVLine pv;
+    Score avg_score = VALUE_NONE;
+    PVLine pv{};
 };
 
 class Search {
@@ -76,22 +66,21 @@ class Search {
     History history;
 
     Board board{STARTING_FEN, false};
-    PVLine pv_table[MAX_PLY + 1];
 
     MoveList<RootMove> root_moves;
 
     // private functions
 
-    Score aspiration(int depth, Stack *s);
+    Score aspiration(int depth, Stack *stack);
 
     template <NodeType nt> //
-    Score negamax(int depth, Score alpha, Score beta, Stack *s, bool cut_node = false);
+    Score negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut_node = false);
 
     template <NodeType nt> //
-    Score quiescence(int depth, Score alpha, Score beta, Stack *s);
+    Score quiescence(int depth, Score alpha, Score beta, Stack *stack);
 
     Score evaluate();
-    Score adjust_eval(Score eval, Stack *s) const;
+    Score adjust_eval(Score eval, Stack *stack) const;
 
     unsigned int probe_wdl() const;
 
@@ -100,7 +89,7 @@ class Search {
     void sort_rootmoves(int offset);
     bool found_rootmove(const Move &move);
 
-    void update_pv(const Move &move, int ply);
+    void update_pv(const Move &move, Stack *stack);
 
     void print_uci_info() const;
 };

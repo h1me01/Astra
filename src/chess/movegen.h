@@ -219,17 +219,28 @@ class MoveList {
 
     template <GenType gt> //
     void gen(const Board &board) {
-        static_assert(std::is_same<Type, Move>::value, "MoveList type must be Move to generate moves.");
         last = list; // reset the list
 
-        if(gt == LEGALS)
-            last = gen_legals(board, list);
-        else if(gt == QUIET_CHECKS)
-            last = board.get_stm() == WHITE ? gen_quiet_checkers<WHITE>(board, list) //
-                                            : gen_quiet_checkers<BLACK>(board, list);
-        else
-            last = board.get_stm() == WHITE ? gen_all<WHITE, gt>(board, list) //
-                                            : gen_all<BLACK, gt>(board, list);
+        auto generate_moves = [&](Move *move_list) -> Move * {
+            if(gt == LEGALS)
+                return gen_legals(board, move_list);
+            else if(gt == QUIET_CHECKS)
+                return board.get_stm() == WHITE ? gen_quiet_checkers<WHITE>(board, move_list)
+                                                : gen_quiet_checkers<BLACK>(board, move_list);
+            else
+                return board.get_stm() == WHITE ? gen_all<WHITE, gt>(board, move_list)
+                                                : gen_all<BLACK, gt>(board, move_list);
+        };
+
+        if constexpr(std::is_same_v<Type, Move>) {
+            last = generate_moves(list);
+        } else {
+            Move temp_list[MAX_MOVES];
+            Move *temp_last = generate_moves(temp_list);
+
+            for(Move *it = temp_list; it != temp_last; ++it)
+                *last++ = Type(*it);
+        }
     }
 
     void add(Type m) {
@@ -243,6 +254,13 @@ class MoveList {
 
     const Type *end() const {
         return last;
+    }
+
+    int idx_of(const Type &m) const {
+        for(int i = 0; i < size(); i++)
+            if(list[i] == m)
+                return i;
+        return -1;
     }
 
     int size() const {

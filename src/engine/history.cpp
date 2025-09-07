@@ -29,7 +29,7 @@ void History::update(         //
     const Move &best_move,    //
     const MoveList<> &quiets, //
     const MoveList<> &noisy,  //
-    Stack *s,                 //
+    Stack *stack,             //
     int depth                 //
 ) {
     Color stm = board.get_stm();
@@ -38,23 +38,23 @@ void History::update(         //
     int malus = history_malus(depth);
 
     if(best_move.is_quiet()) {
-        Move prev_move = (s - 1)->move;
+        Move prev_move = (stack - 1)->move;
         if(prev_move)
             counters[prev_move.from()][prev_move.to()] = best_move;
 
-        s->killer = best_move;
+        stack->killer = best_move;
 
         // idea from ethereal
         // only update quiet history if best move was important
         if(depth > 3 || quiets.size() > 1) {
             update_hh(stm, best_move, bonus);
             update_ph(board, best_move, bonus);
-            update_conth(best_move, s, bonus);
+            update_conth(best_move, stack, bonus);
 
             // quiet maluses
             for(const auto &m : quiets) {
                 update_hh(stm, m, -malus);
-                update_conth(m, s, -malus);
+                update_conth(m, stack, -malus);
                 update_ph(board, m, -malus);
             }
         }
@@ -95,15 +95,15 @@ void History::update_ph(const Board &board, const Move &move, int bonus) {
     value += adjusted_bonus(value, bonus);
 }
 
-void History::update_conth(const Move &move, Stack *s, int bonus) {
+void History::update_conth(const Move &move, Stack *stack, int bonus) {
     assert(move);
 
     for(int offset : {1, 2, 4, 6}) {
-        if((s - offset)->move) {
-            Piece pc = (s - offset)->moved_piece;
+        if((stack - offset)->move) {
+            Piece pc = (stack - offset)->moved_piece;
             assert(valid_piece(pc));
 
-            int16_t &value = (*(s - offset)->conth)[pc][move.to()];
+            int16_t &value = (*(stack - offset)->conth)[pc][move.to()];
             value += adjusted_bonus(value, bonus);
         }
     }
@@ -118,12 +118,12 @@ void History::update_matcorr(const Board &board, Score raw_eval, Score real_scor
     update_corr(b_non_pawn_corr[stm][corr_idx(board.get_nonpawn_hash(BLACK))], diff, depth);
 }
 
-void History::update_contcorr(Score raw_eval, Score real_score, int depth, const Stack *s) {
-    const Move prev_move = (s - 1)->move;
-    const Move pprev_move = (s - 2)->move;
+void History::update_contcorr(Score raw_eval, Score real_score, int depth, const Stack *stack) {
+    const Move prev_move = (stack - 1)->move;
+    const Move pprev_move = (stack - 2)->move;
 
-    Piece prev_pc = (s - 1)->moved_piece;
-    Piece pprev_pc = (s - 2)->moved_piece;
+    Piece prev_pc = (stack - 1)->moved_piece;
+    Piece pprev_pc = (stack - 2)->moved_piece;
 
     if(!prev_move || !pprev_move)
         return;

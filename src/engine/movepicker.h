@@ -33,7 +33,7 @@ class MovePicker {
     MovePicker(SearchType st,          //
                const Board &board,     //
                const History &history, //
-               const Stack *s,         //
+               const Stack *stack,     //
                const Move &tt_move,    //
                bool gen_checks = false //
     );
@@ -67,7 +67,7 @@ class MovePicker {
     SearchType st;
     const Board &board;
     const History &history;
-    const Stack *s;
+    const Stack *stack;
 
     bool gen_checks;
     bool m_skip_quiets = false;

@@ -42,8 +42,7 @@ ENGINE_SRC := engine/history.cpp \
 SYZYGY_SRC := third_party/fathom/src/tbprobe.c
 
 MAIN_SRC := main.cpp \
-            uci/uci.cpp \
-            bench/bench.cpp
+            uci/uci.cpp
 
 SRC := $(CHESS_SRC) $(EVAL_SRC) $(ENGINE_SRC) $(SYZYGY_SRC) $(MAIN_SRC)
 TARGET = $(if $(EXE),$(EXE),astra)

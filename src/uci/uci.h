@@ -67,6 +67,7 @@ class UCI {
 
     void update_position(std::istringstream &is);
     void go(std::istringstream &is);
+    void bench();
 
     Move get_move(const std::string &str_move) const;
 };

@@ -27,27 +27,27 @@ class History {
                 const Move &best_move,    //
                 const MoveList<> &quiets, //
                 const MoveList<> &noisy,  //
-                Stack *s,                 //
+                Stack *stack,             //
                 int depth);
 
     void update_hh(Color c, const Move &move, int bonus);
     void update_nh(const Board &board, const Move &move, int bonus);
     void update_ph(const Board &board, const Move &move, int bonus);
 
-    void update_conth(const Move &move, Stack *s, int bonus);
+    void update_conth(const Move &move, Stack *stack, int bonus);
 
     void update_matcorr(const Board &board, Score raw_eval, Score real_score, int depth);
-    void update_contcorr(Score raw_eval, Score real_score, int depth, const Stack *s);
+    void update_contcorr(Score raw_eval, Score real_score, int depth, const Stack *stack);
 
     Move get_counter(const Move &move) const;
 
     int get_hh(Color stm, const Move &move) const;
     int get_nh(const Board &board, const Move &move) const;
-    int get_qh(const Board &board, const Move &move, const Stack *s) const;
+    int get_qh(const Board &board, const Move &move, const Stack *stack) const;
     int get_ph(const Board &board, const Move &move) const;
 
     int get_matcorr(const Board &board) const;
-    int get_contcorr(const Stack *s) const;
+    int get_contcorr(const Stack *stack) const;
 
   private:
     // private variables
@@ -101,7 +101,7 @@ inline int History::get_nh(const Board &board, const Move &move) const {
     return nh[pc][move.to()][captured];
 }
 
-inline int History::get_qh(const Board &board, const Move &move, const Stack *s) const {
+inline int History::get_qh(const Board &board, const Move &move, const Stack *stack) const {
     Square from = move.from();
     Square to = move.to();
     Piece pc = board.piece_at(from);
@@ -110,11 +110,11 @@ inline int History::get_qh(const Board &board, const Move &move, const Stack *s)
     assert(valid_sq(from));
     assert(valid_piece(pc));
 
-    return get_hh(board.get_stm(), move) +   //
-           get_ph(board, move) +             //
-           (int) (*(s - 1)->conth)[pc][to] + //
-           (int) (*(s - 2)->conth)[pc][to] + //
-           (int) (*(s - 4)->conth)[pc][to];
+    return get_hh(board.get_stm(), move) +       //
+           get_ph(board, move) +                 //
+           (int) (*(stack - 1)->conth)[pc][to] + //
+           (int) (*(stack - 2)->conth)[pc][to] + //
+           (int) (*(stack - 4)->conth)[pc][to];
 }
 
 inline int History::get_ph(const Board &board, const Move &move) const {
@@ -132,12 +132,12 @@ inline int History::get_matcorr(const Board &board) const {
            b_non_pawn_corr[stm][corr_idx(board.get_nonpawn_hash(BLACK))];
 }
 
-inline int History::get_contcorr(const Stack *s) const {
-    const Move prev_move = (s - 1)->move;
-    const Move pprev_move = (s - 2)->move;
+inline int History::get_contcorr(const Stack *stack) const {
+    const Move prev_move = (stack - 1)->move;
+    const Move pprev_move = (stack - 2)->move;
 
-    Piece prev_p = (s - 1)->moved_piece;
-    Piece pprev_p = (s - 2)->moved_piece;
+    Piece prev_p = (stack - 1)->moved_piece;
+    Piece pprev_p = (stack - 2)->moved_piece;
 
     if(!prev_move || !pprev_move)
         return 0;
