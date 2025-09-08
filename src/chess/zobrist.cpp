@@ -47,28 +47,4 @@ U64 get_ep(Square sq) {
     return ep[sq_file(sq)];
 }
 
-U64 get_pawn(const Board &board) {
-    U64 hash = 0;
-
-    for(Color c : {WHITE, BLACK}) {
-        U64 pawns = board.get_piecebb(c, PAWN);
-        while(pawns)
-            hash ^= get_psq(make_piece(c, PAWN), pop_lsb(pawns));
-    }
-
-    return hash;
-}
-
-U64 get_nonpawn(const Board &board, Color c) {
-    U64 hash = 0;
-
-    for(PieceType pt : {KNIGHT, BISHOP, ROOK, QUEEN, KING}) {
-        U64 pieces = board.get_piecebb(c, pt);
-        while(pieces)
-            hash ^= get_psq(make_piece(c, pt), pop_lsb(pieces));
-    }
-
-    return hash;
-}
-
 } // namespace Chess::Zobrist
