@@ -139,7 +139,6 @@ int32_t NNUE::forward(Board &board) const {
 
 #if defined(__AVX512F__) || defined(__AVX2__) || defined(__AVX__)
     vec_type res{};
-
     for(int i = 0; i < FT_SIZE / vec_div; i++) {
         res = add_epi32(res, fma(acc_stm[i], weights[i]));
         res = add_epi32(res, fma(acc_opp[i], weights[i + FT_SIZE / vec_div]));

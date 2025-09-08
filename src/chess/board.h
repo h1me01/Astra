@@ -4,11 +4,38 @@
 #include <memory>
 
 #include "../nnue/accum.h"
+#include "castling_rights.h"
 #include "cuckoo.h"
-#include "state_info.h"
+#include "types.h"
 #include "zobrist.h"
 
 namespace Chess {
+
+struct StateInfo {
+    StateInfo() = default;
+    StateInfo(const StateInfo &other) = default;
+    StateInfo &operator=(const StateInfo &other) = default;
+
+    Piece captured;
+    Square ep_sq;
+    CastlingRights castle_rights;
+
+    int fmr_counter; // fifty move rule
+    int plies_from_null;
+
+    U64 hash;
+    U64 pawn_hash;
+    U64 non_pawn_hash[NUM_COLORS];
+
+    U64 occ[NUM_COLORS];
+    U64 threats[NUM_PIECE_TYPES];
+
+    U64 checkers;
+    U64 danger;
+
+    U64 pinners[NUM_COLORS];
+    U64 blockers[NUM_COLORS];
+};
 
 class Board {
   public:
@@ -62,7 +89,7 @@ class Board {
 
     U64 get_threats(PieceType pt) const {
         assert(valid_piece_type(pt));
-        return states[curr_ply].threats[pt];
+        return get_state().threats[pt];
     }
 
     U64 diag_sliders(Color c) const {
@@ -74,7 +101,7 @@ class Board {
     }
 
     bool in_check() const {
-        return states[curr_ply].checkers > 0;
+        return get_state().checkers > 0;
     }
 
     Color get_stm() const {
@@ -86,20 +113,20 @@ class Board {
     }
 
     int get_fmr() const {
-        return states[curr_ply].fmr_counter;
+        return get_state().fmr_counter;
     }
 
     U64 get_hash() const {
-        return states[curr_ply].hash;
+        return get_state().hash;
     }
 
     U64 get_pawn_hash() const {
-        return states[curr_ply].pawn_hash;
+        return get_state().pawn_hash;
     }
 
     U64 get_nonpawn_hash(Color c) const {
         assert(valid_color(c));
-        return states[curr_ply].non_pawn_hash[c];
+        return get_state().non_pawn_hash[c];
     }
 
     Square king_sq(Color c) const {
@@ -122,7 +149,8 @@ class Board {
         return accum_list.back();
     }
 
-    template <PieceType pt> int count(Color c = BOTH_COLORS) const {
+    template <PieceType pt> //
+    int count(Color c = BOTH_COLORS) const {
         int count = 0;
         if(c != BLACK)
             count += pop_count(get_piecebb(WHITE, pt));
@@ -139,7 +167,6 @@ class Board {
     Piece board[NUM_SQUARES];
     U64 piece_bb[NUM_PIECES];
 
-    bool update_accum_list;
     NNUE::AccumList accum_list;
     std::array<StateInfo, 512> states;
 
@@ -158,7 +185,7 @@ inline void Board::reset_accum_list() {
 }
 
 inline void Board::reset_ply() {
-    states[0] = states[curr_ply];
+    states[0] = get_state();
     states[0].plies_from_null = 0;
     curr_ply = 0;
 }
@@ -166,9 +193,9 @@ inline void Board::reset_ply() {
 inline U64 Board::get_occupancy(Color c = BOTH_COLORS) const {
     U64 occ = 0;
     if(c != BLACK)
-        occ |= states[curr_ply].occ[WHITE];
+        occ |= get_state().occ[WHITE];
     if(c != WHITE)
-        occ |= states[curr_ply].occ[BLACK];
+        occ |= get_state().occ[BLACK];
     return occ;
 }
 
@@ -182,7 +209,7 @@ inline U64 Board::attackers_to(Color c, Square sq, const U64 occ) const {
 }
 
 inline U64 Board::key_after(Move m) const {
-    U64 new_hash = states[curr_ply].hash;
+    U64 new_hash = get_state().hash;
 
     if(!m)
         return new_hash ^ Zobrist::get_side();
@@ -204,7 +231,7 @@ inline U64 Board::key_after(Move m) const {
 
 // doesn't include stalemate
 inline bool Board::is_draw(int ply) const {
-    return states[curr_ply].fmr_counter > 99 || is_repetition(ply);
+    return get_state().fmr_counter > 99 || is_repetition(ply);
 }
 
 // checks if there is any non-pawn material on the board of the current side to move
@@ -216,9 +243,18 @@ inline void Board::put_piece(Piece pc, Square sq, bool update_accum) {
     assert(valid_sq(sq));
     assert(valid_piece(pc));
 
+    StateInfo &info = get_state();
+
     board[sq] = pc;
     piece_bb[pc] |= square_bb(sq);
-    states[curr_ply].occ[piece_color(pc)] ^= square_bb(sq);
+    info.occ[piece_color(pc)] ^= square_bb(sq);
+
+    // update hash
+    info.hash ^= Zobrist::get_psq(pc, sq);
+    if(piece_type(pc) == PAWN)
+        info.pawn_hash ^= Zobrist::get_psq(pc, sq);
+    else
+        info.non_pawn_hash[stm] ^= Zobrist::get_psq(pc, sq);
 
     if(!update_accum)
         return;
@@ -230,12 +266,21 @@ inline void Board::put_piece(Piece pc, Square sq, bool update_accum) {
 inline void Board::remove_piece(Square sq, bool update_accum) {
     assert(valid_sq(sq));
 
+    StateInfo &info = get_state();
+
     Piece pc = board[sq];
     assert(valid_piece(pc));
 
     piece_bb[pc] ^= square_bb(sq);
     board[sq] = NO_PIECE;
-    states[curr_ply].occ[piece_color(pc)] ^= square_bb(sq);
+    info.occ[piece_color(pc)] ^= square_bb(sq);
+
+    // update hash
+    info.hash ^= Zobrist::get_psq(pc, sq);
+    if(piece_type(pc) == PAWN)
+        info.pawn_hash ^= Zobrist::get_psq(pc, sq);
+    else
+        info.non_pawn_hash[~stm] ^= Zobrist::get_psq(pc, sq);
 
     if(!update_accum)
         return;
@@ -248,13 +293,22 @@ inline void Board::move_piece(Square from, Square to, bool update_accum) {
     assert(valid_sq(to));
     assert(valid_sq(from));
 
+    StateInfo &info = get_state();
+
     Piece pc = board[from];
     assert(valid_piece(pc));
 
     piece_bb[pc] ^= square_bb(from) | square_bb(to);
     board[to] = pc;
     board[from] = NO_PIECE;
-    states[curr_ply].occ[piece_color(pc)] ^= square_bb(from) | square_bb(to);
+    info.occ[piece_color(pc)] ^= square_bb(from) | square_bb(to);
+
+    // update hash
+    info.hash ^= Zobrist::get_psq(pc, from) ^ Zobrist::get_psq(pc, to);
+    if(piece_type(pc) == PAWN)
+        info.pawn_hash ^= Zobrist::get_psq(pc, from) ^ Zobrist::get_psq(pc, to);
+    else
+        info.non_pawn_hash[stm] ^= Zobrist::get_psq(pc, from) ^ Zobrist::get_psq(pc, to);
 
     if(!update_accum)
         return;

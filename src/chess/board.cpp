@@ -1,6 +1,8 @@
+#include <chrono>
 #include <cstring>
 
 #include "board.h"
+#include "movegen.h"
 
 namespace Chess {
 
@@ -97,13 +99,7 @@ void Board::set_fen(const std::string &fen, bool init_accum) {
             put_piece(Piece(PIECE_STR.find(c)), Square(sqr++));
     }
 
-    // initialize Zobrist hashes
-    info.pawn_hash = Zobrist::get_pawn(*this);
-    info.non_pawn_hash[WHITE] = Zobrist::get_nonpawn(*this, WHITE);
-    info.non_pawn_hash[BLACK] = Zobrist::get_nonpawn(*this, BLACK);
-
-    info.hash = info.pawn_hash ^ info.non_pawn_hash[WHITE] ^ info.non_pawn_hash[BLACK];
-
+    // initialize zobrist hashes
     info.hash ^= Zobrist::get_side();
     info.hash ^= Zobrist::get_ep(info.ep_sq);
     info.hash ^= Zobrist::get_castle(info.castle_rights.get_hash_idx());
@@ -120,23 +116,20 @@ void Board::print() const {
 
     for(int r = RANK_8; r >= RANK_1; --r) {
         for(int f = FILE_A; f <= FILE_H; ++f) {
-            int s;
-            if(stm == WHITE)
-                s = r * 8 + f;
-            else
-                s = (7 - r) * 8 + (7 - f);
+            int s = (stm == WHITE) ? r * 8 + f : (7 - r) * 8 + (7 - f);
             std::cout << " | " << board[s];
         }
+
         std::cout << " | " << (1 + r) << "\n +---+---+---+---+---+---+---+---+\n";
     }
 
     std::cout << "   a   b   c   d   e   f   g   h\n";
     std::cout << "\nFen: " << get_fen() << std::endl;
-    std::cout << "Hash key: " << std::hex << states[curr_ply].hash << std::dec << "\n\n";
+    std::cout << "Hash key: " << std::hex << get_state().hash << std::dec << "\n\n";
 }
 
 std::string Board::get_fen() const {
-    const StateInfo &info = states[curr_ply];
+    const StateInfo &info = get_state();
     std::ostringstream fen;
 
     for(int i = 56; i >= 0; i -= 8) {
@@ -172,6 +165,236 @@ std::string Board::get_fen() const {
         << " " << (curr_ply == 0 ? 1 : (curr_ply + 1) / 2);
 
     return fen.str();
+}
+
+void Board::make_move(const Move &m, bool update_accum) {
+    const Square from = m.from();
+    const Square to = m.to();
+    const Piece pc = piece_at(from);
+    const PieceType pt = piece_type(pc);
+    const Piece captured = m.is_ep() ? make_piece(~stm, PAWN) : piece_at(to);
+
+    assert(m);
+    assert(valid_piece(pc));
+    assert(piece_type(captured) != KING);
+
+    // update history
+    curr_ply++;
+    states[curr_ply] = StateInfo(states[curr_ply - 1]);
+    StateInfo &info = get_state();
+
+    // update move counters
+    info.fmr_counter++;
+    info.plies_from_null++;
+
+    // reset half move clock if pawn move or capture
+    if(pt == PAWN || valid_piece(captured))
+        info.fmr_counter = 0;
+
+    // reset ep square if it exists
+    if(valid_sq(info.ep_sq)) {
+        info.hash ^= Zobrist::get_ep(info.ep_sq); // remove ep square from hash
+        info.ep_sq = NO_SQUARE;
+    }
+
+    // increment accum
+    if(update_accum)
+        accum_list.push();
+
+    if(m.is_castling()) {
+        assert(pt == KING);
+
+        auto [rook_from, rook_to] = get_castle_rook_squares(stm, to);
+        assert(piece_at(rook_from) == make_piece(stm, ROOK));
+
+        move_piece(rook_from, rook_to, update_accum);
+    }
+
+    if(valid_piece(captured)) {
+        Square cap_sq = m.is_ep() ? Square(to ^ 8) : to;
+        remove_piece(cap_sq, update_accum);
+    }
+
+    // move current piece
+    move_piece(from, to, update_accum);
+
+    if(pt == PAWN) {
+        // set ep square if double push can be captured by enemy pawn
+        auto ep_sq = Square(to ^ 8);
+        if((from ^ to) == 16 && (get_pawn_attacks(stm, ep_sq) & get_piecebb(~stm, PAWN))) {
+            info.ep_sq = ep_sq;
+            info.hash ^= Zobrist::get_ep(ep_sq); // add ep square to hash
+        } else if(m.is_prom()) {
+            PieceType prom_t = m.prom_type();
+            Piece prom_pc = make_piece(stm, prom_t);
+
+            assert(prom_t != PAWN);
+            assert(valid_piece(prom_pc));
+
+            // add promoted piece and remove pawn
+            remove_piece(to, update_accum);
+            put_piece(prom_pc, to, update_accum);
+        }
+    }
+
+    // update castling rights if king/rook moves or if one of the rooks get captured
+    if(info.castle_rights.on_castle_sq(from) || info.castle_rights.on_castle_sq(to)) {
+        // remove old castling rights from hash
+        info.hash ^= Zobrist::get_castle(info.castle_rights.get_hash_idx());
+        info.castle_rights.update(square_bb(from), square_bb(to));
+        // add new castling rights to hash
+        info.hash ^= Zobrist::get_castle(info.castle_rights.get_hash_idx());
+    }
+
+    // update hash
+    info.hash ^= Zobrist::get_side();
+
+    stm = ~stm;
+    info.captured = captured;
+
+    init_threats();
+    init_slider_blockers();
+}
+
+void Board::undo_move(const Move &m) {
+    const MoveType mt = m.type();
+    const Square from = m.from();
+    const Square to = m.to();
+    const Piece captured = get_state().captured;
+
+    assert(m);
+    assert(valid_piece(piece_at(to)));
+    assert(!valid_piece(piece_at(from)));
+
+    stm = ~stm;
+
+    // decrement accum
+    accum_list.pop();
+
+    if(m.is_prom()) {
+        remove_piece(to);
+        put_piece(make_piece(stm, PAWN), to);
+    }
+
+    if(mt == CASTLING) {
+        auto [rook_to, rook_from] = get_castle_rook_squares(stm, to);
+
+        move_piece(to, from); // move king
+        move_piece(rook_from, rook_to);
+    } else {
+        move_piece(to, from);
+
+        if(valid_piece(captured)) {
+            Square cap_sqr = m.is_ep() ? Square(to ^ 8) : to;
+            put_piece(captured, cap_sqr);
+        }
+    }
+
+    curr_ply--;
+}
+
+void Board::make_nullmove() {
+    curr_ply++;
+    states[curr_ply] = StateInfo(states[curr_ply - 1]);
+    StateInfo &info = get_state();
+
+    info.fmr_counter++;
+    info.plies_from_null = 0;
+
+    if(valid_sq(info.ep_sq)) {
+        info.hash ^= Zobrist::get_ep(info.ep_sq); // remove ep square from hash
+        info.ep_sq = NO_SQUARE;
+    }
+
+    info.hash ^= Zobrist::get_side();
+
+    stm = ~stm;
+
+    init_threats();
+    init_slider_blockers();
+}
+
+void Board::undo_nullmove() {
+    curr_ply--;
+    stm = ~stm;
+}
+
+void Board::update_accums() {
+    assert(accum_list[0].is_initialized(WHITE));
+    assert(accum_list[0].is_initialized(BLACK));
+
+    NNUE::Accum &acc = get_accum();
+
+    for(Color view : {WHITE, BLACK}) {
+        if(acc.is_initialized(view))
+            continue;
+
+        const int accums_idx = accum_list.get_idx();
+        assert(accums_idx > 0);
+
+        // apply lazy update
+        for(int i = accums_idx; i >= 0; i--) {
+            if(accum_list[i].needs_refresh(view)) {
+                accum_list.refresh(view);
+                break;
+            }
+
+            if(accum_list[i].is_initialized(view)) {
+                for(int j = i + 1; j <= accums_idx; j++)
+                    accum_list[j].update(accum_list[j - 1], view);
+                break;
+            }
+        }
+    }
+
+    assert(acc.is_initialized(WHITE));
+    assert(acc.is_initialized(BLACK));
+}
+
+void Board::perft(int depth) {
+    if(depth < 1) {
+        std::cout << "Invalid depth value.\n";
+        return;
+    }
+
+    auto perft = [&](int d, auto &&perft_ref) -> U64 {
+        MoveList<> ml;
+        ml.gen<LEGALS>(*this);
+
+        if(d == 1)
+            return ml.size();
+
+        U64 nodes = 0;
+        for(const Move &move : ml) {
+            make_move(move);
+            nodes += perft_ref(d - 1, perft_ref);
+            undo_move(move);
+        }
+        return nodes;
+    };
+
+    std::cout << "\nPerft test at depth " << depth << ":\n\n";
+    auto start = std::chrono::high_resolution_clock::now();
+
+    MoveList<> ml;
+    ml.gen<LEGALS>(*this);
+
+    U64 total_nodes = 0;
+    for(const Move &move : ml) {
+        make_move(move);
+        U64 nodes = perft(depth - 1, perft);
+        undo_move(move);
+
+        total_nodes += nodes;
+        std::cout << move << ": " << nodes << std::endl;
+    }
+
+    auto end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double, std::milli> diff = end - start;
+    double time_ms = diff.count();
+
+    std::cout << "\nTotal nodes: " << total_nodes << std::endl;
+    std::cout << "Total time: " << time_ms << "ms\n\n";
 }
 
 bool Board::is_legal(const Move &m) const {
@@ -215,11 +438,11 @@ bool Board::is_legal(const Move &m) const {
         return !(attackers_to(~stm, to, get_occupancy() ^ square_bb(from)));
 
     // only legal if not pinned or moving in the direction of the pin
-    return !(states[curr_ply].blockers[stm] & square_bb(from)) || (line(from, to) & square_bb(ksq));
+    return !(get_state().blockers[stm] & square_bb(from)) || (line(from, to) & square_bb(ksq));
 }
 
 bool Board::is_pseudolegal(const Move &m) const {
-    const StateInfo &info = states[curr_ply];
+    const StateInfo &info = get_state();
 
     const Square from = m.from();
     const Square to = m.to();
@@ -288,14 +511,14 @@ bool Board::is_pseudolegal(const Move &m) const {
         U64 targets = info.checkers ? between_bb(ksq, lsb(info.checkers)) | info.checkers : -1ULL;
 
         // only pseudo legal, if target range is reachable
-        return (MASK_RANK[rel_rank(stm, RANK_8)] & attacks & targets) & square_bb(to);
+        return (rank_mask(rel_rank(stm, RANK_8)) & attacks & targets) & square_bb(to);
     }
 
     if(pt == PAWN) {
         const Direction up = (stm == WHITE ? NORTH : SOUTH);
 
         // no promotion moves allowed here since we already handled them
-        if(square_bb(to) & (MASK_RANK[RANK_1] | MASK_RANK[RANK_8]))
+        if(square_bb(to) & (rank_mask(RANK_1) | rank_mask(RANK_8)))
             return false;
 
         if(!m.is_ep()) {
@@ -331,7 +554,7 @@ bool Board::is_pseudolegal(const Move &m) const {
 }
 
 bool Board::is_repetition(int ply) const {
-    const StateInfo &info = states[curr_ply];
+    const StateInfo &info = get_state();
     const int distance = std::min(info.plies_from_null, info.fmr_counter);
 
     int rep = 0;
@@ -349,219 +572,139 @@ bool Board::is_repetition(int ply) const {
     return false;
 }
 
-void Board::make_move(const Move &m, bool update_accum) {
+bool Board::see(Move &m, int threshold) const {
+    assert(m);
+
+    if(m.is_prom() || m.is_ep() || m.is_castling())
+        return true;
+
+    const StateInfo &info = get_state();
+
     const Square from = m.from();
     const Square to = m.to();
-    const Piece pc = piece_at(from);
-    const PieceType pt = piece_type(pc);
-    const Piece captured = m.is_ep() ? make_piece(~stm, PAWN) : piece_at(to);
+    const PieceType attacker = piece_type(piece_at(from));
+    const PieceType victim = piece_type(piece_at(to));
 
-    assert(m);
-    assert(valid_piece(pc));
-    assert(piece_type(captured) != KING);
+    assert(valid_piece_type(attacker));
 
-    // update history
-    curr_ply++;
-    states[curr_ply] = StateInfo(states[curr_ply - 1]);
-    StateInfo &info = states[curr_ply];
+    int swap = PIECE_VALUES_SEE[victim] - threshold;
+    if(swap < 0)
+        return false;
 
-    // update move counters
-    info.fmr_counter++;
-    info.plies_from_null++;
+    swap = PIECE_VALUES_SEE[attacker] - swap;
 
-    // reset half move clock if pawn move or capture
-    if(pt == PAWN || valid_piece(captured))
-        info.fmr_counter = 0;
+    if(swap <= 0)
+        return true;
 
-    // reset ep square if it exists
-    if(valid_sq(info.ep_sq)) {
-        info.hash ^= Zobrist::get_ep(info.ep_sq); // remove ep square from hash
-        info.ep_sq = NO_SQUARE;
-    }
+    U64 occ = get_occupancy() ^ square_bb(from) ^ square_bb(to);
+    U64 attackers = attackers_to(WHITE, to, occ) | attackers_to(BLACK, to, occ);
 
-    // increment accum
-    if(update_accum)
-        accum_list.push();
+    const U64 diag = diag_sliders(WHITE) | diag_sliders(BLACK);
+    const U64 orth = orth_sliders(WHITE) | orth_sliders(BLACK);
 
-    if(m.is_castling()) {
-        assert(pt == KING);
+    int res = 1;
 
-        auto [rook_from, rook_to] = get_castle_rook_squares(stm, to);
-        Piece rook = piece_at(rook_from);
+    Color curr_stm = get_stm();
 
-        assert(rook == make_piece(stm, ROOK));
+    U64 stm_attacker, bb;
+    while(true) {
+        curr_stm = ~curr_stm;
+        attackers &= occ;
 
-        move_piece(rook_from, rook_to, update_accum);
+        if(!(stm_attacker = (attackers & get_occupancy(curr_stm))))
+            break;
 
-        // update hash of moving rook
-        info.hash ^= Zobrist::get_psq(rook, rook_from) ^ Zobrist::get_psq(rook, rook_to);
-        info.non_pawn_hash[stm] ^= Zobrist::get_psq(rook, rook_from) ^ Zobrist::get_psq(rook, rook_to);
-    }
+        if(info.pinners[~stm] & occ) {
+            stm_attacker &= ~info.blockers[stm];
+            if(!stm_attacker)
+                break;
+        }
 
-    if(valid_piece(captured)) {
-        Square cap_sq = m.is_ep() ? Square(to ^ 8) : to;
+        res ^= 1;
 
-        remove_piece(cap_sq, update_accum);
+        if((bb = stm_attacker & get_piecebb(curr_stm, PAWN))) {
+            if((swap = PIECE_VALUES_SEE[PAWN] - swap) < res)
+                break;
+            occ ^= (bb & -bb);
+            attackers |= get_attacks(BISHOP, to, occ) & diag;
+        } else if((bb = stm_attacker & get_piecebb(curr_stm, KNIGHT))) {
+            if((swap = PIECE_VALUES_SEE[KNIGHT] - swap) < res)
+                break;
+            occ ^= (bb & -bb);
+        } else if((bb = stm_attacker & get_piecebb(curr_stm, BISHOP))) {
+            if((swap = PIECE_VALUES_SEE[BISHOP] - swap) < res)
+                break;
+            occ ^= (bb & -bb);
+            attackers |= get_attacks(BISHOP, to, occ) & diag;
+        } else if((bb = stm_attacker & get_piecebb(curr_stm, ROOK))) {
+            if((swap = PIECE_VALUES_SEE[ROOK] - swap) < res)
+                break;
+            occ ^= (bb & -bb);
+            attackers |= get_attacks(ROOK, to, occ) & orth;
+        } else if((bb = stm_attacker & get_piecebb(curr_stm, QUEEN))) {
+            swap = PIECE_VALUES_SEE[QUEEN] - swap;
+            assert(swap >= res);
 
-        // update hash
-        info.hash ^= Zobrist::get_psq(captured, cap_sq); // remove captured piece from hash
-        if(piece_type(captured) == PAWN)
-            info.pawn_hash ^= Zobrist::get_psq(captured, cap_sq);
-        else
-            info.non_pawn_hash[~stm] ^= Zobrist::get_psq(captured, cap_sq);
-    }
-
-    // move current piece
-    move_piece(from, to, update_accum);
-
-    // update hash of moving piece
-    info.hash ^= Zobrist::get_psq(pc, from) ^ Zobrist::get_psq(pc, to);
-    if(pt == PAWN)
-        info.pawn_hash ^= Zobrist::get_psq(pc, from) ^ Zobrist::get_psq(pc, to);
-    else
-        info.non_pawn_hash[stm] ^= Zobrist::get_psq(pc, from) ^ Zobrist::get_psq(pc, to);
-
-    if(pt == PAWN) {
-        // set ep square if double push can be captured by enemy pawn
-        auto ep_sq = Square(to ^ 8);
-        if((from ^ to) == 16 && (get_pawn_attacks(stm, ep_sq) & get_piecebb(~stm, PAWN))) {
-            info.ep_sq = ep_sq;
-            info.hash ^= Zobrist::get_ep(ep_sq); // add ep square to hash
-        } else if(m.is_prom()) {
-            PieceType prom_t = m.prom_type();
-            Piece prom_pc = make_piece(stm, prom_t);
-
-            assert(prom_t != PAWN);
-            assert(valid_piece(prom_pc));
-
-            // add promoted piece and remove pawn
-            remove_piece(to, update_accum);
-            put_piece(prom_pc, to, update_accum);
-
-            // update hash of promoting piece
-            info.hash ^= Zobrist::get_psq(pc, to) ^ Zobrist::get_psq(prom_pc, to);
-            info.pawn_hash ^= Zobrist::get_psq(pc, to);
+            occ ^= (bb & -bb);
+            attackers |= (get_attacks(BISHOP, to, occ) & diag) | (get_attacks(ROOK, to, occ) & orth);
+        } else {
+            return (attackers & ~get_occupancy(curr_stm)) ? res ^ 1 : res;
         }
     }
 
-    // update castling rights if king/rook moves or if one of the rooks get captured
-    if(info.castle_rights.on_castle_sq(from) || info.castle_rights.on_castle_sq(to)) {
-        // remove old castling rights from hash
-        info.hash ^= Zobrist::get_castle(info.castle_rights.get_hash_idx());
-        info.castle_rights.update(square_bb(from), square_bb(to));
-        // add new castling rights to hash
-        info.hash ^= Zobrist::get_castle(info.castle_rights.get_hash_idx());
-    }
-
-    // update hash
-    info.hash ^= Zobrist::get_side();
-
-    stm = ~stm;
-    info.captured = captured;
-
-    init_threats();
-    init_slider_blockers();
+    return bool(res);
 }
 
-void Board::undo_move(const Move &m) {
-    const MoveType mt = m.type();
-    const Square from = m.from();
-    const Square to = m.to();
-    const Piece captured = states[curr_ply].captured;
+bool Board::has_upcoming_repetition(int ply) {
+    assert(ply > 0);
 
-    assert(m);
-    assert(valid_piece(piece_at(to)));
-    assert(!valid_piece(piece_at(from)));
+    const U64 occ = get_occupancy();
 
-    stm = ~stm;
+    const StateInfo &info = get_state();
+    StateInfo *prev = &states[curr_ply - 1];
 
-    // decrement accum
-    accum_list.pop();
+    int distance = std::min(info.fmr_counter, info.plies_from_null);
+    for(int i = 3; i <= distance; i += 2) {
+        prev -= 2;
+        U64 move_key = info.hash ^ prev->hash;
 
-    if(m.is_prom()) {
-        remove_piece(to);
-        put_piece(make_piece(stm, PAWN), to);
-    }
+        int hash = Cuckoo::cuckoo_h1(move_key);
+        if(Cuckoo::keys[hash] != move_key)
+            hash = Cuckoo::cuckoo_h2(move_key);
 
-    if(mt == CASTLING) {
-        auto [rook_to, rook_from] = get_castle_rook_squares(stm, to);
-
-        move_piece(to, from); // move king
-        move_piece(rook_from, rook_to);
-    } else {
-        move_piece(to, from);
-
-        if(valid_piece(captured)) {
-            Square cap_sqr = m.is_ep() ? Square(to ^ 8) : to;
-            put_piece(captured, cap_sqr);
-        }
-    }
-
-    curr_ply--;
-}
-
-void Board::make_nullmove() {
-    curr_ply++;
-    states[curr_ply] = StateInfo(states[curr_ply - 1]);
-    StateInfo &info = states[curr_ply];
-
-    info.fmr_counter++;
-    info.plies_from_null = 0;
-
-    if(valid_sq(info.ep_sq)) {
-        info.hash ^= Zobrist::get_ep(info.ep_sq); // remove ep square from hash
-        info.ep_sq = NO_SQUARE;
-    }
-
-    info.hash ^= Zobrist::get_side();
-
-    stm = ~stm;
-
-    init_threats();
-    init_slider_blockers();
-}
-
-void Board::undo_nullmove() {
-    curr_ply--;
-    stm = ~stm;
-}
-
-void Board::update_accums() {
-    assert(accum_list[0].is_initialized(WHITE));
-    assert(accum_list[0].is_initialized(BLACK));
-
-    NNUE::Accum &acc = get_accum();
-
-    for(Color view : {WHITE, BLACK}) {
-        if(acc.is_initialized(view))
+        if(Cuckoo::keys[hash] != move_key)
             continue;
 
-        const int accums_idx = accum_list.get_idx();
-        assert(accums_idx > 0);
+        Move move = Cuckoo::cuckoo_moves[hash];
+        Square from = move.from();
+        Square to = move.to();
 
-        // apply lazy update
-        for(int i = accums_idx; i >= 0; i--) {
-            if(accum_list[i].needs_refresh(view)) {
-                accum_list.refresh(view);
-                break;
-            }
+        U64 between = between_bb(from, to) ^ square_bb(to);
+        if(between & occ)
+            continue;
 
-            if(accum_list[i].is_initialized(view)) {
-                for(int j = i + 1; j <= accums_idx; j++)
-                    accum_list[j].update(accum_list[j - 1], view);
-                break;
-            }
+        if(ply > i)
+            return true;
+
+        Piece pc = valid_piece(piece_at(from)) ? piece_at(from) : piece_at(to);
+        if(piece_color(pc) != stm)
+            continue;
+
+        StateInfo *prev2 = prev - 2;
+        for(int j = i + 4; j <= distance; j += 2) {
+            prev2 -= 2;
+            if(prev2->hash == prev->hash)
+                return true;
         }
     }
 
-    assert(acc.is_initialized(WHITE));
-    assert(acc.is_initialized(BLACK));
+    return false;
 }
 
 // private member
 
 void Board::init_threats() {
-    StateInfo &info = states[curr_ply];
+    StateInfo &info = get_state();
     Color them = ~stm;
     U64 occ = get_occupancy() ^ square_bb(king_sq(stm)); // king must be excluded so we don't block the slider attacks
 
@@ -589,7 +732,7 @@ void Board::init_threats() {
 }
 
 void Board::init_slider_blockers() {
-    StateInfo &info = states[curr_ply];
+    StateInfo &info = get_state();
 
     auto helper = [&](Color c) {
         info.blockers[c] = 0;

@@ -27,7 +27,7 @@ Move *make_promotions(Move *ml, Square to) {
 template <Color us, GenType gt> //
 Move *gen_pawnmoves(const Board &board, Move *ml, const U64 targets) {
     constexpr Color them = ~us;
-    constexpr U64 rank7_bb = MASK_RANK[rel_rank(us, RANK_7)];
+    constexpr U64 rank7_bb = rank_mask(rel_rank(us, RANK_7));
     constexpr Direction up = us == WHITE ? NORTH : SOUTH;
     constexpr Direction up_right = (us == WHITE ? NORTH_EAST : SOUTH_WEST);
     constexpr Direction up_left = (us == WHITE ? NORTH_WEST : SOUTH_EAST);
@@ -42,7 +42,7 @@ Move *gen_pawnmoves(const Board &board, Move *ml, const U64 targets) {
     // single and double pawn pushes, no promotions
     if constexpr(gt != NOISY) {
         U64 b1 = shift<up>(pawns_non7) & empty_sqs;
-        U64 b2 = shift<up>(b1 & MASK_RANK[rel_rank(us, RANK_3)]) & empty_sqs;
+        U64 b2 = shift<up>(b1 & rank_mask(rel_rank(us, RANK_3))) & empty_sqs;
 
         b1 &= targets;
         b2 &= targets;
@@ -221,7 +221,7 @@ class MoveList {
     void gen(const Board &board) {
         last = list; // reset the list
 
-        auto generate_moves = [&](Move *move_list) -> Move * {
+        auto gen_moves = [&](Move *move_list) -> Move * {
             if(gt == LEGALS)
                 return gen_legals(board, move_list);
             else if(gt == QUIET_CHECKS)
@@ -233,10 +233,10 @@ class MoveList {
         };
 
         if constexpr(std::is_same_v<Type, Move>) {
-            last = generate_moves(list);
+            last = gen_moves(list);
         } else {
             Move temp_list[MAX_MOVES];
-            Move *temp_last = generate_moves(temp_list);
+            Move *temp_last = gen_moves(temp_list);
 
             for(Move *it = temp_list; it != temp_last; ++it)
                 *last++ = Type(*it);

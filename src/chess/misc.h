@@ -86,7 +86,7 @@ constexpr int sq_diag(Square sq) {
 }
 
 // gets the anti-diagonal (h1 to a8) of the square
-constexpr int sq_antidiag(Square sq) {
+constexpr int sq_anti_diag(Square sq) {
     assert(valid_sq(sq));
     return sq_rank(sq) + sq_file(sq);
 }
@@ -162,9 +162,8 @@ inline Square sq_from(std::string_view square_str) {
 }
 
 inline std::ostream &operator<<(std::ostream &os, Square sq) {
-    if(sq == NO_SQUARE) {
+    if(sq == NO_SQUARE)
         return os << "NO SQUARE";
-    }
 
     char file_char = 'a' + sq_file(sq);
     char rank_char = '1' + sq_rank(sq);

@@ -10,8 +10,6 @@
 
 namespace Chess {
 
-// variables
-
 constexpr U64 ROOK_MASKS[64] = {
     0x000101010101017eULL, 0x000202020202027cULL, 0x000404040404047aULL, 0x0008080808080876ULL, //
     0x001010101010106eULL, 0x002020202020205eULL, 0x004040404040403eULL, 0x008080808080807eULL, //
@@ -145,8 +143,8 @@ void init_rook_attacks() {
 #else
             const U64 idx = (blockers * ROOK_MAGICS[sq]) >> ROOK_SHIFTS[sq];
 #endif
-            ROOK_ATTACKS[sq][idx] = sliding_attacks(sq, blockers, MASK_FILE[sq_file(sq)]) |
-                                    sliding_attacks(sq, blockers, MASK_RANK[sq_rank(sq)]);
+            ROOK_ATTACKS[sq][idx] = sliding_attacks(sq, blockers, file_mask(sq_file(sq))) |
+                                    sliding_attacks(sq, blockers, rank_mask(sq_rank(sq)));
             blockers = (blockers - ROOK_MASKS[sq]) & ROOK_MASKS[sq];
         } while(blockers);
     }
@@ -173,8 +171,8 @@ void init_bishop_attacks() {
 #else
             const U64 idx = (blockers * BISHOP_MAGICS[sq]) >> BISHOP_SHIFTS[sq];
 #endif
-            BISHOP_ATTACKS[sq][idx] = sliding_attacks(sq, blockers, MASK_DIAGONAL[sq_diag(sq)]) |
-                                      sliding_attacks(sq, blockers, MASK_ANTI_DIAGONAL[sq_antidiag(sq)]);
+            BISHOP_ATTACKS[sq][idx] = sliding_attacks(sq, blockers, diagonal_mask(sq_diag(sq))) |
+                                      sliding_attacks(sq, blockers, anti_diag_mask(sq_anti_diag(sq)));
             blockers = (blockers - BISHOP_MASKS[sq]) & BISHOP_MASKS[sq];
         } while(blockers);
     }
@@ -249,7 +247,7 @@ void init_lookup_tables() {
                 b1 = get_rook_attacks(sq1);
                 b2 = get_rook_attacks(sq2);
                 LINE[sq1][sq2] = (b1 & b2) | square_bb(sq1) | square_bb(sq2);
-            } else if(sq_diag(sq1) == sq_diag(sq2) || sq_antidiag(sq1) == sq_antidiag(sq2)) {
+            } else if(sq_diag(sq1) == sq_diag(sq2) || sq_anti_diag(sq1) == sq_anti_diag(sq2)) {
                 U64 b1 = get_bishop_attacks(sq1, s);
                 U64 b2 = get_bishop_attacks(sq2, s);
                 SQUARES_BETWEEN[sq1][sq2] = b1 & b2;

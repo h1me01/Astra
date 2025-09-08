@@ -23,11 +23,8 @@ LDFLAGS := -lstdc++
 # Source files
 CHESS_SRC := chess/bitboard.cpp \
              chess/board.cpp \
-             chess/see.cpp \
-             chess/perft.cpp \
              chess/zobrist.cpp \
-             chess/cuckoo.cpp \
-             chess/upcoming_repetition.cpp
+             chess/cuckoo.cpp
 
 EVAL_SRC := nnue/nnue.cpp \
             nnue/accum.cpp
