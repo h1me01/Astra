@@ -144,8 +144,9 @@ inline std::vector<std::string> split(const std::string &str, char del) {
                 parts.push_back(current);
                 current.clear();
             }
-        } else
+        } else {
             current += c;
+        }
     }
 
     if(!current.empty())

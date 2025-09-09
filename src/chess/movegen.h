@@ -222,14 +222,17 @@ class MoveList {
         last = list; // reset the list
 
         auto gen_moves = [&](Move *move_list) -> Move * {
-            if(gt == LEGALS)
+            bool is_w = board.get_stm() == WHITE;
+
+            if(gt == LEGALS) {
                 return gen_legals(board, move_list);
-            else if(gt == QUIET_CHECKS)
-                return board.get_stm() == WHITE ? gen_quiet_checkers<WHITE>(board, move_list)
-                                                : gen_quiet_checkers<BLACK>(board, move_list);
-            else
-                return board.get_stm() == WHITE ? gen_all<WHITE, gt>(board, move_list)
-                                                : gen_all<BLACK, gt>(board, move_list);
+            } else if(gt == QUIET_CHECKS) {
+                return is_w ? gen_quiet_checkers<WHITE>(board, move_list) //
+                            : gen_quiet_checkers<BLACK>(board, move_list);
+            } else {
+                return is_w ? gen_all<WHITE, gt>(board, move_list) //
+                            : gen_all<BLACK, gt>(board, move_list);
+            }
         };
 
         if constexpr(std::is_same_v<Type, Move>) {
