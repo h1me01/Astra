@@ -354,7 +354,7 @@ void Board::make_move(const Move &move) {
         for(int i = 4; i <= distance; i += 2) {
             prev -= 2;
             if(prev->hash == info.hash) {
-                info.repetition = info.repetition ? -i : i;
+                info.repetition = prev->repetition ? -i : i;
                 break;
             }
         }
