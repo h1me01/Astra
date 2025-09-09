@@ -488,19 +488,34 @@ bool Board::upcoming_repetition(int ply) {
     assert(ply > 0);
 
     const U64 occ = get_occupancy();
-
     const StateInfo &info = get_state();
-    StateInfo *prev = &states[curr_ply - 1];
 
     int distance = std::min(info.fmr_counter, info.plies_from_null);
-    for(int i = 3; i <= distance; i += 2) {
-        prev -= 2;
-        U64 move_key = info.hash ^ prev->hash;
+    if(distance < 3)
+        return false;
 
+    int offset = 1;
+
+    U64 orig_key = info.hash;
+    U64 other_key = orig_key ^ states[curr_ply - offset].hash ^ Zobrist::get_side();
+
+    for(int i = 3; i <= distance; i += 2) {
+        offset++;
+        int idx = curr_ply - offset;
+
+        other_key ^= states[idx].hash ^ states[idx - 1].hash ^ Zobrist::get_side();
+
+        offset++;
+        idx = curr_ply - offset;
+
+        if(other_key != 0)
+            continue;
+
+        U64 move_key = orig_key ^ states[idx].hash;
         int hash = Cuckoo::cuckoo_h1(move_key);
+
         if(Cuckoo::keys[hash] != move_key)
             hash = Cuckoo::cuckoo_h2(move_key);
-
         if(Cuckoo::keys[hash] != move_key)
             continue;
 
@@ -511,7 +526,7 @@ bool Board::upcoming_repetition(int ply) {
         if(!(between & occ)) {
             if(ply > i)
                 return true;
-            if(prev->repetition)
+            if(states[idx].repetition)
                 return true;
         }
     }
