@@ -23,6 +23,8 @@ struct StateInfo {
     int fmr_counter; // fifty move rule
     int plies_from_null;
 
+    int repetition;
+
     U64 hash;
     U64 pawn_hash;
     U64 non_pawn_hash[NUM_COLORS];
@@ -65,7 +67,7 @@ class Board {
     bool nonpawn_mat(Color c) const;
 
     bool see(Move &move, int threshold) const;
-    bool has_upcoming_repetition(int ply);
+    bool upcoming_repetition(int ply);
 
     void set_fen(const std::string &fen, bool init_accum = true);
     std::string get_fen() const;
@@ -81,6 +83,11 @@ class Board {
         assert(valid_color(c));
         assert(valid_piece_type(pt));
         return piece_bb[make_piece(c, pt)];
+    }
+
+    U64 get_piecebb(PieceType pt) const {
+        assert(valid_piece_type(pt));
+        return get_piecebb(WHITE, pt) | get_piecebb(BLACK, pt);
     }
 
     Piece piece_at(Square sq) const {
@@ -336,6 +343,22 @@ void Board::make_move(const Move &move) {
 
     init_threats();
     init_slider_blockers();
+
+    // update repetition info for upcoming repetition detection
+
+    info.repetition = 0;
+    int distance = std::min(info.fmr_counter, info.plies_from_null);
+
+    if(distance >= 4) {
+        StateInfo *prev = &states[curr_ply - 2];
+        for(int i = 4; i <= distance; i += 2) {
+            prev -= 2;
+            if(prev->hash == info.hash) {
+                info.repetition = info.repetition ? -i : i;
+                break;
+            }
+        }
+    }
 }
 
 inline void Board::undo_move(const Move &move) {

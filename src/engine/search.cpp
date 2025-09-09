@@ -165,7 +165,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
     depth = std::min(depth, MAX_PLY - 1);
 
     // check for upcoming repetition
-    if(!root_node && alpha < VALUE_DRAW && board.has_upcoming_repetition(stack->ply)) {
+    if(!root_node && alpha < VALUE_DRAW && board.upcoming_repetition(stack->ply)) {
         alpha = VALUE_DRAW;
         if(alpha >= beta)
             return alpha;
@@ -469,15 +469,8 @@ movesloop:
 
                 // futility pruning
                 const Score futility = stack->static_eval + fp_base + r_depth * fp_mult;
-
-                if(!in_check && r_depth < fp_depth && futility <= alpha) {
-                    if(best_score <= futility && !is_decisive(best_score) && !is_win(futility)) {
-                        best_score = futility;
-                    }
-
+                if(!in_check && r_depth < fp_depth && futility <= alpha)
                     mp.skip_quiets();
-                    continue;
-                }
 
                 // history pruning
                 if(r_depth < hp_depth && history_score < hp_depth_mult * depth) {
@@ -697,7 +690,7 @@ Score Search::quiescence(int depth, Score alpha, Score beta, Stack *stack) {
         return VALUE_DRAW;
 
     // check for upcoming repetition
-    if(alpha < VALUE_DRAW && board.has_upcoming_repetition(stack->ply)) {
+    if(alpha < VALUE_DRAW && board.upcoming_repetition(stack->ply)) {
         alpha = VALUE_DRAW;
         if(alpha >= beta)
             return alpha;
@@ -888,24 +881,17 @@ unsigned int Search::probe_wdl() const {
     if(pop_count(occ) > signed(TB_LARGEST))
         return TB_RESULT_FAILED;
 
-    U64 pawns = board.get_piecebb(WHITE, PAWN) | board.get_piecebb(BLACK, PAWN);
-    U64 knights = board.get_piecebb(WHITE, KNIGHT) | board.get_piecebb(BLACK, KNIGHT);
-    U64 bishops = board.get_piecebb(WHITE, BISHOP) | board.get_piecebb(BLACK, BISHOP);
-    U64 rooks = board.get_piecebb(WHITE, ROOK) | board.get_piecebb(BLACK, ROOK);
-    U64 queens = board.get_piecebb(WHITE, QUEEN) | board.get_piecebb(BLACK, QUEEN);
-    U64 kings = board.get_piecebb(WHITE, KING) | board.get_piecebb(BLACK, KING);
-
     Square ep_sq = board.get_state().ep_sq;
 
     return tb_probe_wdl(                       //
         w_occ,                                 //
         b_occ,                                 //
-        kings,                                 //
-        queens,                                //
-        rooks,                                 //
-        bishops,                               //
-        knights,                               //
-        pawns,                                 //
+        board.get_piecebb(KING),               //
+        board.get_piecebb(QUEEN),              //
+        board.get_piecebb(ROOK),               //
+        board.get_piecebb(BISHOP),             //
+        board.get_piecebb(KNIGHT),             //
+        board.get_piecebb(PAWN),               //
         board.get_fmr(),                       //
         board.get_state().castle_rights.any(), //
         valid_sq(ep_sq) ? ep_sq : 0,           //

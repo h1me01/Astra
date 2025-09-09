@@ -484,7 +484,7 @@ bool Board::see(Move &move, int threshold) const {
     return bool(res);
 }
 
-bool Board::has_upcoming_repetition(int ply) {
+bool Board::upcoming_repetition(int ply) {
     assert(ply > 0);
 
     const U64 occ = get_occupancy();
@@ -505,24 +505,13 @@ bool Board::has_upcoming_repetition(int ply) {
             continue;
 
         Move move = Cuckoo::cuckoo_moves[hash];
-        Square from = move.from();
         Square to = move.to();
+        U64 between = between_bb(move.from(), to) ^ square_bb(to);
 
-        U64 between = between_bb(from, to) ^ square_bb(to);
-        if(between & occ)
-            continue;
-
-        if(ply > i)
-            return true;
-
-        Piece pc = valid_piece(piece_at(from)) ? piece_at(from) : piece_at(to);
-        if(piece_color(pc) != stm)
-            continue;
-
-        StateInfo *prev2 = prev - 2;
-        for(int j = i + 4; j <= distance; j += 2) {
-            prev2 -= 2;
-            if(prev2->hash == prev->hash)
+        if(!(between & occ)) {
+            if(ply > i)
+                return true;
+            if(prev->repetition)
                 return true;
         }
     }
