@@ -174,16 +174,16 @@ inline std::ostream &operator<<(std::ostream &os, Piece pc) {
     return os << PIECE_STR[pc];
 }
 
-inline std::ostream &operator<<(std::ostream &os, const Move &m) {
-    if(m == NO_MOVE)
+inline std::ostream &operator<<(std::ostream &os, const Move &move) {
+    if(move == NO_MOVE)
         os << "NO MOVE";
-    else if(m == NULL_MOVE)
+    else if(move == NULL_MOVE)
         os << "NULL MOVE";
     else
-        os << m.from() << m.to();
+        os << move.from() << move.to();
 
-    if(m.is_prom()) {
-        const PieceType pt = m.prom_type();
+    if(move.is_prom()) {
+        const PieceType pt = move.prom_type();
         os << Piece(pt + 6);
     }
 

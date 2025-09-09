@@ -98,12 +98,12 @@ void History::update_ph(const Board &board, const Move &move, int bonus) {
 void History::update_conth(const Move &move, Stack *stack, int bonus) {
     assert(move);
 
-    for(int offset : {1, 2, 4, 6}) {
-        if((stack - offset)->move) {
-            Piece pc = (stack - offset)->moved_piece;
+    for(int i : {1, 2, 4, 6}) {
+        if((stack - i)->move) {
+            Piece pc = (stack - i)->moved_piece;
             assert(valid_piece(pc));
 
-            int16_t &value = (*(stack - offset)->conth)[pc][move.to()];
+            int16_t &value = (*(stack - i)->conth)[pc][move.to()];
             value += adjusted_bonus(value, bonus);
         }
     }

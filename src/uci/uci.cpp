@@ -236,7 +236,7 @@ void UCI::update_position(std::istringstream &is) {
     while(is >> token) {
         if(token == "moves")
             continue;
-        board.make_move(get_move(token), false);
+        board.make_move<false>(get_move(token));
         // if half move clock gets reseted, then we can reset the history
         // since the last positions should not be considered in the repetition
         if(board.get_fmr() == 0)

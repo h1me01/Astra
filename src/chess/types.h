@@ -130,10 +130,10 @@ class Move {
         return MoveType(data >> 12);
     }
 
-    Move &operator=(const Move &m) {
-        if(this != &m) {
-            data = m.data;
-            score = m.score;
+    Move &operator=(const Move &move) {
+        if(this != &move) {
+            data = move.data;
+            score = move.score;
         }
         return *this;
     }
@@ -150,12 +150,12 @@ class Move {
         return score;
     }
 
-    bool operator==(const Move &m) const {
-        return data == m.data;
+    bool operator==(const Move &move) const {
+        return data == move.data;
     }
 
-    bool operator!=(const Move &m) const {
-        return data != m.data;
+    bool operator!=(const Move &move) const {
+        return data != move.data;
     }
 
     explicit operator bool() const {

@@ -256,9 +256,9 @@ class MoveList {
         return last;
     }
 
-    int idx_of(const Type &m) const {
+    int idx_of(const Type &move) const {
         for(int i = 0; i < size(); i++)
-            if(list[i] == m)
+            if(list[i] == move)
                 return i;
         return -1;
     }

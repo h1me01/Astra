@@ -82,7 +82,7 @@ Move MovePicker::next() {
 
         if(st == Q_SEARCH && !board.in_check()) {
             if(!gen_checks)
-                return NO_MOVE; // no more moves
+                return NO_MOVE;
             goto quiet_checkers;
         }
 
@@ -151,7 +151,7 @@ Move MovePicker::next() {
             return move;
         }
 
-        return NO_MOVE; // no more moves
+        return NO_MOVE;
     default:
         assert(false);
         return NO_MOVE;
@@ -168,8 +168,7 @@ void MovePicker::score_quiets() {
         const Square from = move.from();
         const Square to = move.to();
 
-        assert(valid_sq(to));
-        assert(valid_sq(from));
+        assert(move);
         assert(valid_piece(pc));
         assert(valid_piece_type(pt));
 
