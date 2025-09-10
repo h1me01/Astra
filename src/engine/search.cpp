@@ -33,6 +33,7 @@ void Search::start(const Board &board, Limits limits) {
 
     total_nodes = 0;
     tb_hits = 0;
+    nmp_min_ply = 0;
 
     root_moves.gen<LEGALS>(board);
 
@@ -351,12 +352,12 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
     }
 
     // null move pruning
-    if(!pv_node                                                          //
-       && depth >= 4                                                     //
-       && !stack->skipped                                                //
+    if(cut_node                                                          //
        && eval >= beta                                                   //
+       && !stack->skipped                                                //
        && !is_loss(beta)                                                 //
        && board.nonpawn_mat(stm)                                         //
+       && stack->ply >= nmp_min_ply                                      //
        && (stack - 1)->move != NULL_MOVE                                 //
        && stack->static_eval + nmp_depth_mult * depth - nmp_base >= beta //
     ) {
@@ -372,11 +373,18 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
         Score score = -negamax<NodeType::NON_PV>(depth - R, -beta, -beta + 1, stack + 1, !cut_node);
         board.undo_nullmove();
 
-        if(score >= beta) {
-            // don't return unproven mate scores
-            if(is_win(score))
-                score = beta;
-            return score;
+        if(score >= beta && !is_win(score)) {
+            if(nmp_min_ply || depth < 16)
+                return score;
+
+            assert(!nmp_min_ply);
+
+            nmp_min_ply = stack->ply + 3 * (depth - R) / 4;
+            Score v = negamax<NodeType::NON_PV>(depth - R, beta - 1, beta, stack, false);
+            nmp_min_ply = 0;
+
+            if(v >= beta)
+                return score;
         }
     }
 

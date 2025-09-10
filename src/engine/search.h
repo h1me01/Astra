@@ -61,6 +61,8 @@ class Search {
     U64 total_nodes;
     U64 tb_hits;
 
+    int nmp_min_ply;
+
     Limits limits;
     TimeMan tm;
     History history;
