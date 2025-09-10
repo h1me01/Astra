@@ -40,7 +40,7 @@ class MovePicker {
 
     // public variables
 
-    int see_cutoff = 0;
+    int pb_threshold = 0;
 
     // public functions
 

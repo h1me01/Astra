@@ -400,7 +400,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
        && !(tt_depth >= depth - 3 && tt_score < beta_cut) //
     ) {
         MovePicker mp(PC_SEARCH, board, history, stack, tt_move);
-        mp.see_cutoff = beta_cut > stack->static_eval;
+        mp.pb_threshold = beta_cut - stack->static_eval;
 
         Move move = NO_MOVE;
         while((move = mp.next()) != NO_MOVE) {
