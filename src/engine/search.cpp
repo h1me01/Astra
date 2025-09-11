@@ -391,7 +391,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
         depth--;
 
     // probcut
-    probcut_beta = beta + probcut_margin - 62 * improving;
+    probcut_beta = beta + probcut_margin - 60 * improving;
     if(depth >= 3                                             //
        && !is_decisive(beta)                                  //
        && !(valid_score(tt_score) && tt_score < probcut_beta) //
