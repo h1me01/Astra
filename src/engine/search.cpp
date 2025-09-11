@@ -179,7 +179,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
 
     Score best_score = -VALUE_INFINITE;
     Score max_score = VALUE_INFINITE;
-    Score raw_eval, eval, beta_cut;
+    Score raw_eval, eval, pc_beta;
 
     Move best_move = NO_MOVE;
 
@@ -391,17 +391,18 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
         depth--;
 
     // probcut
-    beta_cut = beta + prob_cut_margin;
-    if(!pv_node                                           //
-       && depth > 4                                       //
-       && !is_decisive(beta)                              //
-       && !(tt_depth >= depth - 3 && tt_score < beta_cut) //
+    pc_beta = beta + prob_cut_margin - 62 * improving;
+    if(depth >= 3                                        //
+       && !is_decisive(beta)                             //
+       && !(valid_score(tt_score) && tt_score < pc_beta) //
     ) {
         MovePicker mp(PC_SEARCH, board, history, stack, tt_move);
-        mp.pb_threshold = beta_cut - stack->static_eval;
+        mp.pb_threshold = pc_beta - stack->static_eval;
+
+        int probcut_depth = std::max(depth - 4, 0);
 
         Move move = NO_MOVE;
-        while((move = mp.next()) != NO_MOVE) {
+        while((move = mp.next())) {
             if(!board.is_legal(move))
                 continue;
 
@@ -413,26 +414,27 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
             stack->conth = &history.conth[move.is_cap()][stack->moved_piece][move.to()];
 
             board.make_move(move);
-            Score score = -quiescence<NodeType::NON_PV>(0, -beta_cut, -beta_cut + 1, stack + 1);
+            Score score = -quiescence<NodeType::NON_PV>(0, -pc_beta, -pc_beta + 1, stack + 1);
 
-            if(score >= beta_cut)
-                score = -negamax<NodeType::NON_PV>(depth - 4, -beta_cut, -beta_cut + 1, stack + 1, !cut_node);
+            if(score >= pc_beta && probcut_depth > 0)
+                score = -negamax<NodeType::NON_PV>(probcut_depth, -pc_beta, -pc_beta + 1, stack + 1, !cut_node);
 
             board.undo_move(move);
 
-            if(score >= beta_cut) {
-                ent->store(      //
-                    hash,        //
-                    move,        //
-                    score,       //
-                    raw_eval,    //
-                    LOWER_BOUND, //
-                    depth - 3,   //
-                    stack->ply,  //
-                    tt_pv        //
+            if(score >= pc_beta) {
+                ent->store(            //
+                    hash,              //
+                    move,              //
+                    score,             //
+                    raw_eval,          //
+                    LOWER_BOUND,       //
+                    probcut_depth + 1, //
+                    stack->ply,        //
+                    tt_pv              //
                 );
 
-                return score;
+                if(!is_decisive(score))
+                    return score - (pc_beta - beta);
             }
         }
     }
