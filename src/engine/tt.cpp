@@ -33,7 +33,7 @@ void free_align(void *ptr) {
 // TTEntry
 
 int TTEntry::relative_age() const {
-    return (AGE_CYCLE + tt.get_age() - agepvbound) & AGE_MASK;
+    return 4 * ((AGE_CYCLE + tt.get_age() - agepvbound) & AGE_MASK);
 }
 
 void TTEntry::store( //
