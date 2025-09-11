@@ -534,7 +534,7 @@ movesloop:
         Score score = VALUE_NONE;
 
         // late move reductions
-        if(depth >= 2 && made_moves >= lmr_min_moves && !(tt_pv && move.is_noisy())) {
+        if(depth >= 2 && made_moves > 1 + 2 * root_node) {
             int r = reduction;
 
             r += !improving;
