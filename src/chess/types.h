@@ -170,20 +170,6 @@ class Move {
         return data != 0 && data != 65;
     }
 
-    bool is_prom() const {
-        assert(is_valid());
-        return type() >= PQ_KNIGHT;
-    }
-
-    bool is_underprom() const {
-        assert(is_valid());
-        return type() == PQ_KNIGHT || type() == PQ_BISHOP || type() == PC_KNIGHT || type() == PC_BISHOP;
-    }
-
-    bool is_quiet() const {
-        return !is_cap() && !is_prom();
-    }
-
     bool is_cap() const {
         assert(is_valid());
         return type() == CAPTURE || type() == EN_PASSANT || type() >= PC_KNIGHT;
@@ -195,6 +181,24 @@ class Move {
 
     bool is_ep() const {
         return type() == EN_PASSANT;
+    }
+
+    bool is_prom() const {
+        assert(is_valid());
+        return type() >= PQ_KNIGHT;
+    }
+
+    bool is_underprom() const {
+        assert(is_valid());
+        return type() == PQ_KNIGHT || type() == PQ_BISHOP || type() == PC_KNIGHT || type() == PC_BISHOP;
+    }
+
+    bool is_noisy() const {
+        return is_cap() || type() == PQ_QUEEN;
+    }
+
+    bool is_quiet() const {
+        return !is_noisy();
     }
 
     PieceType prom_type() const {

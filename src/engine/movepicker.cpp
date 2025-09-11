@@ -67,9 +67,9 @@ Move MovePicker::next() {
             if(move == tt_move)
                 continue;
 
-            // we want to play captures first in qsearch, doesn't matter if its see is fails
-            int threshold = (st == N_SEARCH) ? -move.get_score() / 32 : pb_threshold;
-            if(st != Q_SEARCH && (move.is_underprom() || !board.see(move, threshold))) {
+            // we want to play noisy moves first in qsearch, doesn't matter if its see fails
+            int threshold = (st == N_SEARCH) ? -move.get_score() / 32 : probcut_threshold;
+            if(st != Q_SEARCH && !board.see(move, threshold)) {
                 ml_bad_noisy.add(move);
                 continue;
             }

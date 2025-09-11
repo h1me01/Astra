@@ -40,7 +40,7 @@ class MovePicker {
 
     // public variables
 
-    int pb_threshold = 0;
+    int probcut_threshold = 0;
 
     // public functions
 

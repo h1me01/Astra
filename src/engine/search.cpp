@@ -179,7 +179,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
 
     Score best_score = -VALUE_INFINITE;
     Score max_score = VALUE_INFINITE;
-    Score raw_eval, eval, pc_beta;
+    Score raw_eval, eval, probcut_beta;
 
     Move best_move = NO_MOVE;
 
@@ -221,7 +221,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
         tt_pv |= ent->get_tt_pv();
     }
 
-    const bool tt_move_noisy = tt_move && !tt_move.is_quiet();
+    const bool tt_move_noisy = tt_move && tt_move.is_noisy();
 
     if(!pv_node                                         //
        && !stack->skipped                               //
@@ -391,13 +391,13 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
         depth--;
 
     // probcut
-    pc_beta = beta + prob_cut_margin - 62 * improving;
-    if(depth >= 3                                        //
-       && !is_decisive(beta)                             //
-       && !(valid_score(tt_score) && tt_score < pc_beta) //
+    probcut_beta = beta + probcut_margin - 62 * improving;
+    if(depth >= 3                                             //
+       && !is_decisive(beta)                                  //
+       && !(valid_score(tt_score) && tt_score < probcut_beta) //
     ) {
         MovePicker mp(PC_SEARCH, board, history, stack, tt_move);
-        mp.pb_threshold = pc_beta - stack->static_eval;
+        mp.probcut_threshold = probcut_beta - stack->static_eval;
 
         int probcut_depth = std::max(depth - 4, 0);
 
@@ -414,14 +414,14 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
             stack->conth = &history.conth[move.is_cap()][stack->moved_piece][move.to()];
 
             board.make_move(move);
-            Score score = -quiescence<NodeType::NON_PV>(0, -pc_beta, -pc_beta + 1, stack + 1);
+            Score score = -quiescence<NodeType::NON_PV>(0, -probcut_beta, -probcut_beta + 1, stack + 1);
 
-            if(score >= pc_beta && probcut_depth > 0)
-                score = -negamax<NodeType::NON_PV>(probcut_depth, -pc_beta, -pc_beta + 1, stack + 1, !cut_node);
+            if(score >= probcut_beta && probcut_depth > 0)
+                score = -negamax<NodeType::NON_PV>(probcut_depth, -probcut_beta, -probcut_beta + 1, stack + 1, !cut_node);
 
             board.undo_move(move);
 
-            if(score >= pc_beta) {
+            if(score >= probcut_beta) {
                 ent->store(            //
                     hash,              //
                     move,              //
@@ -434,7 +434,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
                 );
 
                 if(!is_decisive(score))
-                    return score - (pc_beta - beta);
+                    return score - (probcut_beta - beta);
             }
         }
     }
@@ -534,7 +534,7 @@ movesloop:
         Score score = VALUE_NONE;
 
         // late move reductions
-        if(depth >= 2 && made_moves >= lmr_min_moves && (!tt_pv || move.is_quiet())) {
+        if(depth >= 2 && made_moves >= lmr_min_moves && !(tt_pv && move.is_noisy())) {
             int r = reduction;
 
             r += !improving;
@@ -790,7 +790,7 @@ Score Search::quiescence(int depth, Score alpha, Score beta, Stack *stack) {
                 break;
 
             // futility pruning
-            if(!in_check && !move.is_quiet() && futility <= alpha && !board.see(move, 1)) {
+            if(!in_check && move.is_noisy() && futility <= alpha && !board.see(move, 1)) {
                 best_score = std::max(best_score, futility);
                 continue;
             }

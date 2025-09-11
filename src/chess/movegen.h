@@ -16,7 +16,12 @@ Move *make_promotions(Move *ml, Square to) {
     assert(valid_sq(to));
     assert(!(to >= a2 && to <= h7));
 
-    *ml++ = Move(to - d, to, mt);
+    if(gt != QUIETS) {
+        *ml++ = Move(to - d, to, mt);
+        if(gt == NOISY && mt == PQ_QUEEN)
+            return ml;
+    }
+
     *ml++ = Move(to - d, to, MoveType(mt - 1));
     *ml++ = Move(to - d, to, MoveType(mt - 2));
     *ml++ = Move(to - d, to, MoveType(mt - 3));
@@ -82,20 +87,24 @@ Move *gen_pawnmoves(const Board &board, Move *ml, const U64 targets) {
             while(b1)
                 *ml++ = Move(pop_lsb(b1), ep_sq, EN_PASSANT);
         }
+    }
 
-        // promotions
-        const U64 pawns_on7 = pawns & rank7_bb;
+    // promotions
+    const U64 pawns_on7 = pawns & rank7_bb;
+
+    if(gt != QUIETS) {
         U64 pb1 = shift<up_right>(pawns_on7) & them_bb & targets;
         U64 pb2 = shift<up_left>(pawns_on7) & them_bb & targets;
-        U64 pb3 = shift<up>(pawns_on7) & empty_sqs & targets;
 
         while(pb1)
             ml = make_promotions<gt, up_right, PC_QUEEN>(ml, pop_lsb(pb1));
         while(pb2)
             ml = make_promotions<gt, up_left, PC_QUEEN>(ml, pop_lsb(pb2));
-        while(pb3)
-            ml = make_promotions<gt, up, PQ_QUEEN>(ml, pop_lsb(pb3));
     }
+
+    U64 pb3 = shift<up>(pawns_on7) & empty_sqs & targets;
+    while(pb3)
+        ml = make_promotions<gt, up, PQ_QUEEN>(ml, pop_lsb(pb3));
 
     return ml;
 }

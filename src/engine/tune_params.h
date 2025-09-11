@@ -70,7 +70,7 @@ PARAM(nmp_rbase, 4, 1, 5);
 PARAM(nmp_rdepth_div, 3, 1, 6);
 PARAM(nmp_rmin, 4, 1, 10);
 
-PARAM(prob_cut_margin, 229, 1, 500);
+PARAM(probcut_margin, 229, 1, 500);
 
 PARAM(history_div, 8197, 1, 16384);
 
