@@ -174,7 +174,7 @@ UCI::UCI() {
 }
 
 void UCI::loop(int argc, char **argv) {
-    if(argc > 1 && strncmp(argv[1], "bench", 5) == 0) {
+    if(argc > 1 && !strncmp(argv[1], "bench", 5)) {
         bench();
         return;
     }
@@ -239,7 +239,7 @@ void UCI::update_position(std::istringstream &is) {
         board.make_move<false>(get_move(token));
         // if half move clock gets reseted, then we can reset the history
         // since the last positions should not be considered in the repetition
-        if(board.get_fmr() == 0)
+        if(!board.get_fmr())
             board.reset_ply();
     }
 

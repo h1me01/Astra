@@ -121,7 +121,7 @@ std::string Board::get_fen() const {
             if(!valid_piece(p))
                 empty++;
             else {
-                fen << (empty == 0 ? "" : std::to_string(empty)) << p;
+                fen << (!empty ? "" : std::to_string(empty)) << p;
                 empty = 0;
             }
         }
@@ -143,7 +143,7 @@ std::string Board::get_fen() const {
         << (castle_notation_helper(fen) ? " " : "- ")       //
         << (valid_sq(info.ep_sq) ? oss.str() : "-")         //
         << " " << info.fmr_counter                          //
-        << " " << (curr_ply == 0 ? 1 : (curr_ply + 1) / 2);
+        << " " << (!curr_ply ? 1 : (curr_ply + 1) / 2);
 
     return fen.str();
 }

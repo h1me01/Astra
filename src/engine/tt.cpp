@@ -64,8 +64,6 @@ void TTEntry::store( //
         this->score = score;
         this->eval = eval;
         agepvbound = (uint8_t) (bound + (pv << 2)) | tt.get_age();
-    } else if(this->depth >= 5 && bound != EXACT_BOUND) {
-        this->depth--;
     }
 }
 
@@ -120,7 +118,7 @@ TTEntry *TTable::lookup(U64 hash, bool *hit) const {
     TTEntry *entries = buckets[index(hash)].entries;
 
     for(int i = 0; i < BUCKET_SIZE; i++) {
-        if(entries[i].get_hash() == hash16 || entries[i].get_hash() == 0) {
+        if(entries[i].get_hash() == hash16 || !entries[i].get_hash()) {
             uint8_t agepvbound = (uint8_t) (tt.get_age() | (entries[i].get_agepvbound() & (AGE_STEP - 1)));
             entries[i].set_agepvbound(agepvbound);
 
