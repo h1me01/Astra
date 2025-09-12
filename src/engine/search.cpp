@@ -482,11 +482,7 @@ movesloop:
             if(quiets.size() > (3 + depth * depth) / (2 - improving))
                 skip_quiets = true;
 
-            if(move.is_cap()) {
-                // see pruning
-                if(!board.see(move, depth * see_cap_margin))
-                    continue;
-            } else {
+            if(move.is_quiet()) {
                 const int r_depth = std::max(0, depth - reduction + history_score / history_div);
 
                 // futility pruning
@@ -495,13 +491,17 @@ movesloop:
                     skip_quiets = true;
 
                 // history pruning
-                if(move.is_quiet() && r_depth < hp_depth && history_score < hp_depth_mult * depth) {
+                if(r_depth < hp_depth && history_score < hp_depth_mult * depth) {
                     skip_quiets = true;
                     continue;
                 }
 
                 // see pruning
                 if(!board.see(move, r_depth * r_depth * see_quiet_margin))
+                    continue;
+            } else {
+                // see pruning
+                if(!board.see(move, depth * see_cap_margin))
                     continue;
             }
         }
