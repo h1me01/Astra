@@ -225,13 +225,23 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
 
     if(!pv_node                                         //
        && !stack->skipped                               //
-       && board.get_fmr() < 90                          //
        && valid_score(tt_score)                         //
        && tt_depth > depth - (tt_score <= beta)         //
        && valid_tt_score(tt_score, beta, tt_bound)      //
        && (cut_node == (tt_score >= beta) || depth > 5) //
     ) {
-        return tt_score;
+        if(tt_move && tt_score >= beta) {
+            if(tt_move.is_quiet())
+                history.update_hh(stm, tt_move, history_bonus(depth));
+
+            Square prev_sq = (stack - 1)->move ? (stack - 1)->move.to() : NO_SQUARE;
+            if(valid_sq(prev_sq) && (stack - 1)->move.is_quiet() && (stack - 1)->made_moves <= 3) {
+                history.update_conth((stack - 1)->move, stack - 1, -history_malus(depth));
+            }
+        }
+
+        if(board.get_fmr() < 80)
+            return tt_score;
     }
 
     // tablebase probing
@@ -447,6 +457,7 @@ movesloop:
 
     MoveList<> quiets, noisy;
     int made_moves = 0;
+    stack->made_moves = 0;
 
     while((move = mp.next()) != NO_MOVE) {
         if(move == stack->skipped || !board.is_legal(move))
@@ -459,6 +470,7 @@ movesloop:
         U64 start_nodes = total_nodes;
 
         made_moves++;
+        stack->made_moves = made_moves;
 
         const int reduction = REDUCTIONS[depth][made_moves];
         const int history_score = move.is_quiet() ? history.get_qh(board, move, stack) : history.get_nh(board, move);

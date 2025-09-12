@@ -39,6 +39,7 @@ struct PVLine {
 
 struct Stack {
     int ply;
+    int made_moves;
 
     Move move = NO_MOVE;
     Move killer = NO_MOVE;
