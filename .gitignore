@@ -1,16 +1,13 @@
 .vscode/
 
 build/
-
 pgns/
-
 misc/
-
 python/
-
 openbench/
 
 src/*.exe
 src/astra
+src/build.mk
 
 CMakeLists.txt
