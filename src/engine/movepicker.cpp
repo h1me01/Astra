@@ -36,14 +36,16 @@ MovePicker::MovePicker(SearchType st,          //
         stage = PLAY_TT_MOVE;
 
         this->tt_move = tt_move;
-        killer = stack->killer;
 
-        Move prev_move = (stack - 1)->move;
-        counter = prev_move ? history.get_counter(prev_move) : NO_MOVE;
+        killer = (stack->killer != tt_move) ? stack->killer : NO_MOVE;
+        counter = (stack - 1)->move ? history.get_counter((stack - 1)->move) : NO_MOVE;
+
+        if(counter == tt_move || counter == killer)
+            counter = NO_MOVE;
     }
 }
 
-Move MovePicker::next() {
+Move MovePicker::next(bool skip_quiets) {
     switch(stage) {
     case PLAY_TT_MOVE:
         stage = GEN_NOISY;
@@ -91,26 +93,26 @@ Move MovePicker::next() {
         [[fallthrough]];
     case PLAY_KILLER:
         stage = PLAY_COUNTER;
-        if(!m_skip_quiets && killer != tt_move && board.is_pseudolegal(killer))
+        if(!skip_quiets && board.is_pseudolegal(killer))
             return killer;
         [[fallthrough]];
     case PLAY_COUNTER:
         stage = GEN_QUIETS;
-        if(!m_skip_quiets && counter != tt_move && counter != killer && board.is_pseudolegal(counter))
+        if(!skip_quiets && board.is_pseudolegal(counter))
             return counter;
         [[fallthrough]];
     case GEN_QUIETS:
         idx = 0;
         stage = PLAY_QUIETS;
 
-        if(!m_skip_quiets) {
+        if(!skip_quiets) {
             ml_main.gen<QUIETS>(board);
             score_quiets();
         }
 
         [[fallthrough]];
     case PLAY_QUIETS:
-        while(idx < ml_main.size() && !m_skip_quiets) {
+        while(idx < ml_main.size() && !skip_quiets) {
             partial_insertion_sort(ml_main, idx);
             Move move = ml_main[idx];
             idx++;

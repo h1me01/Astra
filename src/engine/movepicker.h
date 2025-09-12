@@ -44,11 +44,7 @@ class MovePicker {
 
     // public functions
 
-    Move next();
-
-    void skip_quiets() {
-        m_skip_quiets = true;
-    }
+    Move next(bool skip_quiets = false);
 
     Move get_killer() const {
         return killer;
@@ -70,7 +66,6 @@ class MovePicker {
     const Stack *stack;
 
     bool gen_checks;
-    bool m_skip_quiets = false;
 
     Move tt_move, killer, counter;
 

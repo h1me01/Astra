@@ -459,7 +459,9 @@ movesloop:
     int made_moves = 0;
     stack->made_moves = 0;
 
-    while((move = mp.next()) != NO_MOVE) {
+    bool skip_quiets = false;
+
+    while((move = mp.next(skip_quiets)) != NO_MOVE) {
         if(move == stack->skipped || !board.is_legal(move))
             continue;
         if(root_node && !found_rootmove(move))
@@ -478,7 +480,7 @@ movesloop:
         if(!root_node && !is_loss(best_score)) {
             // late move pruning
             if(quiets.size() > (3 + depth * depth) / (2 - improving))
-                mp.skip_quiets();
+                skip_quiets = true;
 
             if(move.is_cap()) {
                 // see pruning
@@ -490,11 +492,11 @@ movesloop:
                 // futility pruning
                 const Score futility = stack->static_eval + fp_base + r_depth * fp_mult;
                 if(!in_check && r_depth < fp_depth && futility <= alpha)
-                    mp.skip_quiets();
+                    skip_quiets = true;
 
                 // history pruning
                 if(r_depth < hp_depth && history_score < hp_depth_mult * depth) {
-                    mp.skip_quiets();
+                    skip_quiets = true;
                     continue;
                 }
 
