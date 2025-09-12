@@ -495,7 +495,7 @@ movesloop:
                     skip_quiets = true;
 
                 // history pruning
-                if(r_depth < hp_depth && history_score < hp_depth_mult * depth) {
+                if(move.is_quiet() && r_depth < hp_depth && history_score < hp_depth_mult * depth) {
                     skip_quiets = true;
                     continue;
                 }
