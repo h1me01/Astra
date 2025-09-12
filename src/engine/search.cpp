@@ -235,7 +235,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
                 history.update_hh(stm, tt_move, history_bonus(depth));
 
             Square prev_sq = (stack - 1)->move ? (stack - 1)->move.to() : NO_SQUARE;
-            if(valid_sq(prev_sq) && (stack - 1)->move.is_quiet() && (stack - 1)->made_moves <= 3) {
+            if(valid_sq(prev_sq) && !(stack - 1)->move.is_cap() && (stack - 1)->made_moves <= 3) {
                 history.update_conth((stack - 1)->move, stack - 1, -history_malus(depth));
             }
         }
