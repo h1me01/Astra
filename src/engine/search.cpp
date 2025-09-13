@@ -129,8 +129,7 @@ Score Search::aspiration(int depth, Stack *stack) {
             fail_high_count = 0;
         } else if(score >= beta) {
             beta = std::min(beta + delta, int(VALUE_INFINITE));
-            if(!is_decisive(score))
-                fail_high_count++;
+            fail_high_count++;
         } else {
             break;
         }
