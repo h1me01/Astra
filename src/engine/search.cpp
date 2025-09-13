@@ -75,10 +75,7 @@ void Search::start(const Board &board, Limits limits) {
         Score score = root_moves[0].get_score();
         best_move = root_moves[0];
 
-        if(best_move == prev_best_move)
-            stability = std::min(stability + 1, int(tm_stability_max));
-        else
-            stability = 0;
+        stability = (best_move == prev_best_move) ? std::min(stability + 1, int(tm_stability_max)) : 0;
 
         if(!id                                               //
            && root_depth >= 5                                //
@@ -190,7 +187,6 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
     if(!root_node) {
         if(stack->ply >= MAX_PLY - 1)
             return in_check ? VALUE_DRAW : evaluate();
-
         if(board.is_draw(stack->ply))
             return VALUE_DRAW;
 
@@ -418,12 +414,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
 
             tt.prefetch(board.key_after(move));
 
-            total_nodes++;
-            stack->move = move;
-            stack->moved_piece = board.piece_at(move.from());
-            stack->conth = &history.conth[move.is_cap()][stack->moved_piece][move.to()];
-
-            board.make_move(move);
+            make_move(move, stack);
             Score score = -quiescence<NodeType::NON_PV>(0, -probcut_beta, -probcut_beta + 1, stack + 1);
 
             if(score >= probcut_beta && probcut_depth > 0)
@@ -470,8 +461,7 @@ movesloop:
 
         U64 start_nodes = total_nodes;
 
-        made_moves++;
-        stack->made_moves = made_moves;
+        stack->made_moves = ++made_moves;
 
         const int reduction = REDUCTIONS[depth][made_moves];
         const int history_score = move.is_quiet() ? history.get_qh(board, move, stack) : history.get_nh(board, move);
@@ -535,15 +525,9 @@ movesloop:
                 extensions = -2;
         }
 
-        stack->move = move;
-        stack->moved_piece = board.piece_at(move.from());
-        stack->conth = &history.conth[move.is_cap()][stack->moved_piece][move.to()];
-
-        total_nodes++;
-
         int new_depth = depth - 1 + extensions;
 
-        board.make_move(move);
+        make_move(move, stack);
 
         Score score = VALUE_NONE;
 
@@ -814,13 +798,7 @@ Score Search::quiescence(int depth, Score alpha, Score beta, Stack *stack) {
                 continue;
         }
 
-        total_nodes++;
-
-        stack->move = move;
-        stack->moved_piece = board.piece_at(move.from());
-        stack->conth = &history.conth[move.is_cap()][stack->moved_piece][move.to()];
-
-        board.make_move(move);
+        make_move(move, stack);
         Score score = -quiescence<nt>(depth - 1, -beta, -alpha, stack + 1);
         board.undo_move(move);
 
@@ -867,6 +845,19 @@ Score Search::quiescence(int depth, Score alpha, Score beta, Stack *stack) {
     assert(valid_score(best_score));
 
     return best_score;
+}
+
+void Search::make_move(const Move &move, Stack *stack) {
+    assert(move);
+    assert(stack != nullptr);
+
+    total_nodes++;
+
+    stack->move = move;
+    stack->moved_piece = board.piece_at(move.from());
+    stack->conth = &history.conth[move.is_cap()][stack->moved_piece][move.to()];
+
+    board.make_move(move);
 }
 
 Score Search::evaluate() {

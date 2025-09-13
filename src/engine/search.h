@@ -81,6 +81,8 @@ class Search {
     template <NodeType nt> //
     Score quiescence(int depth, Score alpha, Score beta, Stack *stack);
 
+    void make_move(const Move &move, Stack *stack);
+
     Score evaluate();
     Score adjust_eval(int32_t eval, Stack *stack) const;
 
