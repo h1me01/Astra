@@ -235,7 +235,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
             }
         }
 
-        if(board.get_fmr() < 80)
+        if(board.get_fmr_count() < 90)
             return tt_score;
     }
 
@@ -875,7 +875,7 @@ Score Search::evaluate() {
 }
 
 Score Search::adjust_eval(int32_t eval, Stack *stack) const {
-    eval = (eval * (200 - board.get_fmr())) / 200;
+    eval = (eval * (200 - board.get_fmr_count())) / 200;
     eval += (history.get_matcorr(board) + history.get_contcorr(stack)) / 256;
 
     return std::clamp(                         //
@@ -904,7 +904,7 @@ unsigned int Search::probe_wdl() const {
         board.get_piecebb(BISHOP),             //
         board.get_piecebb(KNIGHT),             //
         board.get_piecebb(PAWN),               //
-        board.get_fmr(),                       //
+        board.get_fmr_count(),                       //
         board.get_state().castle_rights.any(), //
         valid_sq(ep_sq) ? ep_sq : 0,           //
         board.get_stm() == WHITE               //

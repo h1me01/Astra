@@ -120,7 +120,7 @@ class Board {
         return curr_ply;
     }
 
-    int get_fmr() const {
+    int get_fmr_count() const {
         return get_state().fmr_counter;
     }
 
