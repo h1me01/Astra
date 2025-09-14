@@ -74,7 +74,6 @@ class Board {
 
     U64 get_occupancy(Color c) const;
     U64 attackers_to(Color c, Square sq, U64 occ) const;
-    U64 key_after(Move m) const;
 
     void reset_accum_list();
     void reset_ply();
@@ -221,27 +220,6 @@ inline U64 Board::attackers_to(Color c, Square sq, const U64 occ) const {
     attacks |= get_attacks(ROOK, sq, occ) & orth_sliders(c);
     attacks |= get_attacks(KING, sq) & get_piecebb(c, KING);
     return attacks;
-}
-
-inline U64 Board::key_after(Move m) const {
-    U64 new_hash = get_state().hash;
-
-    if(!m)
-        return new_hash ^ Zobrist::get_side();
-
-    Square from = m.from();
-    Square to = m.to();
-
-    Piece pc = piece_at(from);
-    Piece captured = piece_at(to);
-
-    if(valid_piece(captured))
-        new_hash ^= Zobrist::get_psq(captured, to);
-
-    new_hash ^= Zobrist::get_psq(pc, from) ^ Zobrist::get_psq(pc, to);
-    new_hash ^= Zobrist::get_side();
-
-    return new_hash;
 }
 
 // doesn't include stalemate

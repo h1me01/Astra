@@ -23,6 +23,8 @@ class History {
 
     // public functions
 
+    void clear();
+
     void update(const Board &board,       //
                 const Move &best_move,    //
                 const MoveList<> &quiets, //

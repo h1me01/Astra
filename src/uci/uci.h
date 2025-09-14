@@ -24,16 +24,8 @@ struct Option {
 
 class Options {
   public:
-    // public variables
-
-    bool use_tb = false;
-
-    // public functions
-
     void print() const;
-
     void apply(bool init_tt = true);
-
     void set(std::istringstream &is);
 
     void add(std::string name, const Option &option) {
@@ -66,6 +58,7 @@ class UCI {
     // private member functions
 
     void update_position(std::istringstream &is);
+    void new_game();
     void go(std::istringstream &is);
     void bench();
 

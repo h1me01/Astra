@@ -99,18 +99,19 @@ void Options::print() const {
 
 void Options::apply(bool init_tt) {
     auto path = get("SyzygyPath");
-    if(!path.empty() && path != "<empty>" && !use_tb) {
+    if(!path.empty() && path != "<empty>") {
         bool success = tb_init(path.c_str());
 
         if(success && TB_LARGEST > 0) {
-            use_tb = true;
             std::cout << "info string Successfully loaded syzygy path" << std::endl;
         } else {
             std::cout << "info string Failed to load syzygy path " << path << std::endl;
         }
     }
 
-    Engine::tt.set_worker_count(std::stoi(get("Threads")));
+    const int num_workers = std::stoi(get("Threads"));
+    Engine::tt.set_worker_count(num_workers);
+    Engine::threads.set_count(num_workers);
 
     if(init_tt)
         Engine::tt.init(std::stoi(get("Hash")));
@@ -192,10 +193,9 @@ void UCI::loop(int argc, char **argv) {
             std::cout << "uciok" << std::endl;
         } else if(token == "isready")
             std::cout << "readyok" << std::endl;
-        else if(token == "ucinewgame") {
-            Engine::tt.clear();
-            Engine::threads.force_stop();
-        } else if(token == "position")
+        else if(token == "ucinewgame")
+            new_game();
+        else if(token == "position")
             update_position(is);
         else if(token == "go")
             go(is);
@@ -207,10 +207,12 @@ void UCI::loop(int argc, char **argv) {
             options.set(is);
         else if(token == "d")
             board.print();
-        else if(token == "stop")
-            Engine::threads.force_stop();
-        else if(token == "quit") {
-            Engine::threads.force_stop();
+        else if(token == "stop") {
+            Engine::threads.stop();
+            Engine::threads.wait();
+        } else if(token == "quit") {
+            Engine::threads.stop();
+            Engine::threads.wait();
             tb_free();
             break;
         } else
@@ -246,8 +248,16 @@ void UCI::update_position(std::istringstream &is) {
     board.reset_accum_list();
 }
 
+void UCI::new_game() {
+    Engine::tt.clear();
+    Engine::threads.stop();
+    Engine::threads.wait();
+    Engine::threads.new_game();
+}
+
 void UCI::go(std::istringstream &is) {
-    Engine::threads.force_stop();
+    Engine::threads.stop();
+    Engine::threads.wait();
     Engine::Limits limits;
 
     int64_t w_time = 0, b_time = 0, move_time = 0;
@@ -305,11 +315,11 @@ void UCI::go(std::istringstream &is) {
     limits.multipv = std::stoi(options.get("MultiPV"));
 
     // start search
-    Engine::threads.launch_workers(board, limits, std::stoi(options.get("Threads")), options.use_tb);
+    Engine::threads.launch_workers(board, limits);
 }
 
 void UCI::bench() {
-    Engine::tt.clear();
+    new_game();
     U64 nodes = 0;
 
     auto start = std::chrono::high_resolution_clock::now();
@@ -322,9 +332,7 @@ void UCI::bench() {
         iss.str("depth 13");
         go(iss);
 
-        // wait till all threads are stopped
-        while(!Engine::threads.is_stopped()) {
-        }
+        Engine::threads.wait();
 
         nodes += Engine::threads.get_total_nodes();
     }

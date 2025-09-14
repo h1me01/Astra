@@ -1,5 +1,8 @@
 #pragma once
 
+#include <condition_variable>
+#include <mutex>
+
 #include "../chess/board.h"
 #include "../chess/movegen.h"
 
@@ -26,6 +29,7 @@ struct RootMove : Move {
 
     // public variables
 
+    int depth = 0;
     U64 nodes = 0;
     Score avg_score = VALUE_NONE;
     PVLine pv{};
@@ -33,16 +37,36 @@ struct RootMove : Move {
 
 class Search {
   public:
-    Search() : total_nodes{0}, tb_hits{0} {}
+    Search() {
+        history.clear();
+    }
 
     // public variables
 
-    int id = 0;
-    bool use_tb = false;
+    bool searching = false;
+    bool exiting = false;
+
+    std::mutex mutex;
+    std::condition_variable cv;
+
+    Limits limits;
+    Board board{STARTING_FEN, false};
+
+    MoveList<RootMove> root_moves;
 
     // public functions
 
-    void start(const Board &board, Limits limits);
+    void idle();
+
+    void print_uci_info() const;
+
+    void reset_multipv() {
+        multipv_idx = 0;
+    }
+
+    void clear_histories() {
+        history.clear();
+    }
 
     U64 get_total_nodes() const {
         return total_nodes;
@@ -61,17 +85,15 @@ class Search {
     U64 total_nodes;
     U64 tb_hits;
 
+    int ply;
     int nmp_min_ply;
 
-    Limits limits;
     TimeMan tm;
     History history;
 
-    Board board{STARTING_FEN, false};
-
-    MoveList<RootMove> root_moves;
-
     // private functions
+
+    void start();
 
     Score aspiration(int depth, Stack *stack);
 
@@ -82,6 +104,7 @@ class Search {
     Score quiescence(int depth, Score alpha, Score beta, Stack *stack);
 
     void make_move(const Move &move, Stack *stack);
+    void undo_move(const Move &move);
 
     Score evaluate();
     Score adjust_eval(int32_t eval, Stack *stack) const;
@@ -94,8 +117,6 @@ class Search {
     bool found_rootmove(const Move &move);
 
     void update_pv(const Move &move, Stack *stack);
-
-    void print_uci_info() const;
 };
 
 } // namespace Engine

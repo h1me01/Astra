@@ -1,4 +1,6 @@
 #include <atomic>
+#include <memory>
+#include <mutex>
 #include <thread>
 
 #include "search.h"
@@ -9,20 +11,41 @@ namespace Engine {
 
 class ThreadPool {
   public:
-    void launch_workers(const Board &board, Limits limit, int worker_count, bool use_tb);
+    ThreadPool() : started_threads(0) {}
+    ~ThreadPool();
 
-    void force_stop();
+    void launch_worker(Search *worker);
+    void launch_workers(const Board &board, Limits limit);
+
+    void set_count(int count);
+
+    void wait(bool include_main_thread = true);
+
+    Search *pick_best_thread();
+
+    void add_started_thread() {
+        started_threads.fetch_add(1, std::memory_order_acq_rel);
+    }
+
+    void new_game() {
+        for(auto &th : threads)
+            th->clear_histories();
+    }
 
     void stop() {
-        stop_flag.store(true);
+        stop_flag.store(true, std::memory_order_release);
+    }
+
+    Search *main_thread() {
+        return threads.empty() ? nullptr : threads[0].get();
     }
 
     bool is_stopped() const {
-        return stop_flag.load(std::memory_order_relaxed);
+        return stop_flag.load(std::memory_order_acquire);
     }
 
-    void start() {
-        stop_flag.store(false);
+    int get_count() const {
+        return threads.size();
     }
 
     U64 get_total_nodes() const {
@@ -40,10 +63,11 @@ class ThreadPool {
     }
 
   private:
-    std::vector<std::thread> running_threads;
     std::vector<std::unique_ptr<Search>> threads;
+    std::vector<std::unique_ptr<std::thread>> running_threads;
 
     std::atomic<bool> stop_flag{false};
+    std::atomic<size_t> started_threads;
 };
 
 extern ThreadPool threads;

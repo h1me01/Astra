@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <cstring>
 
 #include "history.h"
 #include "tune_params.h"
@@ -23,6 +24,22 @@ void update_corr(int16_t &value, int diff, int depth) {
 }
 
 // History
+
+void History::clear() {
+    std::memset(conth, 0, sizeof(conth));
+
+    std::fill(&counters[0][0], &counters[0][0] + NUM_SQUARES * NUM_SQUARES, Move{});
+
+    std::memset(hh, 0, sizeof(hh));
+    std::memset(nh, 0, sizeof(nh));
+    std::memset(ph, 0, sizeof(ph));
+
+    std::memset(pawn_corr, 0, sizeof(pawn_corr));
+    std::memset(w_non_pawn_corr, 0, sizeof(w_non_pawn_corr));
+    std::memset(b_non_pawn_corr, 0, sizeof(b_non_pawn_corr));
+
+    std::memset(cont_corr, 0, sizeof(cont_corr));
+}
 
 void History::update(         //
     const Board &board,       //
