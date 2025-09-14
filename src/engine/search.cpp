@@ -326,7 +326,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
     // update quiet history
     if(!stack->skipped                          //
        && (stack - 1)->move                     //
-       && !(stack - 1)->move.is_cap()           //
+       && (stack - 1)->move.is_quiet()          //
        && valid_score((stack - 1)->static_eval) //
     ) {
         int bonus = std::clamp(                                                   //
