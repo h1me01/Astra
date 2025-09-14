@@ -17,16 +17,6 @@ const std::string STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w 
 
 constexpr int PIECE_VALUES[] = {100, 360, 385, 635, 1200, 0, 0};
 
-const int PIECE_VALUES_SEE[] = {
-    Engine::pawn_value_see,   //
-    Engine::knight_value_see, //
-    Engine::bishop_value_see, //
-    Engine::rook_value_see,   //
-    Engine::queen_value_see,  //
-    0,                        //
-    0                         //
-};
-
 constexpr int MAX_PLY = 246;
 
 constexpr Score VALUE_DRAW = 0;

@@ -334,8 +334,8 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
 
     // razoring
     if(!pv_node                                 //
+       && depth < 5                             //
        && !is_win(alpha)                        //
-       && depth < rzr_depth                     //
        && eval + rzr_depth_mult * depth < alpha //
     ) {
         Score score = quiescence<NodeType::NON_PV>(0, alpha, beta, stack);
@@ -532,7 +532,7 @@ movesloop:
         Score score = VALUE_NONE;
 
         // late move reductions
-        if(depth >= 2 && made_moves >= lmr_min_moves && !(tt_pv && move.is_noisy())) {
+        if(depth >= 2 && made_moves >= 3 && !(tt_pv && move.is_noisy())) {
             int r = reduction;
 
             r += !improving;

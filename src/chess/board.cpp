@@ -15,6 +15,19 @@ bool castle_notation_helper(const std::ostringstream &fen_stream) {
     return rights.find_first_of("kqKQ") != std::string::npos;
 }
 
+int get_see_piece_value(PieceType pt) {
+    switch(pt) {
+        // clang-format off
+        case PAWN:   return Engine::pawn_value_see;
+        case KNIGHT: return Engine::knight_value_see;
+        case BISHOP: return Engine::bishop_value_see;
+        case ROOK:   return Engine::rook_value_see;
+        case QUEEN:  return Engine::queen_value_see;
+        default:     return 0;
+        // clang-format on
+    }
+}
+
 // class board
 
 Board::Board(const std::string &fen, bool init_accum) {
@@ -417,11 +430,11 @@ bool Board::see(Move &move, int threshold) const {
     assert(valid_piece_type(attacker));
     assert(piece_color(piece_at(from)) == stm);
 
-    int swap = PIECE_VALUES_SEE[victim] - threshold;
+    int swap = get_see_piece_value(victim) - threshold;
     if(swap < 0)
         return false;
 
-    swap = PIECE_VALUES_SEE[attacker] - swap;
+    swap = get_see_piece_value(attacker) - swap;
 
     if(swap <= 0)
         return true;
@@ -453,26 +466,26 @@ bool Board::see(Move &move, int threshold) const {
         res ^= 1;
 
         if((bb = stm_attacker & get_piecebb(PAWN))) {
-            if((swap = PIECE_VALUES_SEE[PAWN] - swap) < res)
+            if((swap = get_see_piece_value(PAWN) - swap) < res)
                 break;
             occ ^= (bb & -bb);
             attackers |= get_attacks(BISHOP, to, occ) & diag;
         } else if((bb = stm_attacker & get_piecebb(KNIGHT))) {
-            if((swap = PIECE_VALUES_SEE[KNIGHT] - swap) < res)
+            if((swap = get_see_piece_value(KNIGHT) - swap) < res)
                 break;
             occ ^= (bb & -bb);
         } else if((bb = stm_attacker & get_piecebb(BISHOP))) {
-            if((swap = PIECE_VALUES_SEE[BISHOP] - swap) < res)
+            if((swap = get_see_piece_value(BISHOP) - swap) < res)
                 break;
             occ ^= (bb & -bb);
             attackers |= get_attacks(BISHOP, to, occ) & diag;
         } else if((bb = stm_attacker & get_piecebb(ROOK))) {
-            if((swap = PIECE_VALUES_SEE[ROOK] - swap) < res)
+            if((swap = get_see_piece_value(ROOK) - swap) < res)
                 break;
             occ ^= (bb & -bb);
             attackers |= get_attacks(ROOK, to, occ) & orth;
         } else if((bb = stm_attacker & get_piecebb(QUEEN))) {
-            swap = PIECE_VALUES_SEE[QUEEN] - swap;
+            swap = get_see_piece_value(QUEEN) - swap;
             assert(swap >= res);
 
             occ ^= (bb & -bb);

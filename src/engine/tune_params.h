@@ -50,13 +50,11 @@ PARAM(tm_node_base, 51, 10, 90);
 
 PARAM(lmr_base, 117, 40, 200);
 PARAM(lmr_div, 292, 150, 500);
-PARAM(lmr_min_moves, 3, 1, 3);
 
 PARAM(static_h_mult, -45, -500, -1);
 PARAM(static_h_min, -61, -1000, -1);
 PARAM(static_h_max, 262, 1, 1000);
 
-PARAM(rzr_depth, 5, 2, 20);
 PARAM(rzr_depth_mult, 264, 150, 350);
 
 PARAM(rfp_depth, 11, 2, 20);
