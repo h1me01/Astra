@@ -604,17 +604,21 @@ movesloop:
             best_score = score;
 
             if(score > alpha) {
-                alpha = score;
                 best_move = move;
 
                 if(pv_node && !root_node)
                     update_pv(move, stack);
 
-                if(alpha >= beta) {
+                if(score >= beta) {
                     history.update(board, best_move, quiets, noisy, stack,
                                    depth + (best_score > beta + history_bonus_margin));
                     break;
                 }
+
+                if(depth > 2 && depth < 14 && !is_decisive(score))
+                    depth -= 1;
+
+                alpha = score;
             }
         }
 
