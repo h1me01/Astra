@@ -109,17 +109,25 @@ constexpr Rank rel_rank(Color c, Rank r) {
     return c == WHITE ? r : Rank(RANK_8 - r);
 }
 
-inline bool is_loss(const Score score) {
+constexpr Score mate_in(int ply) {
+    return VALUE_MATE - ply;
+}
+
+constexpr Score mated_in(int ply) {
+    return -VALUE_MATE + ply;
+}
+
+constexpr bool is_loss(const Score score) {
     assert(valid_score(score));
     return score <= VALUE_TB_LOSS_IN_MAX_PLY;
 }
 
-inline bool is_win(const Score score) {
+constexpr bool is_win(const Score score) {
     assert(valid_score(score));
     return score >= VALUE_TB_WIN_IN_MAX_PLY;
 }
 
-inline bool is_decisive(const Score score) {
+constexpr bool is_decisive(const Score score) {
     return is_loss(score) || is_win(score);
 }
 

@@ -217,8 +217,8 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
             return VALUE_DRAW;
 
         // mate distance pruning
-        alpha = std::max(alpha, Score(ply - VALUE_MATE));
-        beta = std::min(beta, Score(VALUE_MATE - ply - 1));
+        alpha = std::max(mated_in(ply), alpha);
+        beta = std::min(mate_in(ply + 1), beta);
         if(alpha >= beta)
             return alpha;
     }
@@ -469,8 +469,10 @@ movesloop:
 
                 // futility pruning
                 const Score futility = stack->static_eval + fp_base + r_depth * fp_mult;
-                if(!in_check && r_depth < fp_depth && futility <= alpha)
+                if(!in_check && r_depth < fp_depth && futility <= alpha) {
                     skip_quiets = true;
+                    continue;
+                }
 
                 // history pruning
                 if(r_depth < hp_depth && history_score < hp_depth_mult * depth) {
@@ -607,12 +609,12 @@ movesloop:
 
                 if(pv_node && !root_node)
                     update_pv(move, stack);
-            }
 
-            if(alpha >= beta) {
-                history.update(board, best_move, quiets, noisy, stack,
-                               depth + (best_score > beta + history_bonus_margin));
-                break; // cut-off
+                if(alpha >= beta) {
+                    history.update(board, best_move, quiets, noisy, stack,
+                                   depth + (best_score > beta + history_bonus_margin));
+                    break;
+                }
             }
         }
 
@@ -628,7 +630,7 @@ movesloop:
         if(stack->skipped)
             return alpha;
         else if(in_check)
-            return ply - VALUE_MATE;
+            return mated_in(ply);
         else
             return VALUE_DRAW;
     }
@@ -788,15 +790,15 @@ Score Search::quiescence(int depth, Score alpha, Score beta, Stack *stack) {
 
                 if(pv_node)
                     update_pv(move, stack);
-            }
 
-            if(alpha >= beta)
-                break; // cut-off
+                if(alpha >= beta)
+                    break;
+            }
         }
     }
 
     if(board.in_check() && !made_moves)
-        return ply - VALUE_MATE;
+        return mated_in(ply);
 
     if(best_score >= beta && !is_decisive(best_score))
         best_score = (best_score + beta) / 2;
