@@ -616,7 +616,7 @@ movesloop:
                 }
 
                 if(depth > 2 && depth < 14 && !is_decisive(score))
-                    depth -= 1;
+                    depth -= 2;
 
                 alpha = score;
             }
