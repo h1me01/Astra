@@ -20,12 +20,6 @@ ThreadPool::~ThreadPool() {
     running_threads.clear();
 }
 
-void ThreadPool::launch_worker(Search *worker) {
-    std::lock_guard<std::mutex> lock(worker->mutex);
-    worker->searching = true;
-    worker->cv.notify_all();
-}
-
 void ThreadPool::launch_workers(const Board &board, Limits limits) {
     stop_flag.store(false, std::memory_order_release);
 
@@ -70,7 +64,7 @@ void ThreadPool::set_count(int count) {
 }
 
 void ThreadPool::wait(bool include_main_thread) {
-    // copy the thread pointers while holding the mutex
+    // copy the thread pointers
     std::vector<Search *> thread_ptrs;
     {
         if(threads.empty())
@@ -86,7 +80,6 @@ void ThreadPool::wait(bool include_main_thread) {
         }
     }
 
-    // wait for each thread without holding threads_mutex
     for(auto *th : thread_ptrs) {
         std::unique_lock search_lock(th->mutex);
         th->cv.wait(search_lock, [th] { return !th->searching; });
@@ -96,7 +89,7 @@ void ThreadPool::wait(bool include_main_thread) {
 Search *ThreadPool::pick_best_thread() {
     Search *best_thread = main_thread();
 
-    if(get_count() == 1 || best_thread->limits.multipv != 1)
+    if(threads.size() == 1 || best_thread->limits.multipv != 1)
         return best_thread;
 
     std::unordered_map<uint16_t, int> votes;

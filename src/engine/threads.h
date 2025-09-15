@@ -14,7 +14,6 @@ class ThreadPool {
     ThreadPool() : started_threads(0) {}
     ~ThreadPool();
 
-    void launch_worker(Search *worker);
     void launch_workers(const Board &board, Limits limit);
 
     void set_count(int count);
@@ -44,10 +43,6 @@ class ThreadPool {
         return stop_flag.load(std::memory_order_acquire);
     }
 
-    int get_count() const {
-        return threads.size();
-    }
-
     U64 get_total_nodes() const {
         U64 total_nodes = 0;
         for(const auto &t : threads)
@@ -68,6 +63,12 @@ class ThreadPool {
 
     std::atomic<bool> stop_flag{false};
     std::atomic<size_t> started_threads;
+
+    void launch_worker(Search *worker) {
+        std::lock_guard<std::mutex> lock(worker->mutex);
+        worker->searching = true;
+        worker->cv.notify_all();
+    }
 };
 
 extern ThreadPool threads;
