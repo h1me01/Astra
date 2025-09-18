@@ -29,9 +29,8 @@ MovePicker::MovePicker(SearchType st,          //
         if(board.in_check()) {
             stage = PLAY_TT_MOVE;
             this->tt_move = tt_move;
-        } else {
+        } else
             stage = GEN_NOISY;
-        }
     } else {
         stage = PLAY_TT_MOVE;
 
@@ -49,34 +48,30 @@ Move MovePicker::next(bool skip_quiets) {
     switch(stage) {
     case PLAY_TT_MOVE:
         stage = GEN_NOISY;
-        if(board.is_pseudolegal(tt_move))
+        if(board.is_pseudo_legal(tt_move))
             return tt_move;
         [[fallthrough]];
     case GEN_NOISY:
         idx = 0;
         stage = PLAY_NOISY;
 
-        ml_main.gen<NOISY>(board);
         score_noisy();
 
         [[fallthrough]];
     case PLAY_NOISY:
         while(idx < ml_main.size()) {
             partial_insertion_sort(ml_main, idx);
-            Move move = ml_main[idx];
-            idx++;
 
+            Move move = ml_main[idx++];
             if(move == tt_move)
                 continue;
 
             // we want to play noisy moves first in qsearch, doesn't matter if its see fails
             int threshold = (st == N_SEARCH) ? -move.get_score() / 32 : probcut_threshold;
-            if(st != Q_SEARCH && !board.see(move, threshold)) {
-                ml_bad_noisy.add(move);
-                continue;
-            }
+            if(st == Q_SEARCH || board.see(move, threshold))
+                return move;
 
-            return move;
+            ml_bad_noisy.add(move);
         }
 
         if(st == PC_SEARCH)
@@ -93,34 +88,28 @@ Move MovePicker::next(bool skip_quiets) {
         [[fallthrough]];
     case PLAY_KILLER:
         stage = PLAY_COUNTER;
-        if(!skip_quiets && board.is_pseudolegal(killer))
+        if(!skip_quiets && board.is_pseudo_legal(killer))
             return killer;
         [[fallthrough]];
     case PLAY_COUNTER:
         stage = GEN_QUIETS;
-        if(!skip_quiets && board.is_pseudolegal(counter))
+        if(!skip_quiets && board.is_pseudo_legal(counter))
             return counter;
         [[fallthrough]];
     case GEN_QUIETS:
         idx = 0;
         stage = PLAY_QUIETS;
 
-        if(!skip_quiets) {
-            ml_main.gen<QUIETS>(board);
+        if(!skip_quiets)
             score_quiets();
-        }
 
         [[fallthrough]];
     case PLAY_QUIETS:
         while(idx < ml_main.size() && !skip_quiets) {
             partial_insertion_sort(ml_main, idx);
-            Move move = ml_main[idx];
-            idx++;
-
-            if(move == tt_move || move == killer || move == counter)
-                continue;
-
-            return move;
+            Move move = ml_main[idx++];
+            if(move != tt_move && move != killer && move != counter)
+                return move;
         }
 
         if(st == Q_SEARCH)
@@ -133,8 +122,7 @@ Move MovePicker::next(bool skip_quiets) {
     case PLAY_BAD_NOISY:
         while(idx < ml_bad_noisy.size()) {
             partial_insertion_sort(ml_bad_noisy, idx);
-            Move move = ml_bad_noisy[idx];
-            idx++;
+            Move move = ml_bad_noisy[idx++];
             return move;
         }
 
@@ -148,8 +136,7 @@ Move MovePicker::next(bool skip_quiets) {
     case PLAY_QUIET_CHECKERS:
         while(idx < ml_main.size()) {
             partial_insertion_sort(ml_main, idx);
-            Move move = ml_main[idx];
-            idx++;
+            Move move = ml_main[idx++];
             return move;
         }
 
@@ -163,6 +150,10 @@ Move MovePicker::next(bool skip_quiets) {
 // private member
 
 void MovePicker::score_quiets() {
+    ml_main.gen<QUIETS>(board);
+
+    Threats threats = board.get_threats();
+
     for(int i = 0; i < ml_main.size(); i++) {
         const Move move = ml_main[i];
         const Piece pc = board.piece_at(move.from());
@@ -181,16 +172,16 @@ void MovePicker::score_quiets() {
         if(pt != PAWN && pt != KING) {
             U64 danger;
             if(pt == QUEEN)
-                danger = board.get_threats(ROOK);
+                danger = threats[ROOK];
             else if(pt == ROOK)
-                danger = board.get_threats(BISHOP) | board.get_threats(KNIGHT);
+                danger = threats[BISHOP] | threats[KNIGHT];
             else
-                danger = board.get_threats(PAWN);
+                danger = threats[PAWN];
 
             const int bonus = 16384 + 16384 * (pt == QUEEN);
-            if(danger & square_bb(from))
+            if(danger & sq_bb(from))
                 score += bonus;
-            else if(danger & square_bb(to))
+            else if(danger & sq_bb(to))
                 score -= bonus;
         }
 
@@ -199,6 +190,8 @@ void MovePicker::score_quiets() {
 }
 
 void MovePicker::score_noisy() {
+    ml_main.gen<NOISY>(board);
+
     for(int i = 0; i < ml_main.size(); i++) {
         PieceType captured = ml_main[i].is_ep() ? PAWN : piece_type(board.piece_at(ml_main[i].to()));
         int score = history.get_nh(board, ml_main[i]);

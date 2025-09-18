@@ -6,8 +6,8 @@ namespace NNUE {
 // Accum
 
 void Accum::update(Accum &prev, Color view) {
-    for(int i = 0; i < num_dpcs; i++) {
-        DirtyPiece dpc = dpcs[i];
+    for(int i = 0; i < dirty_pcs.size(); i++) {
+        auto dpc = dirty_pcs[i];
         Square ksq = (view == WHITE) ? wksq : bksq;
 
         if(!valid_sq(dpc.from))
@@ -29,10 +29,10 @@ void AccumTable::reset() {
             entries[c][i].reset();
 }
 
-void AccumTable::refresh(Board &board, Color view) {
+void AccumTable::refresh(Color view, Board &board, Accum &accum) {
     assert(valid_color(view));
 
-    const Square ksq = board.king_sq(view);
+    const Square ksq = board.get_king_sq(view);
     const int ksq_idx = KING_BUCKET[rel_sq(view, ksq)];
     AccumEntry &entry = entries[view][(sq_file(ksq) > 3) * BUCKET_SIZE + ksq_idx];
 
@@ -57,8 +57,6 @@ void AccumTable::refresh(Board &board, Color view) {
             entry.set_piecebb(c, pt, pc_bb);
         }
     }
-
-    Accum &accum = board.get_accum();
 
     memcpy(accum.get_data(view), entry_acc.get_data(view), sizeof(int16_t) * FT_SIZE);
     accum.set_initialized(view);

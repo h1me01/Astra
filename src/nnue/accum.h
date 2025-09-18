@@ -19,26 +19,42 @@ struct DirtyPiece {
     DirtyPiece(Piece pc, Square from, Square to) : pc(pc), from(from), to(to) {}
 };
 
+class DirtyPieces {
+  public:
+    DirtyPieces() : num_dpcs(0) {}
+
+    void reset() {
+        num_dpcs = 0;
+    }
+
+    void add(Piece pc, Square from, Square to) {
+        assert(num_dpcs < 4);
+        dpcs[num_dpcs++] = DirtyPiece(pc, from, to);
+    }
+
+    DirtyPiece &operator[](int i) {
+        assert(i >= 0 && i < num_dpcs);
+        return dpcs[i];
+    }
+
+    int size() const {
+        return num_dpcs;
+    }
+
+  private:
+    int num_dpcs;
+    DirtyPiece dpcs[4]; // only 4 pieces at max can be updated per move
+};
+
 class Accum {
   public:
     void update(Accum &prev, Color view);
 
     void reset() {
+        dirty_pcs.reset();
+        wksq = bksq = NO_SQUARE;
         initialized[WHITE] = m_needs_refresh[WHITE] = false;
         initialized[BLACK] = m_needs_refresh[BLACK] = false;
-        num_dpcs = 0;
-    }
-
-    void put_piece(Piece pc, Square to, Square wksq, Square bksq) {
-        add_dirty_piece(pc, NO_SQUARE, to, wksq, bksq);
-    }
-
-    void remove_piece(Piece pc, Square from, Square wksq, Square bksq) {
-        add_dirty_piece(pc, from, NO_SQUARE, wksq, bksq);
-    }
-
-    void move_piece(Piece pc, Square from, Square to, Square wksq, Square bksq) {
-        add_dirty_piece(pc, from, to, wksq, bksq);
     }
 
     void set_initialized(Color view) {
@@ -47,6 +63,12 @@ class Accum {
 
     void set_refresh(Color view) {
         this->m_needs_refresh[view] = true;
+    }
+
+    void set_info(const DirtyPieces &dpcs, Square wksq, Square bksq) {
+        dirty_pcs = dpcs;
+        this->wksq = wksq;
+        this->bksq = bksq;
     }
 
     bool is_initialized(Color view) const {
@@ -66,26 +88,14 @@ class Accum {
     }
 
   private:
-    // private variables
-
-    Square wksq, bksq;
+    Square wksq = NO_SQUARE, bksq = NO_SQUARE;
 
     bool initialized[NUM_COLORS] = {false, false};
     bool m_needs_refresh[NUM_COLORS] = {false, false};
 
+    DirtyPieces dirty_pcs;
+
     alignas(ALIGNMENT) int16_t data[NUM_COLORS][FT_SIZE];
-
-    int num_dpcs = 0;
-    DirtyPiece dpcs[4]; // only 4 pieces at max can be updated per move
-
-    // private function
-
-    void add_dirty_piece(Piece pc, Square from, Square to, Square wksq, Square bksq) {
-        assert(num_dpcs < 4);
-        this->wksq = wksq;
-        this->bksq = bksq;
-        dpcs[num_dpcs++] = DirtyPiece(pc, from, to);
-    }
 };
 
 // idea from koivisto
@@ -116,7 +126,7 @@ class AccumEntry {
 class AccumTable {
   public:
     void reset();
-    void refresh(Board &board, Color view);
+    void refresh(Color view, Board &board, Accum &accum);
 
   private:
     AccumEntry entries[NUM_COLORS][2 * BUCKET_SIZE];
@@ -124,21 +134,7 @@ class AccumTable {
 
 class AccumList {
   public:
-    AccumList() : idx(0), board(nullptr), data{} {}
-
-    AccumList &copy(const AccumList &other, Board *new_board) {
-        if(this != &other) {
-            idx = other.idx;
-            board = new_board;
-            data = other.data;
-            accum_table = std::make_unique<AccumTable>(*other.accum_table);
-        }
-        return *this;
-    }
-
-    void set_board(Board *new_board) {
-        board = new_board;
-    }
+    AccumList() : idx(0), data{} {}
 
     void pop() {
         if(idx > 0)
@@ -151,18 +147,15 @@ class AccumList {
         data[idx].reset();
     }
 
-    void reset() {
-        assert(board != nullptr);
-
+    void reset(Board &board) {
         idx = 0;
         accum_table->reset();
-        accum_table->refresh(*board, WHITE);
-        accum_table->refresh(*board, BLACK);
+        accum_table->refresh(WHITE, board, back());
+        accum_table->refresh(BLACK, board, back());
     }
 
-    void refresh(Color view) {
-        assert(board != nullptr);
-        accum_table->refresh(*board, view);
+    void refresh(Color view, Board &board) {
+        accum_table->refresh(view, board, back());
     }
 
     Accum &operator[](int i) {
@@ -191,7 +184,6 @@ class AccumList {
 
   private:
     int idx;
-    Board *board;
 
     std::array<Accum, MAX_PLY + 1> data;
     std::unique_ptr<AccumTable> accum_table = std::make_unique<AccumTable>(AccumTable());

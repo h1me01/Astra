@@ -120,21 +120,20 @@ void NNUE::init_accum(Accum &acc) const {
     memcpy(acc.get_data(BLACK), nnue.ft_biases, sizeof(int16_t) * FT_SIZE);
 }
 
-int32_t NNUE::forward(Board &board) const {
-    board.update_accums();
+int32_t NNUE::forward(Board &board, const Accum &accum) const {
+    assert(accum.is_initialized(WHITE) && accum.is_initialized(BLACK));
 
     const int bucket = (pop_count(board.get_occupancy()) - 2) / 4;
     assert(0 <= bucket && bucket < L1_SIZE);
 
     const Color stm = board.get_stm();
-    const Accum &acc = board.get_accum();
 
     assert(valid_color(stm));
 
     int32_t output = 0;
 
-    const auto acc_stm = (const vec_type *) acc.get_data(stm);
-    const auto acc_opp = (const vec_type *) acc.get_data(~stm);
+    const auto acc_stm = (const vec_type *) accum.get_data(stm);
+    const auto acc_opp = (const vec_type *) accum.get_data(~stm);
     const auto weights = (const vec_type *) (l1_weights + bucket * FT_SIZE * 2);
 
 #if defined(__AVX512F__) || defined(__AVX2__) || defined(__AVX__)

@@ -50,7 +50,7 @@ class Search {
     std::condition_variable cv;
 
     Limits limits;
-    Board board{STARTING_FEN, false};
+    Board board{STARTING_FEN};
 
     MoveList<RootMove> root_moves;
 
@@ -91,6 +91,8 @@ class Search {
     TimeMan tm;
     History history;
 
+    NNUE::AccumList accum_list;
+
     // private functions
 
     void start();
@@ -105,6 +107,8 @@ class Search {
 
     void make_move(const Move &move, Stack *stack);
     void undo_move(const Move &move);
+
+    void update_accums();
 
     Score evaluate();
     Score adjust_eval(int32_t eval, Stack *stack) const;

@@ -60,6 +60,8 @@ void Search::start() {
     const bool main_thread = (this == threads.main_thread());
     const int multipv_size = std::min(limits.multipv, root_moves.size());
 
+    accum_list.reset(board);
+
     if(main_thread)
         tt.increment();
 
@@ -446,7 +448,7 @@ movesloop:
 
     bool skip_quiets = false;
 
-    while((move = mp.next(skip_quiets)) != NO_MOVE) {
+    while((move = mp.next(skip_quiets))) {
         if(move == stack->skipped || !board.is_legal(move))
             continue;
         if(root_node && !found_rootmove(move))
@@ -657,8 +659,8 @@ movesloop:
        && !(best_move && best_move.is_cap())                    //
        && valid_tt_score(best_score, stack->static_eval, bound) //
     ) {
-        history.update_matcorr(board, raw_eval, best_score, depth);
-        history.update_contcorr(raw_eval, best_score, depth, stack);
+        history.update_mat_corr(board, raw_eval, best_score, depth);
+        history.update_cont_corr(raw_eval, best_score, depth, stack);
     }
 
     assert(valid_score(best_score));
@@ -754,7 +756,7 @@ Score Search::quiescence(int depth, Score alpha, Score beta, Stack *stack) {
     Move move = NO_MOVE;
 
     int made_moves = 0;
-    while((move = mp.next()) != NO_MOVE) {
+    while((move = mp.next())) {
         if(!board.is_legal(move))
             continue;
 
@@ -825,8 +827,17 @@ void Search::make_move(const Move &move, Stack *stack) {
     stack->moved_piece = board.piece_at(move.from());
     stack->conth = &history.conth[move.is_cap()][stack->moved_piece][move.to()];
 
+    accum_list.push();
+
+    NNUE::Accum &accum = accum_list.back();
+
+    Piece pc = board.piece_at(move.from());
+    if(NNUE::needs_refresh(pc, move.from(), move.to()))
+        accum.set_refresh(piece_color(pc));
+
     ply++;
-    board.make_move(move);
+    auto dirty_pieces = board.make_move(move);
+    accum.set_info(dirty_pieces, board.get_king_sq(WHITE), board.get_king_sq(BLACK));
 
     tt.prefetch(board.get_hash());
 }
@@ -834,12 +845,47 @@ void Search::make_move(const Move &move, Stack *stack) {
 void Search::undo_move(const Move &move) {
     assert(move);
 
+    accum_list.pop();
+
     ply--;
     board.undo_move(move);
 }
 
+void Search::update_accums() {
+    assert(accum_list[0].is_initialized(WHITE));
+    assert(accum_list[0].is_initialized(BLACK));
+
+    NNUE::Accum &acc = accum_list.back();
+
+    for(Color view : {WHITE, BLACK}) {
+        if(acc.is_initialized(view))
+            continue;
+
+        const int accums_idx = accum_list.get_idx();
+        assert(accums_idx > 0);
+
+        // apply lazy update
+        for(int i = accums_idx; i >= 0; i--) {
+            if(accum_list[i].needs_refresh(view)) {
+                accum_list.refresh(view, board);
+                break;
+            }
+
+            if(accum_list[i].is_initialized(view)) {
+                for(int j = i + 1; j <= accums_idx; j++)
+                    accum_list[j].update(accum_list[j - 1], view);
+                break;
+            }
+        }
+    }
+
+    assert(acc.is_initialized(WHITE));
+    assert(acc.is_initialized(BLACK));
+}
+
 Score Search::evaluate() {
-    int eval = NNUE::nnue.forward(board);
+    update_accums();
+    int eval = NNUE::nnue.forward(board, accum_list.back());
 
     int material = 122 * board.count<PAWN>()     //
                    + 401 * board.count<KNIGHT>() //
@@ -854,7 +900,7 @@ Score Search::evaluate() {
 
 Score Search::adjust_eval(int32_t eval, Stack *stack) const {
     eval = (eval * (200 - board.get_fmr_count())) / 200;
-    eval += (history.get_matcorr(board) + history.get_contcorr(stack)) / 256;
+    eval += (history.get_mat_corr(board) + history.get_cont_corr(stack)) / 256;
 
     return std::clamp(                         //
         eval,                                  //

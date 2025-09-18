@@ -15,6 +15,18 @@ bool castle_notation_helper(const std::ostringstream &fen_stream) {
     return rights.find_first_of("kqKQ") != std::string::npos;
 }
 
+std::pair<Square, Square> Board::get_castle_rook_sqs(Color c, Square to) {
+    assert(valid_color(c));
+    assert(to == rel_sq(c, g1) || to == rel_sq(c, c1));
+
+    bool ks = to == rel_sq(c, g1);
+
+    Square rook_from = ks ? rel_sq(c, h1) : rel_sq(c, a1);
+    Square rook_to = ks ? rel_sq(c, f1) : rel_sq(c, d1);
+
+    return {rook_from, rook_to};
+}
+
 int get_see_piece_value(PieceType pt) {
     switch(pt) {
         // clang-format off
@@ -30,8 +42,8 @@ int get_see_piece_value(PieceType pt) {
 
 // class board
 
-Board::Board(const std::string &fen, bool init_accum) {
-    set_fen(fen, init_accum);
+Board::Board(const std::string &fen) {
+    set_fen(fen);
 }
 
 Board &Board::operator=(const Board &other) {
@@ -39,7 +51,6 @@ Board &Board::operator=(const Board &other) {
         stm = other.stm;
         curr_ply = other.curr_ply;
         states = other.states;
-        accum_list.copy(other.accum_list, this);
 
         std::copy(std::begin(other.board), std::end(other.board), std::begin(board));
         std::copy(std::begin(other.piece_bb), std::end(other.piece_bb), std::begin(piece_bb));
@@ -48,9 +59,8 @@ Board &Board::operator=(const Board &other) {
     return *this;
 }
 
-void Board::set_fen(const std::string &fen, bool init_accum) {
+void Board::set_fen(const std::string &fen) {
     curr_ply = 0;
-    accum_list.set_board(this);
     std::memset(piece_bb, 0, sizeof(piece_bb));
 
     for(auto &i : board)
@@ -70,10 +80,10 @@ void Board::set_fen(const std::string &fen, bool init_accum) {
     for(const char c : fen_parts[2]) {
         switch(c) {
             // clang-format off
-            case 'K': info.castle_rights.add_kingside(WHITE); break;
-            case 'Q': info.castle_rights.add_queenside(WHITE); break;
-            case 'k': info.castle_rights.add_kingside(BLACK); break;
-            case 'q': info.castle_rights.add_queenside(BLACK); break;
+            case 'K': info.castle_rights.add_ks(WHITE); break;
+            case 'Q': info.castle_rights.add_qs(WHITE); break;
+            case 'k': info.castle_rights.add_ks(BLACK); break;
+            case 'q': info.castle_rights.add_qs(BLACK); break;
             default: break;
             // clang-format on
         }
@@ -98,11 +108,7 @@ void Board::set_fen(const std::string &fen, bool init_accum) {
     info.hash ^= Zobrist::get_ep(info.ep_sq);
     info.hash ^= Zobrist::get_castle(info.castle_rights.get_hash_idx());
 
-    init_threats();
-    init_slider_blockers();
-
-    if(init_accum)
-        reset_accum_list();
+    init_movegen_data();
 }
 
 void Board::print() const {
@@ -148,49 +154,182 @@ std::string Board::get_fen() const {
     std::ostringstream oss;
     oss << info.ep_sq;
 
-    fen << (stm == WHITE ? " w " : " b ")                   //
-        << (info.castle_rights.kingside(WHITE) ? "K" : "")  //
-        << (info.castle_rights.queenside(WHITE) ? "Q" : "") //
-        << (info.castle_rights.kingside(BLACK) ? "k" : "")  //
-        << (info.castle_rights.queenside(BLACK) ? "q" : "") //
-        << (castle_notation_helper(fen) ? " " : "- ")       //
-        << (valid_sq(info.ep_sq) ? oss.str() : "-")         //
-        << " " << info.fmr_counter                          //
+    fen << (stm == WHITE ? " w " : " b ")             //
+        << (info.castle_rights.ks(WHITE) ? "K" : "")  //
+        << (info.castle_rights.qs(WHITE) ? "Q" : "")  //
+        << (info.castle_rights.ks(BLACK) ? "k" : "")  //
+        << (info.castle_rights.qs(BLACK) ? "q" : "")  //
+        << (castle_notation_helper(fen) ? " " : "- ") //
+        << (valid_sq(info.ep_sq) ? oss.str() : "-")   //
+        << " " << info.fmr_counter                    //
         << " " << (!curr_ply ? 1 : (curr_ply + 1) / 2);
 
     return fen.str();
 }
 
-void Board::update_accums() {
-    assert(accum_list[0].is_initialized(WHITE));
-    assert(accum_list[0].is_initialized(BLACK));
+NNUE::DirtyPieces Board::make_move(const Move &move) {
+    const Square from = move.from();
+    const Square to = move.to();
+    const Piece pc = piece_at(from);
+    const PieceType pt = piece_type(pc);
+    const Piece captured = move.is_ep() ? make_piece(~stm, PAWN) : piece_at(to);
 
-    NNUE::Accum &acc = get_accum();
+    NNUE::DirtyPieces dirty_pieces;
 
-    for(Color view : {WHITE, BLACK}) {
-        if(acc.is_initialized(view))
-            continue;
+    assert(move);
+    assert(valid_piece(pc));
+    assert(piece_type(captured) != KING);
+    assert(valid_piece(captured) == move.is_cap());
 
-        const int accums_idx = accum_list.get_idx();
-        assert(accums_idx > 0);
+    // update history
+    curr_ply++;
+    states[curr_ply] = StateInfo(states[curr_ply - 1]);
+    StateInfo &info = get_state();
 
-        // apply lazy update
-        for(int i = accums_idx; i >= 0; i--) {
-            if(accum_list[i].needs_refresh(view)) {
-                accum_list.refresh(view);
-                break;
-            }
+    // update move counters
+    info.fmr_counter++;
+    info.plies_from_null++;
 
-            if(accum_list[i].is_initialized(view)) {
-                for(int j = i + 1; j <= accums_idx; j++)
-                    accum_list[j].update(accum_list[j - 1], view);
+    // reset half move clock if pawn move or capture
+    if(pt == PAWN || move.is_cap())
+        info.fmr_counter = 0;
+
+    // reset ep square if it exists
+    if(valid_sq(info.ep_sq)) {
+        info.hash ^= Zobrist::get_ep(info.ep_sq); // remove ep square from hash
+        info.ep_sq = NO_SQUARE;
+    }
+
+    if(move.is_castling()) {
+        assert(pt == KING);
+
+        auto [rook_from, rook_to] = get_castle_rook_sqs(stm, to);
+        assert(piece_at(rook_from) == make_piece(stm, ROOK));
+
+        move_piece(rook_from, rook_to);
+        dirty_pieces.add(make_piece(stm, ROOK), rook_from, rook_to);
+    }
+
+    if(move.is_cap()) {
+        Square cap_sq = move.is_ep() ? Square(to ^ 8) : to;
+        remove_piece(cap_sq);
+        dirty_pieces.add(captured, cap_sq, NO_SQUARE);
+    }
+
+    // move current piece
+    move_piece(from, to);
+    dirty_pieces.add(pc, from, to);
+
+    if(pt == PAWN) {
+        // set ep square if double push can be captured by enemy pawn
+        auto ep_sq = Square(to ^ 8);
+        if((from ^ to) == 16 && (get_pawn_attacks(stm, ep_sq) & get_piecebb(~stm, PAWN))) {
+            info.ep_sq = ep_sq;
+            info.hash ^= Zobrist::get_ep(ep_sq); // add ep square to hash
+        } else if(move.is_prom()) {
+            PieceType prom_t = move.prom_type();
+            Piece prom_pc = make_piece(stm, prom_t);
+
+            assert(prom_t != PAWN);
+            assert(valid_piece(prom_pc));
+
+            // add promoted piece and remove pawn
+            remove_piece(to);
+            dirty_pieces.add(make_piece(stm, PAWN), to, NO_SQUARE);
+
+            put_piece(prom_pc, to);
+            dirty_pieces.add(prom_pc, NO_SQUARE, to);
+        }
+    }
+
+    // update castling rights if king/rook moves or if one of the rooks get captured
+    if(info.castle_rights.on_castle_sq(from) || info.castle_rights.on_castle_sq(to)) {
+        // remove old castling rights from hash
+        info.hash ^= Zobrist::get_castle(info.castle_rights.get_hash_idx());
+        info.castle_rights.update(sq_bb(from), sq_bb(to));
+        // add new castling rights to hash
+        info.hash ^= Zobrist::get_castle(info.castle_rights.get_hash_idx());
+    }
+
+    // update hash
+    info.hash ^= Zobrist::get_side();
+
+    stm = ~stm;
+    info.captured = captured;
+
+    init_movegen_data();
+
+    // update repetition info for upcoming repetition detection
+
+    info.repetition = 0;
+    int distance = std::min(info.fmr_counter, info.plies_from_null);
+
+    if(distance >= 4) {
+        StateInfo *prev = &states[curr_ply - 2];
+        for(int i = 4; i <= distance; i += 2) {
+            prev -= 2;
+            if(prev->hash == info.hash) {
+                info.repetition = prev->repetition ? -i : i;
                 break;
             }
         }
     }
 
-    assert(acc.is_initialized(WHITE));
-    assert(acc.is_initialized(BLACK));
+    return dirty_pieces;
+}
+
+void Board::undo_move(const Move &move) {
+    const Square from = move.from();
+    const Square to = move.to();
+    const Piece captured = get_state().captured;
+
+    assert(move);
+    assert(valid_piece(piece_at(to)));
+    assert(!valid_piece(piece_at(from)));
+
+    stm = ~stm;
+
+    if(move.is_prom()) {
+        remove_piece(to);
+        put_piece(make_piece(stm, PAWN), to);
+    }
+
+    move_piece(to, from);
+
+    if(move.is_castling()) {
+        auto [rook_to, rook_from] = get_castle_rook_sqs(stm, to);
+        move_piece(rook_from, rook_to);
+    } else if(move.is_cap()) {
+        assert(valid_piece(captured));
+        Square cap_sqr = move.is_ep() ? Square(to ^ 8) : to;
+        put_piece(captured, cap_sqr);
+    }
+
+    curr_ply--;
+}
+
+void Board::make_nullmove() {
+    curr_ply++;
+    states[curr_ply] = StateInfo(states[curr_ply - 1]);
+    StateInfo &info = get_state();
+
+    info.fmr_counter++;
+    info.plies_from_null = 0;
+
+    if(valid_sq(info.ep_sq)) {
+        info.hash ^= Zobrist::get_ep(info.ep_sq); // remove ep square from hash
+        info.ep_sq = NO_SQUARE;
+    }
+
+    info.hash ^= Zobrist::get_side();
+    stm = ~stm;
+
+    init_movegen_data();
+}
+
+void Board::undo_nullmove() {
+    curr_ply--;
+    stm = ~stm;
 }
 
 void Board::perft(int depth) {
@@ -203,7 +342,10 @@ void Board::perft(int depth) {
         MoveList<> ml;
         ml.gen<LEGALS>(*this);
 
-        if(d == 1)
+        if(d == 0)
+            return 1;
+
+        if(d <= 1)
             return ml.size();
 
         U64 nodes = 0;
@@ -242,7 +384,7 @@ void Board::perft(int depth) {
 bool Board::is_legal(const Move &move) const {
     const Square from = move.from();
     const Square to = move.to();
-    const Square ksq = king_sq(stm);
+    const Square ksq = get_king_sq(stm);
     const Piece from_pc = piece_at(from);
 
     assert(move);
@@ -251,15 +393,17 @@ bool Board::is_legal(const Move &move) const {
 
     if(move.is_ep()) {
         Square cap_sq = Square(to ^ 8);
-        U64 occ = (get_occupancy() ^ square_bb(from) ^ square_bb(cap_sq)) | square_bb(to);
+
+        // update occupancy as if the ep capture has occurred
+        U64 occ = (get_occupancy() ^ sq_bb(from) ^ sq_bb(cap_sq)) | sq_bb(to);
 
         assert(piece_at(cap_sq) == make_piece(~stm, PAWN));
         assert(!valid_piece(piece_at(to)));
 
-        U64 attackers = get_attacks(BISHOP, ksq, occ) //
+        U64 attackers = get_attacks<BISHOP>(ksq, occ) //
                         & (get_piecebb(~stm, BISHOP) | get_piecebb(~stm, QUEEN));
 
-        attackers |= get_attacks(ROOK, ksq, occ) //
+        attackers |= get_attacks<ROOK>(ksq, occ) //
                      & (get_piecebb(~stm, ROOK) | get_piecebb(~stm, QUEEN));
 
         // only legal if no discovered check occurs after ep capture
@@ -270,28 +414,30 @@ bool Board::is_legal(const Move &move) const {
         Direction step = (to == rel_sq(stm, g1)) ? WEST : EAST;
         for(Square sq = to; sq != from; sq += step)
             if(attackers_to(~stm, sq, get_occupancy()))
-                return false;
-
+                return false; // squares passed by the king cannot be attacked
         return true;
     }
 
-    // make sure king doesn't move to checking squares
     if(piece_type(from_pc) == KING)
-        return !(attackers_to(~stm, to, get_occupancy() ^ square_bb(from)));
+        // king cannot move to checking squares
+        return !attackers_to(~stm, to, get_occupancy() ^ sq_bb(from));
 
     // only legal if not pinned or moving in the direction of the pin
-    return !(get_state().blockers[stm] & square_bb(from)) || (line(from, to) & square_bb(ksq));
+    return !(get_state().blockers[stm] & sq_bb(from)) || (line(from, to) & sq_bb(ksq));
 }
 
-bool Board::is_pseudolegal(const Move &move) const {
+bool Board::is_pseudo_legal(const Move &move) const {
     const StateInfo &info = get_state();
 
     const Square from = move.from();
     const Square to = move.to();
-    const Square ksq = king_sq(stm);
+    const Square ksq = get_king_sq(stm);
+    const Square cap_sq = move.is_ep() ? Square(to ^ 8) : to;
 
     const Piece from_pc = piece_at(from);
     const Piece to_pc = piece_at(to);
+    const Piece captured = piece_at(cap_sq);
+
     const PieceType pt = piece_type(from_pc);
 
     const U64 us_bb = get_occupancy(stm);
@@ -299,98 +445,109 @@ bool Board::is_pseudolegal(const Move &move) const {
     const U64 occ = us_bb | them_bb;
 
     if(!move)
-        return false;
+        return false; // no and null moves are not pseudo legal
+
     if(!valid_piece(from_pc))
-        return false;
-    if(square_bb(to) & us_bb)
-        return false;
+        return false; // moving piece must be valid
+
+    if(sq_bb(to) & us_bb)
+        return false; // moving piece cannot capture its own pieces
+
     if(piece_color(from_pc) != stm)
-        return false;
+        return false; // moving piece must match stm
+
     if(!move.is_cap() && valid_piece(to_pc))
-        return false;
+        return false; // if move is quiet, then target square must be empty
+
+    if(move.is_cap() && !valid_piece(captured))
+        return false; // if move is a capture, then captured piece must be valid
+
     if(pop_count(info.checkers) > 1 && pt != KING)
-        return false;
-    if(pt == KING && (square_bb(to) & info.danger))
-        return false;
-    if(!move.is_ep() && move.is_cap() && !valid_piece(to_pc))
-        return false;
+        return false; // only king can move if there are multiple checkers
 
     if(move.is_castling()) {
-        if(pt != KING || info.checkers || !info.castle_rights.any(stm)) {
-            return false;
-        }
+        if(pt != KING || info.checkers || !info.castle_rights.any(stm))
+            return false; // only king can castle, if not in check and has castling rights
 
         // short castling
-        U64 not_free = (occ | info.danger) & OO_BLOCKERS_MASK[stm];
-        if(!not_free && info.castle_rights.kingside(stm) && to == rel_sq(stm, g1))
-            return true;
-
+        if(to == rel_sq(stm, g1))
+            return info.castle_rights.ks(stm) && !(occ & ks_castle_path_mask(stm));
         // long castling
-        not_free = (occ | (info.danger & ~square_bb(rel_sq(stm, b1)))) & OOO_BLOCKERS_MASK[stm];
-        if(!not_free && info.castle_rights.queenside(stm) && to == rel_sq(stm, c1))
-            return true;
+        else
+            return info.castle_rights.qs(stm) && !(occ & qs_castle_path_mask(stm));
 
         // if short/long castling condition is not met, then it's not pseudo legal
         return false;
     }
 
     if(move.is_ep()) {
-        if(pt != PAWN                                                    //
-           || info.ep_sq != to                                           //
-           || valid_piece(to_pc)                                         //
-           || piece_at(Square(info.ep_sq ^ 8)) != make_piece(~stm, PAWN) //
+        if(pt != PAWN                            // moving piece must be a pawn
+           || info.ep_sq != to                   // ep square must match
+           || valid_piece(to_pc)                 // target square must be empty
+           || captured != make_piece(~stm, PAWN) // captured piece must be opponent's pawn
         ) {
             return false;
         }
     }
 
     if(move.is_prom()) {
-        if(pt != PAWN)
+        if(pt != PAWN) // only pawns can promote
             return false;
 
-        U64 up_bb = (stm == WHITE ? square_bb(from) << 8 : square_bb(from) >> 8) & ~occ;
-        U64 attacks = up_bb | (get_pawn_attacks(stm, from) & them_bb);
-        U64 targets = info.checkers ? between_bb(ksq, lsb(info.checkers)) | info.checkers : -1ULL;
+        U64 targets = 0;
+
+        // quiet promotions
+        targets |= (stm == WHITE ? shift<NORTH>(sq_bb(from)) : shift<SOUTH>(sq_bb(from))) & ~occ;
+        // capture promotions
+        targets |= (get_pawn_attacks(stm, from) & them_bb);
+        // limit move targets based on checks
+        targets &= info.checkers ? between_bb(ksq, lsb(info.checkers)) | info.checkers : -1ULL;
+        // limit move targets based on promotion rank
+        targets &= rank_mask(rel_rank(stm, RANK_8));
 
         // only pseudo legal, if target range is reachable
-        return (rank_mask(rel_rank(stm, RANK_8)) & attacks & targets) & square_bb(to);
+        return targets & sq_bb(to);
     }
 
     if(pt == PAWN) {
         const Direction up = (stm == WHITE ? NORTH : SOUTH);
 
-        // no promotion moves allowed here since we already handled them
-        if(square_bb(to) & (rank_mask(RANK_1) | rank_mask(RANK_8)))
-            return false;
+        if(sq_bb(to) & (rank_mask(RANK_1) | rank_mask(RANK_8)))
+            return false; // no promotion moves allowed here since we already handled them
 
         if(!move.is_ep()) {
-            bool capture = get_pawn_attacks(stm, from) & them_bb & square_bb(to);
+            bool valid = false;
 
-            bool singe_push = Square(from + up) == to && !valid_piece(to_pc);
-
-            bool double_push = Square(from + 2 * up) == to &&            //
-                               rel_rank(stm, RANK_2) == sq_rank(from) && //
-                               (to_pc + piece_at(to - up)) == 2 * NO_PIECE;
+            // captures
+            valid |= get_pawn_attacks(stm, from) & them_bb & sq_bb(to);
+            // single push
+            valid |= Square(from + up) == to && !valid_piece(to_pc);
+            // double push
+            valid |= Square(from + 2 * up) == to &&            //
+                     rel_rank(stm, RANK_2) == sq_rank(from) && //
+                     (to_pc + piece_at(to - up)) == 2 * NO_PIECE;
 
             // if none of the conditions above are met, then it's not pseudo legal
-            if(!capture && !singe_push && !double_push)
+            if(!valid)
                 return false;
         }
     }
     // if a non pawn piece's target range isn't reachable, then it's not pseudo legal
-    else if(!(get_attacks(pt, from, occ) & square_bb(to))) {
+    else if(!(get_attacks(pt, from, occ) & sq_bb(to))) {
         return false;
     }
 
     // check for blockers/captures of the checker
     if(info.checkers && pt != KING) {
         U64 target = between_bb(ksq, lsb(info.checkers)) | info.checkers;
-        Square cap_sq = move.is_ep() ? Square(to ^ 8) : to;
 
         // if move can't capture/block the checker, then it's not pseudo legal
-        if(!(target & square_bb(cap_sq)))
+        if(!(target & sq_bb(cap_sq)))
             return false;
     }
+
+    if(info.blockers[stm] & sq_bb(from) && !(line(from, to) & sq_bb(ksq)))
+        return false; // if a pinned piece move causes a discovered check, then it's not pseudo legal
 
     return true;
 }
@@ -414,7 +571,7 @@ bool Board::is_repetition(int ply) const {
     return false;
 }
 
-bool Board::see(Move &move, int threshold) const {
+bool Board::see(const Move &move, int threshold) const {
     assert(move);
 
     if(move.is_prom() || move.is_ep() || move.is_castling())
@@ -439,11 +596,11 @@ bool Board::see(Move &move, int threshold) const {
     if(swap <= 0)
         return true;
 
-    U64 occ = get_occupancy() ^ square_bb(from) ^ square_bb(to);
+    U64 occ = get_occupancy() ^ sq_bb(from) ^ sq_bb(to);
     U64 attackers = attackers_to(WHITE, to, occ) | attackers_to(BLACK, to, occ);
 
-    const U64 diag = diag_sliders(WHITE) | diag_sliders(BLACK);
-    const U64 orth = orth_sliders(WHITE) | orth_sliders(BLACK);
+    const U64 diag = get_diag_sliders(WHITE) | get_diag_sliders(BLACK);
+    const U64 orth = get_orth_sliders(WHITE) | get_orth_sliders(BLACK);
 
     int res = 1;
 
@@ -469,7 +626,7 @@ bool Board::see(Move &move, int threshold) const {
             if((swap = get_see_piece_value(PAWN) - swap) < res)
                 break;
             occ ^= (bb & -bb);
-            attackers |= get_attacks(BISHOP, to, occ) & diag;
+            attackers |= get_attacks<BISHOP>(to, occ) & diag;
         } else if((bb = stm_attacker & get_piecebb(KNIGHT))) {
             if((swap = get_see_piece_value(KNIGHT) - swap) < res)
                 break;
@@ -478,18 +635,18 @@ bool Board::see(Move &move, int threshold) const {
             if((swap = get_see_piece_value(BISHOP) - swap) < res)
                 break;
             occ ^= (bb & -bb);
-            attackers |= get_attacks(BISHOP, to, occ) & diag;
+            attackers |= get_attacks<BISHOP>(to, occ) & diag;
         } else if((bb = stm_attacker & get_piecebb(ROOK))) {
             if((swap = get_see_piece_value(ROOK) - swap) < res)
                 break;
             occ ^= (bb & -bb);
-            attackers |= get_attacks(ROOK, to, occ) & orth;
+            attackers |= get_attacks<ROOK>(to, occ) & orth;
         } else if((bb = stm_attacker & get_piecebb(QUEEN))) {
             swap = get_see_piece_value(QUEEN) - swap;
             assert(swap >= res);
 
             occ ^= (bb & -bb);
-            attackers |= (get_attacks(BISHOP, to, occ) & diag) | (get_attacks(ROOK, to, occ) & orth);
+            attackers |= (get_attacks<BISHOP>(to, occ) & diag) | (get_attacks<ROOK>(to, occ) & orth);
         } else {
             return (attackers & ~get_occupancy(curr_stm)) ? res ^ 1 : res;
         }
@@ -535,7 +692,7 @@ bool Board::upcoming_repetition(int ply) {
 
         Move move = Cuckoo::cuckoo_moves[hash];
         Square to = move.to();
-        U64 between = between_bb(move.from(), to) ^ square_bb(to);
+        U64 between = between_bb(move.from(), to) ^ sq_bb(to);
 
         if(!(between & occ)) {
             if(ply > i)
@@ -548,48 +705,43 @@ bool Board::upcoming_repetition(int ply) {
     return false;
 }
 
-// private member
+Threats Board::get_threats() const {
+    const Color them = ~stm;
 
-void Board::init_threats() {
-    StateInfo &info = get_state();
-    Color them = ~stm;
-    U64 occ = get_occupancy() ^ square_bb(king_sq(stm)); // king must be excluded so we don't block the slider attacks
+    Threats threats;
 
-    U64 danger = 0;
-    U64 threat = 0;
+    // king must be excluded so we don't block the slider attacks
+    U64 occ = get_occupancy() ^ sq_bb(get_king_sq(stm));
 
-    // pawn attacks
     U64 pawns = get_piecebb(them, PAWN);
-    threat = them == WHITE ? shift<NORTH_WEST>(pawns) | shift<NORTH_EAST>(pawns)
-                           : shift<SOUTH_WEST>(pawns) | shift<SOUTH_EAST>(pawns);
-    danger = threat;
-    info.threats[PAWN] = threat;
+    threats[PAWN] = them == WHITE ? shift<NORTH_WEST>(pawns) | shift<NORTH_EAST>(pawns)
+                                  : shift<SOUTH_WEST>(pawns) | shift<SOUTH_EAST>(pawns);
 
-    for(PieceType pt : {KNIGHT, BISHOP, ROOK, QUEEN, KING}) {
-        U64 threat = 0;
+    for(PieceType pt : {KNIGHT, BISHOP, ROOK}) {
+        threats[pt] = 0;
+
         U64 pc_bb = get_piecebb(them, pt);
         while(pc_bb)
-            threat |= get_attacks(pt, pop_lsb(pc_bb), occ);
-        danger |= threat;
-        info.threats[pt] = threat;
+            threats[pt] |= get_attacks(pt, pop_lsb(pc_bb), occ);
     }
 
-    info.danger = danger;
-    info.checkers = attackers_to(them, king_sq(stm), get_occupancy());
+    return threats;
 }
 
-void Board::init_slider_blockers() {
+// private member
+
+void Board::init_movegen_data() {
     StateInfo &info = get_state();
 
     auto helper = [&](Color c) {
         info.blockers[c] = 0;
         info.pinners[~c] = 0;
 
-        const Square ksq = king_sq(c);
+        const Square ksq = get_king_sq(c);
 
         // potential enemy bishop, rook and queen attacks at our king
-        U64 cands = (get_attacks(ROOK, ksq) & orth_sliders(~c)) | //
-                    (get_attacks(BISHOP, ksq) & diag_sliders(~c));
+        U64 cands = (get_attacks<ROOK>(ksq) & get_orth_sliders(~c)) | //
+                    (get_attacks<BISHOP>(ksq) & get_diag_sliders(~c));
 
         const U64 occ = get_occupancy() ^ cands;
         while(cands) {
@@ -599,13 +751,15 @@ void Board::init_slider_blockers() {
             if(pop_count(b) == 1) {
                 info.blockers[c] |= b;
                 if(b & get_occupancy(c))
-                    info.pinners[~c] |= square_bb(sq);
+                    info.pinners[~c] |= sq_bb(sq);
             }
         }
     };
 
     helper(WHITE);
     helper(BLACK);
+
+    info.checkers = attackers_to(~stm, get_king_sq(stm), get_occupancy());
 }
 
 } // namespace Chess

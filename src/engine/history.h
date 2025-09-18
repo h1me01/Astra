@@ -38,8 +38,8 @@ class History {
 
     void update_conth(const Move &move, Stack *stack, int bonus);
 
-    void update_matcorr(const Board &board, Score raw_eval, Score real_score, int depth);
-    void update_contcorr(Score raw_eval, Score real_score, int depth, const Stack *stack);
+    void update_mat_corr(const Board &board, Score raw_eval, Score real_score, int depth);
+    void update_cont_corr(Score raw_eval, Score real_score, int depth, const Stack *stack);
 
     Move get_counter(const Move &move) const;
 
@@ -48,8 +48,8 @@ class History {
     int get_qh(const Board &board, const Move &move, const Stack *stack) const;
     int get_ph(const Board &board, const Move &move) const;
 
-    int get_matcorr(const Board &board) const;
-    int get_contcorr(const Stack *stack) const;
+    int get_mat_corr(const Board &board) const;
+    int get_cont_corr(const Stack *stack) const;
 
   private:
     // private variables
@@ -123,7 +123,7 @@ inline int History::get_ph(const Board &board, const Move &move) const {
     return ph[ph_idx(board.get_pawn_hash())][pc][move.to()];
 }
 
-inline int History::get_matcorr(const Board &board) const {
+inline int History::get_mat_corr(const Board &board) const {
     Color stm = board.get_stm();
 
     return pawn_corr[stm][corr_idx(board.get_pawn_hash())] +               //
@@ -131,7 +131,7 @@ inline int History::get_matcorr(const Board &board) const {
            b_non_pawn_corr[stm][corr_idx(board.get_nonpawn_hash(BLACK))];
 }
 
-inline int History::get_contcorr(const Stack *stack) const {
+inline int History::get_cont_corr(const Stack *stack) const {
     const Move prev_move = (stack - 1)->move;
     const Move pprev_move = (stack - 2)->move;
 

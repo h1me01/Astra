@@ -39,13 +39,13 @@ enum Color {
 
 enum Direction {
     NORTH = 8,
-    NORTH_EAST = 9,
-    EAST = 1,
-    SOUTH_EAST = -7,
     SOUTH = -8,
-    SOUTH_WEST = -9,
+    EAST = 1,
     WEST = -1,
-    NORTH_WEST = 7
+    NORTH_WEST = 7,
+    SOUTH_EAST = -7,
+    NORTH_EAST = 9,
+    SOUTH_WEST = -9
 };
 
 constexpr int NUM_PIECE_TYPES = 6;

@@ -59,7 +59,7 @@ class NNUE {
     void init();
     void init_accum(Accum &acc) const;
 
-    int32_t forward(Board &board) const;
+    int32_t forward(Board &board, const Accum &accum) const;
 
     void put(Accum &acc, Accum &prev, Piece pc, Square psq, Square ksq, Color view) const;
     void remove(Accum &acc, Accum &prev, Piece pc, Square psq, Square ksq, Color view) const;

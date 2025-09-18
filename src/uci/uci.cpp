@@ -234,18 +234,16 @@ void UCI::update_position(std::istringstream &is) {
         return;
     }
 
-    board.set_fen(fen, false);
+    board.set_fen(fen);
     while(is >> token) {
         if(token == "moves")
             continue;
-        board.make_move<false>(get_move(token));
+        board.make_move(get_move(token));
         // if half move clock gets reseted, then we can reset the history
         // since the last positions should not be considered in the repetition
         if(!board.get_fmr_count())
             board.reset_ply();
     }
-
-    board.reset_accum_list();
 }
 
 void UCI::new_game() {
@@ -336,6 +334,8 @@ void UCI::bench() {
 
         nodes += Engine::threads.get_total_nodes();
     }
+
+    Engine::threads.stop();
 
     auto end = std::chrono::high_resolution_clock::now();
     auto total_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();

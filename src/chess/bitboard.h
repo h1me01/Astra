@@ -1,6 +1,6 @@
 #pragma once
 
-#include "types.h"
+#include "misc.h"
 
 namespace Chess {
 
@@ -60,10 +60,19 @@ constexpr U64 anti_diag_mask(int idx) {
     return MASK[idx];
 }
 
-constexpr U64 OO_BLOCKERS_MASK[NUM_COLORS] = {0x60ULL, 0x6000000000000000ULL};
-constexpr U64 OOO_BLOCKERS_MASK[NUM_COLORS] = {0xeULL, 0xE00000000000000ULL};
+constexpr U64 ks_castle_path_mask(Color c) {
+    assert(valid_color(c));
+    constexpr U64 mask[NUM_COLORS] = {0x60ULL, 0x6000000000000000ULL};
+    return mask[c];
+}
 
-inline U64 square_bb(Square sq) {
+constexpr U64 qs_castle_path_mask(Color c) {
+    assert(valid_color(c));
+    constexpr U64 mask[NUM_COLORS] = {0x0EULL, 0x0E00000000000000ULL};
+    return mask[c];
+}
+
+inline U64 sq_bb(Square sq) {
     return (1ULL << sq);
 }
 
@@ -109,5 +118,10 @@ U64 line(Square sq1, Square sq2);
 U64 get_pawn_attacks(Color c, Square sq);
 
 U64 get_attacks(PieceType pt, Square sq, const U64 occ = 0);
+
+template <PieceType pt> //
+U64 get_attacks(Square sq, const U64 occ = 0) {
+    return get_attacks(pt, sq, occ);
+}
 
 } // namespace Chess

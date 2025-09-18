@@ -131,7 +131,7 @@ U64 sliding_attacks(Square sq, const U64 occ, const U64 mask) {
     assert(valid_sq(sq));
     // hyperbola quintessence algorithm
     const U64 mask_occ = mask & occ;
-    return ((mask_occ - square_bb(sq) * 2) ^ (reverse_bb(reverse_bb(mask_occ) - reverse_bb(square_bb(sq)) * 2))) & mask;
+    return ((mask_occ - sq_bb(sq) * 2) ^ (reverse_bb(reverse_bb(mask_occ) - reverse_bb(sq_bb(sq)) * 2))) & mask;
 }
 
 void init_rook_attacks() {
@@ -207,11 +207,11 @@ void init_lookup_tables() {
     };
 
     auto set_pawn_attacks = [](Color c, Square sq) {
-        const U64 sq_bb = square_bb(sq);
+        const U64 b = sq_bb(sq);
         if(c == WHITE)
-            return shift<NORTH_WEST>(sq_bb) | shift<NORTH_EAST>(sq_bb);
+            return shift<NORTH_WEST>(b) | shift<NORTH_EAST>(b);
         else
-            return shift<SOUTH_WEST>(sq_bb) | shift<SOUTH_EAST>(sq_bb);
+            return shift<SOUTH_WEST>(b) | shift<SOUTH_EAST>(b);
     };
 
     // init pseudo legal attacks
@@ -224,9 +224,9 @@ void init_lookup_tables() {
             Square knight_sq = Square(int(sq) + knight_offsets[i]);
 
             if(in_bounds(sq, king_sq, 1))
-                PSEUDO_LEGAL_ATTACKS[KING][sq] |= square_bb(king_sq);
+                PSEUDO_LEGAL_ATTACKS[KING][sq] |= sq_bb(king_sq);
             if(in_bounds(sq, knight_sq, 2))
-                PSEUDO_LEGAL_ATTACKS[KNIGHT][sq] |= square_bb(knight_sq);
+                PSEUDO_LEGAL_ATTACKS[KNIGHT][sq] |= sq_bb(knight_sq);
         }
 
         PSEUDO_LEGAL_ATTACKS[BISHOP][sq] = get_bishop_attacks(sq);
@@ -237,7 +237,7 @@ void init_lookup_tables() {
     // init squares between and line
     for(Square sq1 = a1; sq1 <= h8; ++sq1) {
         for(Square sq2 = a1; sq2 <= h8; ++sq2) {
-            const U64 s = square_bb(sq1) | square_bb(sq2);
+            const U64 s = sq_bb(sq1) | sq_bb(sq2);
 
             if(sq_file(sq1) == sq_file(sq2) || sq_rank(sq1) == sq_rank(sq2)) {
                 U64 b1 = get_rook_attacks(sq1, s);
@@ -246,7 +246,7 @@ void init_lookup_tables() {
 
                 b1 = get_rook_attacks(sq1);
                 b2 = get_rook_attacks(sq2);
-                LINE[sq1][sq2] = (b1 & b2) | square_bb(sq1) | square_bb(sq2);
+                LINE[sq1][sq2] = (b1 & b2) | sq_bb(sq1) | sq_bb(sq2);
             } else if(sq_diag(sq1) == sq_diag(sq2) || sq_anti_diag(sq1) == sq_anti_diag(sq2)) {
                 U64 b1 = get_bishop_attacks(sq1, s);
                 U64 b2 = get_bishop_attacks(sq2, s);
@@ -254,7 +254,7 @@ void init_lookup_tables() {
 
                 b1 = get_bishop_attacks(sq1);
                 b2 = get_bishop_attacks(sq2);
-                LINE[sq1][sq2] = (b1 & b2) | square_bb(sq1) | square_bb(sq2);
+                LINE[sq1][sq2] = (b1 & b2) | sq_bb(sq1) | sq_bb(sq2);
             }
         }
     }
