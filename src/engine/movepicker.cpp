@@ -131,7 +131,7 @@ Move MovePicker::next(bool skip_quiets) {
     quiet_checkers:
         idx = 0;
         stage = PLAY_QUIET_CHECKERS;
-        ml_main.gen<QUIET_CHECKS>(board);
+        ml_main.gen<ADD_QUIET_CHECKS>(board);
         [[fallthrough]];
     case PLAY_QUIET_CHECKERS:
         while(idx < ml_main.size()) {
@@ -150,7 +150,7 @@ Move MovePicker::next(bool skip_quiets) {
 // private member
 
 void MovePicker::score_quiets() {
-    ml_main.gen<QUIETS>(board);
+    ml_main.gen<ADD_QUIETS>(board);
 
     Threats threats = board.get_threats();
 
@@ -158,8 +158,6 @@ void MovePicker::score_quiets() {
         const Move move = ml_main[i];
         const Piece pc = board.piece_at(move.from());
         const PieceType pt = piece_type(pc);
-        const Square from = move.from();
-        const Square to = move.to();
 
         assert(move);
         assert(valid_piece(pc));
@@ -167,7 +165,7 @@ void MovePicker::score_quiets() {
 
         int score = 2 * (history.get_hh(board.get_stm(), move) + history.get_ph(board, move));
         for(int i : {1, 2, 4, 6})
-            score += (int) (*(stack - i)->conth)[pc][to];
+            score += (int) (*(stack - i)->conth)[pc][move.to()];
 
         if(pt != PAWN && pt != KING) {
             U64 danger;
@@ -179,9 +177,9 @@ void MovePicker::score_quiets() {
                 danger = threats[PAWN];
 
             const int bonus = 16384 + 16384 * (pt == QUEEN);
-            if(danger & sq_bb(from))
+            if(danger & sq_bb(move.from()))
                 score += bonus;
-            else if(danger & sq_bb(to))
+            else if(danger & sq_bb(move.to()))
                 score -= bonus;
         }
 
@@ -190,14 +188,19 @@ void MovePicker::score_quiets() {
 }
 
 void MovePicker::score_noisy() {
-    ml_main.gen<NOISY>(board);
+    ml_main.gen<ADD_NOISY>(board);
 
     for(int i = 0; i < ml_main.size(); i++) {
-        PieceType captured = ml_main[i].is_ep() ? PAWN : piece_type(board.piece_at(ml_main[i].to()));
-        int score = history.get_nh(board, ml_main[i]);
+        const Move move = ml_main[i];
+        assert(move);
 
-        score += 16 * PIECE_VALUES[captured];
-        score += 4096 * (2 * ml_main[i].is_prom() - ml_main[i].is_underprom());
+        const PieceType captured = move.is_ep() ? PAWN : piece_type(board.piece_at(move.to()));
+        assert(captured != KING);
+        assert(valid_piece_type(captured) || (move.type() >= PQ_KNIGHT && move.type() <= PQ_QUEEN));
+
+        int score = history.get_nh(board, move)   //
+                    + 16 * PIECE_VALUES[captured] //
+                    + 4096 * (2 * move.is_prom() - move.is_underprom());
 
         ml_main[i].set_score(score);
     }

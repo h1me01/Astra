@@ -5,10 +5,10 @@
 namespace Chess {
 
 enum GenType : int { //
-    NOISY = 1,
-    QUIETS = 2,
-    LEGALS = 3,
-    QUIET_CHECKS = 4
+    ADD_NOISY = 1,
+    ADD_QUIETS = 2,
+    ADD_LEGALS = 3,
+    ADD_QUIET_CHECKS = 4
 };
 
 template <GenType gt, Direction d, MoveType mt> //
@@ -16,9 +16,9 @@ Move *make_promotions(Move *ml, Square to) {
     assert(valid_sq(to));
     assert(!(to >= a2 && to <= h7));
 
-    if(gt & NOISY) {
+    if(gt & ADD_NOISY) {
         *ml++ = Move(to - d, to, mt);
-        if(gt == NOISY && mt == PQ_QUEEN)
+        if(gt == ADD_NOISY && mt == PQ_QUEEN)
             return ml;
     }
 
@@ -40,12 +40,11 @@ Move *gen_pawn_moves(const Board &board, Move *ml, const U64 targets) {
     const U64 them_bb = board.get_occupancy(them);
     const U64 occ = board.get_occupancy(us) | them_bb;
     const U64 empty_sqs = ~occ;
-
-    const U64 pawns = board.get_piecebb(us, PAWN);
+    const U64 pawns = board.get_piece_bb<PAWN>(us);
     const U64 pawns_non7 = pawns & ~rank7_bb;
 
     // single and double pawn pushes, no promotions
-    if constexpr(gt & QUIETS) {
+    if constexpr(gt & ADD_QUIETS) {
         U64 b1 = shift<up>(pawns_non7) & empty_sqs;
         U64 b2 = shift<up>(b1 & rank_mask(rel_rank(us, RANK_3))) & empty_sqs & targets;
 
@@ -62,7 +61,7 @@ Move *gen_pawn_moves(const Board &board, Move *ml, const U64 targets) {
         }
     }
 
-    if constexpr(gt & NOISY) {
+    if constexpr(gt & ADD_NOISY) {
         // standard captures
         U64 b1 = shift<up_right>(pawns_non7) & them_bb & targets;
         U64 b2 = shift<up_left>(pawns_non7) & them_bb & targets;
@@ -91,7 +90,7 @@ Move *gen_pawn_moves(const Board &board, Move *ml, const U64 targets) {
     // promotions
     const U64 pawns_on7 = pawns & rank7_bb;
 
-    if(gt & NOISY) {
+    if(gt & ADD_NOISY) {
         U64 pb1 = shift<up_right>(pawns_on7) & them_bb & targets;
         while(pb1)
             ml = make_promotions<gt, up_right, PC_QUEEN>(ml, pop_lsb(pb1));
@@ -124,13 +123,13 @@ Move *gen_piece_moves(const Board &board, Move *ml, U64 pieces, const U64 target
         if(pinned & sq_bb(from))
             attacks &= line(from, ksq);
 
-        if constexpr(gt & QUIETS) {
+        if constexpr(gt & ADD_QUIETS) {
             U64 target = attacks & ~occ;
             while(target)
                 *ml++ = Move(from, pop_lsb(target), QUIET);
         }
 
-        if constexpr(gt & NOISY) {
+        if constexpr(gt & ADD_NOISY) {
             U64 target = attacks & them_bb;
             while(target)
                 *ml++ = Move(from, pop_lsb(target), CAPTURE);
@@ -148,12 +147,10 @@ Move *gen_all(const Board &board, Move *ml) {
     const U64 us_bb = board.get_occupancy(us);
     const U64 them_bb = board.get_occupancy(~us);
     const U64 occ = us_bb | them_bb;
-
     const U64 checkers = info.checkers;
-
     const U64 targets = (them_bb | ~occ);
 
-    ml = gen_piece_moves<us, gt, KING>(board, ml, board.get_piecebb(us, KING), targets);
+    ml = gen_piece_moves<us, gt, KING>(board, ml, board.get_piece_bb<KING>(us), targets);
 
     // if double check, then only king moves are legal
     if(pop_count(checkers) > 1)
@@ -163,12 +160,12 @@ Move *gen_all(const Board &board, Move *ml) {
     const U64 piece_targets = targets & check_targets;
 
     ml = gen_pawn_moves<us, gt>(board, ml, check_targets);
-    ml = gen_piece_moves<us, gt, KNIGHT>(board, ml, board.get_piecebb(us, KNIGHT), piece_targets);
+    ml = gen_piece_moves<us, gt, KNIGHT>(board, ml, board.get_piece_bb<KNIGHT>(us), piece_targets);
     ml = gen_piece_moves<us, gt, BISHOP>(board, ml, board.get_diag_sliders(us), piece_targets);
     ml = gen_piece_moves<us, gt, ROOK>(board, ml, board.get_orth_sliders(us), piece_targets);
 
     // castling moves
-    if((gt & QUIETS) && !checkers) {
+    if((gt & ADD_QUIETS) && !checkers) {
         if(info.castle_rights.ks(us) && !(occ & ks_castle_path_mask(us)))
             *ml++ = Move(rel_sq(us, e1), rel_sq(us, g1), CASTLING);
         if(info.castle_rights.qs(us) && !(occ & qs_castle_path_mask(us)))
@@ -191,11 +188,11 @@ Move *gen_quiet_checkers(const Board &board, Move *ml) {
     const U64 bishop_checks = get_attacks<BISHOP>(opp_ksq, occ) & ~occ;
     const U64 rook_checks = get_attacks<ROOK>(opp_ksq, occ) & ~occ;
 
-    ml = gen_pawn_moves<us, QUIETS>(board, ml, get_pawn_attacks(them, opp_ksq));
-    ml = gen_piece_moves<us, QUIETS, KNIGHT>(board, ml, board.get_piecebb(us, KNIGHT), knight_checks);
-    ml = gen_piece_moves<us, QUIETS, BISHOP>(board, ml, board.get_piecebb(us, BISHOP), bishop_checks);
-    ml = gen_piece_moves<us, QUIETS, ROOK>(board, ml, board.get_piecebb(us, ROOK), rook_checks);
-    ml = gen_piece_moves<us, QUIETS, QUEEN>(board, ml, board.get_piecebb(us, QUEEN), bishop_checks | rook_checks);
+    ml = gen_pawn_moves<us, ADD_QUIETS>(board, ml, get_pawn_attacks(them, opp_ksq));
+    ml = gen_piece_moves<us, ADD_QUIETS, KNIGHT>(board, ml, board.get_piece_bb<KNIGHT>(us), knight_checks);
+    ml = gen_piece_moves<us, ADD_QUIETS, BISHOP>(board, ml, board.get_piece_bb<BISHOP>(us), bishop_checks);
+    ml = gen_piece_moves<us, ADD_QUIETS, ROOK>(board, ml, board.get_piece_bb<ROOK>(us), rook_checks);
+    ml = gen_piece_moves<us, ADD_QUIETS, QUEEN>(board, ml, board.get_piece_bb<QUEEN>(us), bishop_checks | rook_checks);
 
     return ml;
 }
@@ -206,7 +203,7 @@ inline Move *gen_legals(const Board &board, Move *ml) {
     const U64 pinned = board.get_state().blockers[us] & board.get_occupancy(us);
 
     Move *curr = ml;
-    ml = (us == WHITE) ? gen_all<WHITE, LEGALS>(board, ml) : gen_all<BLACK, LEGALS>(board, ml);
+    ml = (us == WHITE) ? gen_all<WHITE, ADD_LEGALS>(board, ml) : gen_all<BLACK, ADD_LEGALS>(board, ml);
 
     while(curr != ml) {
         if(((pinned & sq_bb(curr->from())) || curr->is_ep() || curr->from() == ksq) && !board.is_legal(*curr)) {
@@ -239,9 +236,9 @@ class MoveList {
         auto gen_moves = [&](Move *move_list) -> Move * {
             bool is_w = board.get_stm() == WHITE;
 
-            if(gt == LEGALS) {
+            if(gt == ADD_LEGALS) {
                 return gen_legals(board, move_list);
-            } else if(gt == QUIET_CHECKS) {
+            } else if(gt == ADD_QUIET_CHECKS) {
                 return is_w ? gen_quiet_checkers<WHITE>(board, move_list) //
                             : gen_quiet_checkers<BLACK>(board, move_list);
             } else {

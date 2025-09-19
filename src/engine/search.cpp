@@ -50,7 +50,7 @@ void Search::start() {
     ply = 0;
     nmp_min_ply = 0;
 
-    root_moves.gen<LEGALS>(board);
+    root_moves.gen<ADD_LEGALS>(board);
 
     if(!root_moves.size()) {
         std::cout << "Position has no legal moves" << std::endl;
@@ -851,7 +851,7 @@ void Search::undo_move(const Move &move) {
     board.undo_move(move);
 }
 
-void Search::update_accums() {
+Score Search::evaluate() {
     assert(accum_list[0].is_initialized(WHITE));
     assert(accum_list[0].is_initialized(BLACK));
 
@@ -881,10 +881,7 @@ void Search::update_accums() {
 
     assert(acc.is_initialized(WHITE));
     assert(acc.is_initialized(BLACK));
-}
 
-Score Search::evaluate() {
-    update_accums();
     int eval = NNUE::nnue.forward(board, accum_list.back());
 
     int material = 122 * board.count<PAWN>()     //
@@ -922,12 +919,12 @@ unsigned int Search::probe_wdl() const {
     return tb_probe_wdl(                       //
         w_occ,                                 //
         b_occ,                                 //
-        board.get_piecebb(KING),               //
-        board.get_piecebb(QUEEN),              //
-        board.get_piecebb(ROOK),               //
-        board.get_piecebb(BISHOP),             //
-        board.get_piecebb(KNIGHT),             //
-        board.get_piecebb(PAWN),               //
+        board.get_piece_bb<KING>(),            //
+        board.get_piece_bb<QUEEN>(),           //
+        board.get_piece_bb<ROOK>(),            //
+        board.get_piece_bb<BISHOP>(),          //
+        board.get_piece_bb<KNIGHT>(),          //
+        board.get_piece_bb<PAWN>(),            //
         board.get_fmr_count(),                 //
         board.get_state().castle_rights.any(), //
         valid_sq(ep_sq) ? ep_sq : 0,           //

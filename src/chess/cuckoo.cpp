@@ -20,7 +20,7 @@ void init() {
 
             for(Square sq1 = a1; sq1 <= h8; ++sq1) {
                 for(Square sq2 = Square(sq1 + 1); sq2 <= h8; ++sq2) {
-                    if(!(get_attacks(pt, sq1, 0) & sq_bb(sq2)))
+                    if(!(get_attacks(pt, sq1) & sq_bb(sq2)))
                         continue;
 
                     Move move = Move(sq1, sq2, QUIET);

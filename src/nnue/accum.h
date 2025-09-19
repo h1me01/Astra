@@ -110,7 +110,7 @@ class AccumEntry {
         piece_bb[c][pt] = bb;
     }
 
-    U64 get_piecebb(Color c, PieceType pt) const {
+    U64 get_piece_bb(Color c, PieceType pt) const {
         return piece_bb[c][pt];
     }
 

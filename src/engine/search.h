@@ -108,8 +108,6 @@ class Search {
     void make_move(const Move &move, Stack *stack);
     void undo_move(const Move &move);
 
-    void update_accums();
-
     Score evaluate();
     Score adjust_eval(int32_t eval, Stack *stack) const;
 

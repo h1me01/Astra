@@ -43,8 +43,8 @@ void AccumTable::refresh(Color view, Board &board, Accum &accum) {
             PieceType pt = PieceType(i);
             Piece pc = make_piece(c, pt);
 
-            const U64 pc_bb = board.get_piecebb(c, pt);
-            const U64 entry_bb = entry.get_piecebb(c, pt);
+            const U64 pc_bb = board.get_piece_bb(c, pt);
+            const U64 entry_bb = entry.get_piece_bb(c, pt);
 
             U64 to_set = pc_bb & ~entry_bb;
             while(to_set)

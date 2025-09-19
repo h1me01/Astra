@@ -60,6 +60,9 @@ class Board {
 
     void print() const;
 
+    void set_fen(const std::string &fen);
+    std::string get_fen() const;
+
     NNUE::DirtyPieces make_move(const Move &move);
     void undo_move(const Move &move);
 
@@ -71,28 +74,33 @@ class Board {
     bool is_legal(const Move &move) const;
     bool is_pseudo_legal(const Move &move) const;
 
-    bool is_repetition(int ply) const;
-
     bool see(const Move &move, int threshold) const;
     bool upcoming_repetition(int ply);
 
-    void set_fen(const std::string &fen);
-    std::string get_fen() const;
+    Threats get_threats() const;
 
     U64 get_occupancy(Color c) const;
     U64 attackers_to(Color c, Square sq, U64 occ) const;
 
-    Threats get_threats() const;
-
-    U64 get_piecebb(Color c, PieceType pt) const {
+    U64 get_piece_bb(Color c, PieceType pt) const {
         assert(valid_color(c));
         assert(valid_piece_type(pt));
         return piece_bb[make_piece(c, pt)];
     }
 
-    U64 get_piecebb(PieceType pt) const {
+    template <PieceType pt> //
+    U64 get_piece_bb(Color c) const {
+        return get_piece_bb(c, pt);
+    }
+
+    U64 get_piece_bb(PieceType pt) const {
         assert(valid_piece_type(pt));
-        return get_piecebb(WHITE, pt) | get_piecebb(BLACK, pt);
+        return get_piece_bb(WHITE, pt) | get_piece_bb(BLACK, pt);
+    }
+
+    template <PieceType pt> //
+    U64 get_piece_bb() const {
+        return get_piece_bb(pt);
     }
 
     Piece piece_at(Square sq) const {
@@ -101,11 +109,11 @@ class Board {
     }
 
     U64 get_diag_sliders(Color c) const {
-        return get_piecebb(c, BISHOP) | get_piecebb(c, QUEEN);
+        return get_piece_bb<BISHOP>(c) | get_piece_bb<QUEEN>(c);
     }
 
     U64 get_orth_sliders(Color c) const {
-        return get_piecebb(c, ROOK) | get_piecebb(c, QUEEN);
+        return get_piece_bb<ROOK>(c) | get_piece_bb<QUEEN>(c);
     }
 
     bool in_check() const {
@@ -138,7 +146,7 @@ class Board {
     }
 
     Square get_king_sq(Color c) const {
-        return lsb(get_piecebb(c, KING));
+        return lsb(get_piece_bb<KING>(c));
     }
 
     StateInfo &get_state() {
@@ -157,21 +165,24 @@ class Board {
 
     // doesn't include stalemate
     bool is_draw(int ply) const {
-        return get_state().fmr_counter > 99 || is_repetition(ply);
+        const StateInfo &info = get_state();
+        const bool is_repetition = info.repetition && info.repetition < ply;
+        return get_state().fmr_counter > 99 || is_repetition;
     }
 
     // checks if there is any non-pawn material on the board of the current side to move
     bool nonpawn_mat(Color c) const {
-        return get_piecebb(c, KNIGHT) | get_piecebb(c, BISHOP) | get_piecebb(c, ROOK) | get_piecebb(c, QUEEN);
+        return get_piece_bb<KNIGHT>(c) | get_piece_bb<BISHOP>(c) | //
+               get_piece_bb<ROOK>(c) | get_piece_bb<QUEEN>(c);
     }
 
     template <PieceType pt> //
     int count(Color c = BOTH_COLORS) const {
         int count = 0;
         if(c != BLACK)
-            count += pop_count(get_piecebb(WHITE, pt));
+            count += pop_count(get_piece_bb(WHITE, pt));
         if(c != WHITE)
-            count += pop_count(get_piecebb(BLACK, pt));
+            count += pop_count(get_piece_bb(BLACK, pt));
         return count;
     }
 
@@ -191,7 +202,7 @@ class Board {
     void remove_piece(Square sq);
     void move_piece(Square from, Square to);
 
-    void init_movegen_data();
+    void init_movegen_info();
 
     std::pair<Square, Square> get_castle_rook_sqs(Color c, Square to);
 };
@@ -206,11 +217,11 @@ inline U64 Board::get_occupancy(Color c = BOTH_COLORS) const {
 }
 
 inline U64 Board::attackers_to(Color c, Square sq, const U64 occ) const {
-    U64 attacks = get_pawn_attacks(~c, sq) & get_piecebb(c, PAWN);
-    attacks |= get_attacks<KNIGHT>(sq) & get_piecebb(c, KNIGHT);
+    U64 attacks = get_pawn_attacks(~c, sq) & get_piece_bb<PAWN>(c);
+    attacks |= get_attacks<KNIGHT>(sq) & get_piece_bb<KNIGHT>(c);
     attacks |= get_attacks<BISHOP>(sq, occ) & get_diag_sliders(c);
     attacks |= get_attacks<ROOK>(sq, occ) & get_orth_sliders(c);
-    attacks |= get_attacks<KING>(sq) & get_piecebb(c, KING);
+    attacks |= get_attacks<KING>(sq) & get_piece_bb<KING>(c);
     return attacks;
 }
 
