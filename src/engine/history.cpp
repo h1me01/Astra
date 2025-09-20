@@ -49,10 +49,10 @@ void History::update(         //
     Stack *stack,             //
     int depth                 //
 ) {
-    Color stm = board.get_stm();
+    const Color stm = board.get_stm();
 
-    int bonus = history_bonus(depth);
-    int malus = history_malus(depth);
+    const int bonus = history_bonus(depth);
+    const int malus = history_malus(depth);
 
     if(best_move.is_quiet()) {
         Move prev_move = (stack - 1)->move;
@@ -127,8 +127,8 @@ void History::update_conth(const Move &move, Stack *stack, int bonus) {
 }
 
 void History::update_mat_corr(const Board &board, Score raw_eval, Score real_score, int depth) {
-    Color stm = board.get_stm();
-    int diff = real_score - raw_eval;
+    const Color stm = board.get_stm();
+    const int diff = real_score - raw_eval;
 
     update_corr(pawn_corr[stm][corr_idx(board.get_pawn_hash())], diff, depth);
     update_corr(w_non_pawn_corr[stm][corr_idx(board.get_nonpawn_hash(WHITE))], diff, depth);
@@ -139,11 +139,12 @@ void History::update_cont_corr(Score raw_eval, Score real_score, int depth, cons
     const Move prev_move = (stack - 1)->move;
     const Move pprev_move = (stack - 2)->move;
 
-    Piece prev_pc = (stack - 1)->moved_piece;
-    Piece pprev_pc = (stack - 2)->moved_piece;
+    const Piece prev_pc = (stack - 1)->moved_piece;
+    const Piece pprev_pc = (stack - 2)->moved_piece;
+    const int diff = real_score - raw_eval;
 
     if(prev_move && pprev_move)
-        update_corr(cont_corr[prev_pc][prev_move.to()][pprev_pc][pprev_move.to()], real_score - raw_eval, depth);
+        update_corr(cont_corr[prev_pc][prev_move.to()][pprev_pc][pprev_move.to()], diff, depth);
 }
 
 } // namespace Engine

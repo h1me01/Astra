@@ -110,8 +110,6 @@ constexpr U64 shift(const U64 b) {
     }
 }
 
-void init_lookup_tables();
-
 U64 between_bb(Square sq1, Square sq2);
 U64 line(Square sq1, Square sq2);
 
@@ -123,5 +121,11 @@ template <PieceType pt> //
 U64 get_attacks(Square sq, const U64 occ = 0) {
     return get_attacks(pt, sq, occ);
 }
+
+namespace Bitboards {
+
+void init();
+
+} // namespace Bitboards
 
 } // namespace Chess

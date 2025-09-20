@@ -170,10 +170,14 @@ inline Square sq_from(std::string_view square_str) {
     return Square(index);
 }
 
+constexpr Square ep_sq(Square sq) {
+    assert(valid_sq(sq));
+    return Square(sq ^ 8);
+}
+
 inline std::ostream &operator<<(std::ostream &os, Square sq) {
     if(sq == NO_SQUARE)
         return os << "NO SQUARE";
-
     char file_char = 'a' + sq_file(sq);
     char rank_char = '1' + sq_rank(sq);
     return os << file_char << rank_char;

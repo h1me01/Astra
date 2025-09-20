@@ -192,7 +192,46 @@ U64 get_bishop_attacks(Square sq, const U64 occ = 0) {
 
 // actual used functions
 
-void init_lookup_tables() {
+U64 between_bb(Square sq1, Square sq2) {
+    assert(valid_sq(sq1));
+    assert(valid_sq(sq2));
+    return SQUARES_BETWEEN[sq1][sq2];
+}
+
+U64 line(Square sq1, Square sq2) {
+    assert(valid_sq(sq1));
+    assert(valid_sq(sq2));
+    return LINE[sq1][sq2];
+}
+
+U64 get_pawn_attacks(Color c, Square sq) {
+    assert(valid_sq(sq));
+    assert(valid_color(c));
+    return PAWN_ATTACKS[c][sq];
+}
+
+U64 get_attacks(PieceType pt, Square sq, const U64 occ) {
+    assert(valid_sq(sq));
+    assert(valid_piece_type(pt) && pt != PAWN);
+
+    switch(pt) {
+    case ROOK:
+        return get_rook_attacks(sq, occ);
+    case BISHOP:
+        return get_bishop_attacks(sq, occ);
+    case QUEEN:
+        return get_rook_attacks(sq, occ) | get_bishop_attacks(sq, occ);
+    case KNIGHT:
+    case KING:
+        return PSEUDO_LEGAL_ATTACKS[pt][sq];
+    default:
+        return 0;
+    }
+}
+
+namespace Bitboards {
+
+void init() {
     init_rook_attacks();
     init_bishop_attacks();
 
@@ -260,41 +299,6 @@ void init_lookup_tables() {
     }
 }
 
-U64 between_bb(Square sq1, Square sq2) {
-    assert(valid_sq(sq1));
-    assert(valid_sq(sq2));
-    return SQUARES_BETWEEN[sq1][sq2];
-}
-
-U64 line(Square sq1, Square sq2) {
-    assert(valid_sq(sq1));
-    assert(valid_sq(sq2));
-    return LINE[sq1][sq2];
-}
-
-U64 get_pawn_attacks(Color c, Square sq) {
-    assert(valid_sq(sq));
-    assert(valid_color(c));
-    return PAWN_ATTACKS[c][sq];
-}
-
-U64 get_attacks(PieceType pt, Square sq, const U64 occ) {
-    assert(valid_sq(sq));
-    assert(valid_piece_type(pt) && pt != PAWN);
-
-    switch(pt) {
-    case ROOK:
-        return get_rook_attacks(sq, occ);
-    case BISHOP:
-        return get_bishop_attacks(sq, occ);
-    case QUEEN:
-        return get_rook_attacks(sq, occ) | get_bishop_attacks(sq, occ);
-    case KNIGHT:
-    case KING:
-        return PSEUDO_LEGAL_ATTACKS[pt][sq];
-    default:
-        return 0;
-    }
-}
+} // namespace Bitboards
 
 } // namespace Chess

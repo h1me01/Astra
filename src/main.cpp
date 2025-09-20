@@ -1,7 +1,7 @@
 #include "uci/uci.h"
 
 int main(int argc, char **argv) {
-    Chess::init_lookup_tables();
+    Bitboards::init();
     Zobrist::init();
     Cuckoo::init();
     NNUE::nnue.init();

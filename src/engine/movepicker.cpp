@@ -33,7 +33,6 @@ MovePicker::MovePicker(SearchType st,          //
             stage = GEN_NOISY;
     } else {
         stage = PLAY_TT_MOVE;
-
         this->tt_move = tt_move;
 
         killer = (stack->killer != tt_move) ? stack->killer : NO_MOVE;
@@ -122,8 +121,7 @@ Move MovePicker::next(bool skip_quiets) {
     case PLAY_BAD_NOISY:
         while(idx < ml_bad_noisy.size()) {
             partial_insertion_sort(ml_bad_noisy, idx);
-            Move move = ml_bad_noisy[idx++];
-            return move;
+            return ml_bad_noisy[idx++];
         }
 
         return NO_MOVE;
@@ -136,8 +134,7 @@ Move MovePicker::next(bool skip_quiets) {
     case PLAY_QUIET_CHECKERS:
         while(idx < ml_main.size()) {
             partial_insertion_sort(ml_main, idx);
-            Move move = ml_main[idx++];
-            return move;
+            return ml_main[idx++];
         }
 
         return NO_MOVE;

@@ -208,7 +208,7 @@ NNUE::DirtyPieces Board::make_move(const Move &move) {
     }
 
     if(move.is_cap()) {
-        Square cap_sq = move.is_ep() ? Square(to ^ 8) : to;
+        Square cap_sq = move.is_ep() ? ep_sq(to) : to;
         remove_piece(cap_sq);
         dirty_pieces.add(captured, cap_sq, NO_SQUARE);
     }
@@ -219,10 +219,10 @@ NNUE::DirtyPieces Board::make_move(const Move &move) {
 
     if(pt == PAWN) {
         // set ep square if double push can be captured by enemy pawn
-        auto ep_sq = Square(to ^ 8);
-        if((from ^ to) == 16 && (get_pawn_attacks(stm, ep_sq) & get_piece_bb<PAWN>(~stm))) {
-            info.ep_sq = ep_sq;
-            info.hash ^= Zobrist::get_ep(ep_sq); // add ep square to hash
+        Square new_ep_sq = ep_sq(to);
+        if((from ^ to) == 16 && (get_pawn_attacks(stm, new_ep_sq) & get_piece_bb<PAWN>(~stm))) {
+            info.ep_sq = new_ep_sq;
+            info.hash ^= Zobrist::get_ep(new_ep_sq); // add ep square to hash
         } else if(move.is_prom()) {
             PieceType prom_t = move.prom_type();
             Piece prom_pc = make_piece(stm, prom_t);
@@ -298,8 +298,7 @@ void Board::undo_move(const Move &move) {
         move_piece(rook_from, rook_to);
     } else if(move.is_cap()) {
         assert(valid_piece(captured));
-        Square cap_sqr = move.is_ep() ? Square(to ^ 8) : to;
-        put_piece(captured, cap_sqr);
+        put_piece(captured, move.is_ep() ? ep_sq(to) : to);
     }
 
     curr_ply--;
@@ -341,7 +340,6 @@ void Board::perft(int depth) {
 
         if(d == 0)
             return 1;
-
         if(d <= 1)
             return ml.size();
 
@@ -375,7 +373,7 @@ void Board::perft(int depth) {
     double time_ms = diff.count();
 
     std::cout << "\nTotal nodes: " << total_nodes << std::endl;
-    std::cout << "Total time: " << time_ms << "ms\n\n";
+    std::cout << "Total time : " << time_ms << " ms\n\n";
 }
 
 bool Board::is_legal(const Move &move) const {
@@ -385,19 +383,20 @@ bool Board::is_legal(const Move &move) const {
     const Piece from_pc = piece_at(from);
 
     const U64 occ = get_occupancy();
+    const U64 from_bb = sq_bb(from);
 
     assert(move);
     assert(valid_piece(from_pc));
     assert(piece_at(ksq) == make_piece(stm, KING));
 
     if(move.is_ep()) {
-        Square cap_sq = Square(to ^ 8);
+        Square cap_sq = ep_sq(to);
 
         // update occupancy as if the ep capture has occurred
-        U64 new_occ = (occ ^ sq_bb(from) ^ sq_bb(cap_sq)) | sq_bb(to);
+        U64 new_occ = (occ ^ from_bb ^ sq_bb(cap_sq)) | sq_bb(to);
 
-        assert(piece_at(cap_sq) == make_piece(~stm, PAWN));
         assert(!valid_piece(piece_at(to)));
+        assert(piece_at(cap_sq) == make_piece(~stm, PAWN));
 
         U64 attackers = (get_attacks<BISHOP>(ksq, new_occ) & get_diag_sliders(~stm)) |
                         (get_attacks<ROOK>(ksq, new_occ) & get_orth_sliders(~stm));
@@ -415,11 +414,10 @@ bool Board::is_legal(const Move &move) const {
     }
 
     if(piece_type(from_pc) == KING)
-        // king cannot move to checking squares
-        return !attackers_to(~stm, to, occ ^ sq_bb(from));
+        return !attackers_to(~stm, to, occ ^ from_bb); // king cannot move to checking squares
 
     // only legal if not pinned or moving in the direction of the pin
-    return !(get_state().blockers[stm] & sq_bb(from)) || (line(from, to) & sq_bb(ksq));
+    return !(get_state().blockers[stm] & from_bb) || (line(from, to) & sq_bb(ksq));
 }
 
 bool Board::is_pseudo_legal(const Move &move) const {
@@ -428,7 +426,7 @@ bool Board::is_pseudo_legal(const Move &move) const {
     const Square from = move.from();
     const Square to = move.to();
     const Square ksq = get_king_sq(stm);
-    const Square cap_sq = move.is_ep() ? Square(to ^ 8) : to;
+    const Square cap_sq = move.is_ep() ? ep_sq(to) : to;
 
     const Piece from_pc = piece_at(from);
     const Piece to_pc = piece_at(to);
@@ -439,6 +437,7 @@ bool Board::is_pseudo_legal(const Move &move) const {
     const U64 us_bb = get_occupancy(stm);
     const U64 them_bb = get_occupancy(~stm);
     const U64 occ = us_bb | them_bb;
+    const U64 from_bb = sq_bb(from);
 
     if(!move)
         return false; // no and null moves are not pseudo legal
@@ -493,7 +492,7 @@ bool Board::is_pseudo_legal(const Move &move) const {
         U64 targets = 0;
 
         // quiet promotions
-        targets |= (stm == WHITE ? shift<NORTH>(sq_bb(from)) : shift<SOUTH>(sq_bb(from))) & ~occ;
+        targets |= (stm == WHITE ? shift<NORTH>(from_bb) : shift<SOUTH>(from_bb)) & ~occ;
         // capture promotions
         targets |= (get_pawn_attacks(stm, from) & them_bb);
         // limit move targets based on checks
@@ -538,7 +537,7 @@ bool Board::is_pseudo_legal(const Move &move) const {
             return false; // if move can't capture/block the checker, then it's not pseudo legal
     }
 
-    if(info.blockers[stm] & sq_bb(from) && !(line(from, to) & sq_bb(ksq)))
+    if(info.blockers[stm] & from_bb && !(line(from, to) & sq_bb(ksq)))
         return false; // if a pinned piece move causes a discovered check, then it's not pseudo legal
 
     return true;
@@ -632,7 +631,7 @@ bool Board::upcoming_repetition(int ply) const {
     const U64 occ = get_occupancy();
     const StateInfo &info = get_state();
 
-    int distance = std::min(info.fmr_counter, info.plies_from_null);
+    const int distance = std::min(info.fmr_counter, info.plies_from_null);
     if(distance < 3)
         return false;
 
@@ -682,9 +681,9 @@ Threats Board::get_threats() const {
     Threats threats;
 
     // king must be excluded so we don't block the slider attacks
-    U64 occ = get_occupancy() ^ sq_bb(get_king_sq(stm));
+    const U64 occ = get_occupancy() ^ sq_bb(get_king_sq(stm));
 
-    U64 pawns = get_piece_bb<PAWN>(them);
+    const U64 pawns = get_piece_bb<PAWN>(them);
     threats[PAWN] = (them == WHITE) ? shift<NORTH_WEST>(pawns) | shift<NORTH_EAST>(pawns)
                                     : shift<SOUTH_WEST>(pawns) | shift<SOUTH_EAST>(pawns);
 

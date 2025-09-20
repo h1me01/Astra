@@ -17,9 +17,9 @@ int history_malus(int depth);
 
 class History {
   public:
-    // public variables
+    // public variable
 
-    int16_t conth[2][NUM_PIECES + 1][NUM_SQUARES + 1][NUM_PIECES + 1][NUM_SQUARES + 1]{};
+    int16_t conth[2][NUM_PIECES + 1][NUM_SQUARES + 1][NUM_PIECES + 1][NUM_SQUARES + 1];
 
     // public functions
 
@@ -56,16 +56,16 @@ class History {
 
     Move counters[NUM_SQUARES][NUM_SQUARES]{};
 
-    int16_t hh[NUM_COLORS][NUM_SQUARES][NUM_SQUARES]{};
-    int16_t nh[NUM_PIECES][NUM_SQUARES][NUM_PIECE_TYPES + 1]{};
+    int16_t hh[NUM_COLORS][NUM_SQUARES][NUM_SQUARES];
+    int16_t nh[NUM_PIECES][NUM_SQUARES][NUM_PIECE_TYPES + 1];
 
-    int16_t ph[PAWN_HIST_SIZE][NUM_PIECES][NUM_SQUARES]{};
+    int16_t ph[PAWN_HIST_SIZE][NUM_PIECES][NUM_SQUARES];
 
-    int16_t pawn_corr[NUM_COLORS][CORR_SIZE]{};
-    int16_t w_non_pawn_corr[NUM_COLORS][CORR_SIZE]{};
-    int16_t b_non_pawn_corr[NUM_COLORS][CORR_SIZE]{};
+    int16_t pawn_corr[NUM_COLORS][CORR_SIZE];
+    int16_t w_non_pawn_corr[NUM_COLORS][CORR_SIZE];
+    int16_t b_non_pawn_corr[NUM_COLORS][CORR_SIZE];
 
-    int16_t cont_corr[NUM_PIECES][NUM_SQUARES][NUM_PIECES][NUM_SQUARES]{};
+    int16_t cont_corr[NUM_PIECES][NUM_SQUARES][NUM_PIECES][NUM_SQUARES];
 
     // private functions
 
@@ -125,7 +125,6 @@ inline int History::get_ph(const Board &board, const Move &move) const {
 
 inline int History::get_mat_corr(const Board &board) const {
     Color stm = board.get_stm();
-
     return pawn_corr[stm][corr_idx(board.get_pawn_hash())] +               //
            w_non_pawn_corr[stm][corr_idx(board.get_nonpawn_hash(WHITE))] + //
            b_non_pawn_corr[stm][corr_idx(board.get_nonpawn_hash(BLACK))];
@@ -135,13 +134,10 @@ inline int History::get_cont_corr(const Stack *stack) const {
     const Move prev_move = (stack - 1)->move;
     const Move pprev_move = (stack - 2)->move;
 
-    Piece prev_p = (stack - 1)->moved_piece;
-    Piece pprev_p = (stack - 2)->moved_piece;
-
-    if(!prev_move || !pprev_move)
+    if(prev_move && pprev_move)
+        return cont_corr[(stack - 1)->moved_piece][prev_move.to()][(stack - 2)->moved_piece][pprev_move.to()];
+    else
         return 0;
-
-    return cont_corr[prev_p][prev_move.to()][pprev_p][pprev_move.to()];
 }
 
 } // namespace Engine

@@ -203,9 +203,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
     Score best_score = -VALUE_INFINITE;
     Score max_score = VALUE_INFINITE;
     Score raw_eval, eval, probcut_beta;
-
     Move best_move = NO_MOVE;
-
     bool improving = false;
 
     (stack + 1)->killer = NO_MOVE;
@@ -352,9 +350,9 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
 
     // reverse futility pruning
     if(!pv_node                                                                    //
-       && !stack->skipped                                                          //
        && !is_win(eval)                                                            //
        && !is_loss(beta)                                                           //
+       && !stack->skipped                                                          //
        && depth < rfp_depth                                                        //
        && eval - (rfp_depth_mult * depth - rfp_improving_mult * improving) >= beta //
     ) {
@@ -364,16 +362,16 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
     // null move pruning
     if(cut_node                                                          //
        && eval >= beta                                                   //
-       && !stack->skipped                                                //
        && !is_loss(beta)                                                 //
+       && !stack->skipped                                                //
        && board.nonpawn_mat(stm)                                         //
        && ply >= nmp_min_ply                                             //
        && (stack - 1)->move != NULL_MOVE                                 //
        && stack->static_eval + nmp_depth_mult * depth - nmp_base >= beta //
     ) {
-        int R = nmp_rbase                //
-                + depth / nmp_rdepth_div //
-                + std::min(int(nmp_rmin), (eval - beta) / nmp_eval_div);
+        const int R = nmp_rbase                //
+                      + depth / nmp_rdepth_div //
+                      + std::min(int(nmp_rmin), (eval - beta) / nmp_eval_div);
 
         stack->move = NULL_MOVE;
         stack->moved_piece = NO_PIECE;
@@ -416,7 +414,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
 
         Move move = NO_MOVE;
         while((move = mp.next())) {
-            if(!board.is_legal(move))
+            if(move == stack->skipped || !board.is_legal(move))
                 continue;
 
             make_move(move, stack);
@@ -446,7 +444,6 @@ movesloop:
     stack->made_moves = 0;
 
     bool skip_quiets = false;
-
     while((move = mp.next(skip_quiets))) {
         if(move == stack->skipped || !board.is_legal(move))
             continue;
@@ -511,7 +508,7 @@ movesloop:
                 extensions = 1;
                 if(!pv_node && score < sbeta - double_ext_margin)
                     extensions = 2 + (move.is_quiet() && score < sbeta - tripple_ext_margin);
-            } else if(sbeta >= beta)
+            } else if(sbeta >= beta && !is_decisive(sbeta))
                 return sbeta;
             else if(tt_score >= beta)
                 extensions = -3;
@@ -582,7 +579,7 @@ movesloop:
             return 0;
 
         if(root_node) {
-            int move_idx = root_moves.idx_of(move);
+            const int move_idx = root_moves.idx_of(move);
             assert(move_idx >= 0);
             RootMove *rm = &root_moves[move_idx];
 

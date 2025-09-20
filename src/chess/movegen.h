@@ -33,7 +33,7 @@ template <Color us, GenType gt> //
 Move *gen_pawn_moves(const Board &board, Move *ml, const U64 targets) {
     constexpr Color them = ~us;
     constexpr U64 rank7_bb = rank_mask(rel_rank(us, RANK_7));
-    constexpr Direction up = us == WHITE ? NORTH : SOUTH;
+    constexpr Direction up = (us == WHITE ? NORTH : SOUTH);
     constexpr Direction up_right = (us == WHITE ? NORTH_EAST : SOUTH_WEST);
     constexpr Direction up_left = (us == WHITE ? NORTH_WEST : SOUTH_EAST);
 
@@ -109,8 +109,7 @@ Move *gen_pawn_moves(const Board &board, Move *ml, const U64 targets) {
 
 template <Color us, GenType gt, PieceType pt> //
 Move *gen_piece_moves(const Board &board, Move *ml, U64 pieces, const U64 targets) {
-    const Square ksq = board.get_king_sq(us);
-
+    const Square our_ksq = board.get_king_sq(us);
     const U64 us_bb = board.get_occupancy(us);
     const U64 them_bb = board.get_occupancy(~us);
     const U64 occ = us_bb | them_bb;
@@ -121,7 +120,7 @@ Move *gen_piece_moves(const Board &board, Move *ml, U64 pieces, const U64 target
         U64 attacks = get_attacks(pt, from, occ) & targets;
 
         if(pinned & sq_bb(from))
-            attacks &= line(from, ksq);
+            attacks &= line(from, our_ksq);
 
         if constexpr(gt & ADD_QUIETS) {
             U64 target = attacks & ~occ;
@@ -142,8 +141,7 @@ Move *gen_piece_moves(const Board &board, Move *ml, U64 pieces, const U64 target
 template <Color us, GenType gt> //
 Move *gen_all(const Board &board, Move *ml) {
     const StateInfo &info = board.get_state();
-    const Square ksq = board.get_king_sq(us);
-
+    const Square our_ksq = board.get_king_sq(us);
     const U64 us_bb = board.get_occupancy(us);
     const U64 them_bb = board.get_occupancy(~us);
     const U64 occ = us_bb | them_bb;
@@ -156,7 +154,7 @@ Move *gen_all(const Board &board, Move *ml) {
     if(pop_count(checkers) > 1)
         return ml;
 
-    const U64 check_targets = checkers ? between_bb(ksq, lsb(checkers)) | checkers : ~0;
+    const U64 check_targets = checkers ? between_bb(our_ksq, lsb(checkers)) | checkers : ~0;
     const U64 piece_targets = targets & check_targets;
 
     ml = gen_pawn_moves<us, gt>(board, ml, check_targets);
@@ -178,17 +176,16 @@ Move *gen_all(const Board &board, Move *ml) {
 template <Color us> //
 Move *gen_quiet_checkers(const Board &board, Move *ml) {
     constexpr Color them = ~us;
-    const Square opp_ksq = board.get_king_sq(them);
 
+    const Square their_ksq = board.get_king_sq(them);
     const U64 us_bb = board.get_occupancy(us);
     const U64 them_bb = board.get_occupancy(them);
     const U64 occ = us_bb | them_bb;
+    const U64 knight_checks = get_attacks<KNIGHT>(their_ksq, occ) & ~occ;
+    const U64 bishop_checks = get_attacks<BISHOP>(their_ksq, occ) & ~occ;
+    const U64 rook_checks = get_attacks<ROOK>(their_ksq, occ) & ~occ;
 
-    const U64 knight_checks = get_attacks<KNIGHT>(opp_ksq, occ) & ~occ;
-    const U64 bishop_checks = get_attacks<BISHOP>(opp_ksq, occ) & ~occ;
-    const U64 rook_checks = get_attacks<ROOK>(opp_ksq, occ) & ~occ;
-
-    ml = gen_pawn_moves<us, ADD_QUIETS>(board, ml, get_pawn_attacks(them, opp_ksq));
+    ml = gen_pawn_moves<us, ADD_QUIETS>(board, ml, get_pawn_attacks(them, their_ksq));
     ml = gen_piece_moves<us, ADD_QUIETS, KNIGHT>(board, ml, board.get_piece_bb<KNIGHT>(us), knight_checks);
     ml = gen_piece_moves<us, ADD_QUIETS, BISHOP>(board, ml, board.get_piece_bb<BISHOP>(us), bishop_checks);
     ml = gen_piece_moves<us, ADD_QUIETS, ROOK>(board, ml, board.get_piece_bb<ROOK>(us), rook_checks);
@@ -199,18 +196,18 @@ Move *gen_quiet_checkers(const Board &board, Move *ml) {
 
 inline Move *gen_legals(const Board &board, Move *ml) {
     const Color us = board.get_stm();
-    const Square ksq = board.get_king_sq(us);
+    const Square our_ksq = board.get_king_sq(us);
     const U64 pinned = board.get_state().blockers[us] & board.get_occupancy(us);
 
     Move *curr = ml;
     ml = (us == WHITE) ? gen_all<WHITE, ADD_LEGALS>(board, ml) : gen_all<BLACK, ADD_LEGALS>(board, ml);
 
     while(curr != ml) {
-        if(((pinned & sq_bb(curr->from())) || curr->is_ep() || curr->from() == ksq) && !board.is_legal(*curr)) {
+        bool needs_checking = (pinned & sq_bb(curr->from())) || curr->is_ep() || curr->from() == our_ksq;
+        if(needs_checking && !board.is_legal(*curr))
             *curr = *(--ml);
-        } else {
+        else
             ++curr;
-        }
     }
 
     return ml;
