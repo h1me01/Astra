@@ -119,7 +119,6 @@ void Search::start() {
     // pick best thread
     Search *best_thread = threads.pick_best_thread();
     if(best_thread != this) {
-        best_thread->reset_multipv();
         best_thread->print_uci_info();
         best_move = best_thread->root_moves[0];
     }

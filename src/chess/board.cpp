@@ -626,7 +626,7 @@ bool Board::see(const Move &move, int threshold) const {
     return bool(res);
 }
 
-bool Board::upcoming_repetition(int ply) {
+bool Board::upcoming_repetition(int ply) const {
     assert(ply > 0);
 
     const U64 occ = get_occupancy();

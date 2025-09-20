@@ -216,16 +216,16 @@ inline Move *gen_legals(const Board &board, Move *ml) {
     return ml;
 }
 
-template <typename Type = Move> //
+template <typename T = Move> //
 class MoveList {
   public:
     MoveList() : last(list) {}
 
-    constexpr Type &operator[](int i) {
+    constexpr T &operator[](int i) {
         return list[i];
     }
 
-    constexpr const Type &operator[](int i) const {
+    constexpr const T &operator[](int i) const {
         return list[i];
     }
 
@@ -247,31 +247,31 @@ class MoveList {
             }
         };
 
-        if constexpr(std::is_same_v<Type, Move>) {
+        if constexpr(std::is_same_v<T, Move>) {
             last = gen_moves(list);
         } else {
             Move temp_list[MAX_MOVES];
             Move *temp_last = gen_moves(temp_list);
 
             for(Move *it = temp_list; it != temp_last; ++it)
-                *last++ = Type(*it);
+                *last++ = T(*it);
         }
     }
 
-    void add(Type m) {
+    void add(T m) {
         assert(last < list + MAX_MOVES);
         *last++ = m;
     }
 
-    const Type *begin() const {
+    const T *begin() const {
         return list;
     }
 
-    const Type *end() const {
+    const T *end() const {
         return last;
     }
 
-    int idx_of(const Type &move) const {
+    int idx_of(const T &move) const {
         for(int i = 0; i < size(); i++)
             if(list[i] == move)
                 return i;
@@ -283,8 +283,8 @@ class MoveList {
     }
 
   private:
-    Type list[MAX_MOVES];
-    Type *last;
+    T list[MAX_MOVES];
+    T *last;
 };
 
 } // namespace Chess

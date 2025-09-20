@@ -60,10 +60,6 @@ class Search {
 
     void print_uci_info() const;
 
-    void reset_multipv() {
-        multipv_idx = 0;
-    }
-
     void clear_histories() {
         history.clear();
     }

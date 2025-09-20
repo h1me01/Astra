@@ -74,8 +74,8 @@ class MovePicker {
 
     // private functions
 
-    void score_quiets();
     void score_noisy();
+    void score_quiets();
 };
 
 } // namespace Engine

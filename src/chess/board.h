@@ -60,6 +60,8 @@ class Board {
 
     void print() const;
 
+    void reset_ply();
+
     void set_fen(const std::string &fen);
     std::string get_fen() const;
 
@@ -74,51 +76,40 @@ class Board {
     bool is_legal(const Move &move) const;
     bool is_pseudo_legal(const Move &move) const;
 
+    bool in_check() const;
+
+    bool is_draw(int ply) const;
+
+    bool nonpawn_mat(Color c) const;
+
     bool see(const Move &move, int threshold) const;
-    bool upcoming_repetition(int ply);
+
+    bool upcoming_repetition(int ply) const;
 
     Threats get_threats() const;
 
     U64 get_occupancy(Color c) const;
     U64 attackers_to(Color c, Square sq, U64 occ) const;
 
-    U64 get_piece_bb(Color c, PieceType pt) const {
-        assert(valid_color(c));
-        assert(valid_piece_type(pt));
-        return piece_bb[make_piece(c, pt)];
-    }
+    U64 get_piece_bb(Color c, PieceType pt) const;
 
     template <PieceType pt> //
-    U64 get_piece_bb(Color c) const {
-        return get_piece_bb(c, pt);
-    }
+    U64 get_piece_bb(Color c) const;
 
-    U64 get_piece_bb(PieceType pt) const {
-        assert(valid_piece_type(pt));
-        return get_piece_bb(WHITE, pt) | get_piece_bb(BLACK, pt);
-    }
+    U64 get_piece_bb(PieceType pt) const;
 
     template <PieceType pt> //
-    U64 get_piece_bb() const {
-        return get_piece_bb(pt);
-    }
+    U64 get_piece_bb() const;
 
-    Piece piece_at(Square sq) const {
-        assert(valid_sq(sq));
-        return board[sq];
-    }
+    Piece piece_at(Square sq) const;
 
-    U64 get_diag_sliders(Color c) const {
-        return get_piece_bb<BISHOP>(c) | get_piece_bb<QUEEN>(c);
-    }
+    U64 get_diag_sliders(Color c) const;
+    U64 get_orth_sliders(Color c) const;
 
-    U64 get_orth_sliders(Color c) const {
-        return get_piece_bb<ROOK>(c) | get_piece_bb<QUEEN>(c);
-    }
+    Square get_king_sq(Color c) const;
 
-    bool in_check() const {
-        return get_state().checkers > 0;
-    }
+    template <PieceType pt> //
+    int count(Color c = BOTH_COLORS) const;
 
     Color get_stm() const {
         return stm;
@@ -145,45 +136,12 @@ class Board {
         return get_state().non_pawn_hash[c];
     }
 
-    Square get_king_sq(Color c) const {
-        return lsb(get_piece_bb<KING>(c));
-    }
-
     StateInfo &get_state() {
         return states[curr_ply];
     }
 
     const StateInfo &get_state() const {
         return states[curr_ply];
-    }
-
-    void reset_ply() {
-        states[0] = get_state();
-        states[0].plies_from_null = 0;
-        curr_ply = 0;
-    }
-
-    // doesn't include stalemate
-    bool is_draw(int ply) const {
-        const StateInfo &info = get_state();
-        const bool is_repetition = info.repetition && info.repetition < ply;
-        return get_state().fmr_counter > 99 || is_repetition;
-    }
-
-    // checks if there is any non-pawn material on the board of the current side to move
-    bool nonpawn_mat(Color c) const {
-        return get_piece_bb<KNIGHT>(c) | get_piece_bb<BISHOP>(c) | //
-               get_piece_bb<ROOK>(c) | get_piece_bb<QUEEN>(c);
-    }
-
-    template <PieceType pt> //
-    int count(Color c = BOTH_COLORS) const {
-        int count = 0;
-        if(c != BLACK)
-            count += pop_count(get_piece_bb(WHITE, pt));
-        if(c != WHITE)
-            count += pop_count(get_piece_bb(BLACK, pt));
-        return count;
     }
 
   private:
@@ -207,6 +165,29 @@ class Board {
     std::pair<Square, Square> get_castle_rook_sqs(Color c, Square to);
 };
 
+inline void Board::reset_ply() {
+    states[0] = get_state();
+    states[0].plies_from_null = 0;
+    curr_ply = 0;
+}
+
+inline bool Board::in_check() const {
+    return get_state().checkers > 0;
+}
+
+// doesn't include stalemate
+inline bool Board::is_draw(int ply) const {
+    const StateInfo &info = get_state();
+    const bool is_repetition = info.repetition && info.repetition < ply;
+    return get_state().fmr_counter > 99 || is_repetition;
+}
+
+// checks if there is any non-pawn material on the board of the current side to move
+inline bool Board::nonpawn_mat(Color c) const {
+    return get_piece_bb<KNIGHT>(c) | get_piece_bb<BISHOP>(c) | //
+           get_piece_bb<ROOK>(c) | get_piece_bb<QUEEN>(c);
+}
+
 inline U64 Board::get_occupancy(Color c = BOTH_COLORS) const {
     U64 occ = 0;
     if(c != BLACK)
@@ -223,6 +204,54 @@ inline U64 Board::attackers_to(Color c, Square sq, const U64 occ) const {
     attacks |= get_attacks<ROOK>(sq, occ) & get_orth_sliders(c);
     attacks |= get_attacks<KING>(sq) & get_piece_bb<KING>(c);
     return attacks;
+}
+
+inline U64 Board::get_piece_bb(Color c, PieceType pt) const {
+    assert(valid_color(c));
+    assert(valid_piece_type(pt));
+    return piece_bb[make_piece(c, pt)];
+}
+
+template <PieceType pt> //
+U64 Board::get_piece_bb(Color c) const {
+    return get_piece_bb(c, pt);
+}
+
+inline U64 Board::get_piece_bb(PieceType pt) const {
+    assert(valid_piece_type(pt));
+    return get_piece_bb(WHITE, pt) | get_piece_bb(BLACK, pt);
+}
+
+template <PieceType pt> //
+U64 Board::get_piece_bb() const {
+    return get_piece_bb(pt);
+}
+
+inline Piece Board::piece_at(Square sq) const {
+    assert(valid_sq(sq));
+    return board[sq];
+}
+
+inline U64 Board::get_diag_sliders(Color c) const {
+    return get_piece_bb<BISHOP>(c) | get_piece_bb<QUEEN>(c);
+}
+
+inline U64 Board::get_orth_sliders(Color c) const {
+    return get_piece_bb<ROOK>(c) | get_piece_bb<QUEEN>(c);
+}
+
+inline Square Board::get_king_sq(Color c) const {
+    return lsb(get_piece_bb<KING>(c));
+}
+
+template <PieceType pt> //
+int Board::count(Color c) const {
+    int count = 0;
+    if(c != BLACK)
+        count += pop_count(get_piece_bb(WHITE, pt));
+    if(c != WHITE)
+        count += pop_count(get_piece_bb(BLACK, pt));
+    return count;
 }
 
 // private member
