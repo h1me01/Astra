@@ -470,10 +470,8 @@ movesloop:
 
                 // futility pruning
                 const Score futility = stack->static_eval + fp_base + r_depth * fp_mult;
-                if(!in_check && r_depth < fp_depth && futility <= alpha) {
+                if(!in_check && r_depth < fp_depth && futility <= alpha)
                     skip_quiets = true;
-                    continue;
-                }
 
                 // history pruning
                 if(r_depth < hp_depth && history_score < hp_depth_mult * depth) {
