@@ -183,15 +183,13 @@ void MovePicker::score_quiets() {
             score += (int) (*(stack - i)->conth)[pc][move.to()];
 
         if(pt != PAWN && pt != KING) {
-            U64 danger;
+            U64 danger = threats[PAWN];
+            if(pt >= ROOK)
+                danger |= threats[BISHOP] | threats[KNIGHT];
             if(pt == QUEEN)
-                danger = threats[ROOK];
-            else if(pt == ROOK)
-                danger = threats[BISHOP] | threats[KNIGHT];
-            else
-                danger = threats[PAWN];
+                danger |= threats[ROOK];
 
-            const int bonus = 16384 + 16384 * (pt == QUEEN);
+            const int bonus = (pt == QUEEN) ? 20480 : (pt == ROOK) ? 12288 : 7168;
             if(danger & sq_bb(move.from()))
                 score += bonus;
             else if(danger & sq_bb(move.to()))
