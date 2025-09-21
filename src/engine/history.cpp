@@ -50,7 +50,6 @@ void History::update(         //
     int depth                 //
 ) {
     const Color stm = board.get_stm();
-
     const int bonus = history_bonus(depth);
     const int malus = history_malus(depth);
 
@@ -94,8 +93,8 @@ void History::update_nh(const Board &board, const Move &move, int bonus) {
     assert(move);
 
     Square to = move.to();
-    PieceType captured = move.is_ep() ? PAWN : piece_type(board.piece_at(to));
     Piece pc = board.piece_at(move.from());
+    PieceType captured = move.is_ep() ? PAWN : piece_type(board.piece_at(to));
 
     assert(valid_piece(pc));
     assert(valid_piece_type(captured) || (move.type() >= PQ_KNIGHT && move.type() <= PQ_QUEEN));
@@ -119,7 +118,6 @@ void History::update_conth(const Move &move, Stack *stack, int bonus) {
         if((stack - i)->move) {
             Piece pc = (stack - i)->moved_piece;
             assert(valid_piece(pc));
-
             int16_t &value = (*(stack - i)->conth)[pc][move.to()];
             value += adjusted_bonus(value, bonus);
         }

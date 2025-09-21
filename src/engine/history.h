@@ -91,8 +91,8 @@ inline int History::get_hh(Color stm, const Move &move) const {
 inline int History::get_nh(const Board &board, const Move &move) const {
     assert(move);
 
-    PieceType captured = move.is_ep() ? PAWN : piece_type(board.piece_at(move.to()));
     Piece pc = board.piece_at(move.from());
+    PieceType captured = move.is_ep() ? PAWN : piece_type(board.piece_at(move.to()));
 
     assert(valid_piece(pc));
     assert(captured != KING);
