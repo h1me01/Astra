@@ -16,11 +16,8 @@ bool castle_notation_helper(const std::ostringstream &fen_stream) {
 }
 
 std::pair<Square, Square> Board::get_castle_rook_sqs(Color c, Square to) {
-    assert(valid_color(c));
     assert(to == rel_sq(c, g1) || to == rel_sq(c, c1));
-
     const bool ks = to == rel_sq(c, g1);
-
     return {rel_sq(c, ks ? h1 : a1), rel_sq(c, ks ? f1 : d1)};
 }
 

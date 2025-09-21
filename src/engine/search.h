@@ -29,7 +29,6 @@ struct RootMove : Move {
 
     // public variables
 
-    int depth = 0;
     U64 nodes = 0;
     Score avg_score = VALUE_NONE;
     PVLine pv{};
@@ -45,6 +44,8 @@ class Search {
 
     bool searching = false;
     bool exiting = false;
+
+    int completed_depth = 0;
 
     std::mutex mutex;
     std::condition_variable cv;

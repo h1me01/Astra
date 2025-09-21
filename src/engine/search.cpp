@@ -81,13 +81,8 @@ void Search::start() {
         for(multipv_idx = 0; multipv_idx < multipv_size; multipv_idx++)
             aspiration(root_depth, stack);
 
-        if(is_limit_reached(root_depth))
+        if(threads.is_stopped())
             break;
-
-        // print final pv info
-        if(main_thread)
-            for(multipv_idx = 0; multipv_idx < multipv_size; multipv_idx++)
-                print_uci_info();
 
         Score score = root_moves[0].get_score();
         best_move = root_moves[0];
@@ -142,10 +137,10 @@ Score Search::aspiration(int depth, Stack *stack) {
     while(true) {
         score = negamax<NodeType::ROOT>(std::max(1, root_depth - fail_high_count), alpha, beta, stack);
 
-        if(is_limit_reached(depth))
-            return 0;
-
         sort_rootmoves(multipv_idx);
+
+        if(threads.is_stopped())
+            return 0;
 
         if(score <= alpha) {
             beta = (alpha + beta) / 2;
@@ -161,7 +156,11 @@ Score Search::aspiration(int depth, Stack *stack) {
         delta += delta / 3;
     }
 
+    completed_depth = depth;
     sort_rootmoves(0);
+
+    if(this == threads.main_thread())
+        print_uci_info();
 
     return score;
 }
@@ -180,7 +179,12 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
     if(pv_node)
         stack->pv.length = ply;
 
-    if(is_limit_reached(depth))
+    if(is_limit_reached(depth)) {
+        threads.stop();
+        return 0;
+    }
+
+    if(threads.is_stopped())
         return 0;
 
     if(depth <= 0)
@@ -200,15 +204,6 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
     const bool in_check = board.in_check();
     const U64 hash = board.get_hash();
 
-    Score best_score = -VALUE_INFINITE;
-    Score max_score = VALUE_INFINITE;
-    Score raw_eval, eval, probcut_beta;
-    Move best_move = NO_MOVE;
-    bool improving = false;
-
-    (stack + 1)->killer = NO_MOVE;
-    (stack + 1)->skipped = NO_MOVE;
-
     if(!root_node) {
         if(ply >= MAX_PLY - 1)
             return in_check ? VALUE_DRAW : evaluate();
@@ -221,6 +216,15 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
         if(alpha >= beta)
             return alpha;
     }
+
+    Score best_score = -VALUE_INFINITE;
+    Score max_score = VALUE_INFINITE;
+    Score raw_eval, eval, probcut_beta;
+    Move best_move = NO_MOVE;
+    bool improving = false;
+
+    (stack + 1)->killer = NO_MOVE;
+    (stack + 1)->skipped = NO_MOVE;
 
     // look up in transposition table
     bool tt_hit = false;
@@ -377,9 +381,16 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
         stack->moved_piece = NO_PIECE;
         stack->conth = &history.conth[0][NO_PIECE][NO_SQUARE];
 
+        ply++;
         board.make_nullmove();
+
         Score score = -negamax<NodeType::NON_PV>(depth - R, -beta, -beta + 1, stack + 1, !cut_node);
+
         board.undo_nullmove();
+        ply--;
+
+        if(threads.is_stopped())
+            return 0;
 
         if(score >= beta && !is_win(score)) {
             if(nmp_min_ply || depth < 16)
@@ -410,7 +421,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
         MovePicker mp(PC_SEARCH, board, history, stack, tt_move);
         mp.probcut_threshold = probcut_beta - stack->static_eval;
 
-        int probcut_depth = std::max(depth - 4, 0);
+        const int probcut_depth = std::max(depth - 4, 0);
 
         Move move = NO_MOVE;
         while((move = mp.next())) {
@@ -424,6 +435,9 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
                 score = -negamax<NodeType::NON_PV>(probcut_depth, -probcut_beta, -probcut_beta + 1, stack + 1, !cut_node);
 
             undo_move(move);
+
+            if(threads.is_stopped())
+                return 0;
 
             if(score >= probcut_beta) {
                 ent->store(hash, move, score, raw_eval, LOWER_BOUND, probcut_depth + 1, ply, tt_pv);
@@ -504,6 +518,9 @@ movesloop:
             Score score = negamax<NodeType::NON_PV>((depth - 1) / 2, sbeta - 1, sbeta, stack, cut_node);
             stack->skipped = NO_MOVE;
 
+            if(threads.is_stopped())
+                return 0;
+
             if(score < sbeta) {
                 extensions = 1;
                 if(!pv_node && score < sbeta - double_ext_margin)
@@ -575,7 +592,7 @@ movesloop:
 
         assert(valid_score(score));
 
-        if(is_limit_reached(depth))
+        if(threads.is_stopped())
             return 0;
 
         if(root_node) {
@@ -588,7 +605,6 @@ movesloop:
 
             if(made_moves == 1 || score > alpha) {
                 rm->set_score(score);
-                rm->depth = root_depth;
                 rm->pv = (stack + 1)->pv;
                 rm->pv[0] = move;
             } else {
@@ -630,10 +646,7 @@ movesloop:
     if(!made_moves) {
         if(stack->skipped)
             return alpha;
-        else if(in_check)
-            return mated_in(ply);
-        else
-            return VALUE_DRAW;
+        return in_check ? mated_in(ply) : VALUE_DRAW;
     }
 
     if(pv_node)
@@ -675,7 +688,7 @@ Score Search::quiescence(int depth, Score alpha, Score beta, Stack *stack) {
     if(pv_node)
         stack->pv.length = ply;
 
-    if(is_limit_reached(0))
+    if(threads.is_stopped())
         return 0;
 
     if(board.is_draw(ply))
@@ -779,7 +792,7 @@ Score Search::quiescence(int depth, Score alpha, Score beta, Stack *stack) {
 
         assert(valid_score(score));
 
-        if(is_limit_reached(0))
+        if(threads.is_stopped())
             return 0;
 
         if(score > best_score) {
@@ -813,7 +826,6 @@ Score Search::quiescence(int depth, Score alpha, Score beta, Stack *stack) {
 }
 
 void Search::make_move(const Move &move, Stack *stack) {
-    assert(move);
     assert(stack != nullptr);
 
     total_nodes++;
@@ -838,10 +850,7 @@ void Search::make_move(const Move &move, Stack *stack) {
 }
 
 void Search::undo_move(const Move &move) {
-    assert(move);
-
     accum_list.pop();
-
     ply--;
     board.undo_move(move);
 }
@@ -928,8 +937,6 @@ unsigned int Search::probe_wdl() const {
 }
 
 bool Search::is_limit_reached(int depth) const {
-    if(threads.is_stopped())
-        return true;
     if(limits.infinite)
         return false;
     if(depth > limits.depth)
@@ -938,7 +945,6 @@ bool Search::is_limit_reached(int depth) const {
         return true;
     if(limits.time.maximum != 0 && tm.elapsed_time() >= limits.time.maximum)
         return true;
-
     return false;
 }
 
@@ -978,9 +984,9 @@ void Search::print_uci_info() const {
     const Score score = rm.get_score();
     const PVLine &pv_line = rm.pv;
 
-    std::cout << "info depth " << rm.depth      //
-              << " multipv " << multipv_idx + 1 //
-              << " score ";                     //
+    std::cout << "info depth " << completed_depth //
+              << " multipv " << multipv_idx + 1   //
+              << " score ";                       //
 
     if(std::abs(score) >= VALUE_MATE_IN_MAX_PLY) {
         std::cout << "mate " << (VALUE_MATE - std::abs(score) + 1) / 2 * (score > 0 ? 1 : -1);

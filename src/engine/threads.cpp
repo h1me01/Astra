@@ -96,14 +96,13 @@ Search *ThreadPool::pick_best_thread() {
     Score min_score = VALUE_INFINITE;
 
     for(auto &th : threads) {
-        const auto &rm = th->root_moves[0];
-        if(!rm.depth)
+        if(!th->completed_depth)
             continue;
-        min_score = std::min(min_score, Score(rm.get_score()));
+        min_score = std::min(min_score, Score(th->root_moves[0].get_score()));
     }
 
     for(auto &th : threads) {
-        const int root_depth = th->root_moves[0].depth;
+        const int root_depth = th->completed_depth;
         if(!root_depth)
             continue;
 
@@ -115,7 +114,7 @@ Search *ThreadPool::pick_best_thread() {
         Search *thread = th.get();
 
         const RootMove &rm = thread->root_moves[0];
-        if(!rm.depth)
+        if(!thread->completed_depth)
             continue;
 
         const RootMove &best_rm = best_thread->root_moves[0];

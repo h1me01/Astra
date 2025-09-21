@@ -151,11 +151,7 @@ void MovePicker::score_noisy() {
 
     for(int i = 0; i < ml_main.size(); i++) {
         const Move move = ml_main[i];
-        assert(move);
-
         const PieceType captured = move.is_ep() ? PAWN : piece_type(board.piece_at(move.to()));
-        assert(captured != KING);
-        assert(valid_piece_type(captured) || (move.type() >= PQ_KNIGHT && move.type() <= PQ_QUEEN));
 
         int score = history.get_nh(board, move)   //
                     + 16 * PIECE_VALUES[captured] //
@@ -167,16 +163,12 @@ void MovePicker::score_noisy() {
 
 void MovePicker::score_quiets() {
     ml_main.gen<ADD_QUIETS>(board);
-
     Threats threats = board.get_threats();
 
     for(int i = 0; i < ml_main.size(); i++) {
         const Move move = ml_main[i];
         const Piece pc = board.piece_at(move.from());
         const PieceType pt = piece_type(pc);
-
-        assert(move);
-        assert(valid_piece(pc));
 
         int score = 2 * (history.get_hh(board.get_stm(), move) + history.get_ph(board, move));
         for(int i : {1, 2, 4, 6})
