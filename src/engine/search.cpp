@@ -45,7 +45,7 @@ void Search::idle() {
 void Search::start() {
     tm.start();
 
-    total_nodes = 0;
+    nodes = 0;
     tb_hits = 0;
     ply = 0;
     nmp_min_ply = 0;
@@ -89,14 +89,14 @@ void Search::start() {
 
         stability = (best_move == prev_best_move) ? std::min(stability + 1, int(tm_stability_max)) : 0;
 
-        if(main_thread                                       //
-           && root_depth >= 5                                //
-           && tm.should_stop(                                //
-                  limits,                                    //
-                  stability,                                 //
-                  scores[root_depth - 1] - score,            //
-                  scores[root_depth - 3] - score,            //
-                  root_moves[0].nodes / double(total_nodes)) //
+        if(main_thread                                 //
+           && root_depth >= 5                          //
+           && tm.should_stop(                          //
+                  limits,                              //
+                  stability,                           //
+                  scores[root_depth - 1] - score,      //
+                  scores[root_depth - 3] - score,      //
+                  root_moves[0].nodes / double(nodes)) //
         ) {
             break;
         }
@@ -122,6 +122,8 @@ void Search::start() {
 }
 
 Score Search::aspiration(int depth, Stack *stack) {
+    sel_depth = 0;
+
     Score score;
     Score alpha = -VALUE_INFINITE;
     Score beta = VALUE_INFINITE;
@@ -203,6 +205,9 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
     const Color stm = board.get_stm();
     const bool in_check = board.in_check();
     const U64 hash = board.get_hash();
+
+    if(pv_node)
+        sel_depth = std::max(sel_depth, ply);
 
     if(!root_node) {
         if(ply >= MAX_PLY - 1)
@@ -466,7 +471,7 @@ movesloop:
         if(root_node && !found_rootmove(move))
             continue;
 
-        U64 start_nodes = total_nodes;
+        U64 start_nodes = nodes;
 
         stack->made_moves = ++made_moves;
 
@@ -602,11 +607,12 @@ movesloop:
             assert(move_idx >= 0);
             RootMove *rm = &root_moves[move_idx];
 
-            rm->nodes += total_nodes - start_nodes;
+            rm->nodes += nodes - start_nodes;
             rm->avg_score = valid_score(rm->avg_score) ? (rm->avg_score + score) / 2 : score;
 
             if(made_moves == 1 || score > alpha) {
                 rm->set_score(score);
+                rm->sel_depth = sel_depth;
                 rm->pv = (stack + 1)->pv;
                 rm->pv[0] = move;
             } else {
@@ -702,6 +708,9 @@ Score Search::quiescence(int depth, Score alpha, Score beta, Stack *stack) {
         if(alpha >= beta)
             return alpha;
     }
+
+    if(pv_node)
+        sel_depth = std::max(sel_depth, ply);
 
     const bool in_check = board.in_check();
     const U64 hash = board.get_hash();
@@ -830,7 +839,7 @@ Score Search::quiescence(int depth, Score alpha, Score beta, Stack *stack) {
 void Search::make_move(const Move &move, Stack *stack) {
     assert(stack != nullptr);
 
-    total_nodes++;
+    nodes++;
 
     stack->move = move;
     stack->moved_piece = board.piece_at(move.from());
@@ -939,6 +948,8 @@ unsigned int Search::probe_wdl() const {
 }
 
 bool Search::is_limit_reached(int depth) const {
+    if(this != threads.main_thread())
+        return false; // only main thread checks limits
     if(limits.infinite)
         return false;
     if(depth > limits.depth)
@@ -987,6 +998,7 @@ void Search::print_uci_info() const {
     const PVLine &pv_line = rm.pv;
 
     std::cout << "info depth " << completed_depth //
+              << " seldepth " << sel_depth        //
               << " multipv " << multipv_idx + 1   //
               << " score ";                       //
 

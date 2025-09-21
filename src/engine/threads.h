@@ -46,7 +46,7 @@ class ThreadPool {
     U64 get_total_nodes() const {
         U64 total_nodes = 0;
         for(const auto &t : threads)
-            total_nodes += t->get_total_nodes();
+            total_nodes += t->get_nodes();
         return total_nodes;
     }
 

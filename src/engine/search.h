@@ -29,6 +29,7 @@ struct RootMove : Move {
 
     // public variables
 
+    int sel_depth = 0;
     U64 nodes = 0;
     Score avg_score = VALUE_NONE;
     PVLine pv{};
@@ -65,8 +66,8 @@ class Search {
         history.clear();
     }
 
-    U64 get_total_nodes() const {
-        return total_nodes;
+    U64 get_nodes() const {
+        return nodes;
     }
 
     U64 get_tb_hits() const {
@@ -78,8 +79,9 @@ class Search {
 
     int root_depth;
     int multipv_idx;
+    int sel_depth;
 
-    U64 total_nodes;
+    U64 nodes;
     U64 tb_hits;
 
     int ply;
