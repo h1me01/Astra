@@ -325,6 +325,8 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
 
     if(valid_score((stack - 2)->static_eval))
         improving = stack->static_eval > (stack - 2)->static_eval;
+    else if(valid_score((stack - 4)->static_eval))
+        improving = stack->static_eval > (stack - 4)->static_eval;
 
     // update quiet history
     if(!stack->skipped                          //
