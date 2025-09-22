@@ -89,7 +89,7 @@ PARAM(zws_margin, 49, 10, 160);
 PARAM(quiet_history_div, 7259, 1, 16384);
 PARAM(noisy_history_div, 4537, 1, 16384);
 
-PARAM(qfp_margin, 116, 40, 280);
+PARAM(qfp_margin, 116, 20, 280);
 PARAM(qsee_margin, -16, -200, 50);
 
 PARAM(asp_delta, 11, 1, 30);
@@ -97,11 +97,11 @@ PARAM(asp_depth, 4, 2, 6);
 
 PARAM(history_bonus_margin, 60, 10, 200);
 PARAM(history_bonus_mult, 303, 1, 1536);
-PARAM(history_bonus_minus, -72, -500, 500);
+PARAM(history_bonus_minus, -72, -300, 300);
 PARAM(max_history_bonus, 2408, 1, 4096);
 
 PARAM(history_malus_mult, 261, 1, 1536);
-PARAM(history_malus_minus, 154, -500, 500);
+PARAM(history_malus_minus, -30, -300, 300);
 PARAM(max_history_malus, 1797, 1, 4096);
 
 } // namespace Engine
