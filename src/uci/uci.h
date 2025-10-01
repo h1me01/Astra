@@ -62,7 +62,7 @@ class UCI {
     void go(std::istringstream &is);
     void bench();
 
-    Move get_move(const std::string &str_move) const;
+    Move parse_move(const std::string &str_move) const;
 };
 
 } // namespace UCI

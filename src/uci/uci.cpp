@@ -238,7 +238,7 @@ void UCI::update_position(std::istringstream &is) {
     while(is >> token) {
         if(token == "moves")
             continue;
-        board.make_move(get_move(token));
+        board.make_move(parse_move(token));
         // if half move clock gets reseted, then we can reset the history
         // since the last positions should not be considered in the repetition
         if(!board.get_fmr_count())
@@ -344,7 +344,7 @@ void UCI::bench() {
     std::cout << nodes << " nodes " << nodes * 1000 / total_time << " nps" << std::endl;
 }
 
-Move UCI::get_move(const std::string &str_move) const {
+Move UCI::parse_move(const std::string &str_move) const {
     Square from = sq_from(str_move.substr(0, 2));
     Square to = sq_from(str_move.substr(2, 2));
     Piece pc = board.piece_at(from);

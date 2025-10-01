@@ -375,8 +375,8 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
        && eval >= beta                                                   //
        && !is_loss(beta)                                                 //
        && !stack->skipped                                                //
-       && board.nonpawn_mat(stm)                                         //
        && ply >= nmp_min_ply                                             //
+       && board.nonpawn_mat(stm)                                         //
        && (stack - 1)->move != NULL_MOVE                                 //
        && stack->static_eval + nmp_depth_mult * depth - nmp_base >= beta //
     ) {
@@ -893,9 +893,6 @@ Score Search::evaluate() {
             }
         }
     }
-
-    assert(acc.is_initialized(WHITE));
-    assert(acc.is_initialized(BLACK));
 
     int eval = NNUE::nnue.forward(board, accum_list.back());
 

@@ -17,8 +17,8 @@ class CastlingRights {
         mask |= OOO_MASK[c];
     }
 
-    void update(U64 from, U64 to) {
-        mask &= ~(from | to);
+    void update(Square from, Square to) {
+        mask &= ~(sq_bb(from) | sq_bb(to));
     }
 
     bool ks(const Color c) const {

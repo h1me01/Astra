@@ -221,11 +221,10 @@ NNUE::DirtyPieces Board::make_move(const Move &move) {
             info.ep_sq = new_ep_sq;
             info.hash ^= Zobrist::get_ep(new_ep_sq); // add ep square to hash
         } else if(move.is_prom()) {
-            PieceType prom_t = move.prom_type();
-            Piece prom_pc = make_piece(stm, prom_t);
+            Piece prom_pc = make_piece(stm, move.prom_type());
 
-            assert(prom_t != PAWN);
             assert(valid_piece(prom_pc));
+            assert(piece_type(prom_pc) != PAWN);
 
             // add promoted piece and remove pawn
             remove_piece(to);
@@ -240,7 +239,7 @@ NNUE::DirtyPieces Board::make_move(const Move &move) {
     if(info.castle_rights.on_castle_sq(from) || info.castle_rights.on_castle_sq(to)) {
         // remove old castling rights from hash
         info.hash ^= Zobrist::get_castle(info.castle_rights.get_hash_idx());
-        info.castle_rights.update(sq_bb(from), sq_bb(to));
+        info.castle_rights.update(from, to);
         // add new castling rights to hash
         info.hash ^= Zobrist::get_castle(info.castle_rights.get_hash_idx());
     }
@@ -283,6 +282,11 @@ void Board::undo_move(const Move &move) {
 
     stm = ~stm;
 
+    if(move.is_castling()) {
+        auto [rook_to, rook_from] = get_castle_rook_sqs(stm, to);
+        move_piece(rook_from, rook_to);
+    }
+
     if(move.is_prom()) {
         remove_piece(to);
         put_piece(make_piece(stm, PAWN), to);
@@ -290,10 +294,7 @@ void Board::undo_move(const Move &move) {
 
     move_piece(to, from);
 
-    if(move.is_castling()) {
-        auto [rook_to, rook_from] = get_castle_rook_sqs(stm, to);
-        move_piece(rook_from, rook_to);
-    } else if(move.is_cap()) {
+    if(move.is_cap()) {
         assert(valid_piece(captured));
         put_piece(captured, move.is_ep() ? ep_sq(to) : to);
     }
@@ -540,6 +541,56 @@ bool Board::is_pseudo_legal(const Move &move) const {
     return true;
 }
 
+bool Board::upcoming_repetition(int ply) const {
+    assert(ply > 0);
+
+    const U64 occ = get_occupancy();
+    const StateInfo &info = get_state();
+
+    const int distance = std::min(info.fmr_counter, info.plies_from_null);
+    if(distance < 3)
+        return false;
+
+    int offset = 1;
+
+    U64 orig_key = info.hash;
+    U64 other_key = orig_key ^ states[curr_ply - offset].hash ^ Zobrist::get_side();
+
+    for(int i = 3; i <= distance; i += 2) {
+        offset++;
+        int idx = curr_ply - offset;
+
+        other_key ^= states[idx].hash ^ states[idx - 1].hash ^ Zobrist::get_side();
+
+        offset++;
+        idx = curr_ply - offset;
+
+        if(other_key != 0)
+            continue;
+
+        U64 move_key = orig_key ^ states[idx].hash;
+        int hash = Cuckoo::cuckoo_h1(move_key);
+
+        if(Cuckoo::keys[hash] != move_key)
+            hash = Cuckoo::cuckoo_h2(move_key);
+        if(Cuckoo::keys[hash] != move_key)
+            continue;
+
+        Move move = Cuckoo::cuckoo_moves[hash];
+        Square to = move.to();
+        U64 between = between_bb(move.from(), to) ^ sq_bb(to);
+
+        if(!(between & occ)) {
+            if(ply > i)
+                return true;
+            if(states[idx].repetition)
+                return true;
+        }
+    }
+
+    return false;
+}
+
 bool Board::see(const Move &move, int threshold) const {
     assert(move);
 
@@ -620,56 +671,6 @@ bool Board::see(const Move &move, int threshold) const {
     }
 
     return bool(res);
-}
-
-bool Board::upcoming_repetition(int ply) const {
-    assert(ply > 0);
-
-    const U64 occ = get_occupancy();
-    const StateInfo &info = get_state();
-
-    const int distance = std::min(info.fmr_counter, info.plies_from_null);
-    if(distance < 3)
-        return false;
-
-    int offset = 1;
-
-    U64 orig_key = info.hash;
-    U64 other_key = orig_key ^ states[curr_ply - offset].hash ^ Zobrist::get_side();
-
-    for(int i = 3; i <= distance; i += 2) {
-        offset++;
-        int idx = curr_ply - offset;
-
-        other_key ^= states[idx].hash ^ states[idx - 1].hash ^ Zobrist::get_side();
-
-        offset++;
-        idx = curr_ply - offset;
-
-        if(other_key != 0)
-            continue;
-
-        U64 move_key = orig_key ^ states[idx].hash;
-        int hash = Cuckoo::cuckoo_h1(move_key);
-
-        if(Cuckoo::keys[hash] != move_key)
-            hash = Cuckoo::cuckoo_h2(move_key);
-        if(Cuckoo::keys[hash] != move_key)
-            continue;
-
-        Move move = Cuckoo::cuckoo_moves[hash];
-        Square to = move.to();
-        U64 between = between_bb(move.from(), to) ^ sq_bb(to);
-
-        if(!(between & occ)) {
-            if(ply > i)
-                return true;
-            if(states[idx].repetition)
-                return true;
-        }
-    }
-
-    return false;
 }
 
 Threats Board::get_threats() const {
