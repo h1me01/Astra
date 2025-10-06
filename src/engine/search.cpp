@@ -822,7 +822,7 @@ Score Search::quiescence(int depth, Score alpha, Score beta, Stack *stack) {
         }
     }
 
-    if(board.in_check() && !made_moves)
+    if(in_check && !made_moves)
         return mated_in(ply);
 
     if(best_score >= beta && !is_decisive(best_score))

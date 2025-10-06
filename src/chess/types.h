@@ -18,6 +18,7 @@ const std::string STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w 
 constexpr int PIECE_VALUES[] = {100, 360, 385, 635, 1200, 0, 0};
 
 constexpr int MAX_PLY = 128;
+constexpr int MAX_MOVES = 128;
 
 constexpr Score VALUE_DRAW = 0;
 constexpr Score VALUE_NONE = 32002;
@@ -91,10 +92,6 @@ enum MoveType
     PC_KNIGHT, PC_BISHOP, PC_ROOK, PC_QUEEN
 };
 // clang-format on
-
-// max number of possible legal moves in chess are 218
-// use 128 for faster move generation
-constexpr int MAX_MOVES = 128;
 
 class Move {
   public:

@@ -439,36 +439,28 @@ bool Board::is_pseudo_legal(const Move &move) const {
 
     if(!move)
         return false; // no and null moves are not pseudo legal
-
     if(!valid_piece(from_pc))
         return false; // moving piece must be valid
-
     if(sq_bb(to) & us_bb)
         return false; // moving piece cannot capture its own pieces
-
     if(piece_color(from_pc) != stm)
         return false; // moving piece must match stm
-
     if(!move.is_cap() && valid_piece(to_pc))
         return false; // if move is quiet, then target square must be empty
-
     if(move.is_cap() && !valid_piece(captured))
         return false; // if move is a capture, then captured piece must be valid
-
     if(pop_count(info.checkers) > 1 && pt != KING)
         return false; // only king can move if there are multiple checkers
 
     if(move.is_castling()) {
-        if(pt != KING || info.checkers || !info.castle_rights.any(stm))
-            return false; // only king can castle, if not in check and has castling rights
-
+        if(pt != KING || info.checkers)
+            return false; // only king can castle while not in check
         // short castling
         if(to == rel_sq(stm, g1))
             return info.castle_rights.ks(stm) && !(occ & ks_castle_path_mask(stm));
         // long castling
         else
             return info.castle_rights.qs(stm) && !(occ & qs_castle_path_mask(stm));
-
         // if short/long castling condition is not met, then it's not pseudo legal
         return false;
     }
@@ -488,7 +480,6 @@ bool Board::is_pseudo_legal(const Move &move) const {
             return false;
 
         U64 targets = 0;
-
         // quiet promotions
         targets |= (stm == WHITE ? shift<NORTH>(from_bb) : shift<SOUTH>(from_bb)) & ~occ;
         // capture promotions
@@ -497,7 +488,7 @@ bool Board::is_pseudo_legal(const Move &move) const {
         targets &= info.checkers ? between_bb(ksq, lsb(info.checkers)) | info.checkers : -1ULL;
         // limit move targets based on promotion rank
         targets &= rank_mask(rel_rank(stm, RANK_8));
-
+        
         // only pseudo legal, if target range is reachable
         return targets & sq_bb(to);
     }
