@@ -231,7 +231,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
     (stack + 1)->killer = NO_MOVE;
     (stack + 1)->skipped = NO_MOVE;
 
-    // look up in transposition table
+    // look up in tt
     bool tt_hit = false;
     TTEntry *ent = tt.lookup(hash, &tt_hit);
 
@@ -264,9 +264,8 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
                 history.update_hh(stm, tt_move, history_bonus(depth));
 
             Square prev_sq = (stack - 1)->move ? (stack - 1)->move.to() : NO_SQUARE;
-            if(valid_sq(prev_sq) && !(stack - 1)->move.is_cap() && (stack - 1)->made_moves <= 3) {
+            if(valid_sq(prev_sq) && !(stack - 1)->move.is_cap() && (stack - 1)->made_moves <= 3)
                 history.update_conth((stack - 1)->move, stack - 1, -history_malus(depth));
-            }
         }
 
         if(board.get_fmr_count() < 90)
@@ -388,8 +387,8 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
         stack->moved_piece = NO_PIECE;
         stack->conth = &history.conth[0][NO_PIECE][NO_SQUARE];
 
-        ply++;
         board.make_nullmove();
+        ply++;
 
         Score score = -negamax<NodeType::NON_PV>(depth - R, -beta, -beta + 1, stack + 1, !cut_node);
 
@@ -660,7 +659,7 @@ movesloop:
     if(pv_node)
         best_score = std::min(best_score, max_score);
 
-    // store in transposition table
+    // store in tt
     Bound bound = EXACT_BOUND;
     if(best_score >= beta)
         bound = LOWER_BOUND;
@@ -723,7 +722,7 @@ Score Search::quiescence(int depth, Score alpha, Score beta, Stack *stack) {
     Score best_score = -VALUE_INFINITE;
     Score raw_eval, futility;
 
-    // look up in transposition table
+    // look up in tt
     bool tt_hit = false;
     TTEntry *ent = tt.lookup(hash, &tt_hit);
 
@@ -741,9 +740,8 @@ Score Search::quiescence(int depth, Score alpha, Score beta, Stack *stack) {
         tt_pv |= ent->get_tt_pv();
     }
 
-    if(!pv_node && valid_score(tt_score) && valid_tt_score(tt_score, beta, tt_bound)) {
+    if(!pv_node && valid_score(tt_score) && valid_tt_score(tt_score, beta, tt_bound))
         return tt_score;
-    }
 
     if(in_check) {
         futility = raw_eval = stack->static_eval = VALUE_NONE;
@@ -752,18 +750,15 @@ Score Search::quiescence(int depth, Score alpha, Score beta, Stack *stack) {
         best_score = stack->static_eval = adjust_eval(raw_eval, stack);
         futility = best_score + qfp_margin;
 
-        if(valid_score(tt_score) && valid_tt_score(tt_score, best_score + 1, tt_bound)) {
+        if(valid_score(tt_score) && valid_tt_score(tt_score, best_score + 1, tt_bound))
             best_score = tt_score;
-        }
 
         // stand pat
         if(best_score >= beta) {
             if(!is_decisive(best_score))
                 best_score = (best_score + beta) / 2;
-
             if(!tt_hit)
                 ent->store(hash, NO_MOVE, VALUE_NONE, raw_eval, NO_BOUND, 0, ply, false);
-
             return best_score;
         }
 
@@ -815,7 +810,6 @@ Score Search::quiescence(int depth, Score alpha, Score beta, Stack *stack) {
 
                 if(pv_node)
                     update_pv(move, stack);
-
                 if(alpha >= beta)
                     break;
             }
@@ -824,7 +818,6 @@ Score Search::quiescence(int depth, Score alpha, Score beta, Stack *stack) {
 
     if(in_check && !made_moves)
         return mated_in(ply);
-
     if(best_score >= beta && !is_decisive(best_score))
         best_score = (best_score + beta) / 2;
 
@@ -853,8 +846,8 @@ void Search::make_move(const Move &move, Stack *stack) {
     if(NNUE::needs_refresh(pc, move.from(), move.to()))
         accum.set_refresh(piece_color(pc));
 
-    ply++;
     auto dirty_pieces = board.make_move(move);
+    ply++;
     accum.set_info(dirty_pieces, board.get_king_sq(WHITE), board.get_king_sq(BLACK));
 
     tt.prefetch(board.get_hash());
@@ -862,8 +855,8 @@ void Search::make_move(const Move &move, Stack *stack) {
 
 void Search::undo_move(const Move &move) {
     accum_list.pop();
-    ply--;
     board.undo_move(move);
+    ply--;
 }
 
 Score Search::evaluate() {
@@ -966,7 +959,6 @@ void Search::sort_rootmoves(int offset) {
         for(int j = i + 1; j < root_moves.size(); j++)
             if(root_moves[j].get_score() > root_moves[i].get_score())
                 best = j;
-
         if(best != i)
             std::swap(root_moves[i], root_moves[best]);
     }
