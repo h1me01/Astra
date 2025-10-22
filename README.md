@@ -18,4 +18,5 @@ make -j
 - [Stockfish](https://github.com/official-stockfish/Stockfish)
 - [Koivisto](https://github.com/Luecx/Koivisto)
 - [Fathom](https://github.com/jdart1/Fathom) 
+- [incbin](https://github.com/graphitemaster/incbin)
 - [Chess Programming Wiki](https://www.chessprogramming.org/Main_Page)
