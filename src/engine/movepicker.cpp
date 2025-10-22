@@ -144,7 +144,7 @@ Move MovePicker::next(bool skip_quiets) {
     }
 }
 
-// private member
+// private functions
 
 void MovePicker::score_noisy() {
     ml_main.gen<ADD_NOISY>(board);

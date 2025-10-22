@@ -4,11 +4,40 @@
 
 namespace Engine {
 
-ThreadPool::~ThreadPool() {
+void ThreadPool::set_count(int count) {
+    wait();
+    terminate();
+
+    started_threads = 0;
+
+    // create new threads
+    threads.reserve(count);
+    running_threads.reserve(count);
+
+    for(int i = 0; i < count; i++) {
+        threads.emplace_back(std::make_unique<Search>());
+        running_threads.emplace_back(std::make_unique<std::thread>(&Search::idle, threads[i].get()));
+    }
+
+    // give threads a moment to start up
+    while(started_threads < (size_t) count) {
+    }
+}
+
+void ThreadPool::wait(bool include_main) {
+    for(size_t i = (include_main ? 0 : 1); i < threads.size(); i++) {
+        std::unique_lock search_lock(threads[i]->mutex);
+        threads[i]->cv.wait(search_lock, [this, i] { return !threads[i]->searching; });
+    }
+}
+
+void ThreadPool::terminate() {
     // signal all threads to exit
     for(auto &th : threads) {
+        std::lock_guard lock(th->mutex);
         th->exiting = true;
-        launch_worker(th.get());
+        th->searching = true;
+        th->cv.notify_all();
     }
 
     // wait for all threads to finish
@@ -21,72 +50,21 @@ ThreadPool::~ThreadPool() {
 }
 
 void ThreadPool::launch_workers(const Board &board, Limits limits) {
-    stop_flag.store(false, std::memory_order_release);
-
-    for(auto &th : threads) {
-        th->board = board;
-        th->limits = limits;
-        launch_worker(th.get());
-    }
-}
-
-void ThreadPool::set_count(int count) {
+    stop();
     wait();
 
-    // stop and clean up existing threads
-    for(int i = 0; i < (int) threads.size(); i++) {
-        auto &th = threads[i];
-        th->exiting = true;
-        launch_worker(th.get());
+    stop_flag = false;
 
-        if(running_threads[i] && running_threads[i]->joinable())
-            running_threads[i]->join();
-    }
-
-    // clear old threads
-    threads.clear();
-    running_threads.clear();
-
-    started_threads.store(0, std::memory_order_release);
-
-    // create new threads
-    threads.reserve(count);
-    running_threads.reserve(count);
-
-    for(int i = 0; i < count; i++) {
-        threads.emplace_back(std::make_unique<Search>());
-        running_threads.emplace_back(std::make_unique<std::thread>(&Search::idle, threads[i].get()));
-    }
-
-    // give threads a moment to start up
-    while(started_threads.load(std::memory_order_acquire) < (size_t) count) {
+    for(auto &th : threads) {
+        std::lock_guard lock(th->mutex);
+        th->board = board;
+        th->limits = limits;
+        th->searching = true;
+        th.get()->cv.notify_all();
     }
 }
 
-void ThreadPool::wait(bool include_main_thread) {
-    // copy the thread pointers
-    std::vector<Search *> thread_ptrs;
-    {
-        if(threads.empty())
-            return;
-
-        size_t start_idx = include_main_thread ? 0 : 1;
-        size_t count = threads.size() - start_idx;
-
-        if(count > 0) {
-            thread_ptrs.reserve(count);
-            for(size_t i = start_idx; i < threads.size(); i++)
-                thread_ptrs.push_back(threads[i].get());
-        }
-    }
-
-    for(auto *th : thread_ptrs) {
-        std::unique_lock search_lock(th->mutex);
-        th->cv.wait(search_lock, [th] { return !th->searching; });
-    }
-}
-
-Search *ThreadPool::pick_best_thread() {
+Search *ThreadPool::pick_best() {
     Search *best_thread = main_thread();
 
     if(threads.size() == 1 || best_thread->limits.multipv != 1)
@@ -96,28 +74,28 @@ Search *ThreadPool::pick_best_thread() {
     Score min_score = VALUE_INFINITE;
 
     for(auto &th : threads) {
-        if(!th->completed_depth)
+        if(!th->get_completed_depth())
             continue;
-        min_score = std::min(min_score, Score(th->root_moves[0].get_score()));
+        min_score = std::min(min_score, Score(th->get_best_rootmove().get_score()));
     }
 
     for(auto &th : threads) {
-        const int root_depth = th->completed_depth;
+        const int root_depth = th->get_completed_depth();
         if(!root_depth)
             continue;
 
-        const auto &rm = th->root_moves[0];
+        const auto &rm = th->get_best_rootmove();
         votes[rm.raw()] += (rm.get_score() - min_score + 10) * root_depth;
     }
 
     for(auto &th : threads) {
         Search *thread = th.get();
 
-        const RootMove &rm = thread->root_moves[0];
-        if(!thread->completed_depth)
+        const RootMove &rm = thread->get_best_rootmove();
+        if(!thread->get_completed_depth())
             continue;
 
-        const RootMove &best_rm = best_thread->root_moves[0];
+        const RootMove &best_rm = best_thread->get_best_rootmove();
 
         if(is_decisive(best_rm.get_score())) {
             if(rm.get_score() > best_rm.get_score())
@@ -130,6 +108,8 @@ Search *ThreadPool::pick_best_thread() {
 
     return best_thread;
 }
+
+// global variable
 
 ThreadPool threads;
 

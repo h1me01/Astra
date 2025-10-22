@@ -1,5 +1,6 @@
 #pragma once
 
+#include <atomic>
 #include <condition_variable>
 #include <mutex>
 
@@ -27,8 +28,6 @@ struct RootMove : Move {
     RootMove() = default;
     RootMove(Move m) : Move(m) {}
 
-    // public variables
-
     int sel_depth = 0;
     U64 nodes = 0;
     Score avg_score = VALUE_NONE;
@@ -41,25 +40,19 @@ class Search {
         history.clear();
     }
 
-    // public variables
+    // variables
 
-    bool searching = false;
-    bool exiting = false;
-
-    int completed_depth = 0;
+    bool searching = false, exiting = false;
 
     std::mutex mutex;
     std::condition_variable cv;
 
+    Board board;
     Limits limits;
-    Board board{STARTING_FEN};
 
-    MoveList<RootMove> root_moves;
-
-    // public functions
+    // functions
 
     void idle();
-
     void print_uci_info() const;
 
     void clear_histories() {
@@ -74,25 +67,34 @@ class Search {
         return tb_hits;
     }
 
+    int get_completed_depth() const {
+        return completed_depth;
+    }
+
+    const RootMove &get_best_rootmove() const {
+        return root_moves[0];
+    }
+
   private:
-    // private variables
-
-    int root_depth;
-    int multipv_idx;
-    int sel_depth;
-
-    U64 nodes;
-    U64 tb_hits;
-
-    int ply;
-    int nmp_min_ply;
+    // variables
 
     TimeMan tm;
     History history;
 
     NNUE::AccumList accum_list;
+    MoveList<RootMove> root_moves;
 
-    // private functions
+    uint64_t nodes, tb_hits;
+
+    int nmp_min_ply;
+
+    int sel_depth;
+    int root_depth;
+    int completed_depth;
+
+    int multipv_idx;
+
+    // functions
 
     void start();
 

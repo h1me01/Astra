@@ -11,19 +11,22 @@ namespace Engine {
 
 class ThreadPool {
   public:
-    ThreadPool() : started_threads(0) {}
-    ~ThreadPool();
+    ThreadPool() : stop_flag(false), started_threads(0) {}
 
-    void launch_workers(const Board &board, Limits limit);
+    ~ThreadPool() {
+        terminate();
+    }
 
     void set_count(int count);
+    void wait(bool include_main = true);
 
-    void wait(bool include_main_thread = true);
+    void terminate();
+    void launch_workers(const Board &board, Limits limit);
 
-    Search *pick_best_thread();
+    Search *pick_best();
 
     void add_started_thread() {
-        started_threads.fetch_add(1, std::memory_order_acq_rel);
+        started_threads++;
     }
 
     void new_game() {
@@ -32,15 +35,15 @@ class ThreadPool {
     }
 
     void stop() {
-        stop_flag.store(true, std::memory_order_release);
+        stop_flag = true;
+    }
+
+    bool is_stopped() const {
+        return stop_flag.load(std::memory_order_relaxed);
     }
 
     Search *main_thread() {
         return threads.empty() ? nullptr : threads[0].get();
-    }
-
-    bool is_stopped() const {
-        return stop_flag.load(std::memory_order_acquire);
     }
 
     U64 get_total_nodes() const {
@@ -58,18 +61,14 @@ class ThreadPool {
     }
 
   private:
-    std::vector<std::unique_ptr<Search>> threads;
-    std::vector<std::unique_ptr<std::thread>> running_threads;
-
-    std::atomic<bool> stop_flag{false};
+    std::atomic<bool> stop_flag;
     std::atomic<size_t> started_threads;
 
-    void launch_worker(Search *worker) {
-        std::lock_guard<std::mutex> lock(worker->mutex);
-        worker->searching = true;
-        worker->cv.notify_all();
-    }
+    std::vector<std::unique_ptr<Search>> threads;
+    std::vector<std::unique_ptr<std::thread>> running_threads;
 };
+
+// global variable
 
 extern ThreadPool threads;
 

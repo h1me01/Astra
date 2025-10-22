@@ -30,10 +30,13 @@ constexpr bool valid_score(Score score) {
 
 // gets opposite color
 constexpr Color operator~(Color c) {
+    assert(valid_color(c));
     return Color(c ^ BLACK);
 }
 
 constexpr Piece make_piece(Color c, PieceType pt) {
+    assert(valid_color(c));
+    assert(valid_piece_type(pt));
     return Piece(pt + 6 * c);
 }
 
@@ -53,8 +56,8 @@ constexpr Color piece_color(Piece pc) {
     return Color(pc > 5);
 }
 
-inline Square &operator++(Square &s) {
-    return s = Square(int(s) + 1);
+inline Square &operator++(Square &sq) {
+    return sq = Square(int(sq) + 1);
 }
 
 constexpr Square operator+(Square sq, Direction d) {
@@ -91,29 +94,37 @@ constexpr int sq_anti_diag(Square sq) {
     return sq_rank(sq) + sq_file(sq);
 }
 
-inline Square &operator+=(Square &s, Direction d) {
-    return s = s + d;
+inline Square &operator+=(Square &sq, Direction d) {
+    sq = sq + d;
+    assert(valid_sq(sq));
+    return sq;
 }
 
-inline Square &operator-=(Square &s, Direction d) {
-    return s = s - d;
+inline Square &operator-=(Square &sq, Direction d) {
+    sq = sq - d;
+    assert(valid_sq(sq));
+    return sq;
 }
 
 constexpr Square rel_sq(Color c, Square sq) {
     assert(valid_sq(sq));
+    assert(valid_color(c));
     return c == WHITE ? sq : Square(sq ^ 56);
 }
 
 constexpr Rank rel_rank(Color c, Rank r) {
+    assert(valid_color(c));
     assert(r >= RANK_1 && r <= RANK_8);
     return c == WHITE ? r : Rank(RANK_8 - r);
 }
 
 constexpr Score mate_in(int ply) {
+    assert(ply >= 0);
     return VALUE_MATE - ply;
 }
 
 constexpr Score mated_in(int ply) {
+    assert(ply >= 0);
     return -VALUE_MATE + ply;
 }
 

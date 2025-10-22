@@ -38,11 +38,11 @@ class MovePicker {
                bool gen_checks = false //
     );
 
-    // public variables
+    // variable
 
     int probcut_threshold = 0;
 
-    // public functions
+    // functions
 
     Move next(bool skip_quiets = false);
 
@@ -55,7 +55,7 @@ class MovePicker {
     }
 
   private:
-    // private variables
+    // variables
 
     int idx;
     Stage stage;
@@ -72,7 +72,7 @@ class MovePicker {
     MoveList<> ml_main;
     MoveList<> ml_bad_noisy;
 
-    // private functions
+    // functions
 
     void score_noisy();
     void score_quiets();

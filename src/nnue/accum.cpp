@@ -39,8 +39,7 @@ void AccumTable::refresh(Color view, Board &board, Accum &accum) {
     Accum &entry_acc = entry.get_accum();
 
     for(Color c : {WHITE, BLACK}) {
-        for(int i = PAWN; i <= KING; i++) {
-            PieceType pt = PieceType(i);
+        for(PieceType pt : {PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING}) {
             Piece pc = make_piece(c, pt);
 
             const U64 pc_bb = board.get_piece_bb(c, pt);

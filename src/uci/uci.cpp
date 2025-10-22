@@ -123,7 +123,7 @@ void Options::set(std::istringstream &is) {
     const std::string &value = tokens[4];
 
     if(tokens.size() < 5 || tokens[1] != "name" || tokens[3] != "value") {
-        std::cout << "Invalid option command" << std::endl;
+        std::cout << "Invalid option " << name << std::endl;
         return;
     }
 
@@ -141,23 +141,20 @@ void Options::set(std::istringstream &is) {
         return;
     }
 
-    bool valid = false;
-    if(options[name].type != "spin") {
-        options[name] = value;
-        valid = true;
-    } else {
+    bool valid = true;
+    if(options[name].type == "check") {
+        valid = (value == "true" || value == "false");
+    } else if(options[name].type == "spin") {
         int n = std::stoi(value);
-        if(n >= options[name].min && n <= options[name].max) {
-            options[name] = value;
-            valid = true;
-        } else {
-            std::cout << "Invalid range for option " << name << std::endl;
-            return;
-        }
+        valid = (n >= options[name].min && n <= options[name].max);
     }
 
-    if(valid)
+    if(valid) {
+        options[name] = value;
         apply(name == "Hash");
+    } else {
+        std::cout << "Invalid value for option " << name << std::endl;
+    }
 }
 
 // UCI
@@ -254,8 +251,6 @@ void UCI::new_game() {
 }
 
 void UCI::go(std::istringstream &is) {
-    Engine::threads.stop();
-    Engine::threads.wait();
     Engine::Limits limits;
 
     int64_t w_time = 0, b_time = 0, move_time = 0;

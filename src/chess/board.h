@@ -54,7 +54,8 @@ class Threats {
 
 class Board {
   public:
-    Board(const std::string &fen = STARTING_FEN);
+    Board() = default;
+    Board(const std::string fen);
 
     Board &operator=(const Board &other);
 
@@ -177,7 +178,7 @@ class Board {
     }
 
   private:
-    // private variables
+    // variables
 
     Color stm;
     int curr_ply;
@@ -186,7 +187,7 @@ class Board {
 
     std::array<StateInfo, 512> states;
 
-    // private functions
+    // functions
 
     void put_piece(Piece pc, Square sq);
     void remove_piece(Square sq);
@@ -229,7 +230,7 @@ inline U64 Board::attackers_to(Color c, Square sq, const U64 occ) const {
     return attacks;
 }
 
-// private member
+// private functions
 
 inline void Board::put_piece(Piece pc, Square sq) {
     assert(valid_sq(sq));

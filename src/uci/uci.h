@@ -50,12 +50,12 @@ class UCI {
     void loop(int argc, char **argv);
 
   private:
-    // private variables
+    // variables
 
-    Board board;
+    Board board{STARTING_FEN};
     Options options;
 
-    // private member functions
+    // functions
 
     void update_position(std::istringstream &is);
     void new_game();

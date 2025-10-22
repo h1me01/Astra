@@ -59,8 +59,7 @@ class TimeMan {
         result_change_factor = std::clamp(result_change_factor, tm_results_min / 100.0, tm_results_max / 100.0);
 
         // adjust time optimum based on node count
-        double not_best_nodes = 1.0 - node_ratio;
-        double node_count_factor = not_best_nodes * (tm_node_mult / 100.0) + (tm_node_base / 100.0);
+        double node_count_factor = (1.0 - node_ratio) * (tm_node_mult / 100.0) + (tm_node_base / 100.0);
 
         // check if we should stop
         return (elapsed_time() > limits.time.optimum * stability_factor * result_change_factor * node_count_factor);

@@ -34,9 +34,9 @@ int get_see_piece_value(PieceType pt) {
     }
 }
 
-// class board
+// class Board
 
-Board::Board(const std::string &fen) {
+Board::Board(const std::string fen) {
     set_fen(fen);
 }
 
@@ -488,7 +488,7 @@ bool Board::is_pseudo_legal(const Move &move) const {
         targets &= info.checkers ? between_bb(ksq, lsb(info.checkers)) | info.checkers : -1ULL;
         // limit move targets based on promotion rank
         targets &= rank_mask(rel_rank(stm, RANK_8));
-        
+
         // only pseudo legal, if target range is reachable
         return targets & sq_bb(to);
     }
@@ -687,7 +687,7 @@ Threats Board::get_threats() const {
     return threats;
 }
 
-// private member
+// private function
 
 void Board::init_movegen_info() {
     StateInfo &info = get_state();

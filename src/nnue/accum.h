@@ -72,18 +72,22 @@ class Accum {
     }
 
     bool is_initialized(Color view) const {
+        assert(valid_color(view));
         return initialized[view];
     }
 
     bool needs_refresh(Color view) const {
+        assert(valid_color(view));
         return m_needs_refresh[view];
     }
 
     int16_t *get_data(Color view) {
+        assert(valid_color(view));
         return data[view];
     }
 
     int16_t *get_data(Color view) const {
+        assert(valid_color(view));
         return const_cast<int16_t *>(data[view]);
     }
 
@@ -136,15 +140,14 @@ class AccumList {
   public:
     AccumList() : idx(0), data{} {}
 
-    void pop() {
+    void decrement() {
         if(idx > 0)
             idx--;
     }
 
-    void push() {
+    void increment() {
         assert(idx < MAX_PLY);
-        idx++;
-        data[idx].reset();
+        data[++idx].reset();
     }
 
     void reset(Board &board) {
