@@ -142,6 +142,8 @@ inline bool valid_tt_score(Score tt_score, Score score, Bound bound) {
     return (bound & (tt_score >= score ? LOWER_BOUND : UPPER_BOUND));
 }
 
+// global variable
+
 extern TTable tt;
 
 } // namespace Engine

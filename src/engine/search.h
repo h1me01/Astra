@@ -36,13 +36,14 @@ struct RootMove : Move {
 
 class Search {
   public:
-    Search() {
+    Search() : exiting(false), searching(false) {
         history.clear();
     }
 
     // variables
 
-    bool searching = false, exiting = false;
+    bool exiting;
+    bool searching;
 
     std::mutex mutex;
     std::condition_variable cv;

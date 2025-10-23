@@ -87,20 +87,20 @@ void Board::set_fen(const std::string &fen) {
     info.fmr_counter = std::stoi(fen_parts[4]);
 
     // place pieces on the board
-    int sqr = a8;
+    int sq = a8;
     for(const char c : fen_parts[0]) {
         if(isdigit(c))
-            sqr += c - '0';
+            sq += c - '0';
         else if(c == '/')
-            sqr -= 16;
+            sq -= 16;
         else
-            put_piece(Piece(PIECE_STR.find(c)), Square(sqr++));
+            put_piece(Piece(PIECE_STR.find(c)), Square(sq++));
     }
 
     // update hash
     info.hash ^= Zobrist::get_side();
     info.hash ^= Zobrist::get_ep(info.ep_sq);
-    info.hash ^= Zobrist::get_castle(info.castle_rights.get_hash_idx());
+    info.hash ^= Zobrist::get_castle(info.castle_rights.hash_idx());
 
     init_movegen_info();
 }
@@ -238,10 +238,10 @@ NNUE::DirtyPieces Board::make_move(const Move &move) {
     // update castling rights if king/rook moves or if one of the rooks get captured
     if(info.castle_rights.on_castle_sq(from) || info.castle_rights.on_castle_sq(to)) {
         // remove old castling rights from hash
-        info.hash ^= Zobrist::get_castle(info.castle_rights.get_hash_idx());
+        info.hash ^= Zobrist::get_castle(info.castle_rights.hash_idx());
         info.castle_rights.update(from, to);
         // add new castling rights to hash
-        info.hash ^= Zobrist::get_castle(info.castle_rights.get_hash_idx());
+        info.hash ^= Zobrist::get_castle(info.castle_rights.hash_idx());
     }
 
     // update hash
@@ -333,7 +333,7 @@ void Board::perft(int depth) {
     }
 
     auto perft = [&](int d, auto &&perft_ref) -> U64 {
-        MoveList<> ml;
+        MoveList ml;
         ml.gen<ADD_LEGALS>(*this);
 
         if(d == 0)
@@ -353,7 +353,7 @@ void Board::perft(int depth) {
     std::cout << "\nPerft test at depth " << depth << ":\n\n";
     auto start = std::chrono::high_resolution_clock::now();
 
-    MoveList<> ml;
+    MoveList ml;
     ml.gen<ADD_LEGALS>(*this);
 
     U64 total_nodes = 0;

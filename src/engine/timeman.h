@@ -22,6 +22,7 @@ struct Limits {
 };
 
 class TimeMan {
+  private:
     using Clock = std::chrono::steady_clock;
     using TimePoint = Clock::time_point;
 

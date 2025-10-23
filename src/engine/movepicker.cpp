@@ -53,9 +53,7 @@ Move MovePicker::next(bool skip_quiets) {
     case GEN_NOISY:
         idx = 0;
         stage = PLAY_NOISY;
-
-        score_noisy();
-
+        gen_score_noisy();
         [[fallthrough]];
     case PLAY_NOISY:
         while(idx < ml_main.size()) {
@@ -100,7 +98,7 @@ Move MovePicker::next(bool skip_quiets) {
         stage = PLAY_QUIETS;
 
         if(!skip_quiets)
-            score_quiets();
+            gen_score_quiets();
 
         [[fallthrough]];
     case PLAY_QUIETS:
@@ -146,7 +144,7 @@ Move MovePicker::next(bool skip_quiets) {
 
 // private functions
 
-void MovePicker::score_noisy() {
+void MovePicker::gen_score_noisy() {
     ml_main.gen<ADD_NOISY>(board);
 
     for(int i = 0; i < ml_main.size(); i++) {
@@ -161,7 +159,7 @@ void MovePicker::score_noisy() {
     }
 }
 
-void MovePicker::score_quiets() {
+void MovePicker::gen_score_quiets() {
     ml_main.gen<ADD_QUIETS>(board);
     Threats threats = board.get_threats();
 

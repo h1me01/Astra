@@ -153,6 +153,8 @@ int TTable::hashfull() const {
     return used / BUCKET_SIZE;
 }
 
+// global variable
+
 TTable tt(16);
 
 } // namespace Engine

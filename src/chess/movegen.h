@@ -15,6 +15,7 @@ template <GenType gt, Direction d, MoveType mt> //
 Move *make_promotions(Move *ml, Square to) {
     assert(valid_sq(to));
     assert(!(to >= a2 && to <= h7));
+    assert(mt == PQ_QUEEN || mt == PC_QUEEN);
 
     if(gt & ADD_NOISY) {
         *ml++ = Move(to - d, to, mt);

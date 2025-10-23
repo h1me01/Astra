@@ -10,11 +10,11 @@ class CastlingRights {
     CastlingRights() : mask(0) {}
 
     void add_ks(Color c) {
-        mask |= OO_MASK[c];
+        mask |= oo_mask(c);
     }
 
     void add_qs(Color c) {
-        mask |= OOO_MASK[c];
+        mask |= ooo_mask(c);
     }
 
     void update(Square from, Square to) {
@@ -23,12 +23,12 @@ class CastlingRights {
 
     bool ks(const Color c) const {
         assert(valid_color(c));
-        return (mask & OO_MASK[c]) == OO_MASK[c];
+        return (mask & oo_mask(c)) == oo_mask(c);
     }
 
     bool qs(const Color c) const {
         assert(valid_color(c));
-        return (mask & OOO_MASK[c]) == OOO_MASK[c];
+        return (mask & ooo_mask(c)) == ooo_mask(c);
     }
 
     bool any(const Color c) const {
@@ -44,14 +44,11 @@ class CastlingRights {
         return mask & sq_bb(sq);
     }
 
-    int get_hash_idx() const {
+    int hash_idx() const {
         return ks(WHITE) + 2 * qs(WHITE) + 4 * ks(BLACK) + 8 * qs(BLACK);
     }
 
   private:
-    static constexpr U64 OO_MASK[NUM_COLORS] = {0x90ULL, 0x9000000000000000ULL};
-    static constexpr U64 OOO_MASK[NUM_COLORS] = {0x11ULL, 0x1100000000000000ULL};
-
     U64 mask;
 };
 

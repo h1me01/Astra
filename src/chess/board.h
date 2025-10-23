@@ -255,7 +255,7 @@ inline void Board::remove_piece(Square sq) {
 
     StateInfo &info = get_state();
 
-    Piece pc = board[sq];
+    Piece pc = piece_at(sq);
     assert(valid_piece(pc));
 
     piece_bb[pc] ^= sq_bb(sq);
@@ -276,7 +276,7 @@ inline void Board::move_piece(Square from, Square to) {
 
     StateInfo &info = get_state();
 
-    Piece pc = board[from];
+    Piece pc = piece_at(from);
     assert(valid_piece(pc));
 
     piece_bb[pc] ^= sq_bb(from) | sq_bb(to);

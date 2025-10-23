@@ -48,6 +48,10 @@ class DirtyPieces {
 
 class Accum {
   public:
+    Accum() {
+        reset();
+    }
+
     void update(Accum &prev, Color view);
 
     void reset() {
@@ -92,10 +96,10 @@ class Accum {
     }
 
   private:
-    Square wksq = NO_SQUARE, bksq = NO_SQUARE;
+    Square wksq, bksq;
 
-    bool initialized[NUM_COLORS] = {false, false};
-    bool m_needs_refresh[NUM_COLORS] = {false, false};
+    bool initialized[NUM_COLORS];
+    bool m_needs_refresh[NUM_COLORS];
 
     DirtyPieces dirty_pcs;
 

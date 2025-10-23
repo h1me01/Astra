@@ -72,6 +72,18 @@ constexpr U64 qs_castle_path_mask(Color c) {
     return mask[c];
 }
 
+constexpr U64 oo_mask(Color c) {
+    assert(valid_color(c));
+    constexpr U64 OO_MASK[NUM_COLORS] = {0x90ULL, 0x9000000000000000ULL};
+    return OO_MASK[c];
+}
+
+constexpr U64 ooo_mask(Color c) {
+    assert(valid_color(c));
+    constexpr U64 OOO_MASK[NUM_COLORS] = {0x11ULL, 0x1100000000000000ULL};
+    return OOO_MASK[c];
+}
+
 inline U64 sq_bb(Square sq) {
     return (1ULL << sq);
 }

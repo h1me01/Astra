@@ -155,8 +155,8 @@ inline void print_bb(const U64 b) {
 
 inline std::vector<std::string> split(const std::string &str, char del) {
     std::vector<std::string> parts;
-    std::string current;
 
+    std::string current;
     for(const char c : str) {
         if(c == del) {
             if(!current.empty()) {

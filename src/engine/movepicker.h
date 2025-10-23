@@ -69,13 +69,12 @@ class MovePicker {
 
     Move tt_move, killer, counter;
 
-    MoveList<> ml_main;
-    MoveList<> ml_bad_noisy;
+    MoveList<> ml_main, ml_bad_noisy;
 
     // functions
 
-    void score_noisy();
-    void score_quiets();
+    void gen_score_noisy();
+    void gen_score_quiets();
 };
 
 } // namespace Engine
