@@ -15,8 +15,7 @@ make -j
 - Versions below 4.0 used a simple Pytorch Neural Network
 
 ## Credits
-- [Stockfish](https://github.com/official-stockfish/Stockfish)
-- [Koivisto](https://github.com/Luecx/Koivisto)
-- [Fathom](https://github.com/jdart1/Fathom) 
-- [incbin](https://github.com/graphitemaster/incbin)
-- [Chess Programming Wiki](https://www.chessprogramming.org/Main_Page)
+- Engine Inspiration: [Stockfish](https://github.com/official-stockfish/Stockfish), [Koivisto](https://github.com/Luecx/Koivisto), [Berserk](https://github.com/jhonnold/berserk)
+- Tablebase Probing: [Fathom](https://github.com/jdart1/Fathom)
+- Binary Embedding: [incbin](https://github.com/graphitemaster/incbin)
+- Learning Resource: [Chess Programming Wiki](https://www.chessprogramming.org/Main_Page)
