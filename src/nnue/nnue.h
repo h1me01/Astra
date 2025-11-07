@@ -63,14 +63,10 @@ class NNUE {
     void move(Accum &acc, const Accum &prev, Piece pc, Square from, Square to, Square ksq, Color view) const;
 
   private:
-    // variables
-
     alignas(ALIGNMENT) int16_t ft_weights[INPUT_SIZE * FT_SIZE];
     alignas(ALIGNMENT) int16_t ft_biases[FT_SIZE];
     alignas(ALIGNMENT) int16_t l1_weights[2 * FT_SIZE * L1_SIZE];
     alignas(ALIGNMENT) int16_t l1_biases[L1_SIZE];
-
-    // function
 
     int feature_idx(Square psq, Square ksq, Piece pc, Color view) const {
         assert(valid_sq(psq));

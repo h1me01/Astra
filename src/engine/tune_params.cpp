@@ -20,7 +20,7 @@ Param::Param(std::string name, int value, int min, int max) //
     params.push_back(this);
 }
 
-void set_param(const std::string &name, int value) {
+bool set_param(const std::string &name, int value) {
     bool found = false;
 
     for(auto *param : params) {
@@ -29,7 +29,7 @@ void set_param(const std::string &name, int value) {
 
         if(value < param->min || value > param->max) {
             std::cerr << "Value out of range for search parameter " << name << std::endl;
-            return;
+            return true;
         }
 
         param->value = value;
@@ -39,6 +39,8 @@ void set_param(const std::string &name, int value) {
 
     if(!found)
         std::cerr << "Unknown search parameter " << name << std::endl;
+
+    return found;
 }
 
 void params_to_spsa() {

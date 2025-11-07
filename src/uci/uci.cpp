@@ -72,103 +72,16 @@ const std::vector<std::string> bench_positions = {
 };
 // clang-format on
 
-// Options
-
-void Options::print() const {
-    for(const auto &elem : options) {
-        Option option = elem.second;
-        const std::string &value = option.default_val;
-
-        std::cout << "option name " << elem.first //
-                  << " type " << option.type      //
-                  << " default " << (value.empty() ? "<empty>" : value);
-
-        if(option.min != 0 && option.max != 0)
-            std::cout << " min " << option.min << " max " << option.max << std::endl;
-        else
-            std::cout << std::endl;
-    }
-
-    for(auto param : Engine::params) {
-        std::cout << "option name " << param->name         //
-                  << " type spin default " << param->value //
-                  << " min " << param->min                 //
-                  << " max " << param->max << std::endl;
-    }
-}
-
-void Options::apply(bool init_tt) {
-    auto path = get("SyzygyPath");
-    if(!path.empty() && path != "<empty>") {
-        bool success = tb_init(path.c_str());
-
-        if(success && TB_LARGEST > 0) {
-            std::cout << "info string Successfully loaded syzygy path" << std::endl;
-        } else {
-            std::cout << "info string Failed to load syzygy path " << path << std::endl;
-        }
-    }
-
-    const int num_workers = std::stoi(get("Threads"));
-    Engine::tt.set_worker_count(num_workers);
-    Engine::threads.set_count(num_workers);
-
-    if(init_tt)
-        Engine::tt.init(std::stoi(get("Hash")));
-}
-
-void Options::set(std::istringstream &is) {
-    std::vector<std::string> tokens = split(is.str(), ' ');
-    const std::string &name = tokens[2];
-    const std::string &value = tokens[4];
-
-    if(tokens.size() < 5 || tokens[1] != "name" || tokens[3] != "value") {
-        std::cout << "Invalid option " << name << std::endl;
-        return;
-    }
-
-    if(value == "<empty>" || value.empty())
-        return;
-
-#ifdef TUNE
-    Engine::set_param(name, std::stoi(value));
-    Engine::init_reductions();
-    return;
-#endif
-
-    if(!options.count(name)) {
-        std::cout << "Unknown option " << name << std::endl;
-        return;
-    }
-
-    bool valid = true;
-    if(options[name].type == "check") {
-        valid = (value == "true" || value == "false");
-    } else if(options[name].type == "spin") {
-        int n = std::stoi(value);
-        valid = (n >= options[name].min && n <= options[name].max);
-    }
-
-    if(valid) {
-        options[name] = value;
-        apply(name == "Hash");
-    } else {
-        std::cout << "Invalid value for option " << name << std::endl;
-    }
-}
-
 // UCI
 
 UCI::UCI() {
     std::cout << "Astra by Semih Oezalp" << std::endl;
 
-    options.add("SyzygyPath", Option("string", "", "", 0, 0));
-    options.add("MoveOverhead", Option("spin", "10", "10", 1, 10000));
-    options.add("MultiPV", Option("spin", "1", "1", 1, 218));
-    options.add("Threads", Option("spin", "1", "1", 1, 128));
-    options.add("Hash", Option("spin", "16", "16", 1, 8192));
-
-    options.apply();
+    options.add("SyzygyPath", {OptionType::STRING, "", 0, 0});
+    options.add("MoveOverhead", {OptionType::SPIN, "10", 1, 10000});
+    options.add("MultiPV", {OptionType::SPIN, "1", 1, 218});
+    options.add("Threads", {OptionType::SPIN, "1", 1, 128});
+    options.add("Hash", {OptionType::SPIN, "16", 1, 8192});
 }
 
 void UCI::loop(int argc, char **argv) {
@@ -201,7 +114,7 @@ void UCI::loop(int argc, char **argv) {
         else if(token == "tune")
             Engine::params_to_spsa();
         else if(token == "setoption")
-            options.set(is);
+            options.set(is.str());
         else if(token == "d")
             board.print();
         else if(token == "stop") {
@@ -253,8 +166,11 @@ void UCI::new_game() {
 void UCI::go(std::istringstream &is) {
     Engine::Limits limits;
 
-    int64_t w_time = 0, b_time = 0, move_time = 0;
-    int w_inc = 0, b_inc = 0, moves_to_go = 0;
+    int64_t move_time = 0;
+    int64_t w_time = 0, b_time = 0;
+
+    int moves_to_go = 0;
+    int w_inc = 0, b_inc = 0;
 
     std::string token;
     while(is >> token) {
@@ -290,8 +206,8 @@ void UCI::go(std::istringstream &is) {
     }
 
     Color stm = board.get_stm();
-    const int64_t time_left = (stm == WHITE) ? w_time : b_time;
-    const int inc = (stm == WHITE) ? w_inc : b_inc;
+    int64_t time_left = (stm == WHITE) ? w_time : b_time;
+    int inc = (stm == WHITE) ? w_inc : b_inc;
 
     if(move_time != 0) {
         limits.time.optimum = move_time;

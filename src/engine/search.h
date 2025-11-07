@@ -40,8 +40,6 @@ class Search {
         history.clear();
     }
 
-    // variables
-
     bool exiting;
     bool searching;
 
@@ -50,8 +48,6 @@ class Search {
 
     Board board;
     Limits limits;
-
-    // functions
 
     void idle();
     void print_uci_info() const;
@@ -77,8 +73,6 @@ class Search {
     }
 
   private:
-    // variables
-
     TimeMan tm;
     History history;
 
@@ -94,8 +88,6 @@ class Search {
     int completed_depth;
 
     int multipv_idx;
-
-    // functions
 
     void start();
 
@@ -115,7 +107,7 @@ class Search {
 
     unsigned int probe_wdl() const;
 
-    bool is_limit_reached(int depth) const;
+    bool is_limit_reached() const;
 
     void sort_rootmoves(int offset);
     bool found_rootmove(const Move &move);

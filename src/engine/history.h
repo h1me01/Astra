@@ -17,11 +17,7 @@ int history_malus(int depth);
 
 class History {
   public:
-    // variable
-
     int16_t conth[2][NUM_PIECES + 1][NUM_SQUARES + 1][NUM_PIECES + 1][NUM_SQUARES + 1];
-
-    // functions
 
     void clear();
 
@@ -52,8 +48,6 @@ class History {
     int get_cont_corr(const Stack *stack) const;
 
   private:
-    // variables
-
     Move counters[NUM_SQUARES][NUM_SQUARES]{};
 
     int16_t hh[NUM_COLORS][NUM_SQUARES][NUM_SQUARES];
@@ -66,8 +60,6 @@ class History {
     int16_t b_non_pawn_corr[NUM_COLORS][CORR_SIZE];
 
     int16_t cont_corr[NUM_PIECES][NUM_SQUARES][NUM_PIECES][NUM_SQUARES];
-
-    // functions
 
     int ph_idx(U64 hash) const {
         return hash % PAWN_HIST_SIZE;

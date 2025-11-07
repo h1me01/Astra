@@ -85,6 +85,9 @@ class Board {
 
     U64 attackers_to(Color c, Square sq, U64 occ) const;
 
+    template <PieceType pt> //
+    int count(Color c = BOTH_COLORS) const;
+
     Threats get_threats() const;
 
     U64 get_occupancy(Color c = BOTH_COLORS) const {
@@ -134,16 +137,6 @@ class Board {
         return lsb(get_piece_bb<KING>(c));
     }
 
-    template <PieceType pt> //
-    int count(Color c = BOTH_COLORS) const {
-        int count = 0;
-        if(c != BLACK)
-            count += pop_count(get_piece_bb(WHITE, pt));
-        if(c != WHITE)
-            count += pop_count(get_piece_bb(BLACK, pt));
-        return count;
-    }
-
     Color get_stm() const {
         return stm;
     }
@@ -178,16 +171,12 @@ class Board {
     }
 
   private:
-    // variables
-
     Color stm;
     int curr_ply;
     Piece board[NUM_SQUARES];
     U64 piece_bb[NUM_PIECES];
 
     std::array<StateInfo, 512> states;
-
-    // functions
 
     void put_piece(Piece pc, Square sq);
     void remove_piece(Square sq);
@@ -228,6 +217,16 @@ inline U64 Board::attackers_to(Color c, Square sq, const U64 occ) const {
     attacks |= get_attacks<ROOK>(sq, occ) & get_orth_sliders(c);
     attacks |= get_attacks<KING>(sq) & get_piece_bb<KING>(c);
     return attacks;
+}
+
+template <PieceType pt> //
+inline int Board::count(Color c) const {
+    int count = 0;
+    if(c != BLACK)
+        count += pop_count(get_piece_bb(WHITE, pt));
+    if(c != WHITE)
+        count += pop_count(get_piece_bb(BLACK, pt));
+    return count;
 }
 
 // private functions

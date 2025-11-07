@@ -79,7 +79,7 @@ void Search::start() {
     Score scores[MAX_PLY];
     Move best_move = NO_MOVE, prev_best_move = NO_MOVE;
 
-    for(root_depth = 1; root_depth < MAX_PLY; root_depth++) {
+    for(root_depth = 1; root_depth <= std::min(MAX_PLY, limits.depth); root_depth++) {
         for(multipv_idx = 0; multipv_idx < limits.multipv; multipv_idx++)
             aspiration(root_depth, stack);
 
@@ -183,7 +183,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
     if(pv_node)
         stack->pv.length = stack->ply;
 
-    if(is_limit_reached(depth)) {
+    if(is_limit_reached()) {
         threads.stop();
         return 0;
     }
@@ -935,13 +935,11 @@ unsigned int Search::probe_wdl() const {
     );
 }
 
-bool Search::is_limit_reached(int depth) const {
+bool Search::is_limit_reached() const {
     if(this != threads.main_thread())
         return false; // only main thread checks limits
     if(limits.infinite)
         return false;
-    if(depth > limits.depth)
-        return true;
     if(limits.nodes != 0 && threads.get_total_nodes() >= limits.nodes)
         return true;
     if(limits.time.maximum != 0 && tm.elapsed_time() >= limits.time.maximum)

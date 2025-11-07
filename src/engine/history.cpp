@@ -67,7 +67,6 @@ void History::update(         //
             update_ph(board, best_move, bonus);
             update_conth(best_move, stack, bonus);
 
-            // quiet maluses
             for(const auto &m : quiets) {
                 update_hh(stm, m, -malus);
                 update_conth(m, stack, -malus);
@@ -78,7 +77,6 @@ void History::update(         //
         update_nh(board, best_move, bonus);
     }
 
-    // noisy maluses
     for(const auto &m : noisy)
         update_nh(board, m, -malus);
 }

@@ -31,7 +31,7 @@ int32_t screlu(const int16_t &input, const int16_t &weight) {
 }
 #endif
 
-// class NNUE
+// NNUE
 
 void NNUE::init() {
     std::size_t offset = 0;

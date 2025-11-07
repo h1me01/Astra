@@ -34,7 +34,7 @@ int get_see_piece_value(PieceType pt) {
     }
 }
 
-// class Board
+// Board
 
 Board::Board(const std::string fen) {
     set_fen(fen);
@@ -379,7 +379,6 @@ bool Board::is_legal(const Move &move) const {
     const Square to = move.to();
     const Square ksq = get_king_sq(stm);
     const Piece from_pc = piece_at(from);
-
     const U64 occ = get_occupancy();
     const U64 from_bb = sq_bb(from);
 
@@ -429,7 +428,6 @@ bool Board::is_pseudo_legal(const Move &move) const {
     const Piece from_pc = piece_at(from);
     const Piece to_pc = piece_at(to);
     const Piece captured = piece_at(cap_sq);
-
     const PieceType pt = piece_type(from_pc);
 
     const U64 us_bb = get_occupancy(stm);
