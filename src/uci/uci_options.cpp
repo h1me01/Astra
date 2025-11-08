@@ -31,11 +31,11 @@ std::string tolower(const std::string &str) {
 void Options::print() const {
     for(const auto &elem : options) {
         Option option = elem.second;
-        const std::string &value = option;
+        const std::string &default_val = option.get_default_val();
 
         std::cout << "option name " << elem.first                     //
                   << " type " << print_option_type(option.get_type()) //
-                  << " default " << (value.empty() ? "<empty>" : value);
+                  << " default " << (default_val.empty() ? "<empty>" : default_val);
 
         if(option.get_min() != 0 && option.get_max() != 0) {
             std::cout << " min " << option.get_min() //
@@ -84,7 +84,6 @@ void Options::set(const std::string &info) {
 void Options::update_syzygy_path(const std::string &path) {
     if(!path.empty() && path != "<empty>") {
         bool success = tb_init(path.c_str());
-
         if(success && TB_LARGEST > 0)
             std::cout << "info string Successfully loaded syzygy path" << std::endl;
         else
@@ -93,15 +92,12 @@ void Options::update_syzygy_path(const std::string &path) {
 }
 
 void Options::apply(const std::string &name) {
-    if(name == "SyzygyPath") {
+    if(name == "SyzygyPath")
         update_syzygy_path(options[name]);
-    } else if(tolower(name) == "hash") {
+    else if(tolower(name) == "hash")
         Engine::tt.init(std::stoi(options[name]));
-    } else if(tolower(name) == "threads") {
-        const int num_workers = std::stoi(get("Threads"));
-        Engine::tt.set_worker_count(num_workers);
-        Engine::threads.set_count(num_workers);
-    }
+    else if(tolower(name) == "threads")
+        Engine::threads.set_count(std::stoi(get("Threads")));
 }
 
 } // namespace UCI
