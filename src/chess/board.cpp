@@ -8,13 +8,6 @@ namespace Chess {
 
 // helper
 
-// represent castle rights correctly in fen notation
-bool castle_notation_helper(const std::ostringstream &fen_stream) {
-    const std::string fen = fen_stream.str();
-    const std::string rights = fen.substr(fen.find(' ') + 1);
-    return rights.find_first_of("kqKQ") != std::string::npos;
-}
-
 std::pair<Square, Square> Board::get_castle_rook_sqs(Color c, Square to) {
     assert(to == rel_sq(c, g1) || to == rel_sq(c, c1));
     const bool ks = to == rel_sq(c, g1);
@@ -126,37 +119,45 @@ std::string Board::get_fen() const {
     const StateInfo &info = get_state();
     std::ostringstream fen;
 
+    // Build board representation
     for(int i = 56; i >= 0; i -= 8) {
         int empty = 0;
-
         for(int j = 0; j < 8; j++) {
             Piece p = board[i + j];
             if(!valid_piece(p))
                 empty++;
             else {
-                fen << (!empty ? "" : std::to_string(empty)) << p;
+                if(empty)
+                    fen << empty;
+                fen << p;
                 empty = 0;
             }
         }
-
         if(empty != 0)
             fen << empty;
         if(i > 0)
             fen << '/';
     }
 
-    std::ostringstream oss;
-    oss << info.ep_sq;
+    std::string castling;
+    if(info.castle_rights.ks(WHITE))
+        castling += "K";
+    if(info.castle_rights.qs(WHITE))
+        castling += "Q";
+    if(info.castle_rights.ks(BLACK))
+        castling += "k";
+    if(info.castle_rights.qs(BLACK))
+        castling += "q";
+    if(castling.empty())
+        castling = "-";
 
-    fen << (stm == WHITE ? " w " : " b ")             //
-        << (info.castle_rights.ks(WHITE) ? "K" : "")  //
-        << (info.castle_rights.qs(WHITE) ? "Q" : "")  //
-        << (info.castle_rights.ks(BLACK) ? "k" : "")  //
-        << (info.castle_rights.qs(BLACK) ? "q" : "")  //
-        << (castle_notation_helper(fen) ? " " : "- ") //
-        << (valid_sq(info.ep_sq) ? oss.str() : "-")   //
-        << " " << info.fmr_counter                    //
-        << " " << (!curr_ply ? 1 : (curr_ply + 1) / 2);
+    std::string ep = valid_sq(info.ep_sq) ? std::to_string(info.ep_sq) : "-";
+
+    fen << (stm == WHITE ? " w " : " b ") //
+        << castling << " "                //
+        << ep << " "                      //
+        << info.fmr_counter << " "        //
+        << (!curr_ply ? 1 : (curr_ply + 1) / 2);
 
     return fen.str();
 }

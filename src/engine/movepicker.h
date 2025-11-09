@@ -8,13 +8,9 @@ using namespace Chess;
 
 namespace Engine {
 
-enum SearchType : int { //
-    N_SEARCH,
-    Q_SEARCH,
-    PC_SEARCH
-};
+enum SearchType { N_SEARCH, Q_SEARCH, PC_SEARCH };
 
-enum Stage : int {
+enum Stage {
     PLAY_TT_MOVE,
     GEN_NOISY,
     PLAY_NOISY,

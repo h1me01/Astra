@@ -18,11 +18,7 @@ namespace Engine {
 
 void init_reductions();
 
-enum class NodeType { //
-    ROOT,
-    PV,
-    NON_PV
-};
+enum class NodeType { ROOT, PV, NON_PV };
 
 struct RootMove : Move {
     RootMove() = default;

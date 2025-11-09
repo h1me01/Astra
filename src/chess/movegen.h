@@ -4,7 +4,7 @@
 
 namespace Chess {
 
-enum GenType : int { //
+enum GenType { //
     ADD_NOISY = 1,
     ADD_QUIETS = 2,
     ADD_LEGALS = 3,

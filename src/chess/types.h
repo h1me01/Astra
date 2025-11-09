@@ -159,7 +159,7 @@ class Move {
 
     bool is_cap() const {
         assert(is_valid());
-        return type() == CAPTURE || type() == EN_PASSANT || type() >= PC_KNIGHT;
+        return type() == CAPTURE || is_ep() || type() >= PC_KNIGHT;
     }
 
     bool is_castling() const {
