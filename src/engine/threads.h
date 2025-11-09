@@ -48,6 +48,10 @@ class ThreadPool {
         return threads.empty() ? nullptr : threads[0].get();
     }
 
+    int get_count() const {
+        return static_cast<int>(threads.size());
+    }
+
     U64 get_total_nodes() const {
         U64 total_nodes = 0;
         for(const auto &t : threads)
