@@ -10,7 +10,7 @@ using namespace Chess;
 namespace Engine {
 
 constexpr size_t CORR_SIZE = 16384;
-constexpr size_t PAWN_HIST_SIZE = 512;
+constexpr size_t PAWN_HIST_SIZE = 8192;
 
 int history_bonus(int depth);
 int history_malus(int depth);
