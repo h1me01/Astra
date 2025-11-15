@@ -55,7 +55,8 @@ PARAM(static_h_mult, -51, -500, -1);
 PARAM(static_h_min, -108, -1000, -1);
 PARAM(static_h_max, 226, 1, 1000);
 
-PARAM(rzr_depth_mult, 256, 150, 350);
+PARAM(rzr_base, 318, 1, 750);
+PARAM(rzr_mult, 234, 1, 500);
 
 PARAM(rfp_depth, 11, 2, 20);
 PARAM(rfp_depth_mult, 103, 40, 200);
