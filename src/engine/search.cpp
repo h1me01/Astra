@@ -350,15 +350,8 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
     }
 
     // razoring
-    if(!pv_node                                 //
-       && depth < 5                             //
-       && !is_win(alpha)                        //
-       && eval + rzr_depth_mult * depth < alpha //
-    ) {
-        Score score = quiescence<NodeType::NON_PV>(0, alpha, beta, stack);
-        if(score <= alpha)
-            return score;
-    }
+    if(!pv_node && eval < alpha - rzr_base - rzr_mult * depth * depth)
+        return quiescence<NodeType::NON_PV>(0, alpha, beta, stack);
 
     // reverse futility pruning
     if(!pv_node                                                                    //
