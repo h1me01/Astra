@@ -649,6 +649,9 @@ movesloop:
         return in_check ? mated_in(stack->ply) : VALUE_DRAW;
     }
 
+    if(best_score >= beta && !is_decisive(best_score) && !is_decisive(alpha))
+        best_score = (best_score * depth + beta) / (depth + 1);
+
     if(pv_node)
         best_score = std::min(best_score, max_score);
 
