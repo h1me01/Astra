@@ -59,6 +59,13 @@ enum Piece {
     BLACK_PAWN, BLACK_KNIGHT, BLACK_BISHOP, BLACK_ROOK, BLACK_QUEEN, BLACK_KING,
     NO_PIECE
 };
+
+
+constexpr PieceType PIECE_TO_PIECE_TYPE[] = {
+    PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING,         
+    PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING,         
+    NO_PIECE_TYPE 
+};
 // clang-format on
 
 // clang-format off

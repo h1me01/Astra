@@ -41,13 +41,7 @@ constexpr Piece make_piece(Color c, PieceType pt) {
 }
 
 constexpr PieceType piece_type(Piece pc) {
-    // clang-format off
-    constexpr PieceType PIECE_TO_PIECE_TYPE[] = {
-        PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING,         
-        PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING,         
-        NO_PIECE_TYPE 
-    };
-    // clang-format on
+    assert(valid_piece(pc) || pc == NO_PIECE);
     return PIECE_TO_PIECE_TYPE[pc];
 }
 

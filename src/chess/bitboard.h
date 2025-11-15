@@ -4,6 +4,15 @@
 
 namespace Chess {
 
+namespace Bitboards {
+constexpr U64 KS_CASTLE_PATH_MASKk[NUM_COLORS] = {0x60ULL, 0x6000000000000000ULL};
+constexpr U64 QS_CASTLE_PATH_MASK[NUM_COLORS] = {0x0EULL, 0x0E00000000000000ULL};
+
+constexpr U64 OO_MASK[NUM_COLORS] = {0x90ULL, 0x9000000000000000ULL};
+constexpr U64 OOO_MASK[NUM_COLORS] = {0x11ULL, 0x1100000000000000ULL};
+
+} // namespace Bitboards
+
 constexpr U64 file_mask(File file) {
     assert(file >= 0 && file < 8);
     return 0x0101010101010101ULL << file;
@@ -14,74 +23,24 @@ constexpr U64 rank_mask(Rank rank) {
     return 0xFFULL << (rank * 8);
 }
 
-constexpr U64 diagonal_mask(int idx) {
-    constexpr U64 MASK[15] = {
-        0x0000000000000080ULL, //
-        0x0000000000008040ULL, //
-        0x0000000000804020ULL, //
-        0x0000000080402010ULL, //
-        0x0000008040201008ULL, //
-        0x0000804020100804ULL, //
-        0x0080402010080402ULL, //
-        0x8040201008040201ULL, //
-        0x4020100804020100ULL, //
-        0x2010080402010000ULL, //
-        0x1008040201000000ULL, //
-        0x0804020100000000ULL, //
-        0x0402010000000000ULL, //
-        0x0201000000000000ULL, //
-        0x0100000000000000ULL  //
-    };
-
-    assert(idx >= 0 && idx < 15);
-    return MASK[idx];
-}
-
-constexpr U64 anti_diag_mask(int idx) {
-    constexpr U64 MASK[15] = {
-        0x0000000000000001ULL, //
-        0x0000000000000102ULL, //
-        0x0000000000010204ULL, //
-        0x0000000001020408ULL, //
-        0x0000000102040810ULL, //
-        0x0000010204081020ULL, //
-        0x0001020408102040ULL, //
-        0x0102040810204080ULL, //
-        0x0204081020408000ULL, //
-        0x0408102040800000ULL, //
-        0x0810204080000000ULL, //
-        0x1020408000000000ULL, //
-        0x2040800000000000ULL, //
-        0x4080000000000000ULL, //
-        0x8000000000000000ULL  //
-    };
-
-    assert(idx >= 0 && idx < 15);
-    return MASK[idx];
-}
-
 constexpr U64 ks_castle_path_mask(Color c) {
     assert(valid_color(c));
-    constexpr U64 mask[NUM_COLORS] = {0x60ULL, 0x6000000000000000ULL};
-    return mask[c];
+    return Bitboards::KS_CASTLE_PATH_MASKk[c];
 }
 
 constexpr U64 qs_castle_path_mask(Color c) {
     assert(valid_color(c));
-    constexpr U64 mask[NUM_COLORS] = {0x0EULL, 0x0E00000000000000ULL};
-    return mask[c];
+    return Bitboards::QS_CASTLE_PATH_MASK[c];
 }
 
 constexpr U64 oo_mask(Color c) {
     assert(valid_color(c));
-    constexpr U64 OO_MASK[NUM_COLORS] = {0x90ULL, 0x9000000000000000ULL};
-    return OO_MASK[c];
+    return Bitboards::OO_MASK[c];
 }
 
 constexpr U64 ooo_mask(Color c) {
     assert(valid_color(c));
-    constexpr U64 OOO_MASK[NUM_COLORS] = {0x11ULL, 0x1100000000000000ULL};
-    return OOO_MASK[c];
+    return Bitboards::OOO_MASK[c];
 }
 
 inline U64 sq_bb(Square sq) {

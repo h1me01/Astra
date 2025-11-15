@@ -108,6 +108,42 @@ constexpr int BISHOP_SHIFTS[NUM_SQUARES] = {
     58, 59, 59, 59, 59, 59, 59, 58, //
 };
 
+constexpr U64 DIAGONAL_MASK[15] = {
+    0x0000000000000080ULL, //
+    0x0000000000008040ULL, //
+    0x0000000000804020ULL, //
+    0x0000000080402010ULL, //
+    0x0000008040201008ULL, //
+    0x0000804020100804ULL, //
+    0x0080402010080402ULL, //
+    0x8040201008040201ULL, //
+    0x4020100804020100ULL, //
+    0x2010080402010000ULL, //
+    0x1008040201000000ULL, //
+    0x0804020100000000ULL, //
+    0x0402010000000000ULL, //
+    0x0201000000000000ULL, //
+    0x0100000000000000ULL  //
+};
+
+constexpr U64 ANTI_DIAGONAL_MASK[15] = {
+    0x0000000000000001ULL, //
+    0x0000000000000102ULL, //
+    0x0000000000010204ULL, //
+    0x0000000001020408ULL, //
+    0x0000000102040810ULL, //
+    0x0000010204081020ULL, //
+    0x0001020408102040ULL, //
+    0x0102040810204080ULL, //
+    0x0204081020408000ULL, //
+    0x0408102040800000ULL, //
+    0x0810204080000000ULL, //
+    0x1020408000000000ULL, //
+    0x2040800000000000ULL, //
+    0x4080000000000000ULL, //
+    0x8000000000000000ULL  //
+};
+
 U64 SQUARES_BETWEEN[NUM_SQUARES][NUM_SQUARES];
 U64 LINE[NUM_SQUARES][NUM_SQUARES];
 
@@ -118,6 +154,16 @@ U64 BISHOP_ATTACKS[NUM_SQUARES][512];
 U64 PSEUDO_LEGAL_ATTACKS[NUM_PIECE_TYPES][NUM_SQUARES];
 
 // helper functions
+
+constexpr U64 diag_mask(int idx) {
+    assert(idx >= 0 && idx < 15);
+    return DIAGONAL_MASK[idx];
+}
+
+constexpr U64 anti_diag_mask(int idx) {
+    assert(idx >= 0 && idx < 15);
+    return ANTI_DIAGONAL_MASK[idx];
+}
 
 U64 reverse_bb(U64 b) {
     b = ((b & 0x5555555555555555) << 1) | ((b >> 1) & 0x5555555555555555);
@@ -171,7 +217,7 @@ void init_bishop_attacks() {
 #else
             const U64 idx = (blockers * BISHOP_MAGICS[sq]) >> BISHOP_SHIFTS[sq];
 #endif
-            BISHOP_ATTACKS[sq][idx] = sliding_attacks(sq, blockers, diagonal_mask(sq_diag(sq))) |
+            BISHOP_ATTACKS[sq][idx] = sliding_attacks(sq, blockers, diag_mask(sq_diag(sq))) |
                                       sliding_attacks(sq, blockers, anti_diag_mask(sq_anti_diag(sq)));
             blockers = (blockers - BISHOP_MASKS[sq]) & BISHOP_MASKS[sq];
         } while(blockers);
