@@ -262,12 +262,16 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
        && (cut_node == (tt_score >= beta) || depth > 5) //
     ) {
         if(tt_move && tt_score >= beta) {
-            if(tt_move.is_quiet())
-                history.update_hh(stm, tt_move, history_bonus(depth));
+            if(tt_move.is_quiet()) {
+                int bonus = std::min(tt_history_bonus_mult * depth + tt_history_bonus_minus, int(max_tt_history_bonus));
+                history.update_hh(stm, tt_move, bonus);
+            }
 
             Square prev_sq = (stack - 1)->move ? (stack - 1)->move.to() : NO_SQUARE;
-            if(valid_sq(prev_sq) && !(stack - 1)->move.is_cap() && (stack - 1)->made_moves <= 3)
-                history.update_conth((stack - 1)->move, stack - 1, -history_malus(depth));
+            if(valid_sq(prev_sq) && !(stack - 1)->move.is_cap() && (stack - 1)->made_moves <= 3) {
+                int malus = std::min(tt_history_malus_mult * depth + tt_history_malus_minus, int(max_tt_history_malus));
+                history.update_conth((stack - 1)->move, stack - 1, -malus);
+            }
         }
 
         if(board.get_fmr_count() < 90)

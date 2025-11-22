@@ -51,6 +51,14 @@ PARAM(tm_node_base, 58, 10, 90);
 PARAM(lmr_base, 111, 40, 200);
 PARAM(lmr_div, 297, 150, 500);
 
+PARAM(tt_history_bonus_mult, 308, 1, 1536);
+PARAM(tt_history_bonus_minus, 4, -500, 500);
+PARAM(max_tt_history_bonus, 2445, 1, 4096);
+
+PARAM(tt_history_malus_mult, 311, 1, 1536);
+PARAM(tt_history_malus_minus, 104, -500, 500);
+PARAM(max_tt_history_malus, 1646, 1, 4096);
+
 PARAM(static_h_mult, -51, -500, -1);
 PARAM(static_h_min, -108, -1000, -1);
 PARAM(static_h_max, 226, 1, 1000);
@@ -97,6 +105,7 @@ PARAM(asp_delta, 11, 1, 30);
 PARAM(asp_depth, 4, 2, 6);
 
 PARAM(history_bonus_margin, 52, 10, 200);
+
 PARAM(history_bonus_mult, 308, 1, 1536);
 PARAM(history_bonus_minus, 4, -500, 500);
 PARAM(max_history_bonus, 2445, 1, 4096);
