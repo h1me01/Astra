@@ -86,6 +86,12 @@ void Search::start() {
         if(threads.is_stopped())
             break;
 
+        if(this == threads.main_thread())
+            for(multipv_idx = 0; multipv_idx < limits.multipv; multipv_idx++)
+                print_uci_info();
+
+        completed_depth = root_depth;
+
         Score score = root_moves[0].get_score();
         best_move = root_moves[0];
 
@@ -160,11 +166,7 @@ Score Search::aspiration(int depth, Stack *stack) {
         delta += delta / 3;
     }
 
-    completed_depth = depth;
     sort_rootmoves(0);
-
-    if(this == threads.main_thread())
-        print_uci_info();
 
     return score;
 }
