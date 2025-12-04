@@ -7,11 +7,11 @@
 namespace Engine {
 
 int history_bonus(int depth) {
-    return std::min(int(max_history_bonus), history_bonus_mult * depth + history_bonus_minus);
+    return std::min(int(max_hist_bonus), hist_bonus_mult * depth + hist_bonus_minus);
 }
 
 int history_malus(int depth) {
-    return std::min(int(max_history_malus), history_malus_mult * depth + history_malus_minus);
+    return std::min(int(max_hist_malus), hist_malus_mult * depth + hist_malus_minus);
 }
 
 int adjusted_bonus(int value, int bonus) {
@@ -63,22 +63,25 @@ void History::update(         //
         // idea from ethereal
         // only update quiet history if best move was important
         if(depth > 3 || quiets.size() > 1) {
-            update_hh(stm, best_move, bonus);
-            update_ph(board, best_move, bonus);
-            update_conth(best_move, stack, bonus);
+            const int quiet_bonus = bonus * quiet_hist_bonus_mult / 1024;
+            const int quiet_malus = malus * quiet_hist_malus_mult / 1024;
+
+            update_hh(stm, best_move, quiet_bonus);
+            update_ph(board, best_move, quiet_bonus);
+            update_conth(best_move, stack, quiet_bonus);
 
             for(const auto &m : quiets) {
-                update_hh(stm, m, -malus);
-                update_conth(m, stack, -malus);
-                update_ph(board, m, -malus);
+                update_hh(stm, m, -quiet_malus);
+                update_conth(m, stack, -quiet_malus);
+                update_ph(board, m, -quiet_malus);
             }
         }
     } else {
-        update_nh(board, best_move, bonus);
+        update_nh(board, best_move, bonus * noisy_hist_bonus_mult / 1024);
     }
 
     for(const auto &m : noisy)
-        update_nh(board, m, -malus);
+        update_nh(board, m, -malus * noisy_hist_malus_mult / 1024);
 }
 
 void History::update_hh(Color c, const Move &move, int bonus) {

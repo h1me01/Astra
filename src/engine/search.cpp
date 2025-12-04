@@ -265,13 +265,13 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
     ) {
         if(tt_move && tt_score >= beta) {
             if(tt_move.is_quiet()) {
-                int bonus = std::min(tt_history_bonus_mult * depth + tt_history_bonus_minus, int(max_tt_history_bonus));
+                int bonus = std::min(tt_hist_bonus_mult * depth + tt_hist_bonus_minus, int(max_tt_hist_bonus));
                 history.update_hh(stm, tt_move, bonus);
             }
 
             Square prev_sq = (stack - 1)->move ? (stack - 1)->move.to() : NO_SQUARE;
             if(valid_sq(prev_sq) && !(stack - 1)->move.is_cap() && (stack - 1)->made_moves <= 3) {
-                int malus = std::min(tt_history_malus_mult * depth + tt_history_malus_minus, int(max_tt_history_malus));
+                int malus = std::min(tt_hist_malus_mult * depth + tt_hist_malus_minus, int(max_tt_hist_malus));
                 history.update_conth((stack - 1)->move, stack - 1, -malus);
             }
         }
@@ -482,7 +482,7 @@ movesloop:
                 skip_quiets = true;
 
             if(move.is_quiet()) {
-                const int r_depth = std::max(0, depth - reduction + history_score / history_div);
+                const int r_depth = std::max(0, depth - reduction + history_score / hist_div);
 
                 // futility pruning
                 const Score futility = stack->static_eval + fp_base + r_depth * fp_mult;
@@ -560,7 +560,7 @@ movesloop:
 
             r -= (tt_depth >= depth);
 
-            r -= history_score / (move.is_quiet() ? quiet_history_div : noisy_history_div);
+            r -= history_score / (move.is_quiet() ? quiet_hist_div : noisy_hist_div);
 
             const int r_depth = std::clamp(new_depth - r, 1, new_depth + 1);
 
@@ -629,7 +629,7 @@ movesloop:
 
                 if(score >= beta) {
                     history.update(board, best_move, quiets, noisy, stack,
-                                   depth + (best_score > beta + history_bonus_margin));
+                                   depth + (best_score > beta + hist_bonus_margin));
                     break;
                 }
 

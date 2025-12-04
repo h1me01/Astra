@@ -51,13 +51,13 @@ PARAM(tm_node_base, 58, 10, 90);
 PARAM(lmr_base, 111, 40, 200);
 PARAM(lmr_div, 297, 150, 500);
 
-PARAM(tt_history_bonus_mult, 308, 1, 1536);
-PARAM(tt_history_bonus_minus, 4, -500, 500);
-PARAM(max_tt_history_bonus, 2445, 1, 4096);
+PARAM(tt_hist_bonus_mult, 308, 1, 1536);
+PARAM(tt_hist_bonus_minus, 4, -500, 500);
+PARAM(max_tt_hist_bonus, 2445, 1, 4096);
 
-PARAM(tt_history_malus_mult, 311, 1, 1536);
-PARAM(tt_history_malus_minus, 104, -500, 500);
-PARAM(max_tt_history_malus, 1646, 1, 4096);
+PARAM(tt_hist_malus_mult, 311, 1, 1536);
+PARAM(tt_hist_malus_minus, 104, -500, 500);
+PARAM(max_tt_hist_malus, 1646, 1, 4096);
 
 PARAM(static_h_mult, -51, -500, -1);
 PARAM(static_h_min, -108, -1000, -1);
@@ -79,7 +79,7 @@ PARAM(nmp_rmin, 4, 1, 10);
 
 PARAM(probcut_margin, 217, 1, 500);
 
-PARAM(history_div, 7778, 1, 16384);
+PARAM(hist_div, 7778, 1, 16384);
 
 PARAM(hp_depth, 6, 1, 15);
 PARAM(hp_depth_mult, -5429, -12500, -2500);
@@ -95,8 +95,8 @@ PARAM(double_ext_margin, 13, 1, 30);
 PARAM(tripple_ext_margin, 93, 10, 250);
 PARAM(zws_margin, 39, 10, 160);
 
-PARAM(quiet_history_div, 8026, 1, 16384);
-PARAM(noisy_history_div, 4566, 1, 16384);
+PARAM(quiet_hist_div, 8026, 1, 16384);
+PARAM(noisy_hist_div, 4566, 1, 16384);
 
 PARAM(qfp_margin, 111, 40, 280);
 PARAM(qsee_margin, -20, -200, 50);
@@ -104,14 +104,20 @@ PARAM(qsee_margin, -20, -200, 50);
 PARAM(asp_delta, 11, 1, 30);
 PARAM(asp_depth, 4, 2, 6);
 
-PARAM(history_bonus_margin, 52, 10, 200);
+PARAM(hist_bonus_margin, 52, 10, 200);
 
-PARAM(history_bonus_mult, 308, 1, 1536);
-PARAM(history_bonus_minus, 4, -500, 500);
-PARAM(max_history_bonus, 2445, 1, 4096);
+PARAM(hist_bonus_mult, 308, 1, 1536);
+PARAM(hist_bonus_minus, 4, -500, 500);
+PARAM(max_hist_bonus, 2445, 1, 4096);
 
-PARAM(history_malus_mult, 311, 1, 1536);
-PARAM(history_malus_minus, 104, -500, 500);
-PARAM(max_history_malus, 1646, 1, 4096);
+PARAM(hist_malus_mult, 311, 1, 1536);
+PARAM(hist_malus_minus, 104, -500, 500);
+PARAM(max_hist_malus, 1646, 1, 4096);
+
+PARAM(quiet_hist_bonus_mult, 1024, 1, 2048);
+PARAM(quiet_hist_malus_mult, 1024, 1, 2048);
+
+PARAM(noisy_hist_bonus_mult, 1024, 1, 2048);
+PARAM(noisy_hist_malus_mult, 1024, 1, 2048);
 
 } // namespace Engine
