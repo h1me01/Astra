@@ -5,6 +5,7 @@
 #include <cstring>
 
 #include "../chess/misc.h"
+#include "constants.h"
 
 #include "simd.h"
 
@@ -18,55 +19,78 @@ namespace NNUE {
 
 class Accum;
 
-// (12x768->1536)x2->8x1
-
-constexpr int BUCKET_SIZE = 12;
-constexpr int FEATURE_SIZE = 768;
-
-constexpr int INPUT_SIZE = BUCKET_SIZE * FEATURE_SIZE;
-constexpr int FT_SIZE = 1536;
-constexpr int L1_SIZE = 8;
-
-constexpr int FT_QUANT = 255;
-constexpr int L1_QUANT = 64;
-
-constexpr int EVAL_SCALE = 400;
-
-constexpr int KING_BUCKET[NUM_SQUARES] = {
-    0,  1,  2,  3,  3,  2,  1,  0,  //
-    4,  5,  6,  7,  7,  6,  5,  4,  //
-    8,  8,  9,  9,  9,  9,  8,  8,  //
-    10, 10, 10, 10, 10, 10, 10, 10, //
-    10, 10, 10, 10, 10, 10, 10, 10, //
-    11, 11, 11, 11, 11, 11, 11, 11, //
-    11, 11, 11, 11, 11, 11, 11, 11, //
-    11, 11, 11, 11, 11, 11, 11, 11, //
-};
+// (13x768->1536)x2->(16->32->1)x8->selected output
 
 inline bool needs_refresh(Piece pc, Square from, Square to) {
     if(piece_type(pc) != KING)
         return false;
 
     Color view = piece_color(pc);
-    return KING_BUCKET[rel_sq(view, from)] != KING_BUCKET[rel_sq(view, to)] || sq_file(from) + sq_file(to) == 7;
+    return INPUT_BUCKET[rel_sq(view, from)] != INPUT_BUCKET[rel_sq(view, to)] || sq_file(from) + sq_file(to) == 7;
 }
+
+template <typename T, size_t N> //
+class LayerOutput {
+  public:
+    LayerOutput() {
+        memset(data, 0, sizeof(T) * N);
+    }
+
+    LayerOutput(T *init_data) {
+        memcpy(data, init_data, sizeof(T) * N);
+    }
+
+    T operator[](size_t idx) const {
+        assert(idx < N);
+        return data[idx];
+    }
+
+    T &operator[](size_t idx) {
+        assert(idx < N);
+        return data[idx];
+    }
+
+    operator T *() {
+        return data;
+    }
+
+    operator const T *() const {
+        return data;
+    }
+
+    T *as_ptr() {
+        return data;
+    }
+
+  private:
+    alignas(ALIGNMENT) T data[N];
+};
 
 class NNUE {
   public:
     void init();
     void init_accum(Accum &acc) const;
 
-    int32_t forward(Board &board, const Accum &accum) const;
+    int32_t forward(Board &board, const Accum &acc);
 
     void put(Accum &acc, const Accum &prev, Piece pc, Square psq, Square ksq, Color view) const;
     void remove(Accum &acc, const Accum &prev, Piece pc, Square psq, Square ksq, Color view) const;
     void move(Accum &acc, const Accum &prev, Piece pc, Square from, Square to, Square ksq, Color view) const;
 
   private:
+    using NNZOutput = std::pair<int, LayerOutput<uint16_t, FT_SIZE / 4>>;
+
+  private:
     alignas(ALIGNMENT) int16_t ft_weights[INPUT_SIZE * FT_SIZE];
     alignas(ALIGNMENT) int16_t ft_biases[FT_SIZE];
-    alignas(ALIGNMENT) int16_t l1_weights[2 * FT_SIZE * L1_SIZE];
-    alignas(ALIGNMENT) int16_t l1_biases[L1_SIZE];
+    alignas(ALIGNMENT) int8_t l1_weights[OUTPUT_BUCKETS][FT_SIZE * L1_SIZE];
+    alignas(ALIGNMENT) float l1_biases[OUTPUT_BUCKETS][L1_SIZE];
+    alignas(ALIGNMENT) float l2_weights[OUTPUT_BUCKETS][L1_SIZE * L2_SIZE];
+    alignas(ALIGNMENT) float l2_biases[OUTPUT_BUCKETS][L2_SIZE];
+    alignas(ALIGNMENT) float l3_weights[OUTPUT_BUCKETS][L2_SIZE];
+    alignas(ALIGNMENT) float l3_biases[OUTPUT_BUCKETS];
+
+    alignas(ALIGNMENT) uint16_t nnz_lookup[256][8];
 
     int feature_idx(Square psq, Square ksq, Piece pc, Color view) const {
         assert(valid_sq(psq));
@@ -78,8 +102,14 @@ class NNUE {
         return rel_sq(view, psq) +               //
                piece_type(pc) * 64 +             //
                (piece_color(pc) != view) * 384 + //
-               KING_BUCKET[rel_sq(view, ksq)] * FEATURE_SIZE;
+               INPUT_BUCKET[rel_sq(view, ksq)] * FEATURE_SIZE;
     }
+
+    LayerOutput<uint8_t, FT_SIZE> prep_l1_input(const Color stm, const Accum &acc);
+    NNZOutput find_nnz(const LayerOutput<uint8_t, FT_SIZE> &input);
+    LayerOutput<float, L1_SIZE> forward_l1(int bucket, const LayerOutput<uint8_t, FT_SIZE> &input);
+    LayerOutput<float, L2_SIZE> forward_l2(int bucket, const LayerOutput<float, L1_SIZE> &input);
+    float forward_l3(int bucket, const LayerOutput<float, L2_SIZE> &input);
 };
 
 // global variable
