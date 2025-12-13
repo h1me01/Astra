@@ -111,7 +111,7 @@ int32_t NNUE::forward(Board &board, const Accum &acc) {
     auto l1_input = prep_l1_input(board.get_stm(), acc);
     auto l1_output = forward_l1(bucket, l1_input);
     auto l2_output = forward_l2(bucket, l1_output);
-    return forward_l3(bucket, l2_output);
+    return static_cast<int32_t>(forward_l3(bucket, l2_output));
 }
 
 LayerOutput<uint8_t, FT_SIZE> NNUE::prep_l1_input(const Color stm, const Accum &acc) {
@@ -122,7 +122,6 @@ LayerOutput<uint8_t, FT_SIZE> NNUE::prep_l1_input(const Color stm, const Accum &
         const int out_offset = (c == stm) ? 0 : FT_SIZE / 2;
 
 #ifdef USE_SIMD
-
         for(int i = 0; i < FT_SIZE / 2; i += 2 * INT16_VEC_SIZE) {
             ivec_t r_clipped1 = crelu(ivec_at(acc_data, i));
             ivec_t r_clipped2 = crelu(ivec_at(acc_data, i + INT16_VEC_SIZE));
@@ -254,11 +253,15 @@ LayerOutput<float, L2_SIZE> NNUE::forward_l2(int bucket, const LayerOutput<float
         for(int j = 0; j < L2_SIZE; j += FLOAT_VEC_SIZE)
             fvec_at(output, j) = fmadd_ps(input_val, fvec_at(weights, j), fvec_at(output, j));
     }
+
+    for(int i = 0; i < L2_SIZE; i += FLOAT_VEC_SIZE)
+        fvec_at(output, i) = screlu(fvec_at(output, i));
 #else
-    for(int i = 0; i < L2_SIZE; i++)
+    for(int i = 0; i < L2_SIZE; i++) {
         for(int j = 0; j < L1_SIZE; j++)
             output[i] += input[j] * l2_weights[bucket][j * L2_SIZE + i];
-
+        output[i] = screlu(output[i]);
+    }
 #endif
 
     return output;
@@ -275,8 +278,7 @@ float NNUE::forward_l3(int bucket, const LayerOutput<float, L2_SIZE> &input) {
     for(int i = 0; i < VEC_SIZE; i++) {
         for(int j = 0; j < L2_SIZE; j += VEC_SIZE * FLOAT_VEC_SIZE) {
             int offset = j + i * FLOAT_VEC_SIZE;
-            fvec_t l2_act = screlu(fvec_at(input, offset));
-            output[i] = fmadd_ps(l2_act, fvec_at(&l3_weights[bucket][0], offset), output[i]);
+            output[i] = fmadd_ps(fvec_at(input, offset), fvec_at(&l3_weights[bucket][0], offset), output[i]);
         }
     }
 
@@ -284,9 +286,9 @@ float NNUE::forward_l3(int bucket, const LayerOutput<float, L2_SIZE> &input) {
 #else
     float result = l3_biases[bucket];
     for(int i = 0; i < L2_SIZE; i++)
-        result += screlu(input[i]) * l3_weights[bucket][i];
+        result += input[i] * l3_weights[bucket][i];
 
-    return result * EVAL_SCALE;
+    return result * static_cast<float>(EVAL_SCALE);
 #endif
 }
 
