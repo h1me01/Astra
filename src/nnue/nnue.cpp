@@ -119,9 +119,9 @@ LayerOutput<uint8_t, FT_SIZE> NNUE::prep_l1_input(const Color stm, const Accum &
 
     for(Color c : {stm, ~stm}) {
         const auto acc_data = acc.get_data(c);
+        const int out_offset = (c == stm) ? 0 : FT_SIZE / 2;
 
 #ifdef USE_SIMD
-        const int out_offset = (c == stm) ? 0 : FT_SIZE / 2;
 
         for(int i = 0; i < FT_SIZE / 2; i += 2 * INT16_VEC_SIZE) {
             ivec_t r_clipped1 = crelu(ivec_at(acc_data, i));
@@ -141,7 +141,7 @@ LayerOutput<uint8_t, FT_SIZE> NNUE::prep_l1_input(const Color stm, const Accum &
         for(int i = 0; i < FT_SIZE / 2; i++) {
             int32_t crelu1 = crelu(acc_data[i]);
             int32_t crelu2 = crelu(acc_data[i + FT_SIZE / 2]);
-            output[i + (c == ~stm) * FT_SIZE / 2] = (crelu1 * crelu2) >> FT_SHIFT;
+            output[i + out_offset] = (crelu1 * crelu2) >> FT_SHIFT;
         }
 #endif
     }
