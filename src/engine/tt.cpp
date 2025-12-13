@@ -93,7 +93,7 @@ void TTable::init(U64 size_mb) {
 void TTable::clear() {
     age = 0;
 
-    const int worker_count = threads.get_count();
+    const int worker_count = std::max(1, threads.get_count());
     const U64 chunk_size = bucket_size / worker_count;
 
     std::vector<std::thread> threads;
