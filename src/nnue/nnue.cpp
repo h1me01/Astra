@@ -231,11 +231,9 @@ LayerOutput<float, L1_SIZE> NNUE::forward_l1(int bucket, const LayerOutput<uint8
 
 #else
     for(int i = 0; i < L1_SIZE; i++) {
-        float pre_activated = 0;
         for(int j = 0; j < FT_SIZE; j++)
-            pre_activated += input[j] * l1_weights[bucket][j * L1_SIZE + i];
-        pre_activated = pre_activated * DEQUANT_MULT + l1_biases[bucket][i];
-        output[i] = screlu(pre_activated);
+            output[i] += input[j] * l1_weights[bucket][j * L1_SIZE + i];
+        output[i] = screlu(output[i] * DEQUANT_MULT + l1_biases[bucket][i]);
     }
 #endif
 
@@ -243,9 +241,11 @@ LayerOutput<float, L1_SIZE> NNUE::forward_l1(int bucket, const LayerOutput<uint8
 }
 
 LayerOutput<float, L2_SIZE> NNUE::forward_l2(int bucket, const LayerOutput<float, L1_SIZE> &input) {
-    LayerOutput<float, L2_SIZE> output(l2_biases[bucket]);
+    LayerOutput<float, L2_SIZE> output;
 
 #ifdef USE_SIMD
+    output.init(l2_biases[bucket]);
+
     for(int i = 0; i < L1_SIZE; i++) {
         const fvec_t input_val = set1_ps(input[i]);
         const auto weights = ptr_cast<const float>(&l2_weights[bucket][i * L2_SIZE]);
@@ -257,11 +257,12 @@ LayerOutput<float, L2_SIZE> NNUE::forward_l2(int bucket, const LayerOutput<float
     for(int i = 0; i < L2_SIZE; i += FLOAT_VEC_SIZE)
         fvec_at(output, i) = screlu(fvec_at(output, i));
 #else
-    for(int i = 0; i < L2_SIZE; i++) {
+    for(int i = 0; i < L2_SIZE; i++)
         for(int j = 0; j < L1_SIZE; j++)
             output[i] += input[j] * l2_weights[bucket][j * L2_SIZE + i];
-        output[i] = screlu(output[i]);
-    }
+
+    for(int i = 0; i < L2_SIZE; i++)
+        output[i] = screlu(output[i] + l2_biases[bucket][i]);
 #endif
 
     return output;
@@ -284,11 +285,11 @@ float NNUE::forward_l3(int bucket, const LayerOutput<float, L2_SIZE> &input) {
 
     return (l3_biases[bucket] + SIMD::hor_sum_ps(output)) * EVAL_SCALE;
 #else
-    float result = l3_biases[bucket];
+    float result = 0;
     for(int i = 0; i < L2_SIZE; i++)
         result += input[i] * l3_weights[bucket][i];
 
-    return result * static_cast<float>(EVAL_SCALE);
+    return (result + l3_biases[bucket]) * static_cast<float>(EVAL_SCALE);
 #endif
 }
 
