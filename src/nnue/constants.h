@@ -13,7 +13,7 @@ constexpr int OUTPUT_BUCKETS = 8;
 
 constexpr int FT_SHIFT = 9;
 constexpr int FT_QUANT = 255;
-constexpr int L1_QUANT = 64;
+constexpr int L1_QUANT = 128;
 
 constexpr int EVAL_SCALE = 400;
 
