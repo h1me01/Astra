@@ -12,9 +12,9 @@
 #include "timeman.h"
 #include "tt.h"
 
-using namespace Chess;
+using namespace chess;
 
-namespace Engine {
+namespace search {
 
 void init_reductions();
 
@@ -72,7 +72,7 @@ class Search {
     TimeMan tm;
     History history;
 
-    NNUE::AccumList accum_list;
+    nnue::AccumList accum_list;
     MoveList<RootMove> root_moves;
 
     uint64_t nodes, tb_hits;
@@ -111,4 +111,4 @@ class Search {
     void update_pv(const Move &move, Stack *stack);
 };
 
-} // namespace Engine
+} // namespace search

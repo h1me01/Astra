@@ -2,7 +2,7 @@
 #include "bitboard.h"
 #include "zobrist.h"
 
-namespace Chess::Cuckoo {
+namespace chess::cuckoo {
 
 U64 keys[8192];
 Move cuckoo_moves[8192];
@@ -24,7 +24,7 @@ void init() {
                         continue;
 
                     Move move = Move(sq1, sq2, QUIET);
-                    U64 hash = Zobrist::get_psq(p, sq1) ^ Zobrist::get_psq(p, sq2) ^ Zobrist::get_side();
+                    U64 hash = zobrist::get_psq(p, sq1) ^ zobrist::get_psq(p, sq2) ^ zobrist::get_side();
 
                     int i = cuckoo_h1(hash);
                     while(true) {
@@ -46,4 +46,4 @@ void init() {
     assert(count == 3668);
 }
 
-} // namespace Chess::Cuckoo
+} // namespace chess::cuckoo

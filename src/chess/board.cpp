@@ -4,7 +4,7 @@
 #include "board.h"
 #include "movegen.h"
 
-namespace Chess {
+namespace chess {
 
 // helper
 
@@ -17,11 +17,11 @@ std::pair<Square, Square> Board::get_castle_rook_sqs(Color c, Square to) {
 int get_see_piece_value(PieceType pt) {
     switch(pt) {
         // clang-format off
-        case PAWN:   return Engine::pawn_value_see;
-        case KNIGHT: return Engine::knight_value_see;
-        case BISHOP: return Engine::bishop_value_see;
-        case ROOK:   return Engine::rook_value_see;
-        case QUEEN:  return Engine::queen_value_see;
+        case PAWN:   return search::pawn_value_see;
+        case KNIGHT: return search::knight_value_see;
+        case BISHOP: return search::bishop_value_see;
+        case ROOK:   return search::rook_value_see;
+        case QUEEN:  return search::queen_value_see;
         default:     return 0;
         // clang-format on
     }
@@ -91,9 +91,9 @@ void Board::set_fen(const std::string &fen) {
     }
 
     // update hash
-    info.hash ^= Zobrist::get_side();
-    info.hash ^= Zobrist::get_ep(info.ep_sq);
-    info.hash ^= Zobrist::get_castle(info.castle_rights.hash_idx());
+    info.hash ^= zobrist::get_side();
+    info.hash ^= zobrist::get_ep(info.ep_sq);
+    info.hash ^= zobrist::get_castle(info.castle_rights.hash_idx());
 
     init_movegen_info();
 }
@@ -162,14 +162,14 @@ std::string Board::get_fen() const {
     return fen.str();
 }
 
-NNUE::DirtyPieces Board::make_move(const Move &move) {
+nnue::DirtyPieces Board::make_move(const Move &move) {
     const Square from = move.from();
     const Square to = move.to();
     const Piece pc = piece_at(from);
     const PieceType pt = piece_type(pc);
     const Piece captured = move.is_ep() ? make_piece(~stm, PAWN) : piece_at(to);
 
-    NNUE::DirtyPieces dirty_pieces;
+    nnue::DirtyPieces dirty_pieces;
 
     assert(move);
     assert(valid_piece(pc));
@@ -191,7 +191,7 @@ NNUE::DirtyPieces Board::make_move(const Move &move) {
 
     // reset ep square if it exists
     if(valid_sq(info.ep_sq)) {
-        info.hash ^= Zobrist::get_ep(info.ep_sq); // remove ep square from hash
+        info.hash ^= zobrist::get_ep(info.ep_sq); // remove ep square from hash
         info.ep_sq = NO_SQUARE;
     }
 
@@ -220,7 +220,7 @@ NNUE::DirtyPieces Board::make_move(const Move &move) {
         Square new_ep_sq = ep_sq(to);
         if((from ^ to) == 16 && (get_pawn_attacks(stm, new_ep_sq) & get_piece_bb<PAWN>(~stm))) {
             info.ep_sq = new_ep_sq;
-            info.hash ^= Zobrist::get_ep(new_ep_sq); // add ep square to hash
+            info.hash ^= zobrist::get_ep(new_ep_sq); // add ep square to hash
         } else if(move.is_prom()) {
             Piece prom_pc = make_piece(stm, move.prom_type());
 
@@ -239,14 +239,14 @@ NNUE::DirtyPieces Board::make_move(const Move &move) {
     // update castling rights if king/rook moves or if one of the rooks get captured
     if(info.castle_rights.on_castle_sq(from) || info.castle_rights.on_castle_sq(to)) {
         // remove old castling rights from hash
-        info.hash ^= Zobrist::get_castle(info.castle_rights.hash_idx());
+        info.hash ^= zobrist::get_castle(info.castle_rights.hash_idx());
         info.castle_rights.update(from, to);
         // add new castling rights to hash
-        info.hash ^= Zobrist::get_castle(info.castle_rights.hash_idx());
+        info.hash ^= zobrist::get_castle(info.castle_rights.hash_idx());
     }
 
     // update hash
-    info.hash ^= Zobrist::get_side();
+    info.hash ^= zobrist::get_side();
 
     stm = ~stm;
     info.captured = captured;
@@ -312,11 +312,11 @@ void Board::make_nullmove() {
     info.plies_from_null = 0;
 
     if(valid_sq(info.ep_sq)) {
-        info.hash ^= Zobrist::get_ep(info.ep_sq); // remove ep square from hash
+        info.hash ^= zobrist::get_ep(info.ep_sq); // remove ep square from hash
         info.ep_sq = NO_SQUARE;
     }
 
-    info.hash ^= Zobrist::get_side();
+    info.hash ^= zobrist::get_side();
     stm = ~stm;
 
     init_movegen_info();
@@ -544,13 +544,13 @@ bool Board::upcoming_repetition(int ply) const {
     int offset = 1;
 
     U64 orig_key = info.hash;
-    U64 other_key = orig_key ^ states[curr_ply - offset].hash ^ Zobrist::get_side();
+    U64 other_key = orig_key ^ states[curr_ply - offset].hash ^ zobrist::get_side();
 
     for(int i = 3; i <= distance; i += 2) {
         offset++;
         int idx = curr_ply - offset;
 
-        other_key ^= states[idx].hash ^ states[idx - 1].hash ^ Zobrist::get_side();
+        other_key ^= states[idx].hash ^ states[idx - 1].hash ^ zobrist::get_side();
 
         offset++;
         idx = curr_ply - offset;
@@ -559,14 +559,14 @@ bool Board::upcoming_repetition(int ply) const {
             continue;
 
         U64 move_key = orig_key ^ states[idx].hash;
-        int hash = Cuckoo::cuckoo_h1(move_key);
+        int hash = cuckoo::cuckoo_h1(move_key);
 
-        if(Cuckoo::keys[hash] != move_key)
-            hash = Cuckoo::cuckoo_h2(move_key);
-        if(Cuckoo::keys[hash] != move_key)
+        if(cuckoo::keys[hash] != move_key)
+            hash = cuckoo::cuckoo_h2(move_key);
+        if(cuckoo::keys[hash] != move_key)
             continue;
 
-        Move move = Cuckoo::cuckoo_moves[hash];
+        Move move = cuckoo::cuckoo_moves[hash];
         Square to = move.to();
         U64 between = between_bb(move.from(), to) ^ sq_bb(to);
 
@@ -720,4 +720,4 @@ void Board::init_movegen_info() {
     info.checkers = attackers_to(~stm, get_king_sq(stm), get_occupancy());
 }
 
-} // namespace Chess
+} // namespace chess

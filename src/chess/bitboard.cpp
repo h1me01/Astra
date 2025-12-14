@@ -8,7 +8,7 @@
 #include "bitboard.h"
 #include "misc.h"
 
-namespace Chess {
+namespace chess {
 
 constexpr U64 ROOK_MASKS[64] = {
     0x000101010101017eULL, 0x000202020202027cULL, 0x000404040404047aULL, 0x0008080808080876ULL, //
@@ -275,7 +275,7 @@ U64 get_attacks(PieceType pt, Square sq, const U64 occ) {
     }
 }
 
-namespace Bitboards {
+namespace bitboards {
 
 void init() {
     init_rook_attacks();
@@ -345,6 +345,6 @@ void init() {
     }
 }
 
-} // namespace Bitboards
+} // namespace bitboards
 
-} // namespace Chess
+} // namespace chess

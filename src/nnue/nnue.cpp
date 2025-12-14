@@ -14,18 +14,18 @@
 
 INCBIN(Weights, NNUE_PATH);
 
-namespace NNUE {
+namespace nnue {
 
 // activation functions
 
 #ifdef USE_SIMD
 
 ivec_t crelu(ivec_t val) {
-    return SIMD::clamp_epi16(val, ZERO_IVEC, FT_QUANT_IVEC);
+    return simd::clamp_epi16(val, simd::ZERO_IVEC, simd::FT_QUANT_IVEC);
 }
 
 fvec_t screlu(fvec_t val) {
-    fvec_t clamped = SIMD::clamp_ps(val, ZERO_FVEC, ONE_FVEC);
+    fvec_t clamped = simd::clamp_ps(val, simd::ZERO_FVEC, simd::ONE_FVEC);
     return mul_ps(clamped, clamped);
 }
 
@@ -122,19 +122,19 @@ LayerOutput<uint8_t, FT_SIZE> NNUE::prep_l1_input(const Color stm, const Accum &
         const int out_offset = (c == stm) ? 0 : FT_SIZE / 2;
 
 #ifdef USE_SIMD
-        for(int i = 0; i < FT_SIZE / 2; i += 2 * INT16_VEC_SIZE) {
+        for(int i = 0; i < FT_SIZE / 2; i += 2 * simd::INT16_VEC_SIZE) {
             ivec_t r_clipped1 = crelu(ivec_at(acc_data, i));
-            ivec_t r_clipped2 = crelu(ivec_at(acc_data, i + INT16_VEC_SIZE));
+            ivec_t r_clipped2 = crelu(ivec_at(acc_data, i + simd::INT16_VEC_SIZE));
 
-            ivec_t l_clipped1 = min_epi16(ivec_at(acc_data, i + FT_SIZE / 2), FT_QUANT_IVEC);
-            ivec_t l_clipped2 = min_epi16(ivec_at(acc_data, i + FT_SIZE / 2 + INT16_VEC_SIZE), FT_QUANT_IVEC);
+            ivec_t l_clipped1 = min_epi16(ivec_at(acc_data, i + FT_SIZE / 2), simd::FT_QUANT_IVEC);
+            ivec_t l_clipped2 = min_epi16(ivec_at(acc_data, i + FT_SIZE / 2 + simd::INT16_VEC_SIZE), simd::FT_QUANT_IVEC);
             ivec_t shifted1 = slli_epi16(r_clipped1, 16 - FT_SHIFT);
             ivec_t shifted2 = slli_epi16(r_clipped2, 16 - FT_SHIFT);
 
             ivec_t product1 = mulhi_epi16(shifted1, l_clipped1);
             ivec_t product2 = mulhi_epi16(shifted2, l_clipped2);
 
-            store_si(ptr_cast<ivec_t>(&output[i + out_offset]), packus_epi16(product1, product2));
+            ivec_at(output, i + out_offset) = packus_epi16(product1, product2);
         }
 #else
         for(int i = 0; i < FT_SIZE / 2; i++) {
@@ -156,10 +156,10 @@ NNUE::NNZOutput NNUE::find_nnz([[maybe_unused]] const LayerOutput<uint8_t, FT_SI
     const __m128i inc = _mm_set1_epi16(8);
     __m128i base = _mm_setzero_si128();
 
-    for(int i = 0; i < FT_SIZE; i += 2 * INT16_VEC_SIZE) {
-        uint32_t nnz = SIMD::nnz_nonzero_mask(ivec_at(input, i));
+    for(int i = 0; i < FT_SIZE; i += 2 * simd::INT16_VEC_SIZE) {
+        uint32_t nnz = simd::nnz_nonzero_mask(ivec_at(input, i));
 
-        for(int j = 0; j < INT32_VEC_SIZE; j += 8) {
+        for(int j = 0; j < simd::INT32_VEC_SIZE; j += 8) {
             uint16_t lookup = (nnz >> j) & 0xFF;
             __m128i offsets = _mm_loadu_si128(ptr_cast<__m128i>(&nnz_lookup[lookup]));
             _mm_storeu_si128(ptr_cast<__m128i>(indices + count), _mm_add_epi16(base, offsets));
@@ -195,9 +195,9 @@ LayerOutput<float, L1_SIZE> NNUE::forward_l1(int bucket, const LayerOutput<uint8
         const auto weights1 = ptr_cast<const int8_t>(&l1_weights[bucket][idx1 * L1_SIZE * INT8_PER_INT32]);
         const auto weights2 = ptr_cast<const int8_t>(&l1_weights[bucket][idx2 * L1_SIZE * INT8_PER_INT32]);
 
-        for(int j = 0; j < L1_SIZE; j += INT32_VEC_SIZE) {
-            int o_offset = j / INT32_VEC_SIZE;
-            linear_vec[o_offset] = SIMD::double_dpbusd_epi32(  //
+        for(int j = 0; j < L1_SIZE; j += simd::INT32_VEC_SIZE) {
+            int o_offset = j / simd::INT32_VEC_SIZE;
+            linear_vec[o_offset] = simd::double_dpbusd_epi32(  //
                 linear_vec[o_offset], input1,                  //
                 ivec_at(weights1, j * INT8_PER_INT32), input2, //
                 ivec_at(weights2, j * INT8_PER_INT32)          //
@@ -210,9 +210,9 @@ LayerOutput<float, L1_SIZE> NNUE::forward_l1(int bucket, const LayerOutput<uint8
         const ivec_t input = set1_epi32(input_packs[idx]);
         const auto weights = ptr_cast<const int8_t>(&l1_weights[bucket][idx * L1_SIZE * INT8_PER_INT32]);
 
-        for(int j = 0; j < L1_SIZE; j += INT32_VEC_SIZE) {
-            int o_offset = j / INT32_VEC_SIZE;
-            linear_vec[o_offset] = SIMD::dpbusd_epi32(      //
+        for(int j = 0; j < L1_SIZE; j += simd::INT32_VEC_SIZE) {
+            int o_offset = j / simd::INT32_VEC_SIZE;
+            linear_vec[o_offset] = simd::dpbusd_epi32(      //
                 linear_vec[o_offset],                       //
                 input, ivec_at(weights, j * INT8_PER_INT32) //
             );
@@ -220,10 +220,10 @@ LayerOutput<float, L1_SIZE> NNUE::forward_l1(int bucket, const LayerOutput<uint8
     }
 
     // activate and add bias to value
-    for(int i = 0; i < L1_SIZE; i += FLOAT_VEC_SIZE) {
-        fvec_t l1_out = add_ps(                                       //
-            mul_ps(cvtepi32_ps(ivec_at(linear, i)), DEQUANT_MULT_PS), //
-            fvec_at(&l1_biases[bucket][0], i)                         //
+    for(int i = 0; i < L1_SIZE; i += simd::FLOAT_VEC_SIZE) {
+        fvec_t l1_out = add_ps(                                             //
+            mul_ps(cvtepi32_ps(ivec_at(linear, i)), simd::DEQUANT_MULT_PS), //
+            fvec_at(&l1_biases[bucket][0], i)                               //
         );
 
         fvec_at(output, i) = screlu(l1_out);
@@ -250,11 +250,11 @@ LayerOutput<float, L2_SIZE> NNUE::forward_l2(int bucket, const LayerOutput<float
         const fvec_t input_val = set1_ps(input[i]);
         const auto weights = ptr_cast<const float>(&l2_weights[bucket][i * L2_SIZE]);
 
-        for(int j = 0; j < L2_SIZE; j += FLOAT_VEC_SIZE)
+        for(int j = 0; j < L2_SIZE; j += simd::FLOAT_VEC_SIZE)
             fvec_at(output, j) = fmadd_ps(input_val, fvec_at(weights, j), fvec_at(output, j));
     }
 
-    for(int i = 0; i < L2_SIZE; i += FLOAT_VEC_SIZE)
+    for(int i = 0; i < L2_SIZE; i += simd::FLOAT_VEC_SIZE)
         fvec_at(output, i) = screlu(fvec_at(output, i));
 #else
     for(int i = 0; i < L2_SIZE; i++)
@@ -270,20 +270,20 @@ LayerOutput<float, L2_SIZE> NNUE::forward_l2(int bucket, const LayerOutput<float
 
 float NNUE::forward_l3(int bucket, const LayerOutput<float, L2_SIZE> &input) {
 #ifdef USE_SIMD
-    constexpr int VEC_SIZE = 16 / FLOAT_VEC_SIZE;
+    constexpr int VEC_SIZE = 16 / simd::FLOAT_VEC_SIZE;
 
     fvec_t output[VEC_SIZE];
     for(int i = 0; i < VEC_SIZE; i++)
-        output[i] = ZERO_FVEC;
+        output[i] = simd::ZERO_FVEC;
 
     for(int i = 0; i < VEC_SIZE; i++) {
-        for(int j = 0; j < L2_SIZE; j += VEC_SIZE * FLOAT_VEC_SIZE) {
-            int offset = j + i * FLOAT_VEC_SIZE;
+        for(int j = 0; j < L2_SIZE; j += VEC_SIZE * simd::FLOAT_VEC_SIZE) {
+            int offset = j + i * simd::FLOAT_VEC_SIZE;
             output[i] = fmadd_ps(fvec_at(input, offset), fvec_at(&l3_weights[bucket][0], offset), output[i]);
         }
     }
 
-    return (l3_biases[bucket] + SIMD::hor_sum_ps(output)) * EVAL_SCALE;
+    return (l3_biases[bucket] + simd::hor_sum_ps(output)) * EVAL_SCALE;
 #else
     float result = 0;
     for(int i = 0; i < L2_SIZE; i++)
@@ -300,8 +300,8 @@ void NNUE::put(Accum &acc, const Accum &prev, Piece pc, Square psq, Square ksq, 
     auto acc_data = ptr_cast<ivec_t>(acc.get_data(view));
     const auto prev_data = acc.is_initialized(view) ? acc_data : ptr_cast<const ivec_t>(prev.get_data(view));
 
-    for(int i = 0; i < FT_SIZE / INT16_VEC_SIZE; i++)
-        acc_data[i] = ACCUM_ADD(prev_data[i], weights[i]);
+    for(int i = 0; i < FT_SIZE / simd::INT16_VEC_SIZE; i++)
+        acc_data[i] = simd::accum_add(prev_data[i], weights[i]);
 
     acc.set_initialized(view);
 }
@@ -313,8 +313,8 @@ void NNUE::remove(Accum &acc, const Accum &prev, Piece pc, Square psq, Square ks
     auto acc_data = ptr_cast<ivec_t>(acc.get_data(view));
     const auto prev_data = acc.is_initialized(view) ? acc_data : ptr_cast<const ivec_t>(prev.get_data(view));
 
-    for(int i = 0; i < FT_SIZE / INT16_VEC_SIZE; i++)
-        acc_data[i] = ACCUM_SUB(prev_data[i], weights[i]);
+    for(int i = 0; i < FT_SIZE / simd::INT16_VEC_SIZE; i++)
+        acc_data[i] = simd::accum_sub(prev_data[i], weights[i]);
 
     acc.set_initialized(view);
 }
@@ -328,8 +328,8 @@ void NNUE::move(Accum &acc, const Accum &prev, Piece pc, Square from, Square to,
     auto acc_data = ptr_cast<ivec_t>(acc.get_data(view));
     const auto prev_data = acc.is_initialized(view) ? acc_data : ptr_cast<const ivec_t>(prev.get_data(view));
 
-    for(int i = 0; i < FT_SIZE / INT16_VEC_SIZE; i++)
-        acc_data[i] = ACCUM_ADD(prev_data[i], ACCUM_SUB(weights_to[i], weights_from[i]));
+    for(int i = 0; i < FT_SIZE / simd::INT16_VEC_SIZE; i++)
+        acc_data[i] = simd::accum_add(prev_data[i], simd::accum_sub(weights_to[i], weights_from[i]));
 
     acc.set_initialized(view);
 }
@@ -338,4 +338,4 @@ void NNUE::move(Accum &acc, const Accum &prev, Piece pc, Square from, Square to,
 
 NNUE nnue;
 
-} // namespace NNUE
+} // namespace nnue

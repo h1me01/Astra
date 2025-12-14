@@ -2,9 +2,9 @@
 
 #include "../chess/misc.h"
 
-using namespace Chess;
+using namespace chess;
 
-namespace Engine {
+namespace search {
 
 enum Bound : uint8_t { //
     NO_BOUND = 0,
@@ -111,7 +111,7 @@ class TTable {
     TTEntry *lookup(U64 hash, bool *hit) const;
 
     size_t index(U64 hash) const {
-        return ((unsigned __int128) hash * (unsigned __int128) bucket_size) >> 64;
+        return (static_cast<unsigned __int128>(hash) * static_cast<unsigned __int128>(bucket_size)) >> 64;
     }
 
     void prefetch(U64 hash) const {
@@ -140,4 +140,4 @@ inline bool valid_tt_score(Score tt_score, Score score, Bound bound) {
 
 extern TTable tt;
 
-} // namespace Engine
+} // namespace search

@@ -7,9 +7,9 @@
 
 #include "search.h"
 
-using namespace Chess;
+using namespace chess;
 
-namespace Engine {
+namespace search {
 
 class ThreadPool {
   public:
@@ -78,4 +78,4 @@ class ThreadPool {
 
 extern ThreadPool threads;
 
-} // namespace Engine
+} // namespace search

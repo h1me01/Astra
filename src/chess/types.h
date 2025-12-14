@@ -5,9 +5,9 @@
 #include <iostream>
 #include <string>
 
-#include "../engine/tune_params.h"
+#include "../search/tune_params.h"
 
-namespace Chess {
+namespace chess {
 
 using U64 = uint64_t;
 using Score = int16_t;
@@ -225,4 +225,4 @@ class Move {
 const Move NO_MOVE{};
 const Move NULL_MOVE{65};
 
-} // namespace Chess
+} // namespace chess

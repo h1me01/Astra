@@ -6,9 +6,9 @@
 
 #include "nnue.h"
 
-using namespace Chess;
+using namespace chess;
 
-namespace NNUE {
+namespace nnue {
 
 struct DirtyPiece {
     Piece pc = NO_PIECE;
@@ -196,4 +196,4 @@ class AccumList {
     std::unique_ptr<AccumTable> accum_table = std::make_unique<AccumTable>(AccumTable());
 };
 
-} // namespace NNUE
+} // namespace nnue

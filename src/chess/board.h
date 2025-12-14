@@ -9,7 +9,7 @@
 #include "types.h"
 #include "zobrist.h"
 
-namespace Chess {
+namespace chess {
 
 struct StateInfo {
     StateInfo() = default;
@@ -66,7 +66,7 @@ class Board {
     void set_fen(const std::string &fen);
     std::string get_fen() const;
 
-    NNUE::DirtyPieces make_move(const Move &move);
+    nnue::DirtyPieces make_move(const Move &move);
     void undo_move(const Move &move);
 
     void make_nullmove();
@@ -242,11 +242,11 @@ inline void Board::put_piece(Piece pc, Square sq) {
     info.occ[piece_color(pc)] ^= sq_bb(sq);
 
     // update hash
-    info.hash ^= Zobrist::get_psq(pc, sq);
+    info.hash ^= zobrist::get_psq(pc, sq);
     if(piece_type(pc) == PAWN)
-        info.pawn_hash ^= Zobrist::get_psq(pc, sq);
+        info.pawn_hash ^= zobrist::get_psq(pc, sq);
     else
-        info.non_pawn_hash[stm] ^= Zobrist::get_psq(pc, sq);
+        info.non_pawn_hash[stm] ^= zobrist::get_psq(pc, sq);
 }
 
 inline void Board::remove_piece(Square sq) {
@@ -262,11 +262,11 @@ inline void Board::remove_piece(Square sq) {
     info.occ[piece_color(pc)] ^= sq_bb(sq);
 
     // update hash
-    info.hash ^= Zobrist::get_psq(pc, sq);
+    info.hash ^= zobrist::get_psq(pc, sq);
     if(piece_type(pc) == PAWN)
-        info.pawn_hash ^= Zobrist::get_psq(pc, sq);
+        info.pawn_hash ^= zobrist::get_psq(pc, sq);
     else
-        info.non_pawn_hash[~stm] ^= Zobrist::get_psq(pc, sq);
+        info.non_pawn_hash[~stm] ^= zobrist::get_psq(pc, sq);
 }
 
 inline void Board::move_piece(Square from, Square to) {
@@ -284,11 +284,11 @@ inline void Board::move_piece(Square from, Square to) {
     info.occ[piece_color(pc)] ^= sq_bb(from) | sq_bb(to);
 
     // update hash
-    info.hash ^= Zobrist::get_psq(pc, from) ^ Zobrist::get_psq(pc, to);
+    info.hash ^= zobrist::get_psq(pc, from) ^ zobrist::get_psq(pc, to);
     if(piece_type(pc) == PAWN)
-        info.pawn_hash ^= Zobrist::get_psq(pc, from) ^ Zobrist::get_psq(pc, to);
+        info.pawn_hash ^= zobrist::get_psq(pc, from) ^ zobrist::get_psq(pc, to);
     else
-        info.non_pawn_hash[stm] ^= Zobrist::get_psq(pc, from) ^ Zobrist::get_psq(pc, to);
+        info.non_pawn_hash[stm] ^= zobrist::get_psq(pc, from) ^ zobrist::get_psq(pc, to);
 }
 
-} // namespace Chess
+} // namespace chess

@@ -2,16 +2,17 @@
 
 #include "misc.h"
 
-namespace Chess {
+namespace chess {
 
-namespace Bitboards {
+namespace bitboards {
+
 constexpr U64 KS_CASTLE_PATH_MASKk[NUM_COLORS] = {0x60ULL, 0x6000000000000000ULL};
 constexpr U64 QS_CASTLE_PATH_MASK[NUM_COLORS] = {0x0EULL, 0x0E00000000000000ULL};
 
 constexpr U64 OO_MASK[NUM_COLORS] = {0x90ULL, 0x9000000000000000ULL};
 constexpr U64 OOO_MASK[NUM_COLORS] = {0x11ULL, 0x1100000000000000ULL};
 
-} // namespace Bitboards
+} // namespace bitboards
 
 constexpr U64 file_mask(File file) {
     assert(file >= 0 && file < 8);
@@ -25,22 +26,22 @@ constexpr U64 rank_mask(Rank rank) {
 
 constexpr U64 ks_castle_path_mask(Color c) {
     assert(valid_color(c));
-    return Bitboards::KS_CASTLE_PATH_MASKk[c];
+    return bitboards::KS_CASTLE_PATH_MASKk[c];
 }
 
 constexpr U64 qs_castle_path_mask(Color c) {
     assert(valid_color(c));
-    return Bitboards::QS_CASTLE_PATH_MASK[c];
+    return bitboards::QS_CASTLE_PATH_MASK[c];
 }
 
 constexpr U64 oo_mask(Color c) {
     assert(valid_color(c));
-    return Bitboards::OO_MASK[c];
+    return bitboards::OO_MASK[c];
 }
 
 constexpr U64 ooo_mask(Color c) {
     assert(valid_color(c));
-    return Bitboards::OOO_MASK[c];
+    return bitboards::OOO_MASK[c];
 }
 
 inline U64 sq_bb(Square sq) {
@@ -93,10 +94,10 @@ U64 get_attacks(Square sq, const U64 occ = 0) {
     return get_attacks(pt, sq, occ);
 }
 
-namespace Bitboards {
+namespace bitboards {
 
 void init();
 
-} // namespace Bitboards
+} // namespace bitboards
 
-} // namespace Chess
+} // namespace chess

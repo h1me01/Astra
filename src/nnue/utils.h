@@ -2,7 +2,7 @@
 
 #include "simd.h"
 
-namespace NNUE {
+namespace nnue {
 
 #ifdef USE_SIMD
 void permute_simd_data(__m128i *vec, int count) {
@@ -73,4 +73,4 @@ void transpose(T *weights, int rows, int cols) {
     memcpy(weights, transposed, sizeof(T) * cols * rows);
 }
 
-} // namespace NNUE
+} // namespace nnue

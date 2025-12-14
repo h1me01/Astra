@@ -2,7 +2,7 @@
 
 #include "board.h"
 
-namespace Chess {
+namespace chess {
 
 enum GenType { //
     ADD_NOISY = 1,
@@ -285,4 +285,4 @@ class MoveList {
     T *last;
 };
 
-} // namespace Chess
+} // namespace chess

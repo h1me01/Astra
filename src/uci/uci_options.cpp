@@ -1,10 +1,10 @@
 #include "../chess/misc.h"
-#include "../engine/threads.h"
+#include "../search/threads.h"
 #include "../third_party/fathom/src/tbprobe.h"
 
 #include "uci_options.h"
 
-namespace UCI {
+namespace uci {
 
 // helper
 
@@ -46,7 +46,7 @@ void Options::print() const {
         }
     }
 
-    for(auto param : Engine::params) {
+    for(auto param : search::params) {
         std::cout << "option name " << param->name         //
                   << " type spin default " << param->value //
                   << " min " << param->min                 //
@@ -69,8 +69,8 @@ void Options::set(const std::string &info) {
 
     bool found_tune_param = false;
 #ifdef TUNE
-    found_tune_param = Engine::set_param(name, std::stoi(value));
-    Engine::init_reductions();
+    found_tune_param = search::set_param(name, std::stoi(value));
+    search::init_reductions();
 #endif
 
     if(options.count(name))
@@ -95,9 +95,9 @@ void Options::apply(const std::string &name) {
     if(name == "SyzygyPath")
         update_syzygy_path(options[name]);
     else if(tolower(name) == "hash")
-        Engine::tt.init(std::stoi(options[name]));
+        search::tt.init(std::stoi(options[name]));
     else if(tolower(name) == "threads")
-        Engine::threads.set_count(std::stoi(get("Threads")));
+        search::threads.set_count(std::stoi(get("Threads")));
 }
 
-} // namespace UCI
+} // namespace uci

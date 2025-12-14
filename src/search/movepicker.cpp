@@ -1,6 +1,6 @@
 #include "movepicker.h"
 
-namespace Engine {
+namespace search {
 
 void partial_insertion_sort(MoveList<> &ml, int idx) {
     assert(idx >= 0);
@@ -170,7 +170,7 @@ void MovePicker::gen_score_quiets() {
 
         int score = 2 * (history.get_hh(board.get_stm(), move) + history.get_ph(board, move));
         for(int i : {1, 2, 4, 6})
-            score += (int) (*(stack - i)->conth)[pc][move.to()];
+            score += static_cast<int>((*(stack - i)->conth)[pc][move.to()]);
 
         if(pt != PAWN && pt != KING) {
             U64 danger = threats[PAWN];
@@ -190,4 +190,4 @@ void MovePicker::gen_score_quiets() {
     }
 }
 
-} // namespace Engine
+} // namespace search

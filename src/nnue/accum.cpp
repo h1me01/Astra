@@ -1,7 +1,7 @@
 #include "accum.h"
 #include "../chess/board.h"
 
-namespace NNUE {
+namespace nnue {
 
 // Accum
 
@@ -61,4 +61,4 @@ void AccumTable::refresh(Color view, Board &board, Accum &accum) {
     accum.set_initialized(view);
 }
 
-} // namespace NNUE
+} // namespace nnue

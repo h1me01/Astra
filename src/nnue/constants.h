@@ -1,6 +1,6 @@
 #pragma once
 
-namespace NNUE {
+namespace nnue {
 
 constexpr int INPUT_BUCKETS = 13;
 constexpr int FEATURE_SIZE = 768;
@@ -20,7 +20,7 @@ constexpr int EVAL_SCALE = 400;
 constexpr int ALIGNMENT = 64;
 constexpr int INT8_PER_INT32 = sizeof(int32_t) / sizeof(int8_t);
 
-constexpr float DEQUANT_MULT = (float) (1 << FT_SHIFT) / (float) (FT_QUANT * FT_QUANT * L1_QUANT);
+constexpr float DEQUANT_MULT = static_cast<float>(1 << FT_SHIFT) / static_cast<float>(FT_QUANT * FT_QUANT * L1_QUANT);
 
 constexpr int INPUT_BUCKET[64] = {
     0,  1,  2,  3,  3,  2,  1,  0,  //
@@ -33,4 +33,4 @@ constexpr int INPUT_BUCKET[64] = {
     12, 12, 12, 12, 12, 12, 12, 12, //
 };
 
-} // namespace NNUE
+} // namespace nnue

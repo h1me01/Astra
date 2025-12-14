@@ -3,10 +3,10 @@
 #include <fstream>
 #include <unordered_map>
 
+#include "../search/search.h"
 #include "uci_options.h"
-#include "../engine/search.h"
 
-namespace UCI {
+namespace uci {
 
 class UCI {
   public:
@@ -26,4 +26,4 @@ class UCI {
     Move parse_move(const std::string &str_move) const;
 };
 
-} // namespace UCI
+} // namespace uci

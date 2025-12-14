@@ -6,7 +6,7 @@
 
 #include "types.h"
 
-namespace Chess {
+namespace chess {
 
 constexpr bool valid_color(Color c) {
     return c == WHITE || c == BLACK;
@@ -208,4 +208,4 @@ inline std::ostream &operator<<(std::ostream &os, const Move &move) {
     return os;
 }
 
-} // namespace Chess
+} // namespace chess

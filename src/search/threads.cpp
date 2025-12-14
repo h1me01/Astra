@@ -2,7 +2,7 @@
 
 #include "threads.h"
 
-namespace Engine {
+namespace search {
 
 void ThreadPool::set_count(int count) {
     wait();
@@ -20,7 +20,7 @@ void ThreadPool::set_count(int count) {
     }
 
     // give threads a moment to start up
-    while(started_threads < (size_t) count) {
+    while(started_threads < static_cast<size_t>(count)) {
     }
 }
 
@@ -113,4 +113,4 @@ Search *ThreadPool::pick_best() {
 
 ThreadPool threads;
 
-} // namespace Engine
+} // namespace search

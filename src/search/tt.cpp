@@ -11,7 +11,7 @@
 #include "threads.h"
 #include "tt.h"
 
-namespace Engine {
+namespace search {
 
 void *alloc_align(size_t size) {
 #if defined(__linux__)
@@ -64,7 +64,7 @@ void TTEntry::store( //
         this->depth = depth;
         this->score = score;
         this->eval = eval;
-        agepvbound = (uint8_t) (bound + (pv << 2)) | tt.get_age();
+        agepvbound = static_cast<uint8_t>(bound + (pv << 2)) | tt.get_age();
     }
 }
 
@@ -85,7 +85,7 @@ void TTable::init(U64 size_mb) {
     U64 size_bytes = size_mb * 1024 * 1024;
     bucket_size = size_bytes / sizeof(TTBucket);
 
-    buckets = (TTBucket *) alloc_align(size_bytes);
+    buckets = static_cast<TTBucket *>(alloc_align(size_bytes));
 
     clear();
 }
@@ -116,12 +116,12 @@ void TTable::clear() {
 }
 
 TTEntry *TTable::lookup(U64 hash, bool *hit) const {
-    uint16_t hash16 = (uint16_t) hash;
+    uint16_t hash16 = static_cast<uint16_t>(hash);
     TTEntry *entries = buckets[index(hash)].entries;
 
     for(int i = 0; i < BUCKET_SIZE; i++) {
         if(entries[i].get_hash() == hash16 || !entries[i].get_hash()) {
-            uint8_t agepvbound = (uint8_t) (tt.get_age() | (entries[i].get_agepvbound() & (AGE_STEP - 1)));
+            uint8_t agepvbound = static_cast<uint8_t>(tt.get_age() | (entries[i].get_agepvbound() & (AGE_STEP - 1)));
             entries[i].set_agepvbound(agepvbound);
 
             *hit = entries[i].get_hash() == hash16;
@@ -159,4 +159,4 @@ int TTable::hashfull() const {
 
 TTable tt(16);
 
-} // namespace Engine
+} // namespace search

@@ -2,9 +2,9 @@
 
 #include "../chess/misc.h"
 
-using namespace Chess;
+using namespace chess;
 
-namespace Engine {
+namespace search {
 
 using ContH = int16_t[NUM_PIECES + 1][NUM_SQUARES + 1];
 
@@ -52,4 +52,4 @@ struct Stack {
     ContH *conth;
 };
 
-} // namespace Engine
+} // namespace search

@@ -4,9 +4,9 @@
 #include "search.h"
 #include "stack.h"
 
-using namespace Chess;
+using namespace chess;
 
-namespace Engine {
+namespace search {
 
 enum SearchType { N_SEARCH, Q_SEARCH, PC_SEARCH };
 
@@ -63,4 +63,4 @@ class MovePicker {
     void gen_score_quiets();
 };
 
-} // namespace Engine
+} // namespace search

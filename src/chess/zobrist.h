@@ -2,7 +2,7 @@
 
 #include "types.h"
 
-namespace Chess {
+namespace chess {
 
 class Board;
 
@@ -24,7 +24,7 @@ class PRNG {
     }
 };
 
-namespace Zobrist {
+namespace zobrist {
 
 void init();
 
@@ -33,6 +33,6 @@ U64 get_ep(Square sq);
 U64 get_castle(int idx);
 U64 get_psq(Piece pc, Square sq);
 
-} // namespace Zobrist
+} // namespace zobrist
 
-} // namespace Chess
+} // namespace chess

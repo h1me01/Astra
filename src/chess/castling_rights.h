@@ -3,7 +3,7 @@
 #include "bitboard.h"
 #include "misc.h"
 
-namespace Chess {
+namespace chess {
 
 class CastlingRights {
   public:
@@ -52,4 +52,4 @@ class CastlingRights {
     U64 mask;
 };
 
-} // namespace Chess
+} // namespace chess

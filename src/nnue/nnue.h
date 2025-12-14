@@ -9,13 +9,13 @@
 
 #include "simd.h"
 
-using namespace Chess;
+using namespace chess;
 
-namespace Chess {
+namespace chess {
 class Board;
-} // namespace Chess
+} // namespace chess
 
-namespace NNUE {
+namespace nnue {
 
 class Accum;
 
@@ -112,4 +112,4 @@ class NNUE {
 
 extern NNUE nnue;
 
-} // namespace NNUE
+} // namespace nnue

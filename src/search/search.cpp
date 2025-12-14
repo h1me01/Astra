@@ -10,13 +10,13 @@
 #include "threads.h"
 #include "tune_params.h"
 
-namespace Engine {
+namespace search {
 
 int REDUCTIONS[MAX_PLY][MAX_MOVES];
 
 void init_reductions() {
-    const double base = double(lmr_base) / 100.0;
-    const double div_factor = double(lmr_div) / 100.0;
+    const double base = static_cast<double>(lmr_base) / 100.0;
+    const double div_factor = static_cast<double>(lmr_div) / 100.0;
 
     for(int depth = 1; depth < MAX_PLY; depth++)
         for(int moves = 1; moves < MAX_MOVES; moves++)
@@ -97,14 +97,14 @@ void Search::start() {
 
         stability = (best_move == prev_best_move) ? std::min(stability + 1, int(tm_stability_max)) : 0;
 
-        if(is_main_thread                              //
-           && root_depth >= 5                          //
-           && tm.should_stop(                          //
-                  limits,                              //
-                  stability,                           //
-                  scores[root_depth - 1] - score,      //
-                  scores[root_depth - 3] - score,      //
-                  root_moves[0].nodes / double(nodes)) //
+        if(is_main_thread                                           //
+           && root_depth >= 5                                       //
+           && tm.should_stop(                                       //
+                  limits,                                           //
+                  stability,                                        //
+                  scores[root_depth - 1] - score,                   //
+                  scores[root_depth - 3] - score,                   //
+                  root_moves[0].nodes / static_cast<double>(nodes)) //
         ) {
             break;
         }
@@ -839,10 +839,10 @@ void Search::make_move(const Move &move, Stack *stack) {
 
     accum_list.increment();
 
-    NNUE::Accum &accum = accum_list.back();
+    nnue::Accum &accum = accum_list.back();
 
     Piece pc = board.piece_at(move.from());
-    if(NNUE::needs_refresh(pc, move.from(), move.to()))
+    if(nnue::needs_refresh(pc, move.from(), move.to()))
         accum.set_refresh(piece_color(pc));
 
     auto dirty_pieces = board.make_move(move);
@@ -860,7 +860,7 @@ Score Search::evaluate() {
     assert(accum_list[0].is_initialized(WHITE));
     assert(accum_list[0].is_initialized(BLACK));
 
-    NNUE::Accum &acc = accum_list.back();
+    nnue::Accum &acc = accum_list.back();
 
     for(Color view : {WHITE, BLACK}) {
         if(acc.is_initialized(view))
@@ -884,7 +884,7 @@ Score Search::evaluate() {
         }
     }
 
-    int eval = NNUE::nnue.forward(board, accum_list.back());
+    int eval = nnue::nnue.forward(board, accum_list.back());
 
     int material = 122 * board.count<PAWN>()     //
                    + 401 * board.count<KNIGHT>() //
@@ -1009,4 +1009,4 @@ void Search::print_uci_info() const {
     std::cout << std::endl;
 }
 
-} // namespace Engine
+} // namespace search

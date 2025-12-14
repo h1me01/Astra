@@ -3,13 +3,13 @@
 #include <chrono>
 #include <cstring> // strncmp
 
-#include "../engine/threads.h"
-#include "../engine/tune_params.h"
+#include "../search/threads.h"
+#include "../search/tune_params.h"
 #include "../third_party/fathom/src/tbprobe.h"
 
 #include "uci.h"
 
-namespace UCI {
+namespace uci {
 
 const std::string version = "6.2";
 
@@ -112,17 +112,17 @@ void UCI::loop(int argc, char **argv) {
         else if(token == "bench")
             bench();
         else if(token == "tune")
-            Engine::params_to_spsa();
+            search::params_to_spsa();
         else if(token == "setoption")
             options.set(is.str());
         else if(token == "d")
             board.print();
         else if(token == "stop") {
-            Engine::threads.stop();
-            Engine::threads.wait();
+            search::threads.stop();
+            search::threads.wait();
         } else if(token == "quit") {
-            Engine::threads.stop();
-            Engine::threads.wait();
+            search::threads.stop();
+            search::threads.wait();
             tb_free();
             break;
         } else
@@ -157,14 +157,14 @@ void UCI::update_position(std::istringstream &is) {
 }
 
 void UCI::new_game() {
-    Engine::tt.clear();
-    Engine::threads.stop();
-    Engine::threads.wait();
-    Engine::threads.new_game();
+    search::tt.clear();
+    search::threads.stop();
+    search::threads.wait();
+    search::threads.new_game();
 }
 
 void UCI::go(std::istringstream &is) {
-    Engine::Limits limits;
+    search::Limits limits;
 
     int64_t move_time = 0;
     int64_t w_time = 0, b_time = 0;
@@ -213,7 +213,7 @@ void UCI::go(std::istringstream &is) {
         limits.time.optimum = move_time;
         limits.time.maximum = move_time;
     } else if(time_left != 0) {
-        limits.time = Engine::TimeMan::get_optimum( //
+        limits.time = search::TimeMan::get_optimum( //
             time_left,                              //
             inc,                                    //
             std::max(moves_to_go, 0),               //
@@ -224,7 +224,7 @@ void UCI::go(std::istringstream &is) {
     limits.multipv = std::stoi(options.get("MultiPV"));
 
     // start search
-    Engine::threads.launch_workers(board, limits);
+    search::threads.launch_workers(board, limits);
 }
 
 void UCI::bench() {
@@ -241,12 +241,12 @@ void UCI::bench() {
         iss.str("depth 13");
         go(iss);
 
-        Engine::threads.wait();
+        search::threads.wait();
 
-        nodes += Engine::threads.get_total_nodes();
+        nodes += search::threads.get_total_nodes();
     }
 
-    Engine::threads.stop();
+    search::threads.stop();
 
     auto end = std::chrono::high_resolution_clock::now();
     auto total_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
@@ -288,4 +288,4 @@ Move UCI::parse_move(const std::string &str_move) const {
     return Move(from, to, mt);
 }
 
-} // namespace UCI
+} // namespace uci

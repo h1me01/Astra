@@ -5,9 +5,9 @@
 
 #include "stack.h"
 
-using namespace Chess;
+using namespace chess;
 
-namespace Engine {
+namespace search {
 
 constexpr size_t CORR_SIZE = 16384;
 constexpr size_t PAWN_HIST_SIZE = 8192;
@@ -101,11 +101,11 @@ inline int History::get_qh(const Board &board, const Move &move, const Stack *st
 
     assert(valid_piece(pc));
 
-    return get_hh(board.get_stm(), move) +       //
-           get_ph(board, move) +                 //
-           (int) (*(stack - 1)->conth)[pc][to] + //
-           (int) (*(stack - 2)->conth)[pc][to] + //
-           (int) (*(stack - 4)->conth)[pc][to];
+    return get_hh(board.get_stm(), move) +                   //
+           get_ph(board, move) +                             //
+           static_cast<int>((*(stack - 1)->conth)[pc][to]) + //
+           static_cast<int>((*(stack - 2)->conth)[pc][to]) + //
+           static_cast<int>((*(stack - 4)->conth)[pc][to]);
 }
 
 inline int History::get_ph(const Board &board, const Move &move) const {
@@ -132,4 +132,4 @@ inline int History::get_cont_corr(const Stack *stack) const {
         return 0;
 }
 
-} // namespace Engine
+} // namespace search

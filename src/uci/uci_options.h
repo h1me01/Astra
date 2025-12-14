@@ -4,7 +4,7 @@
 #include <string>
 #include <unordered_map>
 
-namespace UCI {
+namespace uci {
 
 enum class OptionType { NONE, SPIN, STRING };
 
@@ -73,4 +73,4 @@ class Options {
     void apply(const std::string &name);
 };
 
-} // namespace UCI
+} // namespace uci

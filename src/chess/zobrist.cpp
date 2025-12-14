@@ -2,7 +2,7 @@
 #include "board.h"
 #include "misc.h"
 
-namespace Chess::Zobrist {
+namespace chess::zobrist {
 
 U64 side;
 U64 ep[8];
@@ -47,4 +47,4 @@ U64 get_ep(Square sq) {
     return ep[sq_file(sq)];
 }
 
-} // namespace Chess::Zobrist
+} // namespace chess::zobrist
