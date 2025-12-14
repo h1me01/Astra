@@ -1,7 +1,7 @@
 ROOT := $(realpath $(dir $(abspath $(lastword $(MAKEFILE_LIST)))))
 
 # Allow custom EVALFILE path via command line
-EVALFILE ?= $(ROOT)/weights.nnue
+EVALFILE ?= $(ROOT)/weights-1.nnue
 
 # Compiler and flags
 CXX := g++

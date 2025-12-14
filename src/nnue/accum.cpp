@@ -25,7 +25,7 @@ void Accum::update(Accum &prev, Color view) {
 
 void AccumTable::reset() {
     for(Color c : {WHITE, BLACK})
-        for(int i = 0; i < 2 * BUCKET_SIZE; i++)
+        for(int i = 0; i < 2 * INPUT_BUCKETS; i++)
             entries[c][i].reset();
 }
 
@@ -33,8 +33,8 @@ void AccumTable::refresh(Color view, Board &board, Accum &accum) {
     assert(valid_color(view));
 
     const Square ksq = board.get_king_sq(view);
-    const int ksq_idx = KING_BUCKET[rel_sq(view, ksq)];
-    AccumEntry &entry = entries[view][(sq_file(ksq) > 3) * BUCKET_SIZE + ksq_idx];
+    const int ksq_idx = INPUT_BUCKET[rel_sq(view, ksq)];
+    AccumEntry &entry = entries[view][(sq_file(ksq) > 3) * INPUT_BUCKETS + ksq_idx];
 
     Accum &entry_acc = entry.get_accum();
 

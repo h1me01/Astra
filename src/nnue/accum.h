@@ -137,7 +137,7 @@ class AccumTable {
     void refresh(Color view, Board &board, Accum &accum);
 
   private:
-    AccumEntry entries[NUM_COLORS][2 * BUCKET_SIZE];
+    AccumEntry entries[NUM_COLORS][2 * INPUT_BUCKETS];
 };
 
 class AccumList {
