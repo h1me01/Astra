@@ -24,9 +24,8 @@ ivec_t crelu(ivec_t val) {
     return simd::clamp_epi16(val, simd::ZERO_IVEC, simd::FT_QUANT_IVEC);
 }
 
-fvec_t screlu(fvec_t val) {
-    fvec_t clamped = simd::clamp_ps(val, simd::ZERO_FVEC, simd::ONE_FVEC);
-    return mul_ps(clamped, clamped);
+fvec_t crelu(fvec_t val) {
+    return simd::clamp_ps(val, simd::ZERO_FVEC, simd::ONE_FVEC);
 }
 
 #else
@@ -35,9 +34,8 @@ int32_t crelu(int16_t x) {
     return std::clamp(int32_t(x), 0, FT_QUANT);
 }
 
-float screlu(float x) {
-    x = std::clamp(x, 0.0f, 1.0f);
-    return x * x;
+float crelu(float x) {
+    return std::clamp(x, 0.0f, 1.0f);
 }
 
 #endif
@@ -226,14 +224,14 @@ LayerOutput<float, L1_SIZE> NNUE::forward_l1(int bucket, const LayerOutput<uint8
             fvec_at(&l1_biases[bucket][0], i)                               //
         );
 
-        fvec_at(output, i) = screlu(l1_out);
+        fvec_at(output, i) = crelu(l1_out);
     }
 
 #else
     for(int i = 0; i < L1_SIZE; i++) {
         for(int j = 0; j < FT_SIZE; j++)
             output[i] += input[j] * l1_weights[bucket][j * L1_SIZE + i];
-        output[i] = screlu(output[i] * DEQUANT_MULT + l1_biases[bucket][i]);
+        output[i] = crelu(output[i] * DEQUANT_MULT + l1_biases[bucket][i]);
     }
 #endif
 
@@ -255,14 +253,14 @@ LayerOutput<float, L2_SIZE> NNUE::forward_l2(int bucket, const LayerOutput<float
     }
 
     for(int i = 0; i < L2_SIZE; i += simd::FLOAT_VEC_SIZE)
-        fvec_at(output, i) = screlu(fvec_at(output, i));
+        fvec_at(output, i) = crelu(fvec_at(output, i));
 #else
     for(int i = 0; i < L2_SIZE; i++)
         for(int j = 0; j < L1_SIZE; j++)
             output[i] += input[j] * l2_weights[bucket][j * L2_SIZE + i];
 
     for(int i = 0; i < L2_SIZE; i++)
-        output[i] = screlu(output[i] + l2_biases[bucket][i]);
+        output[i] = crelu(output[i] + l2_biases[bucket][i]);
 #endif
 
     return output;
