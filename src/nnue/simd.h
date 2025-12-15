@@ -47,6 +47,13 @@
 #define cvtepi32_ps   SIMD_OP(cvtepi32_ps)
 #define fmadd_ps      SIMD_OP(fmadd_ps)
 
+
+#if defined(__AVX512F__)
+#define store_si _mm512_store_si512
+#else
+#define store_si _mm256_store_si256
+#endif
+
 #endif
 
 // clang-format on

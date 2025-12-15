@@ -132,7 +132,7 @@ LayerOutput<uint8_t, FT_SIZE> NNUE::prep_l1_input(const Color stm, const Accum &
             ivec_t product1 = mulhi_epi16(shifted1, l_clipped1);
             ivec_t product2 = mulhi_epi16(shifted2, l_clipped2);
 
-            ivec_at(output, i + out_offset) = packus_epi16(product1, product2);
+            store_si(ptr_cast<ivec_t>(&output[i + out_offset]), packus_epi16(product1, product2));
         }
 #else
         for(int i = 0; i < FT_SIZE / 2; i++) {
