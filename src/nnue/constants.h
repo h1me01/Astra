@@ -13,12 +13,12 @@ constexpr int OUTPUT_BUCKETS = 8;
 
 constexpr int FT_SHIFT = 9;
 constexpr int FT_QUANT = 255;
-constexpr int L1_QUANT = 128;
-
-constexpr int EVAL_SCALE = 400;
+constexpr int L1_QUANT = 64;
 
 constexpr int ALIGNMENT = 64;
 constexpr int INT8_PER_INT32 = sizeof(int32_t) / sizeof(int8_t);
+
+constexpr int EVAL_SCALE = 400;
 
 constexpr float DEQUANT_MULT = static_cast<float>(1 << FT_SHIFT) / static_cast<float>(FT_QUANT * FT_QUANT * L1_QUANT);
 
