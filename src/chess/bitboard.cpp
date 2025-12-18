@@ -1,7 +1,7 @@
 #include <cassert>
 #include <cstring> // memcpy
 
-#ifdef __BMI2__
+#if defined(__BMI2__)
 #include <immintrin.h>
 #endif
 
@@ -184,7 +184,7 @@ void init_rook_attacks() {
     for(Square sq = a1; sq <= h8; ++sq) {
         U64 blockers = 0;
         do {
-#ifdef __BMI2__
+#if defined(__BMI2__)
             const int idx = _pext_u64(blockers, ROOK_MASKS[sq]);
 #else
             const U64 idx = (blockers * ROOK_MAGICS[sq]) >> ROOK_SHIFTS[sq];
@@ -199,7 +199,7 @@ void init_rook_attacks() {
 U64 get_rook_attacks(Square sq, const U64 occ = 0) {
     assert(valid_sq(sq));
 
-#ifdef __BMI2__
+#if defined(__BMI2__)
     const int idx = _pext_u64(occ, ROOK_MASKS[sq]);
 #else
     const U64 idx = (occ & ROOK_MASKS[sq]) * ROOK_MAGICS[sq] >> ROOK_SHIFTS[sq];
@@ -212,7 +212,7 @@ void init_bishop_attacks() {
     for(Square sq = a1; sq <= h8; ++sq) {
         U64 blockers = 0;
         do {
-#ifdef __BMI2__
+#if defined(__BMI2__)
             const int idx = _pext_u64(blockers, BISHOP_MASKS[sq]);
 #else
             const U64 idx = (blockers * BISHOP_MAGICS[sq]) >> BISHOP_SHIFTS[sq];
@@ -227,7 +227,7 @@ void init_bishop_attacks() {
 U64 get_bishop_attacks(Square sq, const U64 occ = 0) {
     assert(valid_sq(sq));
 
-#ifdef __BMI2__
+#if defined(__BMI2__)
     const int idx = _pext_u64(occ, BISHOP_MASKS[sq]);
 #else
     const U64 idx = (occ & BISHOP_MASKS[sq]) * BISHOP_MAGICS[sq] >> BISHOP_SHIFTS[sq];

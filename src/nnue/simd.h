@@ -64,14 +64,6 @@ const fvec_t ZERO_FVEC = _mm256_setzero_ps();
 
 // utility functions
 
-inline ivec_t accum_add(ivec_t a, ivec_t b) {
-    return add_epi16(a, b);
-}
-
-inline ivec_t accum_sub(ivec_t a, ivec_t b) {
-    return sub_epi16(a, b);
-}
-
 inline ivec_t clamp_epi16(ivec_t val, ivec_t min_val, ivec_t max_val) {
     return min_epi16(max_epi16(val, min_val), max_val);
 }

@@ -239,7 +239,7 @@ void NNUE::put(Accum &acc, const Accum &prev, Piece pc, Square psq, Square ksq, 
     const auto prev_data = acc.is_initialized(view) ? acc_data : ptr_cast<const ivec_t>(prev.get_data(view));
 
     for(int i = 0; i < FT_SIZE / simd::INT16_VEC_SIZE; i++)
-        acc_data[i] = simd::accum_add(prev_data[i], weights[i]);
+        acc_data[i] = add_epi16(prev_data[i], weights[i]);
 
     acc.set_initialized(view);
 }
@@ -252,7 +252,7 @@ void NNUE::remove(Accum &acc, const Accum &prev, Piece pc, Square psq, Square ks
     const auto prev_data = acc.is_initialized(view) ? acc_data : ptr_cast<const ivec_t>(prev.get_data(view));
 
     for(int i = 0; i < FT_SIZE / simd::INT16_VEC_SIZE; i++)
-        acc_data[i] = simd::accum_sub(prev_data[i], weights[i]);
+        acc_data[i] = sub_epi16(prev_data[i], weights[i]);
 
     acc.set_initialized(view);
 }
@@ -267,7 +267,7 @@ void NNUE::move(Accum &acc, const Accum &prev, Piece pc, Square from, Square to,
     const auto prev_data = acc.is_initialized(view) ? acc_data : ptr_cast<const ivec_t>(prev.get_data(view));
 
     for(int i = 0; i < FT_SIZE / simd::INT16_VEC_SIZE; i++)
-        acc_data[i] = simd::accum_add(prev_data[i], simd::accum_sub(weights_to[i], weights_from[i]));
+        acc_data[i] = add_epi16(prev_data[i], sub_epi16(weights_to[i], weights_from[i]));
 
     acc.set_initialized(view);
 }

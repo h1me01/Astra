@@ -20,8 +20,6 @@ constexpr int INT8_PER_INT32 = sizeof(int32_t) / sizeof(int8_t);
 
 constexpr int EVAL_SCALE = 400;
 
-constexpr float DEQUANT_MULT = static_cast<float>(1 << FT_SHIFT) / static_cast<float>(FT_QUANT * FT_QUANT * L1_QUANT);
-
 constexpr int INPUT_BUCKET[64] = {
     0,  1,  2,  3,  3,  2,  1,  0,  //
     4,  5,  6,  7,  7,  6,  5,  4,  //
@@ -32,5 +30,7 @@ constexpr int INPUT_BUCKET[64] = {
     12, 12, 12, 12, 12, 12, 12, 12, //
     12, 12, 12, 12, 12, 12, 12, 12, //
 };
+
+constexpr float DEQUANT_MULT = static_cast<float>(1 << FT_SHIFT) / static_cast<float>(FT_QUANT * FT_QUANT * L1_QUANT);
 
 } // namespace nnue
