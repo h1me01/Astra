@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <cmath>
 #include <cstring> // std::memcpy
 #include <fstream>
 #include <iostream>
@@ -18,29 +19,13 @@ namespace nnue {
 
 // activation functions
 
-#ifdef USE_SIMD
-
 ivec_t crelu(ivec_t val) {
     return simd::clamp_epi16(val, simd::ZERO_IVEC, simd::FT_QUANT_IVEC);
 }
 
-fvec_t screlu(fvec_t val) {
-    fvec_t clamped = simd::clamp_ps(val, simd::ZERO_FVEC, simd::ONE_FVEC);
-    return mul_ps(clamped, clamped);
+fvec_t crelu(fvec_t val) {
+    return simd::clamp_ps(val, simd::ZERO_FVEC, simd::ONE_FVEC);
 }
-
-#else
-
-int32_t crelu(int16_t x) {
-    return std::clamp(int32_t(x), 0, FT_QUANT);
-}
-
-float screlu(float x) {
-    x = std::clamp(x, 0.0f, 1.0f);
-    return x * x;
-}
-
-#endif
 
 // NNUE
 
@@ -69,15 +54,11 @@ void NNUE::init() {
             nnz_lookup[i][k++] = pop_lsb(j);
     }
 
-#ifdef USE_SIMD
-    permute_simd_data(ptr_cast<__m128i>(ft_biases), FT_SIZE);
-    permute_simd_data(ptr_cast<__m128i>(ft_weights), INPUT_SIZE * FT_SIZE);
-#endif
+    simd::permute_simd_data(ptr_cast<__m128i>(ft_biases), FT_SIZE);
+    simd::permute_simd_data(ptr_cast<__m128i>(ft_weights), INPUT_SIZE * FT_SIZE);
 
     for(int b = 0; b < OUTPUT_BUCKETS; b++) {
-#ifdef USE_SIMD
         int8_t temp_l1_weights[FT_SIZE * L1_SIZE];
-
         for(int i = 0; i < FT_SIZE / INT8_PER_INT32; i++) {
             for(int j = 0; j < L1_SIZE; j++) {
                 for(int k = 0; k < INT8_PER_INT32; k++) {
@@ -87,11 +68,7 @@ void NNUE::init() {
                 }
             }
         }
-
         memcpy(l1_weights[b], temp_l1_weights, sizeof(temp_l1_weights));
-#else
-        transpose<int8_t>(l1_weights[b], L1_SIZE, FT_SIZE);
-#endif
 
         transpose<float>(l2_weights[b], L2_SIZE, L1_SIZE);
     }
@@ -121,7 +98,6 @@ LayerOutput<uint8_t, FT_SIZE> NNUE::prep_l1_input(const Color stm, const Accum &
         const auto acc_data = acc.get_data(c);
         const int out_offset = (c == stm) ? 0 : FT_SIZE / 2;
 
-#ifdef USE_SIMD
         for(int i = 0; i < FT_SIZE / 2; i += 2 * simd::INT16_VEC_SIZE) {
             ivec_t r_clipped1 = crelu(ivec_at(acc_data, i));
             ivec_t r_clipped2 = crelu(ivec_at(acc_data, i + simd::INT16_VEC_SIZE));
@@ -136,13 +112,6 @@ LayerOutput<uint8_t, FT_SIZE> NNUE::prep_l1_input(const Color stm, const Accum &
 
             ivec_at(output, i + out_offset) = packus_epi16(product1, product2);
         }
-#else
-        for(int i = 0; i < FT_SIZE / 2; i++) {
-            int32_t crelu1 = crelu(acc_data[i]);
-            int32_t crelu2 = crelu(acc_data[i + FT_SIZE / 2]);
-            output[i + out_offset] = (crelu1 * crelu2) >> FT_SHIFT;
-        }
-#endif
     }
 
     return output;
@@ -152,7 +121,6 @@ NNUE::NNZOutput NNUE::find_nnz([[maybe_unused]] const LayerOutput<uint8_t, FT_SI
     int count = 0;
     alignas(ALIGNMENT) LayerOutput<uint16_t, FT_SIZE / 4> indices;
 
-#ifdef USE_SIMD
     const __m128i inc = _mm_set1_epi16(8);
     __m128i base = _mm_setzero_si128();
 
@@ -168,7 +136,6 @@ NNUE::NNZOutput NNUE::find_nnz([[maybe_unused]] const LayerOutput<uint8_t, FT_SI
             base = _mm_add_epi16(base, inc);
         }
     }
-#endif
 
     return {count, indices};
 }
@@ -176,44 +143,42 @@ NNUE::NNZOutput NNUE::find_nnz([[maybe_unused]] const LayerOutput<uint8_t, FT_SI
 LayerOutput<float, L1_SIZE> NNUE::forward_l1(int bucket, const LayerOutput<uint8_t, FT_SIZE> &input) {
     LayerOutput<float, L1_SIZE> output;
 
-#ifdef USE_SIMD
-    LayerOutput<int32_t, L1_SIZE> linear;
-
-    auto linear_vec = ptr_cast<ivec_t>(linear);
+    const auto input_packs = ptr_cast<int32_t>(input);
     auto [nnz_count, nnz_indices] = find_nnz(input);
 
-    const auto input_packs = ptr_cast<int>(input);
+    alignas(ALIGNMENT) ivec_t linear[L1_SIZE / simd::INT32_VEC_SIZE];
+    std::fill_n(linear, L1_SIZE / simd::INT32_VEC_SIZE, simd::ZERO_IVEC);
 
     int i = 0;
     for(; i < nnz_count - 1; i += 2) {
         const int idx1 = nnz_indices[i];
         const int idx2 = nnz_indices[i + 1];
 
-        const ivec_t input1 = set1_epi32(input_packs[idx1]);
-        const ivec_t input2 = set1_epi32(input_packs[idx2]);
+        const auto input1 = set1_epi32(input_packs[idx1]);
+        const auto input2 = set1_epi32(input_packs[idx2]);
 
-        const auto weights1 = ptr_cast<const int8_t>(&l1_weights[bucket][idx1 * L1_SIZE * INT8_PER_INT32]);
-        const auto weights2 = ptr_cast<const int8_t>(&l1_weights[bucket][idx2 * L1_SIZE * INT8_PER_INT32]);
+        const auto weights1 = &l1_weights[bucket][idx1 * L1_SIZE * INT8_PER_INT32];
+        const auto weights2 = &l1_weights[bucket][idx2 * L1_SIZE * INT8_PER_INT32];
 
         for(int j = 0; j < L1_SIZE; j += simd::INT32_VEC_SIZE) {
             int o_offset = j / simd::INT32_VEC_SIZE;
-            linear_vec[o_offset] = simd::double_dpbusd_epi32(  //
-                linear_vec[o_offset], input1,                  //
-                ivec_at(weights1, j * INT8_PER_INT32), input2, //
-                ivec_at(weights2, j * INT8_PER_INT32)          //
+            linear[o_offset] = simd::double_dpbusd_epi32(      //
+                linear[o_offset],                              //
+                input1, ivec_at(weights1, j * INT8_PER_INT32), //
+                input2, ivec_at(weights2, j * INT8_PER_INT32)  //
             );
         }
     }
 
     for(; i < nnz_count; i++) {
         const int idx = nnz_indices[i];
-        const ivec_t input = set1_epi32(input_packs[idx]);
-        const auto weights = ptr_cast<const int8_t>(&l1_weights[bucket][idx * L1_SIZE * INT8_PER_INT32]);
+        const auto input = set1_epi32(input_packs[idx]);
+        const auto weights = &l1_weights[bucket][idx * L1_SIZE * INT8_PER_INT32];
 
         for(int j = 0; j < L1_SIZE; j += simd::INT32_VEC_SIZE) {
             int o_offset = j / simd::INT32_VEC_SIZE;
-            linear_vec[o_offset] = simd::dpbusd_epi32(      //
-                linear_vec[o_offset],                       //
+            linear[o_offset] = simd::dpbusd_epi32(          //
+                linear[o_offset],                           //
                 input, ivec_at(weights, j * INT8_PER_INT32) //
             );
         }
@@ -221,76 +186,49 @@ LayerOutput<float, L1_SIZE> NNUE::forward_l1(int bucket, const LayerOutput<uint8
 
     // activate and add bias to value
     for(int i = 0; i < L1_SIZE; i += simd::FLOAT_VEC_SIZE) {
-        fvec_t l1_out = add_ps(                                             //
-            mul_ps(cvtepi32_ps(ivec_at(linear, i)), simd::DEQUANT_MULT_PS), //
-            fvec_at(&l1_biases[bucket][0], i)                               //
-        );
-
-        fvec_at(output, i) = screlu(l1_out);
+        auto converted_linear = cvtepi32_ps(ivec_at(linear, i / simd::INT32_VEC_SIZE));
+        auto l1_out = fmadd_ps(converted_linear, simd::DEQUANT_MULT_PS, fvec_at(l1_biases[bucket], i));
+        fvec_at(output, i) = crelu(l1_out);
     }
-
-#else
-    for(int i = 0; i < L1_SIZE; i++) {
-        for(int j = 0; j < FT_SIZE; j++)
-            output[i] += input[j] * l1_weights[bucket][j * L1_SIZE + i];
-        output[i] = screlu(output[i] * DEQUANT_MULT + l1_biases[bucket][i]);
-    }
-#endif
 
     return output;
 }
 
 LayerOutput<float, L2_SIZE> NNUE::forward_l2(int bucket, const LayerOutput<float, L1_SIZE> &input) {
-    LayerOutput<float, L2_SIZE> output;
-
-#ifdef USE_SIMD
-    output.init(l2_biases[bucket]);
+    LayerOutput<float, L2_SIZE> output(l2_biases[bucket]);
 
     for(int i = 0; i < L1_SIZE; i++) {
-        const fvec_t input_val = set1_ps(input[i]);
+        const auto input_val = set1_ps(input[i]);
         const auto weights = ptr_cast<const float>(&l2_weights[bucket][i * L2_SIZE]);
 
         for(int j = 0; j < L2_SIZE; j += simd::FLOAT_VEC_SIZE)
-            fvec_at(output, j) = fmadd_ps(input_val, fvec_at(weights, j), fvec_at(output, j));
+            fvec_at(output, j) = fmadd_ps(fvec_at(weights, j), input_val, fvec_at(output, j));
     }
 
     for(int i = 0; i < L2_SIZE; i += simd::FLOAT_VEC_SIZE)
-        fvec_at(output, i) = screlu(fvec_at(output, i));
-#else
-    for(int i = 0; i < L2_SIZE; i++)
-        for(int j = 0; j < L1_SIZE; j++)
-            output[i] += input[j] * l2_weights[bucket][j * L2_SIZE + i];
-
-    for(int i = 0; i < L2_SIZE; i++)
-        output[i] = screlu(output[i] + l2_biases[bucket][i]);
-#endif
+        fvec_at(output, i) = crelu(fvec_at(output, i));
 
     return output;
 }
 
 float NNUE::forward_l3(int bucket, const LayerOutput<float, L2_SIZE> &input) {
-#ifdef USE_SIMD
     constexpr int VEC_SIZE = 16 / simd::FLOAT_VEC_SIZE;
 
     fvec_t output[VEC_SIZE];
-    for(int i = 0; i < VEC_SIZE; i++)
-        output[i] = simd::ZERO_FVEC;
+    std::fill_n(output, VEC_SIZE, simd::ZERO_FVEC);
 
     for(int i = 0; i < VEC_SIZE; i++) {
         for(int j = 0; j < L2_SIZE; j += VEC_SIZE * simd::FLOAT_VEC_SIZE) {
-            int offset = j + i * simd::FLOAT_VEC_SIZE;
-            output[i] = fmadd_ps(fvec_at(input, offset), fvec_at(&l3_weights[bucket][0], offset), output[i]);
+            int idx = j + i * simd::FLOAT_VEC_SIZE;
+            output[i] = fmadd_ps(                 //
+                fvec_at(l3_weights[bucket], idx), //
+                fvec_at(input, idx),              //
+                output[i]                         //
+            );
         }
     }
 
-    return (l3_biases[bucket] + simd::hor_sum_ps(output)) * EVAL_SCALE;
-#else
-    float result = 0;
-    for(int i = 0; i < L2_SIZE; i++)
-        result += input[i] * l3_weights[bucket][i];
-
-    return (result + l3_biases[bucket]) * static_cast<float>(EVAL_SCALE);
-#endif
+    return (simd::hor_sum_ps(output) + l3_biases[bucket]) * EVAL_SCALE;
 }
 
 void NNUE::put(Accum &acc, const Accum &prev, Piece pc, Square psq, Square ksq, Color view) const {

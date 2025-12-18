@@ -36,7 +36,7 @@ class LayerOutput {
         memset(data, 0, sizeof(T) * N);
     }
 
-    void init(T *init_data) {
+    LayerOutput(T *init_data) {
         memcpy(data, init_data, sizeof(T) * N);
     }
 

@@ -8,21 +8,14 @@
 // clang-format off
 
 #if defined(__AVX512F__)
-    #define USE_SIMD
     #define SIMD_OP(x) _mm512_##x
     using ivec_t = __m512i;
     using fvec_t = __m512;
 #elif defined(__AVX2__) || defined(__AVX__)
-    #define USE_SIMD
     #define SIMD_OP(x) _mm256_##x
     using ivec_t = __m256i;
     using fvec_t = __m256;
-#else
-    using ivec_t = int16_t;
-    using fvec_t = float;
 #endif
-
-#ifdef USE_SIMD
 
 // integer operations
 #define madd_epi16    SIMD_OP(madd_epi16)
@@ -47,13 +40,9 @@
 #define cvtepi32_ps   SIMD_OP(cvtepi32_ps)
 #define fmadd_ps      SIMD_OP(fmadd_ps)
 
-#endif
-
 // clang-format on
 
 namespace simd {
-
-#ifdef USE_SIMD
 
 // constants
 
@@ -118,36 +107,42 @@ inline ivec_t dpbusd_epi32(ivec_t sum, ivec_t a, ivec_t b) {
     return _mm512_dpbusd_epi32(sum, a, b);
 }
 
-inline ivec_t double_dpbusd_epi32(ivec_t sum, ivec_t a1, ivec_t a2, ivec_t a3, ivec_t a4) {
-    return _mm512_dpbusd_epi32(_mm512_dpbusd_epi32(sum, a1, a2), a3, a4);
+inline ivec_t double_dpbusd_epi32(ivec_t sum, ivec_t a, ivec_t b, ivec_t c, ivec_t d) {
+    return _mm512_dpbusd_epi32(_mm512_dpbusd_epi32(sum, a, b), c, d);
 }
 #else
 inline ivec_t dpbusd_epi32(ivec_t sum, ivec_t a, ivec_t b) {
-    ivec_t product = maddubs_epi16(a, b);
-    ivec_t sum32 = madd_epi16(product, set1_epi16(1));
+    auto product = maddubs_epi16(a, b);
+    auto sum32 = madd_epi16(product, set1_epi16(1));
     return add_epi32(sum, sum32);
 }
 
-inline ivec_t double_dpbusd_epi32(ivec_t sum, ivec_t a1, ivec_t a2, ivec_t a3, ivec_t a4) {
-    ivec_t mul1 = maddubs_epi16(a1, a2);
-    ivec_t mul2 = maddubs_epi16(a3, a4);
-    ivec_t combined = add_epi16(mul1, mul2);
-    ivec_t sum32 = madd_epi16(combined, set1_epi16(1));
+inline ivec_t double_dpbusd_epi32(ivec_t sum, ivec_t a, ivec_t b, ivec_t c, ivec_t d) {
+    auto mul1 = maddubs_epi16(a, b);
+    auto mul2 = maddubs_epi16(c, d);
+    auto sum32 = madd_epi16(add_epi16(mul1, mul2), set1_epi16(1));
     return add_epi32(sum, sum32);
 }
 #endif
 
-#else // no simd
+inline void permute_simd_data(__m128i *vec, int count) {
+    count /= (sizeof(__m128i) / sizeof(int16_t));
 
-constexpr int INT16_VEC_SIZE = 1; // needed so that there are no errors
+#if (defined(__AVX512F__) && defined(__AVX512BW__))
+    const int PACKUS_BLOCKS = 8;
+    const int PERMUTATION[PACKUS_BLOCKS] = {0, 2, 4, 6, 1, 3, 5, 7};
+#else
+    const int PACKUS_BLOCKS = 4;
+    const int PERMUTATION[PACKUS_BLOCKS] = {0, 2, 1, 3};
+#endif
 
-inline ivec_t accum_add(ivec_t a, ivec_t b) {
-    return a + b;
+    __m128i regs[PACKUS_BLOCKS];
+    for(int i = 0; i < count; i += PACKUS_BLOCKS) {
+        for(int j = 0; j < PACKUS_BLOCKS; j++)
+            regs[j] = vec[i + j];
+        for(int j = 0; j < PACKUS_BLOCKS; j++)
+            vec[i + j] = regs[PERMUTATION[j]];
+    }
 }
-inline ivec_t accum_sub(ivec_t a, ivec_t b) {
-    return a - b;
-}
-
-#endif // USE_SIMD
 
 } // namespace simd
