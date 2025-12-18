@@ -7,9 +7,9 @@ misc/
 python/
 openbench/
 
-src/*.exe
-src/*.nnue
-src/astra
+*.exe
+*.nnue
+astra
 src/build.mk
 
 CMakeLists.txt
