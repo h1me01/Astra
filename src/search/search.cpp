@@ -545,7 +545,7 @@ movesloop:
         Score score = VALUE_NONE;
 
         // late move reductions
-        if(depth >= 2 && made_moves >= 3 && !(tt_pv && move.is_noisy())) {
+        if(depth >= 2 && made_moves > 1) {
             int r = reduction;
 
             r += !improving;
@@ -558,11 +558,9 @@ movesloop:
 
             r -= board.in_check();
 
-            r -= (tt_depth >= depth);
-
             r -= history_score / (move.is_quiet() ? quiet_hist_div : noisy_hist_div);
 
-            const int r_depth = std::clamp(new_depth - r, 1, new_depth + 1);
+            const int r_depth = std::clamp(new_depth - r, 1, new_depth + 1) + pv_node;
 
             score = -negamax<NodeType::NON_PV>(r_depth, -alpha - 1, -alpha, stack + 1, true);
 
