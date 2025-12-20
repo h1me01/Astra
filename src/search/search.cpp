@@ -194,7 +194,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
         return 0;
 
     if(depth <= 0)
-        return quiescence<nt>(0, alpha, beta, stack);
+        return quiescence<nt>(alpha, beta, stack);
 
     depth = std::min(depth, MAX_PLY - 1);
 
@@ -357,7 +357,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
 
     // razoring
     if(!pv_node && eval < alpha - rzr_base - rzr_mult * depth * depth)
-        return quiescence<NodeType::NON_PV>(0, alpha, beta, stack);
+        return quiescence<NodeType::NON_PV>(alpha, beta, stack);
 
     // reverse futility pruning
     if(!pv_node                                                                    //
@@ -434,7 +434,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
                 continue;
 
             make_move(move, stack);
-            Score score = -quiescence<NodeType::NON_PV>(0, -probcut_beta, -probcut_beta + 1, stack + 1);
+            Score score = -quiescence<NodeType::NON_PV>(-probcut_beta, -probcut_beta + 1, stack + 1);
 
             if(score >= probcut_beta && probcut_depth > 0)
                 score = -negamax<NodeType::NON_PV>(probcut_depth, -probcut_beta, -probcut_beta + 1, stack + 1, !cut_node);
@@ -683,7 +683,7 @@ movesloop:
 }
 
 template <NodeType nt> //
-Score Search::quiescence(int depth, Score alpha, Score beta, Stack *stack) {
+Score Search::quiescence(Score alpha, Score beta, Stack *stack) {
 
     constexpr bool pv_node = (nt != NodeType::NON_PV);
 
@@ -765,7 +765,7 @@ Score Search::quiescence(int depth, Score alpha, Score beta, Stack *stack) {
             alpha = best_score;
     }
 
-    MovePicker mp(Q_SEARCH, board, history, stack, tt_move, depth >= -1);
+    MovePicker mp(Q_SEARCH, board, history, stack, tt_move);
     Move move = NO_MOVE;
 
     int made_moves = 0;
@@ -792,7 +792,7 @@ Score Search::quiescence(int depth, Score alpha, Score beta, Stack *stack) {
         }
 
         make_move(move, stack);
-        Score score = -quiescence<nt>(depth - 1, -beta, -alpha, stack + 1);
+        Score score = -quiescence<nt>(-beta, -alpha, stack + 1);
         undo_move(move);
 
         assert(valid_score(score));

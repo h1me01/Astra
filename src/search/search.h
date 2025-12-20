@@ -93,7 +93,7 @@ class Search {
     Score negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut_node = false);
 
     template <NodeType nt> //
-    Score quiescence(int depth, Score alpha, Score beta, Stack *stack);
+    Score quiescence(Score alpha, Score beta, Stack *stack);
 
     void make_move(const Move &move, Stack *stack);
     void undo_move(const Move &move);
