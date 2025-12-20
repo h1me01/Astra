@@ -120,4 +120,6 @@ PARAM(quiet_hist_malus_mult, 1024, 1, 2048);
 PARAM(noisy_hist_bonus_mult, 1024, 1, 2048);
 PARAM(noisy_hist_malus_mult, 1024, 1, 2048);
 
+PARAM(quiet_checker_bonus, 75, 0, 150);
+
 } // namespace search
