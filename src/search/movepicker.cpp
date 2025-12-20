@@ -151,9 +151,7 @@ void MovePicker::gen_score_noisy() {
         const Move move = ml_main[i];
         const PieceType captured = move.is_ep() ? PAWN : piece_type(board.piece_at(move.to()));
 
-        int score = history.get_nh(board, move)   //
-                    + 16 * PIECE_VALUES[captured] //
-                    + 4096 * (2 * move.is_prom() - move.is_underprom());
+        int score = history.get_nh(board, move) + 16 * PIECE_VALUES[captured];
 
         ml_main[i].set_score(score);
     }
