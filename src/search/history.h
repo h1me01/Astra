@@ -17,7 +17,7 @@ int history_malus(int depth);
 
 class History {
   public:
-    int16_t conth[2][NUM_PIECES + 1][NUM_SQUARES + 1][NUM_PIECES + 1][NUM_SQUARES + 1];
+    int16_t conth[2][2][NUM_PIECES + 1][NUM_SQUARES + 1][NUM_PIECES + 1][NUM_SQUARES + 1];
 
     void clear();
 
