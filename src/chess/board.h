@@ -34,6 +34,7 @@ struct StateInfo {
     U64 checkers;
     U64 pinners[NUM_COLORS];
     U64 blockers[NUM_COLORS];
+    U64 check_squares[NUM_PIECE_TYPES];
 };
 
 class Threats {
@@ -160,6 +161,11 @@ class Board {
     U64 get_nonpawn_hash(Color c) const {
         assert(valid_color(c));
         return get_state().non_pawn_hash[c];
+    }
+
+    U64 get_check_squares(PieceType pt) const {
+        assert(pt >= PAWN && pt <= KING);
+        return get_state().check_squares[pt];
     }
 
     StateInfo &get_state() {

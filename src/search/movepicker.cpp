@@ -167,10 +167,11 @@ void MovePicker::gen_score_quiets() {
         const Move move = ml_main[i];
         const Piece pc = board.piece_at(move.from());
         const PieceType pt = piece_type(pc);
+        const Square to = move.to();
 
         int score = 2 * (history.get_hh(board.get_stm(), move) + history.get_ph(board, move));
         for(int i : {1, 2, 4, 6})
-            score += static_cast<int>((*(stack - i)->conth)[pc][move.to()]);
+            score += static_cast<int>((*(stack - i)->conth)[pc][to]);
 
         if(pt != PAWN && pt != KING) {
             U64 danger = threats[PAWN];
@@ -182,9 +183,11 @@ void MovePicker::gen_score_quiets() {
             const int bonus = (pt == QUEEN) ? 20480 : (pt == ROOK) ? 12288 : 7168;
             if(danger & sq_bb(move.from()))
                 score += bonus;
-            else if(danger & sq_bb(move.to()))
+            else if(danger & sq_bb(to))
                 score -= bonus;
         }
+
+        score += (bool(board.get_check_squares(pt) & sq_bb(to)) && board.see(move, -quiet_checker_bonus)) * 16384;
 
         ml_main[i].set_score(score);
     }

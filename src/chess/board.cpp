@@ -691,6 +691,8 @@ Threats Board::get_threats() const {
 void Board::init_movegen_info() {
     StateInfo &info = get_state();
 
+    const U64 occ = get_occupancy();
+
     auto helper = [&](Color c) {
         info.blockers[c] = 0;
         info.pinners[~c] = 0;
@@ -701,10 +703,10 @@ void Board::init_movegen_info() {
         U64 cands = (get_attacks<ROOK>(ksq) & get_orth_sliders(~c)) | //
                     (get_attacks<BISHOP>(ksq) & get_diag_sliders(~c));
 
-        const U64 occ = get_occupancy() ^ cands;
+        const U64 new_occ = occ ^ cands;
         while(cands) {
             Square sq = pop_lsb(cands);
-            U64 b = between_bb(ksq, sq) & occ;
+            U64 b = between_bb(ksq, sq) & new_occ;
 
             if(pop_count(b) == 1) {
                 info.blockers[c] |= b;
@@ -717,7 +719,16 @@ void Board::init_movegen_info() {
     helper(WHITE);
     helper(BLACK);
 
-    info.checkers = attackers_to(~stm, get_king_sq(stm), get_occupancy());
+    info.checkers = attackers_to(~stm, get_king_sq(stm), occ);
+
+    Square ksq = get_king_sq(~stm);
+
+    info.check_squares[PAWN] = get_pawn_attacks(~stm, ksq);
+    info.check_squares[KNIGHT] = get_attacks<KNIGHT>(ksq);
+    info.check_squares[BISHOP] = get_attacks<BISHOP>(ksq, occ);
+    info.check_squares[ROOK] = get_attacks<ROOK>(ksq, occ);
+    info.check_squares[QUEEN] = info.check_squares[BISHOP] | info.check_squares[ROOK];
+    info.check_squares[KING] = 0;
 }
 
 } // namespace chess
