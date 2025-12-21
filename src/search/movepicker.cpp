@@ -19,9 +19,8 @@ MovePicker::MovePicker(SearchType st,          //
                        const Board &board,     //
                        const History &history, //
                        const Stack *stack,     //
-                       const Move &tt_move,    //
-                       bool gen_checks)
-    : st(st), board(board), history(history), stack(stack), gen_checks(gen_checks) {
+                       const Move &tt_move)
+    : st(st), board(board), history(history), stack(stack) {
 
     if(st == PC_SEARCH)
         stage = GEN_NOISY;
@@ -74,11 +73,8 @@ Move MovePicker::next(bool skip_quiets) {
         if(st == PC_SEARCH)
             return NO_MOVE;
 
-        if(st == Q_SEARCH && !board.in_check()) {
-            if(!gen_checks)
-                return NO_MOVE;
-            goto quiet_checkers;
-        }
+        if(st == Q_SEARCH && !board.in_check())
+            return NO_MOVE;
 
         // in evasion qsearch we can falltrough the killer and counter since we did not set them
         stage = PLAY_KILLER;
@@ -123,19 +119,6 @@ Move MovePicker::next(bool skip_quiets) {
         }
 
         return NO_MOVE;
-    case GEN_QUIET_CHECKERS:
-    quiet_checkers:
-        idx = 0;
-        stage = PLAY_QUIET_CHECKERS;
-        ml_main.gen<ADD_QUIET_CHECKS>(board);
-        [[fallthrough]];
-    case PLAY_QUIET_CHECKERS:
-        while(idx < ml_main.size()) {
-            partial_insertion_sort(ml_main, idx);
-            return ml_main[idx++];
-        }
-
-        return NO_MOVE;
     default:
         assert(false);
         return NO_MOVE;
@@ -151,9 +134,7 @@ void MovePicker::gen_score_noisy() {
         const Move move = ml_main[i];
         const PieceType captured = move.is_ep() ? PAWN : piece_type(board.piece_at(move.to()));
 
-        int score = history.get_nh(board, move)   //
-                    + 16 * PIECE_VALUES[captured] //
-                    + 4096 * (2 * move.is_prom() - move.is_underprom());
+        int score = history.get_nh(board, move) + 16 * PIECE_VALUES[captured];
 
         ml_main[i].set_score(score);
     }
