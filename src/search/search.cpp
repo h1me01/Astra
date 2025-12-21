@@ -377,9 +377,11 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
        && !stack->skipped                                                //
        && board.nonpawn_mat(stm)                                         //
        && stack->ply >= nmp_min_ply                                      //
-       && (stack - 1)->move != NULL_MOVE                                 //
+       && eval >= stack->static_eval                                     //
        && stack->static_eval + nmp_depth_mult * depth - nmp_base >= beta //
     ) {
+        assert((stack - 1)->move != NULL_MOVE);
+
         int R = nmp_rbase                //
                 + depth / nmp_rdepth_div //
                 + std::min(int(nmp_rmin), (eval - beta) / nmp_eval_div);
@@ -389,9 +391,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
         stack->conth = &history.conth[0][NO_PIECE][NO_SQUARE];
 
         board.make_nullmove();
-
         Score score = -negamax<NodeType::NON_PV>(depth - R, -beta, -beta + 1, stack + 1, !cut_node);
-
         board.undo_nullmove();
 
         if(threads.is_stopped())
