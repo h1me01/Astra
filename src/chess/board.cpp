@@ -531,6 +531,36 @@ bool Board::is_pseudo_legal(const Move &move) const {
     return true;
 }
 
+bool Board::gives_check(const Move &move) const {
+    assert(move);
+    assert(piece_color(piece_at(move.from())) == stm);
+
+    const Square from = move.from();
+    const Square to = move.to();
+    const Square opp_ksq = get_king_sq(~stm);
+    const U64 occ = get_occupancy();
+
+    if(get_check_squares(piece_type(piece_at(from))) & sq_bb(to))
+        return true;
+
+    if(get_state().blockers[~stm] & from)
+        return !(line(from, to) & get_piece_bb<KING>(~stm)) || move.is_castling();
+
+    if(move.is_prom()) {
+        return get_attacks(move.prom_type(), to, occ ^ from) & get_piece_bb<KING>(~stm);
+    } else if(move.is_ep()) {
+        Square cap_sq = make_square(sq_rank(from), sq_file(to));
+        U64 b = (occ ^ from ^ cap_sq) | to;
+
+        return (get_attacks<ROOK>(opp_ksq, b) & get_orth_sliders(stm)) |
+               (get_attacks<BISHOP>(opp_ksq, b) & get_diag_sliders(stm));
+    } else if(move.is_castling()) {
+        return get_check_squares(ROOK) & rel_sq(stm, to > from ? f1 : d1);
+    } else {
+        return false;
+    }
+}
+
 bool Board::upcoming_repetition(int ply) const {
     assert(ply > 0);
 

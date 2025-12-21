@@ -765,6 +765,8 @@ Score Search::quiescence(Score alpha, Score beta, Stack *stack) {
             alpha = best_score;
     }
 
+    const Square prev_sq = ((stack - 1)->move) ? ((stack - 1)->move).to() : NO_SQUARE;
+
     MovePicker mp(Q_SEARCH, board, history, stack, tt_move);
     Move move = NO_MOVE;
 
@@ -780,10 +782,15 @@ Score Search::quiescence(Score alpha, Score beta, Stack *stack) {
             if(in_check && move.is_quiet())
                 break;
 
-            // futility pruning
-            if(!in_check && move.is_noisy() && futility <= alpha && !board.see(move, 1)) {
-                best_score = std::max(best_score, futility);
-                continue;
+            if(prev_sq != move.to() && !move.is_prom() && !board.gives_check(move)) {
+                if(made_moves > 2)
+                    break;
+
+                // futility pruning
+                if(!in_check && futility <= alpha && !board.see(move, 1)) {
+                    best_score = std::max(best_score, futility);
+                    continue;
+                }
             }
 
             // see pruning

@@ -34,6 +34,12 @@ constexpr Color operator~(Color c) {
     return Color(c ^ BLACK);
 }
 
+constexpr Square make_square(Rank r, File f) {
+    assert(r >= RANK_1 && r <= RANK_8);
+    assert(f >= FILE_A && f <= FILE_H);
+    return Square((r << 3) + f);
+}
+
 constexpr Piece make_piece(Color c, PieceType pt) {
     assert(valid_color(c));
     assert(valid_piece_type(pt));
