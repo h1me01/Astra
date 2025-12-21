@@ -73,6 +73,7 @@ void Search::start() {
         stack_arr[i].ply = i - 6;
         stack_arr[i].static_eval = VALUE_NONE;
         stack_arr[i].conth = &history.conth[0][NO_PIECE][NO_SQUARE];
+        stack_arr[i].cont_corrh = &history.cont_corr[NO_PIECE][NO_SQUARE];
     }
 
     int stability = 0;
@@ -387,6 +388,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
         stack->move = NULL_MOVE;
         stack->moved_piece = NO_PIECE;
         stack->conth = &history.conth[0][NO_PIECE][NO_SQUARE];
+        stack->cont_corrh = &history.cont_corr[NO_PIECE][NO_SQUARE];
 
         board.make_nullmove();
 
@@ -843,6 +845,7 @@ void Search::make_move(const Move &move, Stack *stack) {
     stack->move = move;
     stack->moved_piece = board.piece_at(move.from());
     stack->conth = &history.conth[move.is_cap()][stack->moved_piece][move.to()];
+    stack->cont_corrh = &history.cont_corr[stack->moved_piece][move.to()];
 
     accum_list.increment();
 

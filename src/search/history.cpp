@@ -135,15 +135,13 @@ void History::update_mat_corr(const Board &board, Score raw_eval, Score real_sco
 }
 
 void History::update_cont_corr(Score raw_eval, Score real_score, int depth, const Stack *stack) {
-    const Move prev_move = (stack - 1)->move;
-    const Move pprev_move = (stack - 2)->move;
-
-    const Piece prev_pc = (stack - 1)->moved_piece;
-    const Piece pprev_pc = (stack - 2)->moved_piece;
     const int diff = real_score - raw_eval;
+    const Move prev_move = (stack - 1)->move;
+    const Piece prev_pc = (stack - 1)->moved_piece;
 
-    if(prev_move && pprev_move)
-        update_corr(cont_corr[prev_pc][prev_move.to()][pprev_pc][pprev_move.to()], diff, depth);
+    if(prev_move && valid_piece(prev_pc))
+        for(auto i : {2, 4})
+            update_corr(*(stack - i)->cont_corrh[prev_pc][prev_move.to()], diff, depth);
 }
 
 } // namespace search

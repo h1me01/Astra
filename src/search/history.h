@@ -18,6 +18,7 @@ int history_malus(int depth);
 class History {
   public:
     int16_t conth[2][NUM_PIECES + 1][NUM_SQUARES + 1][NUM_PIECES + 1][NUM_SQUARES + 1];
+    int16_t cont_corr[NUM_PIECES + 1][NUM_SQUARES + 1][NUM_PIECES + 1][NUM_SQUARES + 1];
 
     void clear();
 
@@ -58,8 +59,6 @@ class History {
     int16_t pawn_corr[NUM_COLORS][CORR_SIZE];
     int16_t w_non_pawn_corr[NUM_COLORS][CORR_SIZE];
     int16_t b_non_pawn_corr[NUM_COLORS][CORR_SIZE];
-
-    int16_t cont_corr[NUM_PIECES][NUM_SQUARES][NUM_PIECES][NUM_SQUARES];
 
     int ph_idx(U64 hash) const {
         return hash % PAWN_HIST_SIZE;
@@ -124,12 +123,14 @@ inline int History::get_mat_corr(const Board &board) const {
 
 inline int History::get_cont_corr(const Stack *stack) const {
     const Move prev_move = (stack - 1)->move;
-    const Move pprev_move = (stack - 2)->move;
+    const Piece prev_pc = (stack - 1)->moved_piece;
 
-    if(prev_move && pprev_move)
-        return cont_corr[(stack - 1)->moved_piece][prev_move.to()][(stack - 2)->moved_piece][pprev_move.to()];
-    else
-        return 0;
+    int total = 0;
+    if(prev_move && valid_piece(prev_pc))
+        for(auto i : {2, 4})
+            total += *(stack - i)->cont_corrh[prev_pc][prev_move.to()];
+
+    return total;
 }
 
 } // namespace search

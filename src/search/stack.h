@@ -7,6 +7,7 @@ using namespace chess;
 namespace search {
 
 using ContH = int16_t[NUM_PIECES + 1][NUM_SQUARES + 1];
+using ContCorrH = ContH;
 
 struct PVLine {
     Move pv[MAX_PLY + 1];
@@ -50,6 +51,7 @@ struct Stack {
 
     PVLine pv;
     ContH *conth;
+    ContCorrH *cont_corrh;
 };
 
 } // namespace search
