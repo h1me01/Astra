@@ -81,6 +81,7 @@ class Board {
     bool in_check() const;
     bool is_draw(int ply) const;
     bool nonpawn_mat(Color c) const;
+    bool gives_check(const Move &move) const;
     bool upcoming_repetition(int ply) const;
     bool see(const Move &move, int threshold) const;
 
