@@ -413,7 +413,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
     }
 
     // internal iterative reduction
-    if(depth >= 4 && !tt_move && (pv_node || cut_node))
+    if(depth >= 2 + 2 * cut_node && !tt_move && (pv_node || cut_node))
         depth--;
 
     // probcut
