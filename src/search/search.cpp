@@ -272,7 +272,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
             Square prev_sq = (stack - 1)->move ? (stack - 1)->move.to() : NO_SQUARE;
             if(valid_sq(prev_sq) && !(stack - 1)->move.is_cap() && (stack - 1)->made_moves <= 3) {
                 int malus = std::min(tt_hist_malus_mult * depth + tt_hist_malus_minus, int(max_tt_hist_malus));
-                history.update_conth((stack - 1)->move, stack - 1, -malus);
+                history.update_conth((stack - 1)->moved_piece, prev_sq, stack - 1, -malus);
             }
         }
 
@@ -580,7 +580,7 @@ movesloop:
                     else if(score >= beta)
                         bonus = history_bonus(new_depth);
 
-                    history.update_conth(move, stack, bonus);
+                    history.update_conth(stack->moved_piece, move.to(), stack, bonus);
                 }
             }
         }
