@@ -68,11 +68,11 @@ void History::update(         //
 
             update_hh(stm, best_move, quiet_bonus);
             update_ph(board, best_move, quiet_bonus);
-            update_conth(best_move, stack, quiet_bonus);
+            update_conth(board.piece_at(best_move.from()), best_move.to(), stack, quiet_bonus);
 
             for(const auto &m : quiets) {
                 update_hh(stm, m, -quiet_malus);
-                update_conth(m, stack, -quiet_malus);
+                update_conth(board.piece_at(m.from()), m.to(), stack, -quiet_malus);
                 update_ph(board, m, -quiet_malus);
             }
         }
@@ -112,15 +112,12 @@ void History::update_ph(const Board &board, const Move &move, int bonus) {
     value += adjusted_bonus(value, bonus);
 }
 
-void History::update_conth(const Move &move, Stack *stack, int bonus) {
-    assert(move);
+void History::update_conth(const Piece pc, const Square to, Stack *stack, int bonus) {
+    assert(valid_piece(pc));
+    assert(valid_sq(to));
 
     for(int i : {1, 2, 4, 6}) {
-        if(!(stack - i)->move)
-            continue;
-        Piece pc = (stack - i)->moved_piece;
-        assert(valid_piece(pc));
-        int16_t &value = (*(stack - i)->conth)[pc][move.to()];
+        int16_t &value = (*(stack - i)->conth)[pc][to];
         value += adjusted_bonus(value, bonus);
     }
 }
