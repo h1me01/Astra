@@ -32,7 +32,7 @@ class History {
     void update_nh(const Board &board, const Move &move, int bonus);
     void update_ph(const Board &board, const Move &move, int bonus);
 
-    void update_conth(const Move &move, Stack *stack, int bonus);
+    void update_conth(const Piece pc, const Square to, Stack *stack, int bonus);
 
     void update_mat_corr(const Board &board, Score raw_eval, Score real_score, int depth);
     void update_cont_corr(Score raw_eval, Score real_score, int depth, const Stack *stack);
