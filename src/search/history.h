@@ -36,7 +36,7 @@ class History {
     void update_conth(const Piece pc, const Square to, Stack *stack, int bonus);
 
     void update_mat_corr(const Board &board, Score raw_eval, Score real_score, int depth);
-    void update_cont_corr(Score raw_eval, Score real_score, int depth, const Stack *stack);
+    void update_cont_corr(Score raw_eval, Score real_score, int depth, const Board &board, const Stack *stack);
 
     Move get_counter(const Move &move) const;
 
@@ -46,7 +46,7 @@ class History {
     int get_ph(const Board &board, const Move &move) const;
 
     int get_mat_corr(const Board &board) const;
-    int get_cont_corr(const Stack *stack) const;
+    int get_cont_corr(const Board &board, const Stack *stack) const;
 
   private:
     Move counters[NUM_SQUARES][NUM_SQUARES]{};
@@ -121,14 +121,18 @@ inline int History::get_mat_corr(const Board &board) const {
            b_non_pawn_corr[stm][corr_idx(board.get_nonpawn_hash(BLACK))];
 }
 
-inline int History::get_cont_corr(const Stack *stack) const {
+inline int History::get_cont_corr(const Board &board, const Stack *stack) const {
     const Move prev_move = (stack - 1)->move;
-    const Piece prev_pc = (stack - 1)->moved_piece;
+
+    if(!prev_move)
+        return 0;
+
+    const Piece prev_pc = board.piece_at(prev_move.to());
+    assert(valid_piece(prev_pc));
 
     int total = 0;
-    if(prev_move && valid_piece(prev_pc))
-        for(auto i : {2, 4})
-            total += *(stack - i)->cont_corrh[prev_pc][prev_move.to()];
+    for(auto i : {2, 4})
+        total += *(stack - i)->cont_corrh[prev_pc][prev_move.to()];
 
     return total;
 }

@@ -676,7 +676,7 @@ movesloop:
        && valid_tt_score(best_score, stack->static_eval, bound) //
     ) {
         history.update_mat_corr(board, raw_eval, best_score, depth);
-        history.update_cont_corr(raw_eval, best_score, depth, stack);
+        history.update_cont_corr(raw_eval, best_score, depth, board, stack);
     }
 
     assert(valid_score(best_score));
@@ -909,7 +909,7 @@ Score Search::evaluate() {
 
 Score Search::adjust_eval(int32_t eval, Stack *stack) const {
     eval = (eval * (200 - board.get_fmr_count())) / 200;
-    eval += (history.get_mat_corr(board) + history.get_cont_corr(stack)) / 256;
+    eval += (history.get_mat_corr(board) + history.get_cont_corr(board, stack)) / 256;
 
     return std::clamp(                         //
         eval,                                  //
