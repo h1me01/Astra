@@ -8,7 +8,11 @@ using namespace chess;
 
 namespace search {
 
-enum SearchType { N_SEARCH, Q_SEARCH, PC_SEARCH };
+enum SearchType {
+    N_SEARCH,
+    Q_SEARCH,
+    PC_SEARCH,
+};
 
 enum Stage {
     PLAY_TT_MOVE,
@@ -51,7 +55,7 @@ class MovePicker {
     const Stack *stack;
 
     Move tt_move, killer, counter;
-    MoveList<> ml_main, ml_bad_noisy;
+    MoveList<ScoredMove> ml_main, ml_bad_noisy;
 
     void gen_score_noisy();
     void gen_score_quiets();

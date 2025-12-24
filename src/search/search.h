@@ -18,15 +18,42 @@ namespace search {
 
 void init_reductions();
 
-enum class NodeType { ROOT, PV, NON_PV };
+enum class NodeType {
+    ROOT,
+    PV,
+    NON_PV,
+};
 
-struct RootMove : Move {
+struct RootMove : public Move {
     RootMove() = default;
-    RootMove(Move m) : Move(m) {}
+
+    explicit RootMove(Move m) : Move(m) {}
+
+    RootMove(RootMove &&other) noexcept
+        : Move(std::move(other)),     //
+          sel_depth(other.sel_depth), //
+          nodes(other.nodes),         //
+          score(other.score),         //
+          avg_score(other.avg_score), //
+          pv(std::move(other.pv)) {}
+
+    RootMove &operator=(RootMove &&other) noexcept {
+        if(this != &other) {
+            Move::operator=(std::move(other));
+            sel_depth = other.sel_depth;
+            nodes = other.nodes;
+            score = other.score;
+            avg_score = other.avg_score;
+            pv = std::move(other.pv);
+        }
+        return *this;
+    }
 
     int sel_depth = 0;
     U64 nodes = 0;
+    Score score = VALUE_NONE;
     Score avg_score = VALUE_NONE;
+
     PVLine pv{};
 };
 
