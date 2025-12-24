@@ -56,6 +56,11 @@ void Board::set_fen(const std::string &fen) {
     states[0] = StateInfo();
     StateInfo &info = states[0];
 
+    info.hash = 0;
+    info.pawn_hash = 0;
+    info.non_pawn_hash[WHITE] = 0;
+    info.non_pawn_hash[BLACK] = 0;
+
     std::vector<std::string> fen_parts = split(fen, ' ');
     if(fen_parts.size() != 6) {
         std::cerr << "Invalid fen string" << std::endl;
@@ -167,7 +172,7 @@ nnue::DirtyPieces Board::make_move(const Move &move) {
     const Square to = move.to();
     const Piece pc = piece_at(from);
     const PieceType pt = piece_type(pc);
-    const Piece captured = move.is_ep() ? make_piece(~stm, PAWN) : piece_at(to);
+    const Piece captured = captured_piece(move);
 
     nnue::DirtyPieces dirty_pieces;
 
@@ -227,9 +232,12 @@ nnue::DirtyPieces Board::make_move(const Move &move) {
             assert(valid_piece(prom_pc));
             assert(piece_type(prom_pc) != PAWN);
 
+            dirty_pieces.pop();
+
             // add promoted piece and remove pawn
             remove_piece(to);
-            dirty_pieces.add(make_piece(stm, PAWN), to, NO_SQUARE);
+            // pawn in accumulator is still in 'from' square
+            dirty_pieces.add(make_piece(stm, PAWN), from, NO_SQUARE);
 
             put_piece(prom_pc, to);
             dirty_pieces.add(prom_pc, NO_SQUARE, to);
@@ -438,10 +446,10 @@ bool Board::is_pseudo_legal(const Move &move) const {
 
     if(!move)
         return false; // no and null moves are not pseudo legal
-    if(!valid_piece(from_pc))
-        return false; // moving piece must be valid
     if(sq_bb(to) & us_bb)
         return false; // moving piece cannot capture its own pieces
+    if(!valid_piece(from_pc))
+        return false; // moving piece must be valid
     if(piece_color(from_pc) != stm)
         return false; // moving piece must match stm
     if(!move.is_cap() && valid_piece(to_pc))
@@ -591,12 +599,12 @@ bool Board::upcoming_repetition(int ply) const {
         U64 move_key = orig_key ^ states[idx].hash;
         int hash = cuckoo::cuckoo_h1(move_key);
 
-        if(cuckoo::keys[hash] != move_key)
+        if(cuckoo::get_hash(hash) != move_key)
             hash = cuckoo::cuckoo_h2(move_key);
-        if(cuckoo::keys[hash] != move_key)
+        if(cuckoo::get_hash(hash) != move_key)
             continue;
 
-        Move move = cuckoo::cuckoo_moves[hash];
+        Move move = cuckoo::get_move(hash);
         Square to = move.to();
         U64 between = between_bb(move.from(), to) ^ sq_bb(to);
 
