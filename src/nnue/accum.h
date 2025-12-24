@@ -27,8 +27,13 @@ class DirtyPieces {
         num_dpcs = 0;
     }
 
+    void pop() {
+        assert(num_dpcs > 0);
+        num_dpcs--;
+    }
+
     void add(Piece pc, Square from, Square to) {
-        assert(num_dpcs < 4);
+        assert(num_dpcs < 3);
         dpcs[num_dpcs++] = DirtyPiece(pc, from, to);
     }
 
@@ -43,7 +48,7 @@ class DirtyPieces {
 
   private:
     int num_dpcs;
-    DirtyPiece dpcs[4]; // only 4 pieces at max can be updated per move
+    DirtyPiece dpcs[3]; // only 3 pieces at max can be updated per move
 };
 
 class Accum {

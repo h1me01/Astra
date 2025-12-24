@@ -2,12 +2,12 @@
 
 namespace search {
 
-void partial_insertion_sort(MoveList<> &ml, int idx) {
+void partial_insertion_sort(MoveList<ScoredMove> &ml, int idx) {
     assert(idx >= 0);
 
     int best_idx = idx;
     for(int i = 1 + idx; i < ml.size(); i++)
-        if(ml[i].get_score() > ml[best_idx].get_score())
+        if(ml[i].score > ml[best_idx].score)
             best_idx = i;
 
     std::swap(ml[idx], ml[best_idx]);
@@ -34,11 +34,11 @@ MovePicker::MovePicker(SearchType st,          //
         stage = PLAY_TT_MOVE;
         this->tt_move = tt_move;
 
-        killer = (stack->killer != tt_move) ? stack->killer : NO_MOVE;
-        counter = (stack - 1)->move ? history.get_counter((stack - 1)->move) : NO_MOVE;
+        killer = (stack->killer != tt_move) ? stack->killer : Move::none();
+        counter = (stack - 1)->move ? history.get_counter((stack - 1)->move) : Move::none();
 
         if(counter == tt_move || counter == killer)
-            counter = NO_MOVE;
+            counter = Move::none();
     }
 }
 
@@ -58,12 +58,12 @@ Move MovePicker::next(bool skip_quiets) {
         while(idx < ml_main.size()) {
             partial_insertion_sort(ml_main, idx);
 
-            Move move = ml_main[idx++];
+            auto move = ml_main[idx++];
             if(move == tt_move)
                 continue;
 
             // we want to play noisy moves first in qsearch, doesn't matter if its see fails
-            int threshold = (st == N_SEARCH) ? -move.get_score() / 32 : probcut_threshold;
+            int threshold = (st == N_SEARCH) ? -move.score / 32 : probcut_threshold;
             if(st == Q_SEARCH || board.see(move, threshold))
                 return move;
 
@@ -71,10 +71,10 @@ Move MovePicker::next(bool skip_quiets) {
         }
 
         if(st == PC_SEARCH)
-            return NO_MOVE;
+            return Move::none();
 
         if(st == Q_SEARCH && !board.in_check())
-            return NO_MOVE;
+            return Move::none();
 
         // in evasion qsearch we can falltrough the killer and counter since we did not set them
         stage = PLAY_KILLER;
@@ -106,7 +106,7 @@ Move MovePicker::next(bool skip_quiets) {
         }
 
         if(st == Q_SEARCH)
-            return NO_MOVE; // end of evasion qsearch
+            return Move::none(); // end of evasion qsearch
 
         idx = 0;
         stage = PLAY_BAD_NOISY;
@@ -118,10 +118,10 @@ Move MovePicker::next(bool skip_quiets) {
             return ml_bad_noisy[idx++];
         }
 
-        return NO_MOVE;
+        return Move::none();
     default:
         assert(false);
-        return NO_MOVE;
+        return Move::none();
     }
 }
 
@@ -134,9 +134,7 @@ void MovePicker::gen_score_noisy() {
         const Move move = ml_main[i];
         const PieceType captured = move.is_ep() ? PAWN : piece_type(board.piece_at(move.to()));
 
-        int score = history.get_nh(board, move) + 16 * PIECE_VALUES[captured];
-
-        ml_main[i].set_score(score);
+        ml_main[i].score = history.get_noisy_hist(board, move) + 16 * PIECE_VALUES[captured];
     }
 }
 
@@ -150,9 +148,9 @@ void MovePicker::gen_score_quiets() {
         const PieceType pt = piece_type(pc);
         const Square to = move.to();
 
-        int score = 2 * (history.get_hh(board.get_stm(), move) + history.get_ph(board, move));
+        int score = 2 * (history.get_heuristic_hist(board.get_stm(), move) + history.get_pawn_hist(board, move));
         for(int i : {1, 2, 4, 6})
-            score += static_cast<int>((*(stack - i)->conth)[pc][to]);
+            score += static_cast<int>((*(stack - i)->cont_hist)[pc][to]);
 
         if(pt != PAWN && pt != KING) {
             U64 danger = threats[PAWN];
@@ -168,9 +166,10 @@ void MovePicker::gen_score_quiets() {
                 score -= bonus;
         }
 
-        score += (bool(board.get_check_squares(pt) & sq_bb(to)) && board.see(move, -quiet_checker_bonus)) * 16384;
+        bool can_check = board.get_check_squares(pt) & sq_bb(to);
+        score += (can_check && board.see(move, -quiet_checker_bonus)) * 16384;
 
-        ml_main[i].set_score(score);
+        ml_main[i].score = score;
     }
 }
 

@@ -15,10 +15,10 @@ constexpr int FT_SHIFT = 9;
 constexpr int FT_QUANT = 255;
 constexpr int L1_QUANT = 64;
 
+constexpr int EVAL_SCALE = 400;
+
 constexpr int ALIGNMENT = 64;
 constexpr int INT8_PER_INT32 = sizeof(int32_t) / sizeof(int8_t);
-
-constexpr int EVAL_SCALE = 400;
 
 constexpr int INPUT_BUCKET[64] = {
     0,  1,  2,  3,  3,  2,  1,  0,  //
