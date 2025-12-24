@@ -199,9 +199,9 @@ inline std::ostream &operator<<(std::ostream &os, Piece pc) {
 }
 
 inline std::ostream &operator<<(std::ostream &os, const Move &move) {
-    if(move == NO_MOVE)
+    if(move.is_none())
         os << "NO MOVE";
-    else if(move == NULL_MOVE)
+    else if(move.is_null())
         os << "NULL MOVE";
     else
         os << move.from() << move.to();
