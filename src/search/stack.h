@@ -6,8 +6,6 @@ using namespace chess;
 
 namespace search {
 
-using ContH = int16_t[NUM_PIECES + 1][NUM_SQUARES + 1];
-
 struct PVLine {
     Move pv[MAX_PLY + 1];
     uint8_t length = 0;
@@ -38,18 +36,18 @@ struct PVLine {
 };
 
 struct Stack {
-    int ply;
-    int made_moves;
+    int ply = 0;
+    int made_moves = 0;
 
-    Move move = NO_MOVE;
-    Move killer = NO_MOVE;
-    Move skipped = NO_MOVE;
+    Move move = Move::none();
+    Move killer = Move::none();
+    Move skipped = Move::none();
 
     Piece moved_piece = NO_PIECE;
     Score static_eval = VALUE_NONE;
 
     PVLine pv;
-    ContH *conth;
+    int16_t (*cont_hist)[NUM_PIECES + 1][NUM_SQUARES] = nullptr;
 };
 
 } // namespace search

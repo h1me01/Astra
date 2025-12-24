@@ -6,11 +6,11 @@
 
 namespace search {
 
-int history_bonus(int depth) {
+int History::history_bonus(int depth) {
     return std::min(int(max_hist_bonus), hist_bonus_mult * depth + hist_bonus_minus);
 }
 
-int history_malus(int depth) {
+int History::history_malus(int depth) {
     return std::min(int(max_hist_malus), hist_malus_mult * depth + hist_malus_minus);
 }
 
@@ -26,19 +26,17 @@ void update_corr(int16_t &value, int diff, int depth) {
 // History
 
 void History::clear() {
-    std::memset(conth, 0, sizeof(conth));
-
-    std::fill(&counters[0][0], &counters[0][0] + NUM_SQUARES * NUM_SQUARES, Move{});
-
-    std::memset(hh, 0, sizeof(hh));
-    std::memset(nh, 0, sizeof(nh));
-    std::memset(ph, 0, sizeof(ph));
+    std::memset(heuristic_hist, 0, sizeof(heuristic_hist));
+    std::memset(noisy_hist, 0, sizeof(noisy_hist));
+    std::memset(pawn_hist, 0, sizeof(pawn_hist));
+    std::memset(cont_hist, 0, sizeof(cont_hist));
 
     std::memset(pawn_corr, 0, sizeof(pawn_corr));
     std::memset(w_non_pawn_corr, 0, sizeof(w_non_pawn_corr));
     std::memset(b_non_pawn_corr, 0, sizeof(b_non_pawn_corr));
-
     std::memset(cont_corr, 0, sizeof(cont_corr));
+
+    std::fill(&counters[0][0], &counters[0][0] + NUM_SQUARES * NUM_SQUARES, Move{});
 }
 
 void History::update(         //
@@ -66,58 +64,57 @@ void History::update(         //
             const int quiet_bonus = bonus * quiet_hist_bonus_mult / 1024;
             const int quiet_malus = malus * quiet_hist_malus_mult / 1024;
 
-            update_hh(stm, best_move, quiet_bonus);
-            update_ph(board, best_move, quiet_bonus);
-            update_conth(board.piece_at(best_move.from()), best_move.to(), stack, quiet_bonus);
+            update_quiet_hist(stm, best_move, quiet_bonus);
+            update_pawn_hist(board, best_move, quiet_bonus);
+            update_cont_hist(board.piece_at(best_move.from()), best_move.to(), stack, quiet_bonus);
 
             for(const auto &m : quiets) {
-                update_hh(stm, m, -quiet_malus);
-                update_conth(board.piece_at(m.from()), m.to(), stack, -quiet_malus);
-                update_ph(board, m, -quiet_malus);
+                update_quiet_hist(stm, m, -quiet_malus);
+                update_pawn_hist(board, m, -quiet_malus);
+                update_cont_hist(board.piece_at(m.from()), m.to(), stack, -quiet_malus);
             }
         }
     } else {
-        update_nh(board, best_move, bonus * noisy_hist_bonus_mult / 1024);
+        update_noisy_hist(board, best_move, bonus * noisy_hist_bonus_mult / 1024);
     }
 
     for(const auto &m : noisy)
-        update_nh(board, m, -malus * noisy_hist_malus_mult / 1024);
+        update_noisy_hist(board, m, -malus * noisy_hist_malus_mult / 1024);
 }
 
-void History::update_hh(Color c, const Move &move, int bonus) {
+void History::update_quiet_hist(Color c, const Move &move, int bonus) {
     assert(move);
-    int16_t &value = hh[c][move.from()][move.to()];
+    int16_t &value = heuristic_hist[c][move.from()][move.to()];
     value += adjusted_bonus(value, bonus);
 }
 
-void History::update_nh(const Board &board, const Move &move, int bonus) {
+void History::update_noisy_hist(const Board &board, const Move &move, int bonus) {
     assert(move);
 
-    Square to = move.to();
     Piece pc = board.piece_at(move.from());
-    PieceType captured = move.is_ep() ? PAWN : piece_type(board.piece_at(to));
+    PieceType captured = piece_type(board.captured_piece(move));
 
     assert(valid_piece(pc));
-    assert(valid_piece_type(captured) || (move.type() >= PQ_KNIGHT && move.type() <= PQ_QUEEN));
+    assert(valid_piece_type(captured) || move.is_prom());
 
-    int16_t &value = nh[pc][to][captured];
+    int16_t &value = noisy_hist[pc][move.to()][captured];
     value += adjusted_bonus(value, bonus);
 }
 
-void History::update_ph(const Board &board, const Move &move, int bonus) {
+void History::update_pawn_hist(const Board &board, const Move &move, int bonus) {
     assert(move);
     Piece pc = board.piece_at(move.from());
     assert(valid_piece(pc));
-    int16_t &value = ph[ph_idx(board.get_pawn_hash())][pc][move.to()];
+    int16_t &value = pawn_hist[ph_idx(board.get_pawn_hash())][pc][move.to()];
     value += adjusted_bonus(value, bonus);
 }
 
-void History::update_conth(const Piece pc, const Square to, Stack *stack, int bonus) {
+void History::update_cont_hist(const Piece pc, const Square to, Stack *stack, int bonus) {
     assert(valid_piece(pc));
     assert(valid_sq(to));
 
     for(int i : {1, 2, 4, 6}) {
-        int16_t &value = (*(stack - i)->conth)[pc][to];
+        int16_t &value = (*(stack - i)->cont_hist)[pc][to];
         value += adjusted_bonus(value, bonus);
     }
 }

@@ -127,6 +127,15 @@ class Board {
         return board[sq];
     }
 
+    Piece captured_piece(const Move &move) const {
+        assert(move);
+        if(move.is_ep())
+            return make_piece(~stm, PAWN);
+        if(move.is_cap())
+            return piece_at(move.to());
+        return NO_PIECE;
+    }
+
     U64 get_diag_sliders(Color c) const {
         return get_piece_bb<BISHOP>(c) | get_piece_bb<QUEEN>(c);
     }
@@ -291,11 +300,13 @@ inline void Board::move_piece(Square from, Square to) {
     info.occ[piece_color(pc)] ^= sq_bb(from) | sq_bb(to);
 
     // update hash
-    info.hash ^= zobrist::get_psq(pc, from) ^ zobrist::get_psq(pc, to);
+    U64 new_hash = zobrist::get_psq(pc, to) ^ zobrist::get_psq(pc, from);
+
+    info.hash ^= new_hash;
     if(piece_type(pc) == PAWN)
-        info.pawn_hash ^= zobrist::get_psq(pc, from) ^ zobrist::get_psq(pc, to);
+        info.pawn_hash ^= new_hash;
     else
-        info.non_pawn_hash[stm] ^= zobrist::get_psq(pc, from) ^ zobrist::get_psq(pc, to);
+        info.non_pawn_hash[stm] ^= new_hash;
 }
 
 } // namespace chess

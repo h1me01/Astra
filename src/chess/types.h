@@ -50,7 +50,15 @@ enum Direction {
 };
 
 constexpr int NUM_PIECE_TYPES = 6;
-enum PieceType { PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING, NO_PIECE_TYPE };
+enum PieceType {
+    PAWN,
+    KNIGHT,
+    BISHOP,
+    ROOK,
+    QUEEN,
+    KING,
+    NO_PIECE_TYPE,
+};
 
 // clang-format off
 constexpr int NUM_PIECES = 12;
@@ -59,7 +67,6 @@ enum Piece {
     BLACK_PAWN, BLACK_KNIGHT, BLACK_BISHOP, BLACK_ROOK, BLACK_QUEEN, BLACK_KING,
     NO_PIECE
 };
-
 
 constexpr PieceType PIECE_TO_PIECE_TYPE[] = {
     PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING,         
@@ -84,9 +91,27 @@ enum Square
 };
 // clang-format on
 
-enum File { FILE_A, FILE_B, FILE_C, FILE_D, FILE_E, FILE_F, FILE_G, FILE_H };
+enum File {
+    FILE_A,
+    FILE_B,
+    FILE_C,
+    FILE_D,
+    FILE_E,
+    FILE_F,
+    FILE_G,
+    FILE_H,
+};
 
-enum Rank { RANK_1, RANK_2, RANK_3, RANK_4, RANK_5, RANK_6, RANK_7, RANK_8 };
+enum Rank {
+    RANK_1,
+    RANK_2,
+    RANK_3,
+    RANK_4,
+    RANK_5,
+    RANK_6,
+    RANK_7,
+    RANK_8,
+};
 
 // clang-format off
 enum MoveType
@@ -96,21 +121,21 @@ enum MoveType
     CASTLING,
     EN_PASSANT,
     PQ_KNIGHT, PQ_BISHOP, PQ_ROOK, PQ_QUEEN,
-    PC_KNIGHT, PC_BISHOP, PC_ROOK, PC_QUEEN
+    PC_KNIGHT, PC_BISHOP, PC_ROOK, PC_QUEEN,
 };
 // clang-format on
 
 class Move {
   public:
-    // default move (a1a1)
-    Move() : data(0), score(0) {}
+    // default no move (a1a1)
+    Move() : data(0) {}
 
-    explicit Move(uint16_t m) : data(m), score(0) {}
+    explicit constexpr Move(uint16_t m) : data(m) {}
 
-    Move(const Move &other) : data(other.data), score(other.score) {}
+    Move(const Move &other) : data(other.data) {}
 
     Move(Square from, Square to, MoveType mt) //
-        : data((mt << 12) | (to << 6) | from), score(0) {}
+        : data((mt << 12) | (to << 6) | from) {}
 
     Square from() const {
         return Square(data & 0x3f);
@@ -125,43 +150,29 @@ class Move {
     }
 
     Move &operator=(const Move &move) {
-        if(this != &move) {
+        if(this != &move)
             data = move.data;
-            score = move.score;
-        }
         return *this;
     }
 
-    uint16_t raw() const {
-        return data;
+    static constexpr Move null() {
+        return Move(65);
     }
 
-    void set_score(int score) {
-        this->score = score;
+    static constexpr Move none() {
+        return Move(0);
     }
 
-    int get_score() const {
-        return score;
+    bool is_null() const {
+        return *this == Move::null();
     }
 
-    bool operator==(const Move &move) const {
-        return data == move.data;
-    }
-
-    bool operator!=(const Move &move) const {
-        return data != move.data;
-    }
-
-    explicit operator bool() const {
-        return is_valid();
-    }
-
-    bool operator!() const {
-        return !is_valid();
+    bool is_none() const {
+        return *this == Move::none();
     }
 
     bool is_valid() const {
-        return data != 0 && data != 65;
+        return !is_null() && !is_none();
     }
 
     bool is_cap() const {
@@ -180,11 +191,6 @@ class Move {
     bool is_prom() const {
         assert(is_valid());
         return type() >= PQ_KNIGHT;
-    }
-
-    bool is_underprom() const {
-        assert(is_valid());
-        return type() == PQ_KNIGHT || type() == PQ_BISHOP || type() == PC_KNIGHT || type() == PC_BISHOP;
     }
 
     bool is_noisy() const {
@@ -214,15 +220,62 @@ class Move {
         }
     }
 
+    uint16_t raw() const {
+        return data;
+    }
+
+    bool operator==(const Move &move) const {
+        return data == move.data;
+    }
+
+    bool operator!=(const Move &move) const {
+        return data != move.data;
+    }
+
+    bool operator!() const {
+        return !is_valid();
+    }
+
+    explicit operator bool() const {
+        return is_valid();
+    }
+
   private:
     // first 6 bits represent the from square
     // next 6 bits represent the to square
     // last 4 bits represent the move type
     uint16_t data;
-    int score;
 };
 
-const Move NO_MOVE{};
-const Move NULL_MOVE{65};
+struct ScoredMove : public Move {
+    ScoredMove() : Move(), score(0) {}
+
+    ScoredMove(const Move &move) //
+        : Move(move), score(0) {}
+
+    ScoredMove(const ScoredMove &other) //
+        : Move(other), score(other.score) {}
+
+    ScoredMove &operator=(const ScoredMove &other) {
+        if(this != &other) {
+            Move::operator=(other);
+            score = other.score;
+        }
+        return *this;
+    }
+
+    ScoredMove(ScoredMove &&other) noexcept //
+        : Move(std::move(other)), score(other.score) {}
+
+    ScoredMove &operator=(ScoredMove &&other) noexcept {
+        if(this != &other) {
+            Move::operator=(std::move(other));
+            score = other.score;
+        }
+        return *this;
+    }
+
+    int score;
+};
 
 } // namespace chess
