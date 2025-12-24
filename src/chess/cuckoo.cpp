@@ -5,12 +5,20 @@
 namespace chess::cuckoo {
 
 U64 keys[8192];
-Move cuckoo_moves[8192];
+Move moves[8192];
+
+U64 get_hash(const int idx) {
+    return keys[idx];
+}
+
+Move get_move(const int idx) {
+    return moves[idx];
+}
 
 void init() {
     for(int i = 0; i < 8192; i++) {
         keys[i] = 0;
-        cuckoo_moves[i] = NO_MOVE;
+        moves[i] = Move::none();
     }
 
     int count = 0;
@@ -29,7 +37,7 @@ void init() {
                     int i = cuckoo_h1(hash);
                     while(true) {
                         std::swap(keys[i], hash);
-                        std::swap(cuckoo_moves[i], move);
+                        std::swap(moves[i], move);
 
                         if(!move)
                             break;
