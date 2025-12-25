@@ -262,7 +262,7 @@ inline void Board::put_piece(Piece pc, Square sq) {
     if(piece_type(pc) == PAWN)
         info.pawn_hash ^= zobrist::get_psq(pc, sq);
     else
-        info.non_pawn_hash[stm] ^= zobrist::get_psq(pc, sq);
+        info.non_pawn_hash[piece_color(pc)] ^= zobrist::get_psq(pc, sq);
 }
 
 inline void Board::remove_piece(Square sq) {
@@ -282,7 +282,7 @@ inline void Board::remove_piece(Square sq) {
     if(piece_type(pc) == PAWN)
         info.pawn_hash ^= zobrist::get_psq(pc, sq);
     else
-        info.non_pawn_hash[~stm] ^= zobrist::get_psq(pc, sq);
+        info.non_pawn_hash[piece_color(pc)] ^= zobrist::get_psq(pc, sq);
 }
 
 inline void Board::move_piece(Square from, Square to) {
@@ -306,7 +306,7 @@ inline void Board::move_piece(Square from, Square to) {
     if(piece_type(pc) == PAWN)
         info.pawn_hash ^= new_hash;
     else
-        info.non_pawn_hash[stm] ^= new_hash;
+        info.non_pawn_hash[piece_color(pc)] ^= new_hash;
 }
 
 } // namespace chess
