@@ -194,6 +194,7 @@ class Board {
 
     std::array<StateInfo, 512> states;
 
+    void update_hash(Piece pc, U64 hash);
     void put_piece(Piece pc, Square sq);
     void remove_piece(Square sq);
     void move_piece(Square from, Square to);
@@ -247,6 +248,18 @@ inline int Board::count(Color c) const {
 
 // private functions
 
+inline void Board::update_hash(Piece pc, U64 hash) {
+    assert(valid_piece(pc));
+
+    StateInfo &info = get_state();
+
+    info.hash ^= hash;
+    if(piece_type(pc) == PAWN)
+        info.pawn_hash ^= hash;
+    else
+        info.non_pawn_hash[piece_color(pc)] ^= hash;
+}
+
 inline void Board::put_piece(Piece pc, Square sq) {
     assert(valid_sq(sq));
     assert(valid_piece(pc));
@@ -257,12 +270,7 @@ inline void Board::put_piece(Piece pc, Square sq) {
     piece_bb[pc] |= sq_bb(sq);
     info.occ[piece_color(pc)] ^= sq_bb(sq);
 
-    // update hash
-    info.hash ^= zobrist::get_psq(pc, sq);
-    if(piece_type(pc) == PAWN)
-        info.pawn_hash ^= zobrist::get_psq(pc, sq);
-    else
-        info.non_pawn_hash[stm] ^= zobrist::get_psq(pc, sq);
+    update_hash(pc, zobrist::get_psq(pc, sq));
 }
 
 inline void Board::remove_piece(Square sq) {
@@ -277,12 +285,7 @@ inline void Board::remove_piece(Square sq) {
     board[sq] = NO_PIECE;
     info.occ[piece_color(pc)] ^= sq_bb(sq);
 
-    // update hash
-    info.hash ^= zobrist::get_psq(pc, sq);
-    if(piece_type(pc) == PAWN)
-        info.pawn_hash ^= zobrist::get_psq(pc, sq);
-    else
-        info.non_pawn_hash[~stm] ^= zobrist::get_psq(pc, sq);
+    update_hash(pc, zobrist::get_psq(pc, sq));
 }
 
 inline void Board::move_piece(Square from, Square to) {
@@ -299,14 +302,7 @@ inline void Board::move_piece(Square from, Square to) {
     board[from] = NO_PIECE;
     info.occ[piece_color(pc)] ^= sq_bb(from) | sq_bb(to);
 
-    // update hash
-    U64 new_hash = zobrist::get_psq(pc, to) ^ zobrist::get_psq(pc, from);
-
-    info.hash ^= new_hash;
-    if(piece_type(pc) == PAWN)
-        info.pawn_hash ^= new_hash;
-    else
-        info.non_pawn_hash[stm] ^= new_hash;
+    update_hash(pc, zobrist::get_psq(pc, to) ^ zobrist::get_psq(pc, from));
 }
 
 } // namespace chess
