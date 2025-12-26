@@ -44,7 +44,7 @@ class History {
     int get_quiet_hist(const Board &board, const Move &move, const Stack *stack) const;
     int get_pawn_hist(const Board &board, const Move &move) const;
 
-    int get_mat_corr(const Board &board) const;
+    int get_material_corr(const Board &board) const;
     int get_cont_corr(const Stack *stack) const;
 
   private:
@@ -110,14 +110,14 @@ inline int History::get_pawn_hist(const Board &board, const Move &move) const {
     assert(move);
     Piece pc = board.piece_at(move.from());
     assert(valid_piece(pc));
-    return pawn_hist[ph_idx(board.get_pawn_hash())][pc][move.to()];
+    return pawn_hist[ph_idx(board.pawn_hash())][pc][move.to()];
 }
 
-inline int History::get_mat_corr(const Board &board) const {
+inline int History::get_material_corr(const Board &board) const {
     Color stm = board.get_stm();
-    return pawn_corr[stm][corr_idx(board.get_pawn_hash())] +               //
-           w_non_pawn_corr[stm][corr_idx(board.get_nonpawn_hash(WHITE))] + //
-           b_non_pawn_corr[stm][corr_idx(board.get_nonpawn_hash(BLACK))];
+    return pawn_corr[stm][corr_idx(board.pawn_hash())] +                //
+           w_non_pawn_corr[stm][corr_idx(board.non_pawn_hash(WHITE))] + //
+           b_non_pawn_corr[stm][corr_idx(board.non_pawn_hash(BLACK))];
 }
 
 inline int History::get_cont_corr(const Stack *stack) const {

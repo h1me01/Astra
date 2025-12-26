@@ -151,7 +151,7 @@ void UCI::update_position(std::istringstream &is) {
         board.make_move(parse_move(token));
         // if half move clock gets reseted, then we can reset the history
         // since the last positions should not be considered in the repetition
-        if(!board.get_fmr_count())
+        if(!board.fmr_count())
             board.reset_ply();
     }
 }
@@ -243,7 +243,7 @@ void UCI::bench() {
 
         search::threads.wait();
 
-        nodes += search::threads.get_total_nodes();
+        nodes += search::threads.total_nodes();
     }
 
     search::threads.stop();

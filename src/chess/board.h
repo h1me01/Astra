@@ -80,7 +80,7 @@ class Board {
 
     bool in_check() const;
     bool is_draw(int ply) const;
-    bool nonpawn_mat(Color c) const;
+    bool non_pawn_mat(Color c) const;
     bool gives_check(const Move &move) const;
     bool upcoming_repetition(int ply) const;
     bool see(const Move &move, int threshold) const;
@@ -92,12 +92,12 @@ class Board {
 
     Threats get_threats() const;
 
-    U64 get_occupancy(Color c) const {
+    U64 occupancy(Color c) const {
         return get_state().occ[c];
     }
 
-    U64 get_occupancy() const {
-        return get_occupancy(WHITE) | get_occupancy(BLACK);
+    U64 occupancy() const {
+        return occupancy(WHITE) | occupancy(BLACK);
     }
 
     U64 get_piece_bb(Color c, PieceType pt) const {
@@ -125,15 +125,15 @@ class Board {
         return NO_PIECE;
     }
 
-    U64 get_diag_sliders(Color c) const {
+    U64 diag_sliders(Color c) const {
         return get_piece_bb(c, BISHOP) | get_piece_bb(c, QUEEN);
     }
 
-    U64 get_orth_sliders(Color c) const {
+    U64 orth_sliders(Color c) const {
         return get_piece_bb(c, ROOK) | get_piece_bb(c, QUEEN);
     }
 
-    Square get_king_sq(Color c) const {
+    Square king_sq(Color c) const {
         return lsb(get_piece_bb(c, KING));
     }
 
@@ -145,24 +145,24 @@ class Board {
         return curr_ply;
     }
 
-    int get_fmr_count() const {
+    int fmr_count() const {
         return get_state().fmr_counter;
     }
 
-    U64 get_hash() const {
+    U64 hash() const {
         return get_state().hash;
     }
 
-    U64 get_pawn_hash() const {
+    U64 pawn_hash() const {
         return get_state().pawn_hash;
     }
 
-    U64 get_nonpawn_hash(Color c) const {
+    U64 non_pawn_hash(Color c) const {
         assert(valid_color(c));
         return get_state().non_pawn_hash[c];
     }
 
-    U64 get_check_squares(PieceType pt) const {
+    U64 check_squares(PieceType pt) const {
         assert(pt >= PAWN && pt <= KING);
         return get_state().check_squares[pt];
     }
@@ -181,7 +181,7 @@ class Board {
     Piece board[NUM_SQUARES];
     U64 piece_bb[NUM_PIECES];
 
-    std::array<StateInfo, 512> states;
+    std::array<StateInfo, 1024> states;
 
     void update_hash(Piece pc, U64 hash);
     void put_piece(Piece pc, Square sq);
@@ -190,7 +190,7 @@ class Board {
 
     void init_movegen_info();
 
-    std::pair<Square, Square> get_castle_rook_sqs(Color c, Square to);
+    std::pair<Square, Square> castle_rook_sqs(Color c, Square to);
 };
 
 inline void Board::reset_ply() {
@@ -211,7 +211,7 @@ inline bool Board::is_draw(int ply) const {
 }
 
 // checks if there is any non-pawn material on the board of the current side to move
-inline bool Board::nonpawn_mat(Color c) const {
+inline bool Board::non_pawn_mat(Color c) const {
     return get_piece_bb(c, KNIGHT) | get_piece_bb(c, BISHOP) | //
            get_piece_bb(c, ROOK) | get_piece_bb(c, QUEEN);
 }
@@ -219,8 +219,8 @@ inline bool Board::nonpawn_mat(Color c) const {
 inline U64 Board::attackers_to(Color c, Square sq, const U64 occ) const {
     U64 attacks = get_pawn_attacks(~c, sq) & get_piece_bb(c, PAWN);
     attacks |= get_attacks<KNIGHT>(sq) & get_piece_bb(c, KNIGHT);
-    attacks |= get_attacks<BISHOP>(sq, occ) & get_diag_sliders(c);
-    attacks |= get_attacks<ROOK>(sq, occ) & get_orth_sliders(c);
+    attacks |= get_attacks<BISHOP>(sq, occ) & diag_sliders(c);
+    attacks |= get_attacks<ROOK>(sq, occ) & orth_sliders(c);
     attacks |= get_attacks<KING>(sq) & get_piece_bb(c, KING);
     return attacks;
 }

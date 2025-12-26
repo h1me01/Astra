@@ -82,7 +82,7 @@ void NNUE::init_accum(Accum &acc) const {
 int32_t NNUE::forward(Board &board, const Accum &acc) {
     assert(acc.is_initialized(WHITE) && acc.is_initialized(BLACK));
 
-    const int bucket = (pop_count(board.get_occupancy()) - 2) / 4;
+    const int bucket = (pop_count(board.occupancy()) - 2) / 4;
     assert(0 <= bucket && bucket < OUTPUT_BUCKETS);
 
     auto l1_input = prep_l1_input(board.get_stm(), acc);

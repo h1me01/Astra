@@ -8,13 +8,13 @@ namespace chess {
 
 // helper
 
-std::pair<Square, Square> Board::get_castle_rook_sqs(Color c, Square to) {
+std::pair<Square, Square> Board::castle_rook_sqs(Color c, Square to) {
     assert(to == rel_sq(c, g1) || to == rel_sq(c, c1));
     const bool ks = to == rel_sq(c, g1);
     return {rel_sq(c, ks ? h1 : a1), rel_sq(c, ks ? f1 : d1)};
 }
 
-int get_see_piece_value(PieceType pt) {
+int see_piece_value(PieceType pt) {
     switch(pt) {
         // clang-format off
         case PAWN:   return search::pawn_value_see;
@@ -203,7 +203,7 @@ nnue::DirtyPieces Board::make_move(const Move &move) {
     if(move.is_castling()) {
         assert(pt == KING);
 
-        auto [rook_from, rook_to] = get_castle_rook_sqs(stm, to);
+        auto [rook_from, rook_to] = castle_rook_sqs(stm, to);
         assert(piece_at(rook_from) == make_piece(stm, ROOK));
 
         move_piece(rook_from, rook_to);
@@ -292,7 +292,7 @@ void Board::undo_move(const Move &move) {
     stm = ~stm;
 
     if(move.is_castling()) {
-        auto [rook_to, rook_from] = get_castle_rook_sqs(stm, to);
+        auto [rook_to, rook_from] = castle_rook_sqs(stm, to);
         move_piece(rook_from, rook_to);
     }
 
@@ -386,9 +386,9 @@ void Board::perft(int depth) {
 bool Board::is_legal(const Move &move) const {
     const Square from = move.from();
     const Square to = move.to();
-    const Square ksq = get_king_sq(stm);
+    const Square ksq = king_sq(stm);
     const Piece from_pc = piece_at(from);
-    const U64 occ = get_occupancy();
+    const U64 occ = occupancy();
     const U64 from_bb = sq_bb(from);
 
     assert(move);
@@ -404,8 +404,8 @@ bool Board::is_legal(const Move &move) const {
         assert(!valid_piece(piece_at(to)));
         assert(piece_at(cap_sq) == make_piece(~stm, PAWN));
 
-        U64 attackers = (get_attacks<BISHOP>(ksq, new_occ) & get_diag_sliders(~stm)) |
-                        (get_attacks<ROOK>(ksq, new_occ) & get_orth_sliders(~stm));
+        U64 attackers = (get_attacks<BISHOP>(ksq, new_occ) & diag_sliders(~stm)) |
+                        (get_attacks<ROOK>(ksq, new_occ) & orth_sliders(~stm));
 
         // only legal if no discovered check occurs after ep capture
         return !attackers;
@@ -431,7 +431,7 @@ bool Board::is_pseudo_legal(const Move &move) const {
 
     const Square from = move.from();
     const Square to = move.to();
-    const Square ksq = get_king_sq(stm);
+    const Square ksq = king_sq(stm);
     const Square cap_sq = move.is_ep() ? ep_sq(to) : to;
 
     const Piece from_pc = piece_at(from);
@@ -439,8 +439,8 @@ bool Board::is_pseudo_legal(const Move &move) const {
     const Piece captured = piece_at(cap_sq);
     const PieceType pt = piece_type(from_pc);
 
-    const U64 us_bb = get_occupancy(stm);
-    const U64 them_bb = get_occupancy(~stm);
+    const U64 us_bb = occupancy(stm);
+    const U64 them_bb = occupancy(~stm);
     const U64 occ = us_bb | them_bb;
     const U64 from_bb = sq_bb(from);
 
@@ -545,10 +545,10 @@ bool Board::gives_check(const Move &move) const {
 
     const Square from = move.from();
     const Square to = move.to();
-    const Square opp_ksq = get_king_sq(~stm);
-    const U64 occ = get_occupancy();
+    const Square opp_ksq = king_sq(~stm);
+    const U64 occ = occupancy();
 
-    if(get_check_squares(piece_type(piece_at(from))) & sq_bb(to))
+    if(check_squares(piece_type(piece_at(from))) & sq_bb(to))
         return true;
 
     if(get_state().blockers[~stm] & from)
@@ -560,10 +560,10 @@ bool Board::gives_check(const Move &move) const {
         Square cap_sq = make_square(sq_rank(from), sq_file(to));
         U64 b = (occ ^ from ^ cap_sq) | to;
 
-        return (get_attacks<ROOK>(opp_ksq, b) & get_orth_sliders(stm)) |
-               (get_attacks<BISHOP>(opp_ksq, b) & get_diag_sliders(stm));
+        return (get_attacks<ROOK>(opp_ksq, b) & orth_sliders(stm)) |
+               (get_attacks<BISHOP>(opp_ksq, b) & diag_sliders(stm));
     } else if(move.is_castling()) {
-        return get_check_squares(ROOK) & rel_sq(stm, to > from ? f1 : d1);
+        return check_squares(ROOK) & rel_sq(stm, to > from ? f1 : d1);
     } else {
         return false;
     }
@@ -572,7 +572,7 @@ bool Board::gives_check(const Move &move) const {
 bool Board::upcoming_repetition(int ply) const {
     assert(ply > 0);
 
-    const U64 occ = get_occupancy();
+    const U64 occ = occupancy();
     const StateInfo &info = get_state();
 
     const int distance = std::min(info.fmr_counter, info.plies_from_null);
@@ -634,20 +634,20 @@ bool Board::see(const Move &move, int threshold) const {
     assert(valid_piece_type(attacker));
     assert(piece_color(piece_at(from)) == stm);
 
-    int swap = get_see_piece_value(victim) - threshold;
+    int swap = see_piece_value(victim) - threshold;
     if(swap < 0)
         return false;
 
-    swap = get_see_piece_value(attacker) - swap;
+    swap = see_piece_value(attacker) - swap;
 
     if(swap <= 0)
         return true;
 
-    U64 occ = get_occupancy() ^ sq_bb(from) ^ sq_bb(to);
+    U64 occ = occupancy() ^ sq_bb(from) ^ sq_bb(to);
     U64 attackers = attackers_to(WHITE, to, occ) | attackers_to(BLACK, to, occ);
 
-    const U64 diag = get_diag_sliders(WHITE) | get_diag_sliders(BLACK);
-    const U64 orth = get_orth_sliders(WHITE) | get_orth_sliders(BLACK);
+    const U64 diag = diag_sliders(WHITE) | diag_sliders(BLACK);
+    const U64 orth = orth_sliders(WHITE) | orth_sliders(BLACK);
 
     int res = 1;
 
@@ -658,7 +658,7 @@ bool Board::see(const Move &move, int threshold) const {
         curr_stm = ~curr_stm;
         attackers &= occ;
 
-        if(!(stm_attacker = (attackers & get_occupancy(curr_stm))))
+        if(!(stm_attacker = (attackers & occupancy(curr_stm))))
             break;
 
         if(info.pinners[~stm] & occ) {
@@ -670,31 +670,31 @@ bool Board::see(const Move &move, int threshold) const {
         res ^= 1;
 
         if((bb = stm_attacker & get_piece_bb(PAWN))) {
-            if((swap = get_see_piece_value(PAWN) - swap) < res)
+            if((swap = see_piece_value(PAWN) - swap) < res)
                 break;
             occ ^= (bb & -bb);
             attackers |= get_attacks<BISHOP>(to, occ) & diag;
         } else if((bb = stm_attacker & get_piece_bb(KNIGHT))) {
-            if((swap = get_see_piece_value(KNIGHT) - swap) < res)
+            if((swap = see_piece_value(KNIGHT) - swap) < res)
                 break;
             occ ^= (bb & -bb);
         } else if((bb = stm_attacker & get_piece_bb(BISHOP))) {
-            if((swap = get_see_piece_value(BISHOP) - swap) < res)
+            if((swap = see_piece_value(BISHOP) - swap) < res)
                 break;
             occ ^= (bb & -bb);
             attackers |= get_attacks<BISHOP>(to, occ) & diag;
         } else if((bb = stm_attacker & get_piece_bb(ROOK))) {
-            if((swap = get_see_piece_value(ROOK) - swap) < res)
+            if((swap = see_piece_value(ROOK) - swap) < res)
                 break;
             occ ^= (bb & -bb);
             attackers |= get_attacks<ROOK>(to, occ) & orth;
         } else if((bb = stm_attacker & get_piece_bb(QUEEN))) {
-            swap = get_see_piece_value(QUEEN) - swap;
+            swap = see_piece_value(QUEEN) - swap;
             assert(swap >= res);
             occ ^= (bb & -bb);
             attackers |= (get_attacks<BISHOP>(to, occ) & diag) | (get_attacks<ROOK>(to, occ) & orth);
         } else {
-            return (attackers & ~get_occupancy(curr_stm)) ? res ^ 1 : res;
+            return (attackers & ~occupancy(curr_stm)) ? res ^ 1 : res;
         }
     }
 
@@ -707,7 +707,7 @@ Threats Board::get_threats() const {
     Threats threats;
 
     // king must be excluded so we don't block the slider attacks
-    const U64 occ = get_occupancy() ^ sq_bb(get_king_sq(stm));
+    const U64 occ = occupancy() ^ sq_bb(king_sq(stm));
 
     const U64 pawns = get_piece_bb(them, PAWN);
     threats[PAWN] = (them == WHITE) ? shift<NORTH_WEST>(pawns) | shift<NORTH_EAST>(pawns)
@@ -729,17 +729,17 @@ Threats Board::get_threats() const {
 void Board::init_movegen_info() {
     StateInfo &info = get_state();
 
-    const U64 occ = get_occupancy();
+    const U64 occ = occupancy();
 
     auto helper = [&](Color c) {
         info.blockers[c] = 0;
         info.pinners[~c] = 0;
 
-        const Square ksq = get_king_sq(c);
+        const Square ksq = king_sq(c);
 
         // potential enemy bishop, rook and queen attacks at our king
-        U64 cands = (get_attacks<ROOK>(ksq) & get_orth_sliders(~c)) | //
-                    (get_attacks<BISHOP>(ksq) & get_diag_sliders(~c));
+        U64 cands = (get_attacks<ROOK>(ksq) & orth_sliders(~c)) | //
+                    (get_attacks<BISHOP>(ksq) & diag_sliders(~c));
 
         const U64 new_occ = occ ^ cands;
         while(cands) {
@@ -748,7 +748,7 @@ void Board::init_movegen_info() {
 
             if(pop_count(b) == 1) {
                 info.blockers[c] |= b;
-                if(b & get_occupancy(c))
+                if(b & occupancy(c))
                     info.pinners[~c] |= sq_bb(sq);
             }
         }
@@ -757,9 +757,9 @@ void Board::init_movegen_info() {
     helper(WHITE);
     helper(BLACK);
 
-    info.checkers = attackers_to(~stm, get_king_sq(stm), occ);
+    info.checkers = attackers_to(~stm, king_sq(stm), occ);
 
-    Square ksq = get_king_sq(~stm);
+    Square ksq = king_sq(~stm);
 
     info.check_squares[PAWN] = get_pawn_attacks(~stm, ksq);
     info.check_squares[KNIGHT] = get_attacks<KNIGHT>(ksq);

@@ -166,7 +166,7 @@ void MovePicker::gen_score_quiets() {
                 score -= bonus;
         }
 
-        bool can_check = board.get_check_squares(pt) & sq_bb(to);
+        bool can_check = board.check_squares(pt) & sq_bb(to);
         score += (can_check && board.see(move, -quiet_checker_bonus)) * 16384;
 
         ml_main[i].score = score;

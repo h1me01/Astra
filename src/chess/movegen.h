@@ -37,8 +37,8 @@ Move *gen_pawn_moves(const Board &board, Move *ml, const U64 targets) {
     constexpr Direction up_right = (us == WHITE ? NORTH_EAST : SOUTH_WEST);
     constexpr Direction up_left = (us == WHITE ? NORTH_WEST : SOUTH_EAST);
 
-    const U64 them_bb = board.get_occupancy(them);
-    const U64 occ = board.get_occupancy(us) | them_bb;
+    const U64 them_bb = board.occupancy(them);
+    const U64 occ = board.occupancy(us) | them_bb;
     const U64 empty_sqs = ~occ;
     const U64 pawns = board.get_piece_bb(us, PAWN);
     const U64 pawns_non7 = pawns & ~rank7_bb;
@@ -109,9 +109,9 @@ Move *gen_pawn_moves(const Board &board, Move *ml, const U64 targets) {
 
 template <Color us, GenType gt, PieceType pt> //
 Move *gen_piece_moves(const Board &board, Move *ml, U64 pieces, const U64 targets) {
-    const Square our_ksq = board.get_king_sq(us);
-    const U64 us_bb = board.get_occupancy(us);
-    const U64 them_bb = board.get_occupancy(~us);
+    const Square our_ksq = board.king_sq(us);
+    const U64 us_bb = board.occupancy(us);
+    const U64 them_bb = board.occupancy(~us);
     const U64 occ = us_bb | them_bb;
     const U64 pinned = board.get_state().blockers[us] & us_bb;
 
@@ -141,9 +141,9 @@ Move *gen_piece_moves(const Board &board, Move *ml, U64 pieces, const U64 target
 template <Color us, GenType gt> //
 Move *gen_all(const Board &board, Move *ml) {
     const StateInfo &info = board.get_state();
-    const Square our_ksq = board.get_king_sq(us);
-    const U64 us_bb = board.get_occupancy(us);
-    const U64 them_bb = board.get_occupancy(~us);
+    const Square our_ksq = board.king_sq(us);
+    const U64 us_bb = board.occupancy(us);
+    const U64 them_bb = board.occupancy(~us);
     const U64 occ = us_bb | them_bb;
     const U64 checkers = info.checkers;
     const U64 targets = (them_bb | ~occ);
@@ -159,8 +159,8 @@ Move *gen_all(const Board &board, Move *ml) {
 
     ml = gen_pawn_moves<us, gt>(board, ml, check_targets);
     ml = gen_piece_moves<us, gt, KNIGHT>(board, ml, board.get_piece_bb(us, KNIGHT), piece_targets);
-    ml = gen_piece_moves<us, gt, BISHOP>(board, ml, board.get_diag_sliders(us), piece_targets);
-    ml = gen_piece_moves<us, gt, ROOK>(board, ml, board.get_orth_sliders(us), piece_targets);
+    ml = gen_piece_moves<us, gt, BISHOP>(board, ml, board.diag_sliders(us), piece_targets);
+    ml = gen_piece_moves<us, gt, ROOK>(board, ml, board.orth_sliders(us), piece_targets);
 
     // castling moves
     if((gt & ADD_QUIETS) && !checkers) {
@@ -175,8 +175,8 @@ Move *gen_all(const Board &board, Move *ml) {
 
 inline Move *gen_legals(const Board &board, Move *ml) {
     const Color us = board.get_stm();
-    const Square our_ksq = board.get_king_sq(us);
-    const U64 pinned = board.get_state().blockers[us] & board.get_occupancy(us);
+    const Square our_ksq = board.king_sq(us);
+    const U64 pinned = board.get_state().blockers[us] & board.occupancy(us);
 
     Move *curr = ml;
     ml = (us == WHITE) ? gen_all<WHITE, ADD_LEGALS>(board, ml) : gen_all<BLACK, ADD_LEGALS>(board, ml);

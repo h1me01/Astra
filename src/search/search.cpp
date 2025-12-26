@@ -209,7 +209,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
     const Score old_alpha = alpha;
     const Color stm = board.get_stm();
     const bool in_check = board.in_check();
-    const U64 hash = board.get_hash();
+    const U64 hash = board.hash();
 
     if(pv_node)
         sel_depth = std::max(sel_depth, stack->ply);
@@ -277,7 +277,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
             }
         }
 
-        if(board.get_fmr_count() < 90)
+        if(board.fmr_count() < 90)
             return tt_score;
     }
 
@@ -376,7 +376,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
        && eval >= beta                                                   //
        && !is_loss(beta)                                                 //
        && !stack->skipped                                                //
-       && board.nonpawn_mat(stm)                                         //
+       && board.non_pawn_mat(stm)                                        //
        && stack->ply >= nmp_min_ply                                      //
        && stack->static_eval + nmp_depth_mult * depth - nmp_base >= beta //
     ) {
@@ -712,7 +712,7 @@ Score Search::quiescence(Score alpha, Score beta, Stack *stack) {
         sel_depth = std::max(sel_depth, stack->ply);
 
     const bool in_check = board.in_check();
-    const U64 hash = board.get_hash();
+    const U64 hash = board.hash();
 
     if(stack->ply >= MAX_PLY - 1)
         return in_check ? VALUE_DRAW : evaluate();
@@ -854,9 +854,9 @@ void Search::make_move(const Move &move, Stack *stack) {
         accum.set_refresh(piece_color(pc));
 
     auto dirty_pieces = board.make_move(move);
-    accum.set_info(dirty_pieces, board.get_king_sq(WHITE), board.get_king_sq(BLACK));
+    accum.set_info(dirty_pieces, board.king_sq(WHITE), board.king_sq(BLACK));
 
-    tt.prefetch(board.get_hash());
+    tt.prefetch(board.hash());
 }
 
 void Search::undo_move(const Move &move) {
@@ -906,8 +906,8 @@ Score Search::evaluate() {
 }
 
 Score Search::adjust_eval(int32_t eval, Stack *stack) const {
-    eval = (eval * (200 - board.get_fmr_count())) / 200;
-    eval += (history.get_mat_corr(board) + history.get_cont_corr(stack)) / 256;
+    eval = (eval * (200 - board.fmr_count())) / 200;
+    eval += (history.get_material_corr(board) + history.get_cont_corr(stack)) / 256;
 
     return std::clamp(                         //
         eval,                                  //
@@ -917,8 +917,8 @@ Score Search::adjust_eval(int32_t eval, Stack *stack) const {
 }
 
 unsigned int Search::probe_wdl() const {
-    U64 w_occ = board.get_occupancy(WHITE);
-    U64 b_occ = board.get_occupancy(BLACK);
+    U64 w_occ = board.occupancy(WHITE);
+    U64 b_occ = board.occupancy(BLACK);
     U64 occ = w_occ | b_occ;
 
     if(pop_count(occ) > signed(TB_LARGEST))
@@ -935,7 +935,7 @@ unsigned int Search::probe_wdl() const {
         board.get_piece_bb(BISHOP),            //
         board.get_piece_bb(KNIGHT),            //
         board.get_piece_bb(PAWN),              //
-        board.get_fmr_count(),                 //
+        board.fmr_count(),                     //
         board.get_state().castle_rights.any(), //
         valid_sq(ep_sq) ? ep_sq : 0,           //
         board.get_stm() == WHITE               //
@@ -947,7 +947,7 @@ bool Search::is_limit_reached() const {
         return false; // only main thread checks limits
     if(limits.infinite)
         return false;
-    if(limits.nodes != 0 && threads.get_total_nodes() >= limits.nodes)
+    if(limits.nodes != 0 && threads.total_nodes() >= limits.nodes)
         return true;
     if(limits.time.maximum != 0 && tm.elapsed_time() >= limits.time.maximum)
         return true;
@@ -985,7 +985,7 @@ void Search::update_pv(const Move &move, Stack *stack) {
 void Search::print_uci_info() const {
     const RootMove &rm = root_moves[multipv_idx];
     const int64_t elapsed_time = tm.elapsed_time();
-    const U64 total_nodes = threads.get_total_nodes();
+    const U64 total_nodes = threads.total_nodes();
     const PVLine &pv_line = rm.pv;
 
     std::cout << "info depth " << completed_depth //
@@ -1000,7 +1000,7 @@ void Search::print_uci_info() const {
 
     std::cout << " nodes " << total_nodes                           //
               << " nps " << total_nodes * 1000 / (elapsed_time + 1) //
-              << " tbhits " << threads.get_tb_hits()                //
+              << " tbhits " << threads.tb_hits()                    //
               << " hashfull " << tt.hashfull()                      //
               << " time " << elapsed_time                           //
               << " pv " << rm;

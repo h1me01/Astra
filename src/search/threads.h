@@ -48,22 +48,22 @@ class ThreadPool {
         return threads.empty() ? nullptr : threads[0].get();
     }
 
-    int get_count() const {
+    int size() const {
         return static_cast<int>(threads.size());
     }
 
-    U64 get_total_nodes() const {
-        U64 total_nodes = 0;
+    U64 total_nodes() const {
+        U64 count = 0;
         for(const auto &t : threads)
-            total_nodes += t->get_nodes();
-        return total_nodes;
+            count += t->get_nodes();
+        return count;
     }
 
-    U64 get_tb_hits() const {
-        U64 total_tb_hits = 0;
+    U64 tb_hits() const {
+        U64 count = 0;
         for(const auto &t : threads)
-            total_tb_hits += t->get_tb_hits();
-        return total_tb_hits;
+            count += t->get_tb_hits();
+        return count;
     }
 
   private:
