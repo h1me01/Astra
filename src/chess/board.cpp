@@ -14,17 +14,17 @@ std::pair<Square, Square> Board::castle_rook_sqs(Color c, Square to) {
     return {rel_sq(c, ks ? h1 : a1), rel_sq(c, ks ? f1 : d1)};
 }
 
-int see_piece_value(PieceType pt) {
+int see_piece_values(PieceType pt) {
+    // clang-format off
     switch(pt) {
-        // clang-format off
         case PAWN:   return search::pawn_value_see;
         case KNIGHT: return search::knight_value_see;
         case BISHOP: return search::bishop_value_see;
         case ROOK:   return search::rook_value_see;
         case QUEEN:  return search::queen_value_see;
         default:     return 0;
-        // clang-format on
     }
+    // clang-format on
 }
 
 // Board
@@ -36,8 +36,7 @@ Board::Board(const std::string fen) {
 Board &Board::operator=(const Board &other) {
     if(this != &other) {
         stm = other.stm;
-        curr_ply = other.curr_ply;
-        states = other.states;
+        state_list = other.state_list;
 
         std::copy(std::begin(other.occ), std::end(other.occ), std::begin(occ));
         std::copy(std::begin(other.board), std::end(other.board), std::begin(board));
@@ -48,15 +47,14 @@ Board &Board::operator=(const Board &other) {
 }
 
 void Board::set_fen(const std::string &fen) {
-    curr_ply = 0;
     std::memset(piece_bb, 0, sizeof(piece_bb));
     std::memset(occ, 0, sizeof(occ));
 
     for(auto &i : board)
         i = NO_PIECE;
 
-    states[0] = StateInfo();
-    StateInfo &info = states[0];
+    state_list.clear();
+    StateInfo &info = state_list.back();
 
     info.hash = 0;
     info.pawn_hash = 0;
@@ -164,7 +162,7 @@ std::string Board::get_fen() const {
         << castling << " "                //
         << ep << " "                      //
         << info.fmr_counter << " "        //
-        << (!curr_ply ? 1 : (curr_ply + 1) / 2);
+        << (!get_ply() ? 1 : (get_ply() + 1) / 2);
 
     return fen.str();
 }
@@ -184,9 +182,7 @@ nnue::DirtyPieces Board::make_move(const Move &move) {
     assert(valid_piece(captured) == move.is_cap());
 
     // update history
-    curr_ply++;
-    states[curr_ply] = states[curr_ply - 1];
-    StateInfo &info = get_state();
+    StateInfo &info = state_list.increment();
 
     // update move counters
     info.fmr_counter++;
@@ -269,7 +265,7 @@ nnue::DirtyPieces Board::make_move(const Move &move) {
     int distance = std::min(info.fmr_counter, info.plies_from_null);
 
     if(distance >= 4) {
-        StateInfo *prev = &states[curr_ply - 2];
+        StateInfo *prev = &state_list[get_ply() - 2];
         for(int i = 4; i <= distance; i += 2) {
             prev -= 2;
             if(prev->hash == info.hash) {
@@ -310,13 +306,11 @@ void Board::undo_move(const Move &move) {
         put_piece(captured, move.is_ep() ? ep_sq(to) : to);
     }
 
-    curr_ply--;
+    state_list.decrement();
 }
 
 void Board::make_nullmove() {
-    curr_ply++;
-    states[curr_ply] = states[curr_ply - 1];
-    StateInfo &info = get_state();
+    StateInfo &info = state_list.increment();
 
     info.fmr_counter++;
     info.plies_from_null = 0;
@@ -333,8 +327,8 @@ void Board::make_nullmove() {
 }
 
 void Board::undo_nullmove() {
-    curr_ply--;
     stm = ~stm;
+    state_list.decrement();
 }
 
 void Board::perft(int depth) {
@@ -552,7 +546,7 @@ bool Board::gives_check(const Move &move) const {
 
     const Square from = move.from();
     const Square to = move.to();
-    const Square opp_ksq = king_sq(~stm);
+    const Square nstm_ksq = king_sq(~stm);
     const U64 occ = occupancy();
 
     if(check_squares(piece_type(piece_at(from))) & sq_bb(to))
@@ -567,8 +561,8 @@ bool Board::gives_check(const Move &move) const {
         Square cap_sq = make_square(sq_rank(from), sq_file(to));
         U64 b = (occ ^ from ^ cap_sq) | to;
 
-        return (get_attacks<ROOK>(opp_ksq, b) & orth_sliders(stm)) |
-               (get_attacks<BISHOP>(opp_ksq, b) & diag_sliders(stm));
+        return (get_attacks<ROOK>(nstm_ksq, b) & orth_sliders(stm)) |
+               (get_attacks<BISHOP>(nstm_ksq, b) & diag_sliders(stm));
     } else if(move.is_castling()) {
         return check_squares(ROOK) & rel_sq(stm, to > from ? f1 : d1);
     } else {
@@ -589,21 +583,21 @@ bool Board::upcoming_repetition(int ply) const {
     int offset = 1;
 
     U64 orig_key = info.hash;
-    U64 other_key = orig_key ^ states[curr_ply - offset].hash ^ zobrist::get_side();
+    U64 other_key = orig_key ^ state_list[get_ply() - offset].hash ^ zobrist::get_side();
 
     for(int i = 3; i <= distance; i += 2) {
         offset++;
-        int idx = curr_ply - offset;
+        int idx = get_ply() - offset;
 
-        other_key ^= states[idx].hash ^ states[idx - 1].hash ^ zobrist::get_side();
+        other_key ^= state_list[idx].hash ^ state_list[idx - 1].hash ^ zobrist::get_side();
 
         offset++;
-        idx = curr_ply - offset;
+        idx = get_ply() - offset;
 
         if(other_key != 0)
             continue;
 
-        U64 move_key = orig_key ^ states[idx].hash;
+        U64 move_key = orig_key ^ state_list[idx].hash;
         int hash = cuckoo::cuckoo_h1(move_key);
 
         if(cuckoo::get_hash(hash) != move_key)
@@ -618,7 +612,7 @@ bool Board::upcoming_repetition(int ply) const {
         if(!(between & occ)) {
             if(ply > i)
                 return true;
-            if(states[idx].repetition)
+            if(state_list[idx].repetition)
                 return true;
         }
     }
@@ -639,14 +633,14 @@ bool Board::see(const Move &move, int threshold) const {
     const PieceType victim = piece_type(piece_at(to));
 
     assert(valid_piece_type(attacker));
+    assert(valid_piece_type(victim) || move.is_quiet());
     assert(piece_color(piece_at(from)) == stm);
 
-    int swap = see_piece_value(victim) - threshold;
+    int swap = see_piece_values(victim) - threshold;
     if(swap < 0)
         return false;
 
-    swap = see_piece_value(attacker) - swap;
-
+    swap = see_piece_values(attacker) - swap;
     if(swap <= 0)
         return true;
 
@@ -677,26 +671,26 @@ bool Board::see(const Move &move, int threshold) const {
         res ^= 1;
 
         if((bb = stm_attacker & get_piece_bb(PAWN))) {
-            if((swap = see_piece_value(PAWN) - swap) < res)
+            if((swap = see_piece_values(PAWN) - swap) < res)
                 break;
             occ ^= (bb & -bb);
             attackers |= get_attacks<BISHOP>(to, occ) & diag;
         } else if((bb = stm_attacker & get_piece_bb(KNIGHT))) {
-            if((swap = see_piece_value(KNIGHT) - swap) < res)
+            if((swap = see_piece_values(KNIGHT) - swap) < res)
                 break;
             occ ^= (bb & -bb);
         } else if((bb = stm_attacker & get_piece_bb(BISHOP))) {
-            if((swap = see_piece_value(BISHOP) - swap) < res)
+            if((swap = see_piece_values(BISHOP) - swap) < res)
                 break;
             occ ^= (bb & -bb);
             attackers |= get_attacks<BISHOP>(to, occ) & diag;
         } else if((bb = stm_attacker & get_piece_bb(ROOK))) {
-            if((swap = see_piece_value(ROOK) - swap) < res)
+            if((swap = see_piece_values(ROOK) - swap) < res)
                 break;
             occ ^= (bb & -bb);
             attackers |= get_attacks<ROOK>(to, occ) & orth;
         } else if((bb = stm_attacker & get_piece_bb(QUEEN))) {
-            swap = see_piece_value(QUEEN) - swap;
+            swap = see_piece_values(QUEEN) - swap;
             assert(swap >= res);
             occ ^= (bb & -bb);
             attackers |= (get_attacks<BISHOP>(to, occ) & diag) | (get_attacks<ROOK>(to, occ) & orth);
@@ -766,12 +760,12 @@ void Board::init_movegen_info() {
 
     info.checkers = attackers_to(~stm, king_sq(stm), occ);
 
-    Square ksq = king_sq(~stm);
+    Square nstm_ksq = king_sq(~stm);
 
-    info.check_squares[PAWN] = get_pawn_attacks(~stm, ksq);
-    info.check_squares[KNIGHT] = get_attacks<KNIGHT>(ksq);
-    info.check_squares[BISHOP] = get_attacks<BISHOP>(ksq, occ);
-    info.check_squares[ROOK] = get_attacks<ROOK>(ksq, occ);
+    info.check_squares[PAWN] = get_pawn_attacks(~stm, nstm_ksq);
+    info.check_squares[KNIGHT] = get_attacks<KNIGHT>(nstm_ksq);
+    info.check_squares[BISHOP] = get_attacks<BISHOP>(nstm_ksq, occ);
+    info.check_squares[ROOK] = get_attacks<ROOK>(nstm_ksq, occ);
     info.check_squares[QUEEN] = info.check_squares[BISHOP] | info.check_squares[ROOK];
 }
 

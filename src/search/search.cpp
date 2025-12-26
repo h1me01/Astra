@@ -51,7 +51,6 @@ void Search::start() {
     completed_depth = 0;
 
     root_moves.gen<ADD_LEGALS>(board);
-
     if(!root_moves.size()) {
         std::cout << "Position has no legal moves" << std::endl;
         return;
@@ -845,13 +844,10 @@ void Search::make_move(const Move &move, Stack *stack) {
     stack->moved_piece = board.piece_at(move.from());
     stack->cont_hist = &history.cont_hist[move.is_cap()][stack->moved_piece][move.to()];
 
-    accum_list.increment();
+    nnue::Accum &accum = accum_list.increment();
 
-    nnue::Accum &accum = accum_list.back();
-
-    Piece pc = board.piece_at(move.from());
-    if(nnue::needs_refresh(pc, move.from(), move.to()))
-        accum.set_refresh(piece_color(pc));
+    if(nnue::needs_refresh(stack->moved_piece, move.from(), move.to()))
+        accum.set_refresh(piece_color(stack->moved_piece));
 
     auto dirty_pieces = board.make_move(move);
     accum.set_info(dirty_pieces, board.king_sq(WHITE), board.king_sq(BLACK));
@@ -926,19 +922,19 @@ unsigned int Search::probe_wdl() const {
 
     Square ep_sq = board.get_state().ep_sq;
 
-    return tb_probe_wdl(                       //
-        w_occ,                                 //
-        b_occ,                                 //
-        board.get_piece_bb(KING),              //
-        board.get_piece_bb(QUEEN),             //
-        board.get_piece_bb(ROOK),              //
-        board.get_piece_bb(BISHOP),            //
-        board.get_piece_bb(KNIGHT),            //
-        board.get_piece_bb(PAWN),              //
-        board.fmr_count(),                     //
+    return tb_probe_wdl(                         //
+        w_occ,                                   //
+        b_occ,                                   //
+        board.get_piece_bb(KING),                //
+        board.get_piece_bb(QUEEN),               //
+        board.get_piece_bb(ROOK),                //
+        board.get_piece_bb(BISHOP),              //
+        board.get_piece_bb(KNIGHT),              //
+        board.get_piece_bb(PAWN),                //
+        board.fmr_count(),                       //
         board.get_state().castling_rights.any(), //
-        valid_sq(ep_sq) ? ep_sq : 0,           //
-        board.get_stm() == WHITE               //
+        valid_sq(ep_sq) ? ep_sq : 0,             //
+        board.get_stm() == WHITE                 //
     );
 }
 

@@ -8,31 +8,10 @@
 #include "cuckoo.h"
 #include "types.h"
 #include "zobrist.h"
+#include "state_info.h"
 
 namespace chess {
 
-struct StateInfo {
-    StateInfo() = default;
-    StateInfo(const StateInfo &other) = default;
-    StateInfo &operator=(const StateInfo &other) = default;
-
-    Piece captured;
-    Square ep_sq;
-    CastlingRights castling_rights;
-
-    int fmr_counter; // fifty move rule
-    int plies_from_null;
-    int repetition;
-
-    U64 hash;
-    U64 pawn_hash;
-    U64 non_pawn_hash[NUM_COLORS];
-
-    U64 checkers;
-    U64 pinners[NUM_COLORS];
-    U64 blockers[NUM_COLORS];
-    U64 check_squares[NUM_PIECE_TYPES];
-};
 
 class Threats {
   public:
@@ -139,7 +118,8 @@ class Board {
     }
 
     int get_ply() const {
-        return curr_ply;
+        assert(state_list.size() > 0);
+        return state_list.size() - 1;
     }
 
     int fmr_count() const {
@@ -165,21 +145,20 @@ class Board {
     }
 
     StateInfo &get_state() {
-        return states[curr_ply];
+        return state_list.back();
     }
 
     const StateInfo &get_state() const {
-        return states[curr_ply];
+        return state_list.back();
     }
 
   private:
     Color stm;
-    int curr_ply;
     Piece board[NUM_SQUARES];
     U64 piece_bb[NUM_PIECES];
     U64 occ[NUM_COLORS];
 
-    std::array<StateInfo, 1024> states;
+    StateInfoList state_list;
 
     void update_hash(Piece pc, U64 hash);
     void put_piece(Piece pc, Square sq);
@@ -192,9 +171,8 @@ class Board {
 };
 
 inline void Board::reset_ply() {
-    states[0] = get_state();
-    states[0].plies_from_null = 0;
-    curr_ply = 0;
+    state_list.reset();
+    state_list.back().plies_from_null = 0;
 }
 
 inline bool Board::in_check() const {
