@@ -430,7 +430,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
 
         Move move = Move::none();
         while((move = mp.next())) {
-            if(move == stack->skipped || !board.is_legal(move))
+            if(move == stack->skipped || !board.legal(move))
                 continue;
 
             make_move(move, stack);
@@ -464,7 +464,7 @@ movesloop:
 
     bool skip_quiets = false;
     while((move = mp.next(skip_quiets))) {
-        if(move == stack->skipped || !board.is_legal(move))
+        if(move == stack->skipped || !board.legal(move))
             continue;
         if(root_node && !found_rootmove(move))
             continue;
@@ -773,7 +773,7 @@ Score Search::quiescence(Score alpha, Score beta, Stack *stack) {
 
     int made_moves = 0;
     while((move = mp.next())) {
-        if(!board.is_legal(move))
+        if(!board.legal(move))
             continue;
 
         made_moves++;
@@ -936,7 +936,7 @@ unsigned int Search::probe_wdl() const {
         board.get_piece_bb(KNIGHT),            //
         board.get_piece_bb(PAWN),              //
         board.fmr_count(),                     //
-        board.get_state().castle_rights.any(), //
+        board.get_state().castling_rights.any(), //
         valid_sq(ep_sq) ? ep_sq : 0,           //
         board.get_stm() == WHITE               //
     );

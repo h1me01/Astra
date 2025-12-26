@@ -46,7 +46,7 @@ Move MovePicker::next(bool skip_quiets) {
     switch(stage) {
     case PLAY_TT_MOVE:
         stage = GEN_NOISY;
-        if(board.is_pseudo_legal(tt_move))
+        if(board.pseudo_legal(tt_move))
             return tt_move;
         [[fallthrough]];
     case GEN_NOISY:
@@ -81,12 +81,12 @@ Move MovePicker::next(bool skip_quiets) {
         [[fallthrough]];
     case PLAY_KILLER:
         stage = PLAY_COUNTER;
-        if(!skip_quiets && board.is_pseudo_legal(killer))
+        if(!skip_quiets && board.pseudo_legal(killer))
             return killer;
         [[fallthrough]];
     case PLAY_COUNTER:
         stage = GEN_QUIETS;
-        if(!skip_quiets && board.is_pseudo_legal(counter))
+        if(!skip_quiets && board.pseudo_legal(counter))
             return counter;
         [[fallthrough]];
     case GEN_QUIETS:

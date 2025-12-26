@@ -16,7 +16,7 @@ Move *make_promotions(Move *ml, Square to) {
     assert(!(to >= a2 && to <= h7));
     assert(mt == PQ_QUEEN || mt == PC_QUEEN);
 
-    if(gt & ADD_NOISY) {
+    if(gt != ADD_QUIETS) {
         *ml++ = Move(to - d, to, mt);
         if(gt == ADD_NOISY && mt == PQ_QUEEN)
             return ml;
@@ -44,7 +44,7 @@ Move *gen_pawn_moves(const Board &board, Move *ml, const U64 targets) {
     const U64 pawns_non7 = pawns & ~rank7_bb;
 
     // single and double pawn pushes, no promotions
-    if constexpr(gt & ADD_QUIETS) {
+    if constexpr(gt != ADD_NOISY) {
         U64 b1 = shift<up>(pawns_non7) & empty_sqs;
         U64 b2 = shift<up>(b1 & rank_mask(rel_rank(us, RANK_3))) & empty_sqs & targets;
 
@@ -61,7 +61,7 @@ Move *gen_pawn_moves(const Board &board, Move *ml, const U64 targets) {
         }
     }
 
-    if constexpr(gt & ADD_NOISY) {
+    if constexpr(gt != ADD_QUIETS) {
         // standard captures
         U64 b1 = shift<up_right>(pawns_non7) & them_bb & targets;
         U64 b2 = shift<up_left>(pawns_non7) & them_bb & targets;
@@ -78,7 +78,8 @@ Move *gen_pawn_moves(const Board &board, Move *ml, const U64 targets) {
 
         // en passant
         Square ep_sq = board.get_state().ep_sq;
-        if(valid_sq(ep_sq)) {
+        // make sure en passant is valid and that there is no discovered check
+        if(valid_sq(ep_sq) && !(targets & sq_bb(ep_sq + up))) {
             assert(sq_rank(ep_sq) == rel_rank(us, RANK_6));
 
             b1 = pawns_non7 & get_pawn_attacks(them, ep_sq);
@@ -90,7 +91,7 @@ Move *gen_pawn_moves(const Board &board, Move *ml, const U64 targets) {
     // promotions
     const U64 pawns_on7 = pawns & rank7_bb;
 
-    if(gt & ADD_NOISY) {
+    if(gt != ADD_QUIETS) {
         U64 pb1 = shift<up_right>(pawns_on7) & them_bb & targets;
         while(pb1)
             ml = make_promotions<gt, up_right, PC_QUEEN>(ml, pop_lsb(pb1));
@@ -109,6 +110,8 @@ Move *gen_pawn_moves(const Board &board, Move *ml, const U64 targets) {
 
 template <Color us, GenType gt, PieceType pt> //
 Move *gen_piece_moves(const Board &board, Move *ml, U64 pieces, const U64 targets) {
+    assert(pt != PAWN);
+
     const Square our_ksq = board.king_sq(us);
     const U64 us_bb = board.occupancy(us);
     const U64 them_bb = board.occupancy(~us);
@@ -122,16 +125,10 @@ Move *gen_piece_moves(const Board &board, Move *ml, U64 pieces, const U64 target
         if(pinned & sq_bb(from))
             attacks &= line(from, our_ksq);
 
-        if constexpr(gt & ADD_QUIETS) {
-            U64 target = attacks & ~occ;
-            while(target)
-                *ml++ = Move(from, pop_lsb(target), QUIET);
-        }
-
-        if constexpr(gt & ADD_NOISY) {
-            U64 target = attacks & them_bb;
-            while(target)
-                *ml++ = Move(from, pop_lsb(target), CAPTURE);
+        while(attacks) {
+            Square to = pop_lsb(attacks);
+            MoveType mt = (sq_bb(to) & them_bb) ? CAPTURE : QUIET;
+            *ml++ = Move(from, to, mt);
         }
     }
 
@@ -146,7 +143,12 @@ Move *gen_all(const Board &board, Move *ml) {
     const U64 them_bb = board.occupancy(~us);
     const U64 occ = us_bb | them_bb;
     const U64 checkers = info.checkers;
-    const U64 targets = (them_bb | ~occ);
+
+    U64 targets = 0;
+    if constexpr(gt != ADD_QUIETS)
+        targets |= them_bb;
+    if constexpr(gt != ADD_NOISY)
+        targets |= ~occ;
 
     ml = gen_piece_moves<us, gt, KING>(board, ml, board.get_piece_bb(us, KING), targets);
 
@@ -163,10 +165,10 @@ Move *gen_all(const Board &board, Move *ml) {
     ml = gen_piece_moves<us, gt, ROOK>(board, ml, board.orth_sliders(us), piece_targets);
 
     // castling moves
-    if((gt & ADD_QUIETS) && !checkers) {
-        if(info.castle_rights.ks(us) && !(occ & ks_castle_path_mask(us)))
+    if((gt != ADD_NOISY) && !checkers) {
+        if(info.castling_rights.kingside(us) && !(occ & ks_castle_path_mask(us)))
             *ml++ = Move(rel_sq(us, e1), rel_sq(us, g1), CASTLING);
-        if(info.castle_rights.qs(us) && !(occ & qs_castle_path_mask(us)))
+        if(info.castling_rights.queenside(us) && !(occ & qs_castle_path_mask(us)))
             *ml++ = Move(rel_sq(us, e1), rel_sq(us, c1), CASTLING);
     }
 
@@ -183,7 +185,7 @@ inline Move *gen_legals(const Board &board, Move *ml) {
 
     while(curr != ml) {
         bool needs_checking = (pinned & sq_bb(curr->from())) || curr->is_ep() || curr->from() == our_ksq;
-        if(needs_checking && !board.is_legal(*curr))
+        if(needs_checking && !board.legal(*curr))
             *curr = *(--ml);
         else
             ++curr;

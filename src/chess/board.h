@@ -18,18 +18,15 @@ struct StateInfo {
 
     Piece captured;
     Square ep_sq;
-    CastlingRights castle_rights;
+    CastlingRights castling_rights;
 
     int fmr_counter; // fifty move rule
     int plies_from_null;
-
     int repetition;
 
     U64 hash;
     U64 pawn_hash;
     U64 non_pawn_hash[NUM_COLORS];
-
-    U64 occ[NUM_COLORS];
 
     U64 checkers;
     U64 pinners[NUM_COLORS];
@@ -75,8 +72,8 @@ class Board {
 
     void perft(int depth);
 
-    bool is_legal(const Move &move) const;
-    bool is_pseudo_legal(const Move &move) const;
+    bool legal(const Move &move) const;
+    bool pseudo_legal(const Move &move) const;
 
     bool in_check() const;
     bool is_draw(int ply) const;
@@ -93,7 +90,7 @@ class Board {
     Threats get_threats() const;
 
     U64 occupancy(Color c) const {
-        return get_state().occ[c];
+        return occ[c];
     }
 
     U64 occupancy() const {
@@ -180,6 +177,7 @@ class Board {
     int curr_ply;
     Piece board[NUM_SQUARES];
     U64 piece_bb[NUM_PIECES];
+    U64 occ[NUM_COLORS];
 
     std::array<StateInfo, 1024> states;
 
@@ -253,11 +251,9 @@ inline void Board::put_piece(Piece pc, Square sq) {
     assert(valid_sq(sq));
     assert(valid_piece(pc));
 
-    StateInfo &info = get_state();
-
     board[sq] = pc;
     piece_bb[pc] |= sq_bb(sq);
-    info.occ[piece_color(pc)] ^= sq_bb(sq);
+    occ[piece_color(pc)] |= sq_bb(sq);
 
     update_hash(pc, zobrist::get_psq(pc, sq));
 }
@@ -265,14 +261,12 @@ inline void Board::put_piece(Piece pc, Square sq) {
 inline void Board::remove_piece(Square sq) {
     assert(valid_sq(sq));
 
-    StateInfo &info = get_state();
-
     Piece pc = piece_at(sq);
     assert(valid_piece(pc));
 
     piece_bb[pc] ^= sq_bb(sq);
     board[sq] = NO_PIECE;
-    info.occ[piece_color(pc)] ^= sq_bb(sq);
+    occ[piece_color(pc)] ^= sq_bb(sq);
 
     update_hash(pc, zobrist::get_psq(pc, sq));
 }
@@ -281,15 +275,13 @@ inline void Board::move_piece(Square from, Square to) {
     assert(valid_sq(to));
     assert(valid_sq(from));
 
-    StateInfo &info = get_state();
-
     Piece pc = piece_at(from);
     assert(valid_piece(pc));
 
     piece_bb[pc] ^= sq_bb(from) | sq_bb(to);
     board[to] = pc;
     board[from] = NO_PIECE;
-    info.occ[piece_color(pc)] ^= sq_bb(from) | sq_bb(to);
+    occ[piece_color(pc)] ^= sq_bb(from) | sq_bb(to);
 
     update_hash(pc, zobrist::get_psq(pc, to) ^ zobrist::get_psq(pc, from));
 }

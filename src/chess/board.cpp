@@ -39,6 +39,7 @@ Board &Board::operator=(const Board &other) {
         curr_ply = other.curr_ply;
         states = other.states;
 
+        std::copy(std::begin(other.occ), std::end(other.occ), std::begin(occ));
         std::copy(std::begin(other.board), std::end(other.board), std::begin(board));
         std::copy(std::begin(other.piece_bb), std::end(other.piece_bb), std::begin(piece_bb));
     }
@@ -49,6 +50,7 @@ Board &Board::operator=(const Board &other) {
 void Board::set_fen(const std::string &fen) {
     curr_ply = 0;
     std::memset(piece_bb, 0, sizeof(piece_bb));
+    std::memset(occ, 0, sizeof(occ));
 
     for(auto &i : board)
         i = NO_PIECE;
@@ -72,10 +74,10 @@ void Board::set_fen(const std::string &fen) {
     for(const char c : fen_parts[2]) {
         switch(c) {
             // clang-format off
-            case 'K': info.castle_rights.add_ks(WHITE); break;
-            case 'Q': info.castle_rights.add_qs(WHITE); break;
-            case 'k': info.castle_rights.add_ks(BLACK); break;
-            case 'q': info.castle_rights.add_qs(BLACK); break;
+            case 'K': info.castling_rights.add_kingside(WHITE); break;
+            case 'Q': info.castling_rights.add_queenside(WHITE); break;
+            case 'k': info.castling_rights.add_kingside(BLACK); break;
+            case 'q': info.castling_rights.add_queenside(BLACK); break;
             default: break;
             // clang-format on
         }
@@ -98,7 +100,7 @@ void Board::set_fen(const std::string &fen) {
     // update hash
     info.hash ^= zobrist::get_side();
     info.hash ^= zobrist::get_ep(info.ep_sq);
-    info.hash ^= zobrist::get_castle(info.castle_rights.hash_idx());
+    info.hash ^= zobrist::get_castle(info.castling_rights.hash_idx());
 
     init_movegen_info();
 }
@@ -145,13 +147,13 @@ std::string Board::get_fen() const {
     }
 
     std::string castling;
-    if(info.castle_rights.ks(WHITE))
+    if(info.castling_rights.kingside(WHITE))
         castling += "K";
-    if(info.castle_rights.qs(WHITE))
+    if(info.castling_rights.queenside(WHITE))
         castling += "Q";
-    if(info.castle_rights.ks(BLACK))
+    if(info.castling_rights.kingside(BLACK))
         castling += "k";
-    if(info.castle_rights.qs(BLACK))
+    if(info.castling_rights.queenside(BLACK))
         castling += "q";
     if(castling.empty())
         castling = "-";
@@ -183,7 +185,7 @@ nnue::DirtyPieces Board::make_move(const Move &move) {
 
     // update history
     curr_ply++;
-    states[curr_ply] = StateInfo(states[curr_ply - 1]);
+    states[curr_ply] = states[curr_ply - 1];
     StateInfo &info = get_state();
 
     // update move counters
@@ -245,12 +247,12 @@ nnue::DirtyPieces Board::make_move(const Move &move) {
     }
 
     // update castling rights if king/rook moves or if one of the rooks get captured
-    if(info.castle_rights.on_castle_sq(from) || info.castle_rights.on_castle_sq(to)) {
+    if(info.castling_rights.on_castling_sq(from) || info.castling_rights.on_castling_sq(to)) {
         // remove old castling rights from hash
-        info.hash ^= zobrist::get_castle(info.castle_rights.hash_idx());
-        info.castle_rights.update(from, to);
+        info.hash ^= zobrist::get_castle(info.castling_rights.hash_idx());
+        info.castling_rights.update(from, to);
         // add new castling rights to hash
-        info.hash ^= zobrist::get_castle(info.castle_rights.hash_idx());
+        info.hash ^= zobrist::get_castle(info.castling_rights.hash_idx());
     }
 
     // update hash
@@ -313,7 +315,7 @@ void Board::undo_move(const Move &move) {
 
 void Board::make_nullmove() {
     curr_ply++;
-    states[curr_ply] = StateInfo(states[curr_ply - 1]);
+    states[curr_ply] = states[curr_ply - 1];
     StateInfo &info = get_state();
 
     info.fmr_counter++;
@@ -383,7 +385,7 @@ void Board::perft(int depth) {
     std::cout << "Total time : " << time_ms << " ms\n\n";
 }
 
-bool Board::is_legal(const Move &move) const {
+bool Board::legal(const Move &move) const {
     const Square from = move.from();
     const Square to = move.to();
     const Square ksq = king_sq(stm);
@@ -391,8 +393,7 @@ bool Board::is_legal(const Move &move) const {
     const U64 occ = occupancy();
     const U64 from_bb = sq_bb(from);
 
-    assert(move);
-    assert(valid_piece(from_pc));
+    assert(pseudo_legal(move));
     assert(piece_at(ksq) == make_piece(stm, KING));
 
     if(move.is_ep()) {
@@ -426,7 +427,7 @@ bool Board::is_legal(const Move &move) const {
     return !(get_state().blockers[stm] & from_bb) || (line(from, to) & sq_bb(ksq));
 }
 
-bool Board::is_pseudo_legal(const Move &move) const {
+bool Board::pseudo_legal(const Move &move) const {
     const StateInfo &info = get_state();
 
     const Square from = move.from();
@@ -444,30 +445,44 @@ bool Board::is_pseudo_legal(const Move &move) const {
     const U64 occ = us_bb | them_bb;
     const U64 from_bb = sq_bb(from);
 
+    const U64 target_bb = in_check() ? between_bb(ksq, lsb(info.checkers)) | info.checkers : ~0ULL;
+
+    // no and null moves are not pseudo legal
     if(!move)
-        return false; // no and null moves are not pseudo legal
+        return false;
+    // moving piece cannot capture its own pieces
     if(sq_bb(to) & us_bb)
-        return false; // moving piece cannot capture its own pieces
+        return false;
+    // moving piece must be valid
     if(!valid_piece(from_pc))
-        return false; // moving piece must be valid
+        return false;
+    // moving piece must match stm
     if(piece_color(from_pc) != stm)
-        return false; // moving piece must match stm
+        return false;
+    // if move is quiet, then target square must be empty
     if(!move.is_cap() && valid_piece(to_pc))
-        return false; // if move is quiet, then target square must be empty
+        return false;
+    // if move is a capture, then captured piece must be valid
     if(move.is_cap() && !valid_piece(captured))
-        return false; // if move is a capture, then captured piece must be valid
+        return false;
+    // only king can move if there are multiple checkers
     if(pop_count(info.checkers) > 1 && pt != KING)
-        return false; // only king can move if there are multiple checkers
+        return false;
+
+    // if move can't capture/block the checker, then it's not pseudo legal
+    if(in_check() && pt != KING && !(target_bb & sq_bb(cap_sq)))
+        return false;
 
     if(move.is_castling()) {
-        if(pt != KING || info.checkers)
-            return false; // only king can castle while not in check
+        // only king can castle while not in check
+        if(pt != KING || in_check())
+            return false;
         // short castling
         if(to == rel_sq(stm, g1))
-            return info.castle_rights.ks(stm) && !(occ & ks_castle_path_mask(stm));
+            return info.castling_rights.kingside(stm) && !(occ & ks_castle_path_mask(stm));
         // long castling
         else
-            return info.castle_rights.qs(stm) && !(occ & qs_castle_path_mask(stm));
+            return info.castling_rights.queenside(stm) && !(occ & qs_castle_path_mask(stm));
         // if short/long castling condition is not met, then it's not pseudo legal
         return false;
     }
@@ -492,7 +507,7 @@ bool Board::is_pseudo_legal(const Move &move) const {
         // capture promotions
         targets |= (get_pawn_attacks(stm, from) & them_bb);
         // limit move targets based on checks
-        targets &= info.checkers ? between_bb(ksq, lsb(info.checkers)) | info.checkers : -1ULL;
+        targets &= target_bb;
         // limit move targets based on promotion rank
         targets &= rank_mask(rel_rank(stm, RANK_8));
 
@@ -501,13 +516,14 @@ bool Board::is_pseudo_legal(const Move &move) const {
     }
 
     if(pt == PAWN) {
+        // no promotion moves allowed here since we already handled them
         if(sq_bb(to) & (rank_mask(RANK_1) | rank_mask(RANK_8)))
-            return false; // no promotion moves allowed here since we already handled them
+            return false;
 
         if(!move.is_ep()) {
             const Direction up = (stm == WHITE ? NORTH : SOUTH);
-            bool valid = false;
 
+            bool valid = false;
             // captures
             valid |= get_pawn_attacks(stm, from) & them_bb & sq_bb(to);
             // single push
@@ -517,24 +533,15 @@ bool Board::is_pseudo_legal(const Move &move) const {
                      rel_rank(stm, RANK_2) == sq_rank(from) && //
                      (to_pc + piece_at(to - up)) == 2 * NO_PIECE;
 
+            // if none of the conditions above are met, then it's not pseudo legal
             if(!valid)
-                return false; // if none of the conditions above are met, then it's not pseudo legal
+                return false;
         }
     }
     // if a non pawn piece's target range isn't reachable, then it's not pseudo legal
     else if(!(get_attacks(pt, from, occ) & sq_bb(to))) {
         return false;
     }
-
-    // check for blockers/captures of the checker
-    if(info.checkers && pt != KING) {
-        const U64 target = between_bb(ksq, lsb(info.checkers)) | info.checkers;
-        if(!(target & sq_bb(cap_sq)))
-            return false; // if move can't capture/block the checker, then it's not pseudo legal
-    }
-
-    if(info.blockers[stm] & from_bb && !(line(from, to) & sq_bb(ksq)))
-        return false; // if a pinned piece move causes a discovered check, then it's not pseudo legal
 
     return true;
 }
@@ -766,7 +773,6 @@ void Board::init_movegen_info() {
     info.check_squares[BISHOP] = get_attacks<BISHOP>(ksq, occ);
     info.check_squares[ROOK] = get_attacks<ROOK>(ksq, occ);
     info.check_squares[QUEEN] = info.check_squares[BISHOP] | info.check_squares[ROOK];
-    info.check_squares[KING] = 0;
 }
 
 } // namespace chess
