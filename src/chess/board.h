@@ -92,13 +92,12 @@ class Board {
 
     Threats get_threats() const;
 
-    U64 get_occupancy(Color c = BOTH_COLORS) const {
-        U64 occ = 0;
-        if(c != BLACK)
-            occ |= get_state().occ[WHITE];
-        if(c != WHITE)
-            occ |= get_state().occ[BLACK];
-        return occ;
+    U64 get_occupancy(Color c) const {
+        return get_state().occ[c];
+    }
+
+    U64 get_occupancy() const {
+        return get_occupancy(WHITE) | get_occupancy(BLACK);
     }
 
     U64 get_piece_bb(Color c, PieceType pt) const {
@@ -107,19 +106,9 @@ class Board {
         return piece_bb[make_piece(c, pt)];
     }
 
-    template <PieceType pt> //
-    U64 get_piece_bb(Color c) const {
-        return get_piece_bb(c, pt);
-    }
-
     U64 get_piece_bb(PieceType pt) const {
         assert(valid_piece_type(pt));
         return get_piece_bb(WHITE, pt) | get_piece_bb(BLACK, pt);
-    }
-
-    template <PieceType pt> //
-    U64 get_piece_bb() const {
-        return get_piece_bb(pt);
     }
 
     Piece piece_at(Square sq) const {
@@ -137,15 +126,15 @@ class Board {
     }
 
     U64 get_diag_sliders(Color c) const {
-        return get_piece_bb<BISHOP>(c) | get_piece_bb<QUEEN>(c);
+        return get_piece_bb(c, BISHOP) | get_piece_bb(c, QUEEN);
     }
 
     U64 get_orth_sliders(Color c) const {
-        return get_piece_bb<ROOK>(c) | get_piece_bb<QUEEN>(c);
+        return get_piece_bb(c, ROOK) | get_piece_bb(c, QUEEN);
     }
 
     Square get_king_sq(Color c) const {
-        return lsb(get_piece_bb<KING>(c));
+        return lsb(get_piece_bb(c, KING));
     }
 
     Color get_stm() const {
@@ -223,16 +212,16 @@ inline bool Board::is_draw(int ply) const {
 
 // checks if there is any non-pawn material on the board of the current side to move
 inline bool Board::nonpawn_mat(Color c) const {
-    return get_piece_bb<KNIGHT>(c) | get_piece_bb<BISHOP>(c) | //
-           get_piece_bb<ROOK>(c) | get_piece_bb<QUEEN>(c);
+    return get_piece_bb(c, KNIGHT) | get_piece_bb(c, BISHOP) | //
+           get_piece_bb(c, ROOK) | get_piece_bb(c, QUEEN);
 }
 
 inline U64 Board::attackers_to(Color c, Square sq, const U64 occ) const {
-    U64 attacks = get_pawn_attacks(~c, sq) & get_piece_bb<PAWN>(c);
-    attacks |= get_attacks<KNIGHT>(sq) & get_piece_bb<KNIGHT>(c);
+    U64 attacks = get_pawn_attacks(~c, sq) & get_piece_bb(c, PAWN);
+    attacks |= get_attacks<KNIGHT>(sq) & get_piece_bb(c, KNIGHT);
     attacks |= get_attacks<BISHOP>(sq, occ) & get_diag_sliders(c);
     attacks |= get_attacks<ROOK>(sq, occ) & get_orth_sliders(c);
-    attacks |= get_attacks<KING>(sq) & get_piece_bb<KING>(c);
+    attacks |= get_attacks<KING>(sq) & get_piece_bb(c, KING);
     return attacks;
 }
 

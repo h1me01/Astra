@@ -223,7 +223,7 @@ nnue::DirtyPieces Board::make_move(const Move &move) {
     if(pt == PAWN) {
         // set ep square if double push can be captured by enemy pawn
         Square new_ep_sq = ep_sq(to);
-        if((from ^ to) == 16 && (get_pawn_attacks(stm, new_ep_sq) & get_piece_bb<PAWN>(~stm))) {
+        if((from ^ to) == 16 && (get_pawn_attacks(stm, new_ep_sq) & get_piece_bb(~stm, PAWN))) {
             info.ep_sq = new_ep_sq;
             info.hash ^= zobrist::get_ep(new_ep_sq); // add ep square to hash
         } else if(move.is_prom()) {
@@ -552,10 +552,10 @@ bool Board::gives_check(const Move &move) const {
         return true;
 
     if(get_state().blockers[~stm] & from)
-        return !(line(from, to) & get_piece_bb<KING>(~stm)) || move.is_castling();
+        return !(line(from, to) & get_piece_bb(~stm, KING)) || move.is_castling();
 
     if(move.is_prom()) {
-        return get_attacks(move.prom_type(), to, occ ^ from) & get_piece_bb<KING>(~stm);
+        return get_attacks(move.prom_type(), to, occ ^ from) & get_piece_bb(~stm, KING);
     } else if(move.is_ep()) {
         Square cap_sq = make_square(sq_rank(from), sq_file(to));
         U64 b = (occ ^ from ^ cap_sq) | to;
@@ -669,26 +669,26 @@ bool Board::see(const Move &move, int threshold) const {
 
         res ^= 1;
 
-        if((bb = stm_attacker & get_piece_bb<PAWN>())) {
+        if((bb = stm_attacker & get_piece_bb(PAWN))) {
             if((swap = get_see_piece_value(PAWN) - swap) < res)
                 break;
             occ ^= (bb & -bb);
             attackers |= get_attacks<BISHOP>(to, occ) & diag;
-        } else if((bb = stm_attacker & get_piece_bb<KNIGHT>())) {
+        } else if((bb = stm_attacker & get_piece_bb(KNIGHT))) {
             if((swap = get_see_piece_value(KNIGHT) - swap) < res)
                 break;
             occ ^= (bb & -bb);
-        } else if((bb = stm_attacker & get_piece_bb<BISHOP>())) {
+        } else if((bb = stm_attacker & get_piece_bb(BISHOP))) {
             if((swap = get_see_piece_value(BISHOP) - swap) < res)
                 break;
             occ ^= (bb & -bb);
             attackers |= get_attacks<BISHOP>(to, occ) & diag;
-        } else if((bb = stm_attacker & get_piece_bb<ROOK>())) {
+        } else if((bb = stm_attacker & get_piece_bb(ROOK))) {
             if((swap = get_see_piece_value(ROOK) - swap) < res)
                 break;
             occ ^= (bb & -bb);
             attackers |= get_attacks<ROOK>(to, occ) & orth;
-        } else if((bb = stm_attacker & get_piece_bb<QUEEN>())) {
+        } else if((bb = stm_attacker & get_piece_bb(QUEEN))) {
             swap = get_see_piece_value(QUEEN) - swap;
             assert(swap >= res);
             occ ^= (bb & -bb);
@@ -709,7 +709,7 @@ Threats Board::get_threats() const {
     // king must be excluded so we don't block the slider attacks
     const U64 occ = get_occupancy() ^ sq_bb(get_king_sq(stm));
 
-    const U64 pawns = get_piece_bb<PAWN>(them);
+    const U64 pawns = get_piece_bb(them, PAWN);
     threats[PAWN] = (them == WHITE) ? shift<NORTH_WEST>(pawns) | shift<NORTH_EAST>(pawns)
                                     : shift<SOUTH_WEST>(pawns) | shift<SOUTH_EAST>(pawns);
 

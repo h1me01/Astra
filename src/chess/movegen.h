@@ -40,7 +40,7 @@ Move *gen_pawn_moves(const Board &board, Move *ml, const U64 targets) {
     const U64 them_bb = board.get_occupancy(them);
     const U64 occ = board.get_occupancy(us) | them_bb;
     const U64 empty_sqs = ~occ;
-    const U64 pawns = board.get_piece_bb<PAWN>(us);
+    const U64 pawns = board.get_piece_bb(us, PAWN);
     const U64 pawns_non7 = pawns & ~rank7_bb;
 
     // single and double pawn pushes, no promotions
@@ -148,7 +148,7 @@ Move *gen_all(const Board &board, Move *ml) {
     const U64 checkers = info.checkers;
     const U64 targets = (them_bb | ~occ);
 
-    ml = gen_piece_moves<us, gt, KING>(board, ml, board.get_piece_bb<KING>(us), targets);
+    ml = gen_piece_moves<us, gt, KING>(board, ml, board.get_piece_bb(us, KING), targets);
 
     // if double check, then only king moves are legal
     if(pop_count(checkers) > 1)
@@ -158,7 +158,7 @@ Move *gen_all(const Board &board, Move *ml) {
     const U64 piece_targets = targets & check_targets;
 
     ml = gen_pawn_moves<us, gt>(board, ml, check_targets);
-    ml = gen_piece_moves<us, gt, KNIGHT>(board, ml, board.get_piece_bb<KNIGHT>(us), piece_targets);
+    ml = gen_piece_moves<us, gt, KNIGHT>(board, ml, board.get_piece_bb(us, KNIGHT), piece_targets);
     ml = gen_piece_moves<us, gt, BISHOP>(board, ml, board.get_diag_sliders(us), piece_targets);
     ml = gen_piece_moves<us, gt, ROOK>(board, ml, board.get_orth_sliders(us), piece_targets);
 

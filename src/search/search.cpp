@@ -929,12 +929,12 @@ unsigned int Search::probe_wdl() const {
     return tb_probe_wdl(                       //
         w_occ,                                 //
         b_occ,                                 //
-        board.get_piece_bb<KING>(),            //
-        board.get_piece_bb<QUEEN>(),           //
-        board.get_piece_bb<ROOK>(),            //
-        board.get_piece_bb<BISHOP>(),          //
-        board.get_piece_bb<KNIGHT>(),          //
-        board.get_piece_bb<PAWN>(),            //
+        board.get_piece_bb(KING),              //
+        board.get_piece_bb(QUEEN),             //
+        board.get_piece_bb(ROOK),              //
+        board.get_piece_bb(BISHOP),            //
+        board.get_piece_bb(KNIGHT),            //
+        board.get_piece_bb(PAWN),              //
         board.get_fmr_count(),                 //
         board.get_state().castle_rights.any(), //
         valid_sq(ep_sq) ? ep_sq : 0,           //
