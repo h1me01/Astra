@@ -387,7 +387,7 @@ bool Board::legal(const Move &move) const {
     const U64 occ = occupancy();
     const U64 from_bb = sq_bb(from);
 
-    assert(pseudo_legal(move));
+    // assert(pseudo_legal(move));
     assert(piece_at(ksq) == make_piece(stm, KING));
 
     if(move.is_ep()) {
@@ -536,6 +536,10 @@ bool Board::pseudo_legal(const Move &move) const {
     else if(!(get_attacks(pt, from, occ) & sq_bb(to))) {
         return false;
     }
+
+    // if a pinned piece move causes a discovered check, then it's not pseudo legal
+    if(info.blockers[stm] & from_bb && !(line(from, to) & sq_bb(ksq)))
+        return false;
 
     return true;
 }

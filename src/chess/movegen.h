@@ -78,8 +78,7 @@ Move *gen_pawn_moves(const Board &board, Move *ml, const U64 targets) {
 
         // en passant
         Square ep_sq = board.get_state().ep_sq;
-        // make sure en passant is valid and that there is no discovered check
-        if(valid_sq(ep_sq) && !(targets & sq_bb(ep_sq + up))) {
+        if(valid_sq(ep_sq)) {
             assert(sq_rank(ep_sq) == rel_rank(us, RANK_6));
 
             b1 = pawns_non7 & get_pawn_attacks(them, ep_sq);
