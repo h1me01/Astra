@@ -140,7 +140,7 @@ void MovePicker::gen_score_noisy() {
 
 void MovePicker::gen_score_quiets() {
     ml_main.gen<ADD_QUIETS>(board);
-    Threats threats = board.get_threats();
+    Threats threats = board.threats();
 
     for(int i = 0; i < ml_main.size(); i++) {
         const Move move = ml_main[i];
@@ -148,7 +148,7 @@ void MovePicker::gen_score_quiets() {
         const PieceType pt = piece_type(pc);
         const Square to = move.to();
 
-        int score = 2 * (history.get_heuristic_hist(board.get_stm(), move) + history.get_pawn_hist(board, move));
+        int score = 2 * (history.get_heuristic_hist(board.side_to_move(), move) + history.get_pawn_hist(board, move));
         for(int i : {1, 2, 4, 6})
             score += static_cast<int>((*(stack - i)->cont_hist)[pc][to]);
 

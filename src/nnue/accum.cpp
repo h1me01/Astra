@@ -42,7 +42,7 @@ void AccumTable::refresh(Color view, Board &board, Accum &accum) {
         for(PieceType pt : {PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING}) {
             Piece pc = make_piece(c, pt);
 
-            const U64 pc_bb = board.get_piece_bb(c, pt);
+            const U64 pc_bb = board.piece_bb(c, pt);
             const U64 entry_bb = entry.get_piece_bb(c, pt);
 
             U64 to_set = pc_bb & ~entry_bb;
@@ -57,7 +57,7 @@ void AccumTable::refresh(Color view, Board &board, Accum &accum) {
         }
     }
 
-    memcpy(accum.get_data(view), entry_acc.get_data(view), sizeof(int16_t) * FT_SIZE);
+    std::memcpy(accum.get_data(view), entry_acc.get_data(view), sizeof(int16_t) * FT_SIZE);
     accum.set_initialized(view);
 }
 

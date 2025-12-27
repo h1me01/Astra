@@ -206,7 +206,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
     }
 
     const Score old_alpha = alpha;
-    const Color stm = board.get_stm();
+    const Color stm = board.side_to_move();
     const bool in_check = board.in_check();
     const U64 hash = board.hash();
 
@@ -255,6 +255,9 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
         tt_pv |= ent->get_tt_pv();
     }
 
+    if (root_node)
+        tt_move = root_moves[multipv_idx];
+
     const bool tt_move_noisy = tt_move && tt_move.is_noisy();
 
     if(!pv_node                                         //
@@ -277,7 +280,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
             }
         }
 
-        if(board.fmr_count() < 90)
+        if(board.fifty_move_count() < 90)
             return tt_score;
     }
 
@@ -903,7 +906,7 @@ Score Search::evaluate() {
 }
 
 Score Search::adjust_eval(int32_t eval, Stack *stack) const {
-    eval = (eval * (200 - board.fmr_count())) / 200;
+    eval = (eval * (200 - board.fifty_move_count())) / 200;
     eval += (history.get_material_corr(board) + history.get_cont_corr(stack)) / 256;
 
     return std::clamp(                         //
@@ -921,21 +924,21 @@ unsigned int Search::probe_wdl() const {
     if(pop_count(occ) > signed(TB_LARGEST))
         return TB_RESULT_FAILED;
 
-    Square ep_sq = board.get_state().ep_sq;
+    Square ep_sq = board.en_passant();
 
     return tb_probe_wdl(                         //
         w_occ,                                   //
         b_occ,                                   //
-        board.get_piece_bb(KING),                //
-        board.get_piece_bb(QUEEN),               //
-        board.get_piece_bb(ROOK),                //
-        board.get_piece_bb(BISHOP),              //
-        board.get_piece_bb(KNIGHT),              //
-        board.get_piece_bb(PAWN),                //
-        board.fmr_count(),                       //
-        board.get_state().castling_rights.any(), //
+        board.piece_bb(KING),                //
+        board.piece_bb(QUEEN),               //
+        board.piece_bb(ROOK),                //
+        board.piece_bb(BISHOP),              //
+        board.piece_bb(KNIGHT),              //
+        board.piece_bb(PAWN),                //
+        board.fifty_move_count(),                       //
+        board.state().castling_rights.any(), //
         valid_sq(ep_sq) ? ep_sq : 0,             //
-        board.get_stm() == WHITE                 //
+        board.side_to_move() == WHITE                 //
     );
 }
 

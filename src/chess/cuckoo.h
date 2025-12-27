@@ -12,8 +12,8 @@ inline int cuckoo_h2(U64 hash) {
     return (hash >> 16) & 0x1fff;
 }
 
-U64 get_hash(const int idx);
-Move get_move(const int idx);
+U64 hash(const int idx);
+Move move(const int idx);
 
 void init();
 

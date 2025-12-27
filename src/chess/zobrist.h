@@ -28,10 +28,10 @@ namespace zobrist {
 
 void init();
 
-U64 get_side();
-U64 get_ep(Square sq);
-U64 get_castle(int idx);
-U64 get_psq(Piece pc, Square sq);
+U64 side_hash();
+U64 ep_hash(Square sq);
+U64 castling_hash(int idx);
+U64 psq_hash(Piece pc, Square sq);
 
 } // namespace zobrist
 

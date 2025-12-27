@@ -33,11 +33,11 @@ template <typename T, size_t N> //
 class LayerOutput {
   public:
     LayerOutput() {
-        memset(data, 0, sizeof(T) * N);
+        std::memset(data, 0, sizeof(T) * N);
     }
 
     LayerOutput(T *init_data) {
-        memcpy(data, init_data, sizeof(T) * N);
+        std::memcpy(data, init_data, sizeof(T) * N);
     }
 
     T operator[](size_t idx) const {

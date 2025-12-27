@@ -120,7 +120,7 @@ class Accum {
 class AccumEntry {
   public:
     void reset() {
-        memset(piece_bb, 0, sizeof(piece_bb));
+        std::memset(piece_bb, 0, sizeof(piece_bb));
         nnue.init_accum(acc);
     }
 

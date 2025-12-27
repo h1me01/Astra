@@ -47,7 +47,7 @@ void History::update(         //
     Stack *stack,             //
     int depth                 //
 ) {
-    const Color stm = board.get_stm();
+    const Color stm = board.side_to_move();
     const int bonus = history_bonus(depth);
     const int malus = history_malus(depth);
 
@@ -120,7 +120,7 @@ void History::update_cont_hist(const Piece pc, const Square to, Stack *stack, in
 }
 
 void History::update_mat_corr(const Board &board, Score raw_eval, Score real_score, int depth) {
-    const Color stm = board.get_stm();
+    const Color stm = board.side_to_move();
     const int diff = real_score - raw_eval;
 
     update_corr(pawn_corr[stm][corr_idx(board.pawn_hash())], diff, depth);

@@ -48,7 +48,7 @@ void transpose(T *weights, int rows, int cols) {
     for(int i = 0; i < cols; i++)
         for(int j = 0; j < rows; j++)
             transposed[i * rows + j] = weights[j * cols + i];
-    memcpy(weights, transposed, sizeof(T) * cols * rows);
+    std::memcpy(weights, transposed, sizeof(T) * cols * rows);
 }
 
 } // namespace nnue

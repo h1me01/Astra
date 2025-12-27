@@ -35,7 +35,6 @@ constexpr int NUM_COLORS = 2;
 enum Color {
     WHITE,
     BLACK,
-    BOTH_COLORS = 2,
 };
 
 enum Direction {

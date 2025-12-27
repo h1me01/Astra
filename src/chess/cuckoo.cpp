@@ -4,20 +4,20 @@
 
 namespace chess::cuckoo {
 
-U64 keys[8192];
+U64 hashes[8192];
 Move moves[8192];
 
-U64 get_hash(const int idx) {
-    return keys[idx];
+U64 hash(const int idx) {
+    return hashes[idx];
 }
 
-Move get_move(const int idx) {
+Move move(const int idx) {
     return moves[idx];
 }
 
 void init() {
     for(int i = 0; i < 8192; i++) {
-        keys[i] = 0;
+        hashes[i] = 0;
         moves[i] = Move::none();
     }
 
@@ -28,15 +28,15 @@ void init() {
 
             for(Square sq1 = a1; sq1 <= h8; ++sq1) {
                 for(Square sq2 = Square(sq1 + 1); sq2 <= h8; ++sq2) {
-                    if(!(get_attacks(pt, sq1) & sq_bb(sq2)))
+                    if(!(attacks_bb(pt, sq1) & sq_bb(sq2)))
                         continue;
 
                     Move move = Move(sq1, sq2, QUIET);
-                    U64 hash = zobrist::get_psq(p, sq1) ^ zobrist::get_psq(p, sq2) ^ zobrist::get_side();
+                    U64 hash = zobrist::psq_hash(p, sq1) ^ zobrist::psq_hash(p, sq2) ^ zobrist::side_hash();
 
                     int i = cuckoo_h1(hash);
                     while(true) {
-                        std::swap(keys[i], hash);
+                        std::swap(hashes[i], hash);
                         std::swap(moves[i], move);
 
                         if(!move)

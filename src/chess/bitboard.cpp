@@ -151,17 +151,19 @@ U64 PAWN_ATTACKS[NUM_COLORS][NUM_SQUARES];
 U64 ROOK_ATTACKS[NUM_SQUARES][4096];
 U64 BISHOP_ATTACKS[NUM_SQUARES][512];
 
-U64 PSEUDO_LEGAL_ATTACKS[NUM_PIECE_TYPES][NUM_SQUARES];
+U64 PSEUDO_ATTACKS[NUM_PIECE_TYPES][NUM_SQUARES];
 
 // helper functions
 
-constexpr U64 diag_mask(int idx) {
-    assert(idx >= 0 && idx < 15);
+constexpr U64 diag_mask(Square sq) {
+    assert(valid_sq(sq));
+    const int idx = 7 + sq_rank(sq) - sq_file(sq);
     return DIAGONAL_MASK[idx];
 }
 
-constexpr U64 anti_diag_mask(int idx) {
-    assert(idx >= 0 && idx < 15);
+constexpr U64 anti_diag_mask(Square sq) {
+    assert(valid_sq(sq));
+    const int idx = sq_rank(sq) + sq_file(sq);
     return ANTI_DIAGONAL_MASK[idx];
 }
 
@@ -196,7 +198,7 @@ void init_rook_attacks() {
     }
 }
 
-U64 get_rook_attacks(Square sq, const U64 occ = 0) {
+U64 rook_attacks_bb(Square sq, const U64 occ = 0) {
     assert(valid_sq(sq));
 
 #if defined(__BMI2__)
@@ -217,14 +219,14 @@ void init_bishop_attacks() {
 #else
             const U64 idx = (blockers * BISHOP_MAGICS[sq]) >> BISHOP_SHIFTS[sq];
 #endif
-            BISHOP_ATTACKS[sq][idx] = sliding_attacks(sq, blockers, diag_mask(sq_diag(sq))) |
-                                      sliding_attacks(sq, blockers, anti_diag_mask(sq_anti_diag(sq)));
+            BISHOP_ATTACKS[sq][idx] = sliding_attacks(sq, blockers, diag_mask(sq)) | //
+                                      sliding_attacks(sq, blockers, anti_diag_mask(sq));
             blockers = (blockers - BISHOP_MASKS[sq]) & BISHOP_MASKS[sq];
         } while(blockers);
     }
 }
 
-U64 get_bishop_attacks(Square sq, const U64 occ = 0) {
+U64 bishop_attacks_bb(Square sq, const U64 occ = 0) {
     assert(valid_sq(sq));
 
 #if defined(__BMI2__)
@@ -250,26 +252,26 @@ U64 line(Square sq1, Square sq2) {
     return LINE[sq1][sq2];
 }
 
-U64 get_pawn_attacks(Color c, Square sq) {
+U64 pawn_attacks_bb(Color c, Square sq) {
     assert(valid_sq(sq));
     assert(valid_color(c));
     return PAWN_ATTACKS[c][sq];
 }
 
-U64 get_attacks(PieceType pt, Square sq, const U64 occ) {
+U64 attacks_bb(PieceType pt, Square sq, const U64 occ) {
     assert(valid_sq(sq));
     assert(valid_piece_type(pt) && pt != PAWN);
 
     switch(pt) {
     case ROOK:
-        return get_rook_attacks(sq, occ);
+        return rook_attacks_bb(sq, occ);
     case BISHOP:
-        return get_bishop_attacks(sq, occ);
+        return bishop_attacks_bb(sq, occ);
     case QUEEN:
-        return get_rook_attacks(sq, occ) | get_bishop_attacks(sq, occ);
+        return rook_attacks_bb(sq, occ) | bishop_attacks_bb(sq, occ);
     case KNIGHT:
     case KING:
-        return PSEUDO_LEGAL_ATTACKS[pt][sq];
+        return PSEUDO_ATTACKS[pt][sq];
     default:
         return 0;
     }
@@ -281,65 +283,49 @@ void init() {
     init_rook_attacks();
     init_bishop_attacks();
 
-    const int king_offsets[8] = {-9, -8, -7, -1, 1, 7, 8, 9};
-    const int knight_offsets[8] = {-17, -15, -10, -6, 6, 10, 15, 17};
-
-    // helper
     auto in_bounds = [](Square sq, Square target_sq, int max_delta) {
         return valid_sq(target_sq) &&                                     //
                std::abs(sq_rank(sq) - sq_rank(target_sq)) <= max_delta && //
                std::abs(sq_file(sq) - sq_file(target_sq)) <= max_delta;
     };
 
-    auto set_pawn_attacks = [](Color c, Square sq) {
-        const U64 b = sq_bb(sq);
-        if(c == WHITE)
-            return shift<NORTH_WEST>(b) | shift<NORTH_EAST>(b);
-        else
-            return shift<SOUTH_WEST>(b) | shift<SOUTH_EAST>(b);
-    };
-
-    // init pseudo legal attacks
+    // initialize pawn attacks
     for(Square sq = a1; sq <= h8; ++sq) {
-        PAWN_ATTACKS[WHITE][sq] = set_pawn_attacks(WHITE, sq);
-        PAWN_ATTACKS[BLACK][sq] = set_pawn_attacks(BLACK, sq);
-
-        for(int i = 0; i < 8; ++i) {
-            Square king_sq = Square(int(sq) + king_offsets[i]);
-            Square knight_sq = Square(int(sq) + knight_offsets[i]);
-
-            if(in_bounds(sq, king_sq, 1))
-                PSEUDO_LEGAL_ATTACKS[KING][sq] |= sq_bb(king_sq);
-            if(in_bounds(sq, knight_sq, 2))
-                PSEUDO_LEGAL_ATTACKS[KNIGHT][sq] |= sq_bb(knight_sq);
-        }
-
-        PSEUDO_LEGAL_ATTACKS[BISHOP][sq] = get_bishop_attacks(sq);
-        PSEUDO_LEGAL_ATTACKS[ROOK][sq] = get_rook_attacks(sq);
-        PSEUDO_LEGAL_ATTACKS[QUEEN][sq] = PSEUDO_LEGAL_ATTACKS[ROOK][sq] | PSEUDO_LEGAL_ATTACKS[BISHOP][sq];
+        const U64 b = sq_bb(sq);
+        PAWN_ATTACKS[WHITE][sq] = shift<NORTH_WEST>(b) | shift<NORTH_EAST>(b);
+        PAWN_ATTACKS[BLACK][sq] = shift<SOUTH_WEST>(b) | shift<SOUTH_EAST>(b);
     }
 
-    // init squares between and line
+    for(Square sq = a1; sq <= h8; ++sq) {
+        // king attacks
+        for(int offset : {-9, -8, -7, -1, 1, 7, 8, 9}) {
+            Square target = Square(int(sq) + offset);
+            if(in_bounds(sq, target, 1))
+                PSEUDO_ATTACKS[KING][sq] |= sq_bb(target);
+        }
+
+        // knight attacks
+        for(int offset : {-17, -15, -10, -6, 6, 10, 15, 17}) {
+            Square target = Square(int(sq) + offset);
+            if(in_bounds(sq, target, 2))
+                PSEUDO_ATTACKS[KNIGHT][sq] |= sq_bb(target);
+        }
+
+        // sliding pieces
+        PSEUDO_ATTACKS[BISHOP][sq] = bishop_attacks_bb(sq);
+        PSEUDO_ATTACKS[ROOK][sq] = rook_attacks_bb(sq);
+        PSEUDO_ATTACKS[QUEEN][sq] = PSEUDO_ATTACKS[ROOK][sq] | PSEUDO_ATTACKS[BISHOP][sq];
+    }
+
+    // initialize squares between and line tables
     for(Square sq1 = a1; sq1 <= h8; ++sq1) {
-        for(Square sq2 = a1; sq2 <= h8; ++sq2) {
-            const U64 s = sq_bb(sq1) | sq_bb(sq2);
-
-            if(sq_file(sq1) == sq_file(sq2) || sq_rank(sq1) == sq_rank(sq2)) {
-                U64 b1 = get_rook_attacks(sq1, s);
-                U64 b2 = get_rook_attacks(sq2, s);
-                SQUARES_BETWEEN[sq1][sq2] = b1 & b2;
-
-                b1 = get_rook_attacks(sq1);
-                b2 = get_rook_attacks(sq2);
-                LINE[sq1][sq2] = (b1 & b2) | sq_bb(sq1) | sq_bb(sq2);
-            } else if(sq_diag(sq1) == sq_diag(sq2) || sq_anti_diag(sq1) == sq_anti_diag(sq2)) {
-                U64 b1 = get_bishop_attacks(sq1, s);
-                U64 b2 = get_bishop_attacks(sq2, s);
-                SQUARES_BETWEEN[sq1][sq2] = b1 & b2;
-
-                b1 = get_bishop_attacks(sq1);
-                b2 = get_bishop_attacks(sq2);
-                LINE[sq1][sq2] = (b1 & b2) | sq_bb(sq1) | sq_bb(sq2);
+        for(PieceType pt : {BISHOP, ROOK}) {
+            for(Square sq2 = a1; sq2 <= h8; ++sq2) {
+                if(PSEUDO_ATTACKS[pt][sq1] & sq_bb(sq2)) {
+                    LINE[sq1][sq2] = (attacks_bb(pt, sq1) & attacks_bb(pt, sq2)) | sq_bb(sq1) | sq_bb(sq2);
+                    SQUARES_BETWEEN[sq1][sq2] = attacks_bb(pt, sq1, sq_bb(sq2)) & attacks_bb(pt, sq2, sq_bb(sq1));
+                }
+                SQUARES_BETWEEN[sq1][sq1] |= sq_bb(sq2);
             }
         }
     }

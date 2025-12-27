@@ -151,7 +151,7 @@ void UCI::update_position(std::istringstream &is) {
         board.make_move(parse_move(token));
         // if half move clock gets reseted, then we can reset the history
         // since the last positions should not be considered in the repetition
-        if(!board.fmr_count())
+        if(!board.fifty_move_count())
             board.reset_ply();
     }
 }
@@ -205,7 +205,7 @@ void UCI::go(std::istringstream &is) {
         }
     }
 
-    Color stm = board.get_stm();
+    Color stm = board.side_to_move();
     int64_t time_left = (stm == WHITE) ? w_time : b_time;
     int inc = (stm == WHITE) ? w_inc : b_inc;
 
@@ -256,31 +256,31 @@ void UCI::bench() {
 }
 
 Move UCI::parse_move(const std::string &str_move) const {
-    Square from = sq_from(str_move.substr(0, 2));
-    Square to = sq_from(str_move.substr(2, 2));
-    Piece pc = board.piece_at(from);
-    Piece captured = board.piece_at(to);
+    const Square from = sq_from(str_move.substr(0, 2));
+    const Square to = sq_from(str_move.substr(2, 2));
+    const Piece pc = board.piece_at(from);
+    const Piece captured = board.piece_at(to);
     MoveType mt = QUIET;
 
     if(valid_piece(captured))
         mt = CAPTURE;
 
     if(piece_type(pc) == PAWN) {
-        if(board.get_state().ep_sq == to)
+        if(board.en_passant() == to)
             mt = EN_PASSANT;
         else if(sq_rank(to) == RANK_1 || sq_rank(to) == RANK_8) {
-            char prom_t = tolower(str_move[4]); // piece type
+            char prom_type = tolower(str_move[4]);
 
             mt = valid_piece(captured) ? PC_QUEEN : PQ_QUEEN;
-            if(prom_t == 'r')
+            if(prom_type == 'r')
                 mt = MoveType(mt - 1);
-            else if(prom_t == 'b')
+            else if(prom_type == 'b')
                 mt = MoveType(mt - 2);
-            else if(prom_t == 'n')
+            else if(prom_type == 'n')
                 mt = MoveType(mt - 3);
         }
     } else if(piece_type(pc) == KING) {
-        Color stm = board.get_stm();
+        Color stm = board.side_to_move();
         if(from == rel_sq(stm, e1) && (to == rel_sq(stm, g1) || to == rel_sq(stm, c1)))
             mt = CASTLING;
     }
