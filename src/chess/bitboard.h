@@ -85,13 +85,13 @@ constexpr U64 shift(const U64 b) {
 U64 between_bb(Square sq1, Square sq2);
 U64 line(Square sq1, Square sq2);
 
-U64 get_pawn_attacks(Color c, Square sq);
+U64 pawn_attacks_bb(Color c, Square sq);
 
-U64 get_attacks(PieceType pt, Square sq, const U64 occ = 0);
+U64 attacks_bb(PieceType pt, Square sq, const U64 occ = 0);
 
 template <PieceType pt> //
-U64 get_attacks(Square sq, const U64 occ = 0) {
-    return get_attacks(pt, sq, occ);
+U64 attacks_bb(Square sq, const U64 occ = 0) {
+    return attacks_bb(pt, sq, occ);
 }
 
 namespace bitboards {

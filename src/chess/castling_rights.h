@@ -9,11 +9,11 @@ class CastlingRights {
   public:
     CastlingRights() : mask(0) {}
 
-    void add_ks(Color c) {
+    void add_kingside(Color c) {
         mask |= oo_mask(c);
     }
 
-    void add_qs(Color c) {
+    void add_queenside(Color c) {
         mask |= ooo_mask(c);
     }
 
@@ -21,31 +21,31 @@ class CastlingRights {
         mask &= ~(sq_bb(from) | sq_bb(to));
     }
 
-    bool ks(const Color c) const {
+    bool kingside(const Color c) const {
         assert(valid_color(c));
         return (mask & oo_mask(c)) == oo_mask(c);
     }
 
-    bool qs(const Color c) const {
+    bool queenside(const Color c) const {
         assert(valid_color(c));
         return (mask & ooo_mask(c)) == ooo_mask(c);
     }
 
     bool any(const Color c) const {
-        return ks(c) || qs(c);
+        return kingside(c) || queenside(c);
     }
 
     bool any() const {
         return any(WHITE) || any(BLACK);
     }
 
-    bool on_castle_sq(Square sq) const {
+    bool on_castling_sq(Square sq) const {
         assert(valid_sq(sq));
         return mask & sq_bb(sq);
     }
 
     int hash_idx() const {
-        return ks(WHITE) + 2 * qs(WHITE) + 4 * ks(BLACK) + 8 * qs(BLACK);
+        return kingside(WHITE) + 2 * queenside(WHITE) + 4 * kingside(BLACK) + 8 * queenside(BLACK);
     }
 
   private:

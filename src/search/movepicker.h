@@ -27,11 +27,7 @@ enum Stage {
 
 class MovePicker {
   public:
-    MovePicker(SearchType st,          //
-               const Board &board,     //
-               const History &history, //
-               const Stack *stack,     //
-               const Move &tt_move);
+    MovePicker(SearchType st, const Board &board, const History &history, const Stack *stack, const Move &tt_move);
 
     int probcut_threshold = 0;
 

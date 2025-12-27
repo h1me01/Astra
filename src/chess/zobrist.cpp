@@ -26,22 +26,22 @@ void init() {
     side = rng.rand<U64>();
 }
 
-U64 get_side() {
+U64 side_hash() {
     return side;
 }
 
-U64 get_psq(Piece pc, Square sq) {
+U64 psq_hash(Piece pc, Square sq) {
     assert(valid_sq(sq));
     assert(valid_piece(pc));
     return psq[pc][sq];
 }
 
-U64 get_castle(int idx) {
+U64 castling_hash(int idx) {
     assert(idx >= 0 && idx < 16);
     return castle[idx];
 }
 
-U64 get_ep(Square sq) {
+U64 ep_hash(Square sq) {
     if(!valid_sq(sq))
         return 0;
     return ep[sq_file(sq)];

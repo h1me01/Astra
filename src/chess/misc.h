@@ -72,6 +72,23 @@ constexpr Square operator-(Square sq, Direction d) {
     return _sq;
 }
 
+constexpr Square &operator+=(Square &sq, Direction d) {
+    sq = sq + d;
+    assert(valid_sq(sq));
+    return sq;
+}
+
+constexpr Square &operator-=(Square &sq, Direction d) {
+    sq = sq - d;
+    assert(valid_sq(sq));
+    return sq;
+}
+
+constexpr Square ep_sq(Square sq) {
+    assert(valid_sq(sq));
+    return Square(sq ^ 8);
+}
+
 constexpr Rank sq_rank(Square sq) {
     assert(valid_sq(sq));
     return Rank(sq >> 3);
@@ -80,30 +97,6 @@ constexpr Rank sq_rank(Square sq) {
 constexpr File sq_file(Square sq) {
     assert(valid_sq(sq));
     return File(sq & 0b111);
-}
-
-// gets the diagonal (a1 to h8) of the square
-constexpr int sq_diag(Square sq) {
-    assert(valid_sq(sq));
-    return 7 + sq_rank(sq) - sq_file(sq);
-}
-
-// gets the anti-diagonal (h1 to a8) of the square
-constexpr int sq_anti_diag(Square sq) {
-    assert(valid_sq(sq));
-    return sq_rank(sq) + sq_file(sq);
-}
-
-inline Square &operator+=(Square &sq, Direction d) {
-    sq = sq + d;
-    assert(valid_sq(sq));
-    return sq;
-}
-
-inline Square &operator-=(Square &sq, Direction d) {
-    sq = sq - d;
-    assert(valid_sq(sq));
-    return sq;
 }
 
 constexpr Square rel_sq(Color c, Square sq) {
@@ -179,11 +172,6 @@ inline Square sq_from(std::string_view square_str) {
     int rank = square_str[1] - 49;
     int index = rank * 8 + file;
     return Square(index);
-}
-
-constexpr Square ep_sq(Square sq) {
-    assert(valid_sq(sq));
-    return Square(sq ^ 8);
 }
 
 inline std::ostream &operator<<(std::ostream &os, Square sq) {

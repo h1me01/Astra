@@ -67,14 +67,19 @@ class Accum {
     }
 
     void set_initialized(Color view) {
+        assert(valid_color(view));
         this->initialized[view] = true;
     }
 
     void set_refresh(Color view) {
+        assert(valid_color(view));
         this->m_needs_refresh[view] = true;
     }
 
     void set_info(const DirtyPieces &dpcs, Square wksq, Square bksq) {
+        assert(valid_sq(wksq));
+        assert(valid_sq(bksq));
+
         dirty_pcs = dpcs;
         this->wksq = wksq;
         this->bksq = bksq;
@@ -115,15 +120,19 @@ class Accum {
 class AccumEntry {
   public:
     void reset() {
-        memset(piece_bb, 0, sizeof(piece_bb));
+        std::memset(piece_bb, 0, sizeof(piece_bb));
         nnue.init_accum(acc);
     }
 
     void set_piecebb(Color c, PieceType pt, U64 bb) {
+        assert(valid_color(c));
+        assert(valid_piece_type(pt));
         piece_bb[c][pt] = bb;
     }
 
     U64 get_piece_bb(Color c, PieceType pt) const {
+        assert(valid_color(c));
+        assert(valid_piece_type(pt));
         return piece_bb[c][pt];
     }
 
@@ -154,9 +163,10 @@ class AccumList {
             idx--;
     }
 
-    void increment() {
+    Accum &increment() {
         assert(idx < MAX_PLY);
         data[++idx].reset();
+        return data[idx];
     }
 
     void reset(Board &board) {

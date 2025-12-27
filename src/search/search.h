@@ -29,6 +29,9 @@ struct RootMove : public Move {
 
     explicit RootMove(Move m) : Move(m) {}
 
+    RootMove(const RootMove &other) = default;
+    RootMove &operator=(const RootMove &other) = default;
+
     RootMove(RootMove &&other) noexcept
         : Move(std::move(other)),     //
           sel_depth(other.sel_depth), //

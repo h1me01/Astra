@@ -9,9 +9,6 @@ using namespace chess;
 
 namespace search {
 
-constexpr size_t CORR_SIZE = 16384;
-constexpr size_t PAWN_HIST_SIZE = 8192;
-
 class History {
   public:
     static int history_bonus(int depth);
@@ -44,8 +41,11 @@ class History {
     int get_quiet_hist(const Board &board, const Move &move, const Stack *stack) const;
     int get_pawn_hist(const Board &board, const Move &move) const;
 
-    int get_mat_corr(const Board &board) const;
-    int get_cont_corr(const Stack *stack) const;
+    int get_corr_value(const Board &board, const Stack *stack) const;
+
+  private:
+    static constexpr size_t CORR_SIZE = 16384;
+    static constexpr size_t PAWN_HIST_SIZE = 8192;
 
   private:
     Move counters[NUM_SQUARES][NUM_SQUARES];
@@ -99,35 +99,33 @@ inline int History::get_quiet_hist(const Board &board, const Move &move, const S
 
     assert(valid_piece(pc));
 
-    return get_heuristic_hist(board.get_stm(), move) +           //
-           get_pawn_hist(board, move) +                          //
-           static_cast<int>((*(stack - 1)->cont_hist)[pc][to]) + //
-           static_cast<int>((*(stack - 2)->cont_hist)[pc][to]) + //
-           static_cast<int>((*(stack - 4)->cont_hist)[pc][to]);
+    return get_heuristic_hist(board.side_to_move(), move)        //
+           + get_pawn_hist(board, move)                          //
+           + static_cast<int>((*(stack - 1)->cont_hist)[pc][to]) //
+           + static_cast<int>((*(stack - 2)->cont_hist)[pc][to]) //
+           + static_cast<int>((*(stack - 4)->cont_hist)[pc][to]);
 }
 
 inline int History::get_pawn_hist(const Board &board, const Move &move) const {
     assert(move);
     Piece pc = board.piece_at(move.from());
     assert(valid_piece(pc));
-    return pawn_hist[ph_idx(board.get_pawn_hash())][pc][move.to()];
+    return pawn_hist[ph_idx(board.pawn_hash())][pc][move.to()];
 }
 
-inline int History::get_mat_corr(const Board &board) const {
-    Color stm = board.get_stm();
-    return pawn_corr[stm][corr_idx(board.get_pawn_hash())] +               //
-           w_non_pawn_corr[stm][corr_idx(board.get_nonpawn_hash(WHITE))] + //
-           b_non_pawn_corr[stm][corr_idx(board.get_nonpawn_hash(BLACK))];
-}
+inline int History::get_corr_value(const Board &board, const Stack *stack) const {
+    Color stm = board.side_to_move();
+    Move prev_move = (stack - 1)->move;
+    Move pprev_move = (stack - 2)->move;
 
-inline int History::get_cont_corr(const Stack *stack) const {
-    const Move prev_move = (stack - 1)->move;
-    const Move pprev_move = (stack - 2)->move;
+    int value = pawn_corr[stm][corr_idx(board.pawn_hash())]                  //
+                + w_non_pawn_corr[stm][corr_idx(board.non_pawn_hash(WHITE))] //
+                + b_non_pawn_corr[stm][corr_idx(board.non_pawn_hash(BLACK))];
 
     if(prev_move && pprev_move)
-        return cont_corr[(stack - 1)->moved_piece][prev_move.to()][(stack - 2)->moved_piece][pprev_move.to()];
-    else
-        return 0;
+        value += cont_corr[(stack - 1)->moved_piece][prev_move.to()][(stack - 2)->moved_piece][pprev_move.to()];
+
+    return value / 256;
 }
 
 } // namespace search

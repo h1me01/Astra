@@ -51,7 +51,6 @@ void Search::start() {
     completed_depth = 0;
 
     root_moves.gen<ADD_LEGALS>(board);
-
     if(!root_moves.size()) {
         std::cout << "Position has no legal moves" << std::endl;
         return;
@@ -98,16 +97,23 @@ void Search::start() {
 
         stability = (best_move == prev_best_move) ? std::min(stability + 1, int(tm_stability_max)) : 0;
 
-        if(is_main_thread                                           //
-           && root_depth >= 5                                       //
-           && tm.should_stop(                                       //
-                  limits,                                           //
-                  stability,                                        //
-                  scores[root_depth - 1] - score,                   //
-                  scores[root_depth - 3] - score,                   //
-                  root_moves[0].nodes / static_cast<double>(nodes)) //
-        ) {
-            break;
+        if(is_main_thread && root_depth >= 5 && limits.time.optimum) {
+            double stability_factor = (tm_stability_base / 100.0) - stability * (tm_stability_mult / 1000.0);
+
+            // adjust time optimum based on last score
+            double result_change_factor = (tm_results_base / 100.0)                                        //
+                                          + (tm_results_mult1 / 1000.0) * (scores[root_depth - 1] - score) //
+                                          + (tm_results_mult2 / 1000.0) * (scores[root_depth - 3] - score);
+
+            result_change_factor = std::clamp(result_change_factor, tm_results_min / 100.0, tm_results_max / 100.0);
+
+            // adjust time optimum based on node count
+            double node_ratio = root_moves[0].nodes / static_cast<double>(nodes);
+            double node_count_factor = (1.0 - node_ratio) * (tm_node_mult / 100.0) + (tm_node_base / 100.0);
+
+            // check if we should stop
+            if(tm.elapsed_time() > limits.time.optimum * stability_factor * result_change_factor * node_count_factor)
+                break;
         }
 
         prev_best_move = best_move;
@@ -207,9 +213,9 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
     }
 
     const Score old_alpha = alpha;
-    const Color stm = board.get_stm();
+    const Color stm = board.side_to_move();
     const bool in_check = board.in_check();
-    const U64 hash = board.get_hash();
+    const U64 hash = board.hash();
 
     if(pv_node)
         sel_depth = std::max(sel_depth, stack->ply);
@@ -234,13 +240,12 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
     bool improving = false;
 
     (stack + 1)->killer = Move::none();
-    (stack + 1)->skipped = Move::none();
 
     // look up in tt
     bool tt_hit = false;
     TTEntry *ent = tt.lookup(hash, &tt_hit);
 
-    Move tt_move = root_node ? root_moves[multipv_idx] : tt_hit ? ent->get_move() : Move::none();
+    Move tt_move = Move::none();
     Bound tt_bound = NO_BOUND;
     Score tt_score = VALUE_NONE;
     Score tt_eval = VALUE_NONE;
@@ -248,6 +253,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
     bool tt_pv = pv_node;
 
     if(tt_hit) {
+        tt_move = ent->get_move();
         tt_bound = ent->get_bound();
         tt_score = ent->get_score(stack->ply);
         tt_eval = ent->get_eval();
@@ -255,7 +261,8 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
         tt_pv |= ent->get_tt_pv();
     }
 
-    const bool tt_move_noisy = tt_move && tt_move.is_noisy();
+    if(root_node)
+        tt_move = root_moves[multipv_idx];
 
     if(!pv_node                                         //
        && !stack->skipped                               //
@@ -277,7 +284,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
             }
         }
 
-        if(board.get_fmr_count() < 90)
+        if(board.fifty_move_count() < 90)
             return tt_score;
     }
 
@@ -376,7 +383,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
        && eval >= beta                                                   //
        && !is_loss(beta)                                                 //
        && !stack->skipped                                                //
-       && board.nonpawn_mat(stm)                                         //
+       && board.non_pawn_mat(stm)                                        //
        && stack->ply >= nmp_min_ply                                      //
        && stack->static_eval + nmp_depth_mult * depth - nmp_base >= beta //
     ) {
@@ -430,7 +437,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
 
         Move move = Move::none();
         while((move = mp.next())) {
-            if(move == stack->skipped || !board.is_legal(move))
+            if(move == stack->skipped || !board.legal(move))
                 continue;
 
             make_move(move, stack);
@@ -464,7 +471,7 @@ movesloop:
 
     bool skip_quiets = false;
     while((move = mp.next(skip_quiets))) {
-        if(move == stack->skipped || !board.is_legal(move))
+        if(move == stack->skipped || !board.legal(move))
             continue;
         if(root_node && !found_rootmove(move))
             continue;
@@ -474,8 +481,8 @@ movesloop:
         stack->made_moves = ++made_moves;
 
         const int reduction = REDUCTIONS[depth][made_moves];
-        const int history_score =
-            move.is_quiet() ? history.get_quiet_hist(board, move, stack) : history.get_noisy_hist(board, move);
+        const int history_score = move.is_quiet() ? history.get_quiet_hist(board, move, stack) //
+                                                  : history.get_noisy_hist(board, move);
 
         if(!root_node && !is_loss(best_score)) {
             // late move pruning
@@ -520,6 +527,7 @@ movesloop:
            && stack->ply < 2 * root_depth //
         ) {
             Score sbeta = tt_score - 6 * depth / 8;
+
             stack->skipped = move;
             Score score = negamax<NodeType::NON_PV>((depth - 1) / 2, sbeta - 1, sbeta, stack, cut_node);
             stack->skipped = Move::none();
@@ -531,12 +539,13 @@ movesloop:
                 extensions = 1;
                 if(!pv_node && score < sbeta - double_ext_margin)
                     extensions = 2 + (move.is_quiet() && score < sbeta - tripple_ext_margin);
-            } else if(sbeta >= beta && !is_decisive(sbeta))
+            } else if(sbeta >= beta && !is_decisive(sbeta)) {
                 return sbeta;
-            else if(tt_score >= beta)
+            } else if(tt_score >= beta) {
                 extensions = -3;
-            else if(cut_node)
+            } else if(cut_node) {
                 extensions = -2;
+            }
         }
 
         int new_depth = depth - 1 + extensions;
@@ -553,7 +562,7 @@ movesloop:
 
             r += 2 * cut_node;
 
-            r += tt_move_noisy;
+            r += (tt_move && tt_move.is_noisy());
 
             r -= tt_pv;
 
@@ -712,7 +721,7 @@ Score Search::quiescence(Score alpha, Score beta, Stack *stack) {
         sel_depth = std::max(sel_depth, stack->ply);
 
     const bool in_check = board.in_check();
-    const U64 hash = board.get_hash();
+    const U64 hash = board.hash();
 
     if(stack->ply >= MAX_PLY - 1)
         return in_check ? VALUE_DRAW : evaluate();
@@ -773,7 +782,7 @@ Score Search::quiescence(Score alpha, Score beta, Stack *stack) {
 
     int made_moves = 0;
     while((move = mp.next())) {
-        if(!board.is_legal(move))
+        if(!board.legal(move))
             continue;
 
         made_moves++;
@@ -845,18 +854,15 @@ void Search::make_move(const Move &move, Stack *stack) {
     stack->moved_piece = board.piece_at(move.from());
     stack->cont_hist = &history.cont_hist[move.is_cap()][stack->moved_piece][move.to()];
 
-    accum_list.increment();
+    nnue::Accum &accum = accum_list.increment();
 
-    nnue::Accum &accum = accum_list.back();
-
-    Piece pc = board.piece_at(move.from());
-    if(nnue::needs_refresh(pc, move.from(), move.to()))
-        accum.set_refresh(piece_color(pc));
+    if(nnue::needs_refresh(stack->moved_piece, move.from(), move.to()))
+        accum.set_refresh(piece_color(stack->moved_piece));
 
     auto dirty_pieces = board.make_move(move);
-    accum.set_info(dirty_pieces, board.get_king_sq(WHITE), board.get_king_sq(BLACK));
+    accum.set_info(dirty_pieces, board.king_sq(WHITE), board.king_sq(BLACK));
 
-    tt.prefetch(board.get_hash());
+    tt.prefetch(board.hash());
 }
 
 void Search::undo_move(const Move &move) {
@@ -906,8 +912,8 @@ Score Search::evaluate() {
 }
 
 Score Search::adjust_eval(int32_t eval, Stack *stack) const {
-    eval = (eval * (200 - board.get_fmr_count())) / 200;
-    eval += (history.get_mat_corr(board) + history.get_cont_corr(stack)) / 256;
+    eval = (eval * (200 - board.fifty_move_count())) / 200;
+    eval += history.get_corr_value(board, stack);
 
     return std::clamp(                         //
         eval,                                  //
@@ -917,28 +923,28 @@ Score Search::adjust_eval(int32_t eval, Stack *stack) const {
 }
 
 unsigned int Search::probe_wdl() const {
-    U64 w_occ = board.get_occupancy(WHITE);
-    U64 b_occ = board.get_occupancy(BLACK);
+    U64 w_occ = board.occupancy(WHITE);
+    U64 b_occ = board.occupancy(BLACK);
     U64 occ = w_occ | b_occ;
 
     if(pop_count(occ) > signed(TB_LARGEST))
         return TB_RESULT_FAILED;
 
-    Square ep_sq = board.get_state().ep_sq;
+    Square ep_sq = board.en_passant();
 
-    return tb_probe_wdl(                       //
-        w_occ,                                 //
-        b_occ,                                 //
-        board.get_piece_bb<KING>(),            //
-        board.get_piece_bb<QUEEN>(),           //
-        board.get_piece_bb<ROOK>(),            //
-        board.get_piece_bb<BISHOP>(),          //
-        board.get_piece_bb<KNIGHT>(),          //
-        board.get_piece_bb<PAWN>(),            //
-        board.get_fmr_count(),                 //
-        board.get_state().castle_rights.any(), //
-        valid_sq(ep_sq) ? ep_sq : 0,           //
-        board.get_stm() == WHITE               //
+    return tb_probe_wdl(                     //
+        w_occ,                               //
+        b_occ,                               //
+        board.piece_bb(KING),                //
+        board.piece_bb(QUEEN),               //
+        board.piece_bb(ROOK),                //
+        board.piece_bb(BISHOP),              //
+        board.piece_bb(KNIGHT),              //
+        board.piece_bb(PAWN),                //
+        board.fifty_move_count(),            //
+        board.state().castling_rights.any(), //
+        valid_sq(ep_sq) ? ep_sq : 0,         //
+        board.side_to_move() == WHITE        //
     );
 }
 
@@ -947,7 +953,7 @@ bool Search::is_limit_reached() const {
         return false; // only main thread checks limits
     if(limits.infinite)
         return false;
-    if(limits.nodes != 0 && threads.get_total_nodes() >= limits.nodes)
+    if(limits.nodes != 0 && threads.total_nodes() >= limits.nodes)
         return true;
     if(limits.time.maximum != 0 && tm.elapsed_time() >= limits.time.maximum)
         return true;
@@ -985,7 +991,7 @@ void Search::update_pv(const Move &move, Stack *stack) {
 void Search::print_uci_info() const {
     const RootMove &rm = root_moves[multipv_idx];
     const int64_t elapsed_time = tm.elapsed_time();
-    const U64 total_nodes = threads.get_total_nodes();
+    const U64 total_nodes = threads.total_nodes();
     const PVLine &pv_line = rm.pv;
 
     std::cout << "info depth " << completed_depth //
@@ -1000,7 +1006,7 @@ void Search::print_uci_info() const {
 
     std::cout << " nodes " << total_nodes                           //
               << " nps " << total_nodes * 1000 / (elapsed_time + 1) //
-              << " tbhits " << threads.get_tb_hits()                //
+              << " tbhits " << threads.tb_hits()                    //
               << " hashfull " << tt.hashfull()                      //
               << " time " << elapsed_time                           //
               << " pv " << rm;

@@ -47,7 +47,7 @@ void History::update(         //
     Stack *stack,             //
     int depth                 //
 ) {
-    const Color stm = board.get_stm();
+    const Color stm = board.side_to_move();
     const int bonus = history_bonus(depth);
     const int malus = history_malus(depth);
 
@@ -105,7 +105,7 @@ void History::update_pawn_hist(const Board &board, const Move &move, int bonus) 
     assert(move);
     Piece pc = board.piece_at(move.from());
     assert(valid_piece(pc));
-    int16_t &value = pawn_hist[ph_idx(board.get_pawn_hash())][pc][move.to()];
+    int16_t &value = pawn_hist[ph_idx(board.pawn_hash())][pc][move.to()];
     value += adjusted_bonus(value, bonus);
 }
 
@@ -120,12 +120,12 @@ void History::update_cont_hist(const Piece pc, const Square to, Stack *stack, in
 }
 
 void History::update_mat_corr(const Board &board, Score raw_eval, Score real_score, int depth) {
-    const Color stm = board.get_stm();
+    const Color stm = board.side_to_move();
     const int diff = real_score - raw_eval;
 
-    update_corr(pawn_corr[stm][corr_idx(board.get_pawn_hash())], diff, depth);
-    update_corr(w_non_pawn_corr[stm][corr_idx(board.get_nonpawn_hash(WHITE))], diff, depth);
-    update_corr(b_non_pawn_corr[stm][corr_idx(board.get_nonpawn_hash(BLACK))], diff, depth);
+    update_corr(pawn_corr[stm][corr_idx(board.pawn_hash())], diff, depth);
+    update_corr(w_non_pawn_corr[stm][corr_idx(board.non_pawn_hash(WHITE))], diff, depth);
+    update_corr(b_non_pawn_corr[stm][corr_idx(board.non_pawn_hash(BLACK))], diff, depth);
 }
 
 void History::update_cont_corr(Score raw_eval, Score real_score, int depth, const Stack *stack) {

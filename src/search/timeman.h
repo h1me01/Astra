@@ -40,32 +40,6 @@ class TimeMan {
         return std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now() - start_time).count();
     }
 
-    bool should_stop(           //
-        Limits limits,          //
-        int stability,          //
-        Score prev_score_diff,  //
-        Score pprev_score_diff, //
-        double node_ratio       //
-    ) const {
-        if(!limits.time.optimum)
-            return false;
-
-        double stability_factor = (tm_stability_base / 100.0) - stability * (tm_stability_mult / 1000.0);
-
-        // adjust time optimum based on last score
-        double result_change_factor = (tm_results_base / 100.0)                       //
-                                      + (tm_results_mult1 / 1000.0) * prev_score_diff //
-                                      + (tm_results_mult2 / 1000.0) * pprev_score_diff;
-
-        result_change_factor = std::clamp(result_change_factor, tm_results_min / 100.0, tm_results_max / 100.0);
-
-        // adjust time optimum based on node count
-        double node_count_factor = (1.0 - node_ratio) * (tm_node_mult / 100.0) + (tm_node_base / 100.0);
-
-        // check if we should stop
-        return (elapsed_time() > limits.time.optimum * stability_factor * result_change_factor * node_count_factor);
-    }
-
     static Time get_optimum(int64_t time_left, int inc, int moves_to_go, int overhead) {
         Time time;
 

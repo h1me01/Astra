@@ -33,11 +33,11 @@ template <typename T, size_t N> //
 class LayerOutput {
   public:
     LayerOutput() {
-        memset(data, 0, sizeof(T) * N);
+        std::memset(data, 0, sizeof(T) * N);
     }
 
     LayerOutput(T *init_data) {
-        memcpy(data, init_data, sizeof(T) * N);
+        std::memcpy(data, init_data, sizeof(T) * N);
     }
 
     T operator[](size_t idx) const {
@@ -92,13 +92,13 @@ class NNUE {
         assert(valid_sq(psq));
         assert(valid_piece(pc));
 
-        if(sq_file(ksq) > 3)
+        if(sq_file(ksq) > FILE_D)
             psq = Square(psq ^ 7); // mirror psq horizontally if king is on other half
 
-        return rel_sq(view, psq) +               //
-               piece_type(pc) * 64 +             //
-               (piece_color(pc) != view) * 384 + //
-               INPUT_BUCKET[rel_sq(view, ksq)] * FEATURE_SIZE;
+        return rel_sq(view, psq)                 //
+               + piece_type(pc) * 64             //
+               + (piece_color(pc) != view) * 384 //
+               + INPUT_BUCKET[rel_sq(view, ksq)] * FEATURE_SIZE;
     }
 
     LayerOutput<uint8_t, FT_SIZE> prep_l1_input(const Color stm, const Accum &acc);

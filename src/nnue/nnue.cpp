@@ -34,7 +34,7 @@ void NNUE::init() {
 
     auto load = [&](auto *dest, std::size_t count) {
         const std::size_t bytes = count * sizeof(*dest);
-        memcpy(dest, &gWeightsData[offset], bytes);
+        std::memcpy(dest, &gWeightsData[offset], bytes);
         offset += bytes;
     };
 
@@ -68,24 +68,24 @@ void NNUE::init() {
                 }
             }
         }
-        memcpy(l1_weights[b], temp_l1_weights, sizeof(temp_l1_weights));
+        std::memcpy(l1_weights[b], temp_l1_weights, sizeof(temp_l1_weights));
 
         transpose<float>(l2_weights[b], L2_SIZE, L1_SIZE);
     }
 }
 
 void NNUE::init_accum(Accum &acc) const {
-    memcpy(acc.get_data(WHITE), nnue.ft_biases, sizeof(int16_t) * FT_SIZE);
-    memcpy(acc.get_data(BLACK), nnue.ft_biases, sizeof(int16_t) * FT_SIZE);
+    std::memcpy(acc.get_data(WHITE), nnue.ft_biases, sizeof(int16_t) * FT_SIZE);
+    std::memcpy(acc.get_data(BLACK), nnue.ft_biases, sizeof(int16_t) * FT_SIZE);
 }
 
 int32_t NNUE::forward(Board &board, const Accum &acc) {
     assert(acc.is_initialized(WHITE) && acc.is_initialized(BLACK));
 
-    const int bucket = (pop_count(board.get_occupancy()) - 2) / 4;
+    const int bucket = (pop_count(board.occupancy()) - 2) / 4;
     assert(0 <= bucket && bucket < OUTPUT_BUCKETS);
 
-    auto l1_input = prep_l1_input(board.get_stm(), acc);
+    auto l1_input = prep_l1_input(board.side_to_move(), acc);
     auto l1_output = forward_l1(bucket, l1_input);
     auto l2_output = forward_l2(bucket, l1_output);
     return static_cast<int32_t>(forward_l3(bucket, l2_output));
