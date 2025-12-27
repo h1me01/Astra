@@ -243,8 +243,16 @@ class MoveList {
         *last++ = m;
     }
 
+    T *begin() {
+        return list;
+    }
+
     const T *begin() const {
         return list;
+    }
+
+    T *end() {
+        return last;
     }
 
     const T *end() const {

@@ -256,36 +256,17 @@ void UCI::bench() {
 }
 
 Move UCI::parse_move(const std::string &str_move) const {
-    const Square from = sq_from(str_move.substr(0, 2));
-    const Square to = sq_from(str_move.substr(2, 2));
-    const Piece pc = board.piece_at(from);
-    const Piece captured = board.piece_at(to);
-    MoveType mt = QUIET;
+    MoveList ml;
+    ml.gen<ADD_LEGALS>(board);
 
-    if(valid_piece(captured))
-        mt = CAPTURE;
-
-    if(piece_type(pc) == PAWN) {
-        if(board.en_passant() == to)
-            mt = EN_PASSANT;
-        else if(sq_rank(to) == RANK_1 || sq_rank(to) == RANK_8) {
-            char prom_type = tolower(str_move[4]);
-
-            mt = valid_piece(captured) ? PC_QUEEN : PQ_QUEEN;
-            if(prom_type == 'r')
-                mt = MoveType(mt - 1);
-            else if(prom_type == 'b')
-                mt = MoveType(mt - 2);
-            else if(prom_type == 'n')
-                mt = MoveType(mt - 3);
-        }
-    } else if(piece_type(pc) == KING) {
-        Color stm = board.side_to_move();
-        if(from == rel_sq(stm, e1) && (to == rel_sq(stm, g1) || to == rel_sq(stm, c1)))
-            mt = CASTLING;
+    for(const Move &move : ml) {
+        std::ostringstream ss;
+        ss << move;
+        if(ss.str() == str_move)
+            return move;
     }
 
-    return Move(from, to, mt);
+    return Move::none();
 }
 
 } // namespace uci

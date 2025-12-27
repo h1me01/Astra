@@ -97,16 +97,23 @@ void Search::start() {
 
         stability = (best_move == prev_best_move) ? std::min(stability + 1, int(tm_stability_max)) : 0;
 
-        if(is_main_thread                                           //
-           && root_depth >= 5                                       //
-           && tm.should_stop(                                       //
-                  limits,                                           //
-                  stability,                                        //
-                  scores[root_depth - 1] - score,                   //
-                  scores[root_depth - 3] - score,                   //
-                  root_moves[0].nodes / static_cast<double>(nodes)) //
-        ) {
-            break;
+        if(is_main_thread && root_depth >= 5 && limits.time.optimum) {
+            double stability_factor = (tm_stability_base / 100.0) - stability * (tm_stability_mult / 1000.0);
+
+            // adjust time optimum based on last score
+            double result_change_factor = (tm_results_base / 100.0)                                        //
+                                          + (tm_results_mult1 / 1000.0) * (scores[root_depth - 1] - score) //
+                                          + (tm_results_mult2 / 1000.0) * (scores[root_depth - 3] - score);
+
+            result_change_factor = std::clamp(result_change_factor, tm_results_min / 100.0, tm_results_max / 100.0);
+
+            // adjust time optimum based on node count
+            double node_ratio = root_moves[0].nodes / static_cast<double>(nodes);
+            double node_count_factor = (1.0 - node_ratio) * (tm_node_mult / 100.0) + (tm_node_base / 100.0);
+
+            // check if we should stop
+            if(tm.elapsed_time() > limits.time.optimum * stability_factor * result_change_factor * node_count_factor)
+                break;
         }
 
         prev_best_move = best_move;
@@ -233,7 +240,6 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
     bool improving = false;
 
     (stack + 1)->killer = Move::none();
-    (stack + 1)->skipped = Move::none();
 
     // look up in tt
     bool tt_hit = false;
@@ -257,8 +263,6 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
 
     if(root_node)
         tt_move = root_moves[multipv_idx];
-
-    const bool tt_move_noisy = tt_move && tt_move.is_noisy();
 
     if(!pv_node                                         //
        && !stack->skipped                               //
@@ -477,8 +481,8 @@ movesloop:
         stack->made_moves = ++made_moves;
 
         const int reduction = REDUCTIONS[depth][made_moves];
-        const int history_score =
-            move.is_quiet() ? history.get_quiet_hist(board, move, stack) : history.get_noisy_hist(board, move);
+        const int history_score = move.is_quiet() ? history.get_quiet_hist(board, move, stack) //
+                                                  : history.get_noisy_hist(board, move);
 
         if(!root_node && !is_loss(best_score)) {
             // late move pruning
@@ -523,6 +527,7 @@ movesloop:
            && stack->ply < 2 * root_depth //
         ) {
             Score sbeta = tt_score - 6 * depth / 8;
+
             stack->skipped = move;
             Score score = negamax<NodeType::NON_PV>((depth - 1) / 2, sbeta - 1, sbeta, stack, cut_node);
             stack->skipped = Move::none();
@@ -534,12 +539,13 @@ movesloop:
                 extensions = 1;
                 if(!pv_node && score < sbeta - double_ext_margin)
                     extensions = 2 + (move.is_quiet() && score < sbeta - tripple_ext_margin);
-            } else if(sbeta >= beta && !is_decisive(sbeta))
+            } else if(sbeta >= beta && !is_decisive(sbeta)) {
                 return sbeta;
-            else if(tt_score >= beta)
+            } else if(tt_score >= beta) {
                 extensions = -3;
-            else if(cut_node)
+            } else if(cut_node) {
                 extensions = -2;
+            }
         }
 
         int new_depth = depth - 1 + extensions;
@@ -556,7 +562,7 @@ movesloop:
 
             r += 2 * cut_node;
 
-            r += tt_move_noisy;
+            r += (tt_move && tt_move.is_noisy());
 
             r -= tt_pv;
 
@@ -907,7 +913,7 @@ Score Search::evaluate() {
 
 Score Search::adjust_eval(int32_t eval, Stack *stack) const {
     eval = (eval * (200 - board.fifty_move_count())) / 200;
-    eval += (history.get_material_corr(board) + history.get_cont_corr(stack)) / 256;
+    eval += history.get_corr_value(board, stack);
 
     return std::clamp(                         //
         eval,                                  //

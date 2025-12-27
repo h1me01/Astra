@@ -34,7 +34,7 @@ void AccumTable::refresh(Color view, Board &board, Accum &accum) {
 
     const Square ksq = board.king_sq(view);
     const int ksq_idx = INPUT_BUCKET[rel_sq(view, ksq)];
-    AccumEntry &entry = entries[view][(sq_file(ksq) > 3) * INPUT_BUCKETS + ksq_idx];
+    AccumEntry &entry = entries[view][(sq_file(ksq) > FILE_D) * INPUT_BUCKETS + ksq_idx];
 
     Accum &entry_acc = entry.get_accum();
 
