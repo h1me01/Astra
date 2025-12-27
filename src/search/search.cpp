@@ -249,8 +249,8 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
 
     if(tt_hit) {
         tt_move = ent->get_move();
-        if (root_node && valid_score(root_moves[multipv_idx].score))
-            tt_move = root_moves[multipv_idx];
+        //if (root_node && valid_score(root_moves[multipv_idx].score))
+        //    tt_move = root_moves[multipv_idx];
 
         tt_bound = ent->get_bound();
         tt_score = ent->get_score(stack->ply);
