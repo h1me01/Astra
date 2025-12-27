@@ -318,7 +318,7 @@ void Board::make_nullmove() {
     info.plies_from_null = 0;
 
     if(valid_sq(info.ep_sq)) {
-        info.hash ^= zobrist::ep_hash(info.ep_sq); // remove ep square from hash
+        info.hash ^= zobrist::ep_hash(info.ep_sq);
         info.ep_sq = NO_SQUARE;
     }
 

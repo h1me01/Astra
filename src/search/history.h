@@ -99,7 +99,7 @@ inline int History::get_quiet_hist(const Board &board, const Move &move, const S
 
     assert(valid_piece(pc));
 
-    return get_heuristic_hist(board.side_to_move(), move) +           //
+    return get_heuristic_hist(board.side_to_move(), move) +      //
            get_pawn_hist(board, move) +                          //
            static_cast<int>((*(stack - 1)->cont_hist)[pc][to]) + //
            static_cast<int>((*(stack - 2)->cont_hist)[pc][to]) + //

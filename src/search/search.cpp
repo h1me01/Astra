@@ -255,7 +255,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
         tt_pv |= ent->get_tt_pv();
     }
 
-    if (root_node)
+    if(root_node)
         tt_move = root_moves[multipv_idx];
 
     const bool tt_move_noisy = tt_move && tt_move.is_noisy();
@@ -926,19 +926,19 @@ unsigned int Search::probe_wdl() const {
 
     Square ep_sq = board.en_passant();
 
-    return tb_probe_wdl(                         //
-        w_occ,                                   //
-        b_occ,                                   //
+    return tb_probe_wdl(                     //
+        w_occ,                               //
+        b_occ,                               //
         board.piece_bb(KING),                //
         board.piece_bb(QUEEN),               //
         board.piece_bb(ROOK),                //
         board.piece_bb(BISHOP),              //
         board.piece_bb(KNIGHT),              //
         board.piece_bb(PAWN),                //
-        board.fifty_move_count(),                       //
+        board.fifty_move_count(),            //
         board.state().castling_rights.any(), //
-        valid_sq(ep_sq) ? ep_sq : 0,             //
-        board.side_to_move() == WHITE                 //
+        valid_sq(ep_sq) ? ep_sq : 0,         //
+        board.side_to_move() == WHITE        //
     );
 }
 
