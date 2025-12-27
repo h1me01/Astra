@@ -240,7 +240,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
     bool tt_hit = false;
     TTEntry *ent = tt.lookup(hash, &tt_hit);
 
-    Move tt_move = root_node ? root_moves[multipv_idx] : tt_hit ? ent->get_move() : Move::none();
+    Move tt_move = Move::none();
     Bound tt_bound = NO_BOUND;
     Score tt_score = VALUE_NONE;
     Score tt_eval = VALUE_NONE;
@@ -248,6 +248,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
     bool tt_pv = pv_node;
 
     if(tt_hit) {
+        tt_move = ent->get_move();
         tt_bound = ent->get_bound();
         tt_score = ent->get_score(stack->ply);
         tt_eval = ent->get_eval();
