@@ -157,13 +157,16 @@ std::string Board::fen() const {
     if(castling.empty())
         castling = "-";
 
-    std::string ep = valid_sq(info.ep_sq) ? std::to_string(info.ep_sq) : "-";
+    fen << (stm == WHITE ? " w " : " b ");
+    fen << castling << " ";
 
-    fen << (stm == WHITE ? " w " : " b ") //
-        << castling << " "                //
-        << ep << " "                      //
-        << info.fmr_counter << " "        //
-        << (!ply_count() ? 1 : (ply_count() + 1) / 2);
+    if(valid_sq(info.ep_sq))
+        fen << info.ep_sq << " ";
+    else
+        fen << "- ";
+
+    fen << info.fmr_counter << " ";
+    fen << (ply_count() ? (ply_count() + 1) / 2 : 1);
 
     return fen.str();
 }

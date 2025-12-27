@@ -42,6 +42,7 @@ Move *gen_pawn_moves(const Board &board, Move *ml, const U64 targets) {
     const U64 empty_sqs = ~occ;
     const U64 pawns = board.piece_bb(us, PAWN);
     const U64 pawns_non7 = pawns & ~rank7_bb;
+    const U64 checkers = board.state().checkers;
 
     // single and double pawn pushes, no promotions
     if constexpr(gt != ADD_NOISY) {
@@ -78,7 +79,7 @@ Move *gen_pawn_moves(const Board &board, Move *ml, const U64 targets) {
 
         // en passant
         Square ep_sq = board.en_passant();
-        if(valid_sq(ep_sq) && !(targets & sq_bb(ep_sq + up))) {
+        if(valid_sq(ep_sq) && !(board.in_check() && ((targets ^ checkers) & sq_bb(ep_sq + up)))) {
             assert(sq_rank(ep_sq) == rel_rank(us, RANK_6));
 
             b1 = pawns_non7 & pawn_attacks_bb(them, ep_sq);
