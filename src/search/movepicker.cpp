@@ -15,11 +15,7 @@ void partial_insertion_sort(MoveList<ScoredMove> &ml, int idx) {
 
 // MovePicker
 
-MovePicker::MovePicker(SearchType st,          //
-                       const Board &board,     //
-                       const History &history, //
-                       const Stack *stack,     //
-                       const Move &tt_move)
+MovePicker::MovePicker(SearchType st, const Board &board, const History &history, const Stack *stack, const Move &tt_move)
     : st(st), board(board), history(history), stack(stack) {
 
     if(st == PC_SEARCH)

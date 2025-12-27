@@ -13,29 +13,15 @@ enum Bound : uint8_t { //
     EXACT_BOUND = 3
 };
 
-constexpr int AGE_STEP = 0x8;
-constexpr int AGE_CYCLE = 255 + AGE_STEP;
-constexpr int AGE_MASK = 0xF8;
-
 #pragma pack(push, 1)
 class TTEntry {
   public:
-    void store(      //
-        U64 hash,    //
-        Move move,   //
-        Score score, //
-        Score eval,  //
-        Bound bound, //
-        int depth,   //
-        int ply,     //
-        bool pv      //
-    );
+    void store(U64 hash, Move move, Score score, Score eval, Bound bound, int depth, int ply, bool pv);
+
+    void refresh_age();
 
     int relative_age() const;
-
-    void set_agepvbound(uint8_t age_pv_bound) {
-        this->agepvbound = age_pv_bound;
-    }
+    uint8_t get_age() const;
 
     U64 get_hash() const {
         return hash;
@@ -63,16 +49,8 @@ class TTEntry {
         return eval;
     }
 
-    uint8_t get_agepvbound() const {
-        return agepvbound;
-    }
-
     Bound get_bound() const {
         return Bound(agepvbound & 0x3);
-    }
-
-    uint8_t get_age() const {
-        return agepvbound & AGE_MASK;
     }
 
     bool get_tt_pv() {
@@ -106,20 +84,14 @@ class TTable {
     void init(U64 size_mb);
     void clear();
 
-    int hashfull() const;
+    void increment();
 
     TTEntry *lookup(U64 hash, bool *hit) const;
 
-    size_t index(U64 hash) const {
-        return (static_cast<unsigned __int128>(hash) * static_cast<unsigned __int128>(bucket_size)) >> 64;
-    }
+    int hashfull() const;
 
     void prefetch(U64 hash) const {
         __builtin_prefetch(&buckets[index(hash)]);
-    }
-
-    void increment() {
-        age += AGE_STEP;
     }
 
     int get_age() const {
@@ -130,6 +102,10 @@ class TTable {
     uint8_t age;
     U64 bucket_size;
     TTBucket *buckets;
+
+    size_t index(U64 hash) const {
+        return (static_cast<unsigned __int128>(hash) * static_cast<unsigned __int128>(bucket_size)) >> 64;
+    }
 };
 
 inline bool valid_tt_score(Score tt_score, Score score, Bound bound) {
