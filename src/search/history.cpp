@@ -32,6 +32,7 @@ void History::clear() {
     std::memset(cont_hist, 0, sizeof(cont_hist));
 
     std::memset(pawn_corr, 0, sizeof(pawn_corr));
+    std::memset(minor_piece_corr, 0, sizeof(minor_piece_corr));
     std::memset(w_non_pawn_corr, 0, sizeof(w_non_pawn_corr));
     std::memset(b_non_pawn_corr, 0, sizeof(b_non_pawn_corr));
     std::memset(cont_corr, 0, sizeof(cont_corr));
@@ -124,6 +125,7 @@ void History::update_mat_corr(const Board &board, Score raw_eval, Score real_sco
     const int diff = real_score - raw_eval;
 
     update_corr(pawn_corr[stm][corr_idx(board.pawn_hash())], diff, depth);
+    update_corr(minor_piece_corr[stm][corr_idx(board.minor_pieces_hash())], diff, depth);
     update_corr(w_non_pawn_corr[stm][corr_idx(board.non_pawn_hash(WHITE))], diff, depth);
     update_corr(b_non_pawn_corr[stm][corr_idx(board.non_pawn_hash(BLACK))], diff, depth);
 }

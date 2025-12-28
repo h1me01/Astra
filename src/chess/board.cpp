@@ -56,11 +56,6 @@ void Board::set_fen(const std::string &fen) {
     state_list.clear();
     StateInfo &info = state();
 
-    info.hash = 0;
-    info.pawn_hash = 0;
-    info.non_pawn_hash[WHITE] = 0;
-    info.non_pawn_hash[BLACK] = 0;
-
     std::vector<std::string> fen_parts = split(fen, ' ');
     if(fen_parts.size() != 6) {
         std::cerr << "Invalid fen string" << std::endl;

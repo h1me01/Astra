@@ -55,6 +55,7 @@ class History {
     int16_t pawn_hist[PAWN_HIST_SIZE][NUM_PIECES][NUM_SQUARES];
 
     int16_t pawn_corr[NUM_COLORS][CORR_SIZE];
+    int16_t minor_piece_corr[NUM_COLORS][CORR_SIZE];
     int16_t w_non_pawn_corr[NUM_COLORS][CORR_SIZE];
     int16_t b_non_pawn_corr[NUM_COLORS][CORR_SIZE];
     int16_t cont_corr[NUM_PIECES][NUM_SQUARES][NUM_PIECES][NUM_SQUARES];
@@ -119,6 +120,7 @@ inline int History::get_corr_value(const Board &board, const Stack *stack) const
     Move pprev_move = (stack - 2)->move;
 
     int value = pawn_corr[stm][corr_idx(board.pawn_hash())]                  //
+                + minor_piece_corr[stm][corr_idx(board.minor_pieces_hash())] //
                 + w_non_pawn_corr[stm][corr_idx(board.non_pawn_hash(WHITE))] //
                 + b_non_pawn_corr[stm][corr_idx(board.non_pawn_hash(BLACK))];
 
