@@ -343,7 +343,7 @@ void Board::perft(int depth) {
     }
 
     auto perft = [&](int d, auto &&perft_ref) -> U64 {
-        MoveList ml;
+        MoveList<Move> ml;
         ml.gen<ADD_LEGALS>(*this);
 
         if(d == 0)
@@ -363,7 +363,7 @@ void Board::perft(int depth) {
     std::cout << "\nPerft test at depth " << depth << ":\n\n";
     auto start = std::chrono::high_resolution_clock::now();
 
-    MoveList ml;
+    MoveList<Move> ml;
     ml.gen<ADD_LEGALS>(*this);
 
     U64 total_nodes = 0;

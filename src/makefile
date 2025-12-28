@@ -44,6 +44,7 @@ endif
 # Source files
 CHESS_SRC := chess/bitboard.cpp \
 			 chess/board.cpp \
+			 chess/movegen.cpp \
 			 chess/zobrist.cpp \
 			 chess/cuckoo.cpp
 

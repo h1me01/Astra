@@ -256,7 +256,7 @@ void UCI::bench() {
 }
 
 Move UCI::parse_move(const std::string &str_move) const {
-    MoveList ml;
+    MoveList<Move> ml;
     ml.gen<ADD_LEGALS>(board);
 
     for(const Move &move : ml) {

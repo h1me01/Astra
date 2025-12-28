@@ -39,13 +39,13 @@ void History::clear() {
     std::fill(&counters[0][0], &counters[0][0] + NUM_SQUARES * NUM_SQUARES, Move{});
 }
 
-void History::update(         //
-    const Board &board,       //
-    const Move &best_move,    //
-    const MoveList<> &quiets, //
-    const MoveList<> &noisy,  //
-    Stack *stack,             //
-    int depth                 //
+void History::update(             //
+    const Board &board,           //
+    const Move &best_move,        //
+    const MoveList<Move> &quiets, //
+    const MoveList<Move> &noisy,  //
+    Stack *stack,                 //
+    int depth                     //
 ) {
     const Color stm = board.side_to_move();
     const int bonus = history_bonus(depth);

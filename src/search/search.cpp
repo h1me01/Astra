@@ -465,7 +465,7 @@ movesloop:
     MovePicker mp(N_SEARCH, board, history, stack, tt_move);
     Move move = Move::none();
 
-    MoveList quiets, noisy;
+    MoveList<Move> quiets, noisy;
     int made_moves = 0;
     stack->made_moves = 0;
 

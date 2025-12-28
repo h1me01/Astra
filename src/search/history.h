@@ -19,11 +19,11 @@ class History {
 
     void clear();
 
-    void update(const Board &board,       //
-                const Move &best_move,    //
-                const MoveList<> &quiets, //
-                const MoveList<> &noisy,  //
-                Stack *stack,             //
+    void update(const Board &board,           //
+                const Move &best_move,        //
+                const MoveList<Move> &quiets, //
+                const MoveList<Move> &noisy,  //
+                Stack *stack,                 //
                 int depth);
 
     void update_quiet_hist(Color c, const Move &move, int bonus);
