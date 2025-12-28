@@ -72,6 +72,7 @@ void Search::start() {
         stack_arr[i].ply = i - 6;
         stack_arr[i].static_eval = VALUE_NONE;
         stack_arr[i].cont_hist = &history.cont_hist[0][NO_PIECE][0];
+        stack_arr[i].cont_corr = &history.cont_corr[NO_PIECE][0];
     }
 
     int stability = 0;
@@ -376,6 +377,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
        && !stack->skipped                                                //
        && board.non_pawn_mat(stm)                                        //
        && stack->ply >= nmp_min_ply                                      //
+       && eval >= stack->static_eval                                     //
        && stack->static_eval + nmp_depth_mult * depth - nmp_base >= beta //
     ) {
         assert(!(stack - 1)->move.is_null());
@@ -387,6 +389,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
         stack->move = Move::null();
         stack->moved_piece = NO_PIECE;
         stack->cont_hist = &history.cont_hist[0][NO_PIECE][0];
+        stack->cont_corr = &history.cont_corr[NO_PIECE][0];
 
         board.make_nullmove();
         Score score = -negamax<NodeType::NON_PV>(depth - R, -beta, -beta + 1, stack + 1, !cut_node);
@@ -836,6 +839,7 @@ void Search::make_move(const Move &move, Stack *stack) {
     stack->move = move;
     stack->moved_piece = board.piece_at(move.from());
     stack->cont_hist = &history.cont_hist[move.is_cap()][stack->moved_piece][move.to()];
+    stack->cont_corr = &history.cont_corr[stack->moved_piece][move.to()];
 
     nnue::Accum &accum = accum_list.increment();
 

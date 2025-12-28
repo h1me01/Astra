@@ -48,6 +48,7 @@ struct Stack {
 
     PVLine pv;
     int16_t (*cont_hist)[NUM_PIECES + 1][NUM_SQUARES] = nullptr;
+    int16_t (*cont_corr)[NUM_PIECES + 1][NUM_SQUARES] = nullptr;
 };
 
 } // namespace search

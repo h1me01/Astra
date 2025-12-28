@@ -16,6 +16,7 @@ class History {
 
   public:
     int16_t cont_hist[2][NUM_PIECES + 1][NUM_SQUARES][NUM_PIECES + 1][NUM_SQUARES];
+    int16_t cont_corr[NUM_PIECES + 1][NUM_SQUARES][NUM_PIECES + 1][NUM_SQUARES];
 
     void clear();
 
@@ -57,7 +58,6 @@ class History {
     int16_t pawn_corr[NUM_COLORS][CORR_SIZE];
     int16_t w_non_pawn_corr[NUM_COLORS][CORR_SIZE];
     int16_t b_non_pawn_corr[NUM_COLORS][CORR_SIZE];
-    int16_t cont_corr[NUM_PIECES][NUM_SQUARES][NUM_PIECES][NUM_SQUARES];
 
     int ph_idx(U64 hash) const {
         return hash % PAWN_HIST_SIZE;
@@ -116,14 +116,15 @@ inline int History::get_pawn_hist(const Board &board, const Move &move) const {
 inline int History::get_corr_value(const Board &board, const Stack *stack) const {
     Color stm = board.side_to_move();
     Move prev_move = (stack - 1)->move;
-    Move pprev_move = (stack - 2)->move;
+    Piece prev_pc = (stack - 1)->moved_piece;
 
     int value = pawn_corr[stm][corr_idx(board.pawn_hash())]                  //
                 + w_non_pawn_corr[stm][corr_idx(board.non_pawn_hash(WHITE))] //
                 + b_non_pawn_corr[stm][corr_idx(board.non_pawn_hash(BLACK))];
 
-    if(prev_move && pprev_move)
-        value += cont_corr[(stack - 1)->moved_piece][prev_move.to()][(stack - 2)->moved_piece][pprev_move.to()];
+    if(prev_move && valid_piece(prev_pc))
+        for(auto i : {2, 4})
+            value += *(stack - i)->cont_corr[prev_pc][prev_move.to()];
 
     return value / 256;
 }
