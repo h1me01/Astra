@@ -245,25 +245,15 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
     bool tt_hit = false;
     TTEntry *ent = tt.lookup(hash, &tt_hit);
 
-    Move tt_move = Move::none();
-    Bound tt_bound = NO_BOUND;
-    Score tt_score = VALUE_NONE;
-    Score tt_eval = VALUE_NONE;
-    int tt_depth = 0;
-    bool tt_pv = pv_node;
+    Move tt_move = tt_hit ? ent->get_move() : Move::none();
+    Bound tt_bound = tt_hit ? ent->get_bound() : NO_BOUND;
+    Score tt_score = tt_hit ? ent->get_score(stack->ply) : VALUE_NONE;
+    Score tt_eval = tt_hit ? ent->get_eval() : VALUE_NONE;
+    int tt_depth = tt_hit ? ent->get_depth() : 0;
+    bool tt_pv = pv_node || (tt_hit && ent->get_tt_pv());
 
-    if(tt_hit) {
-        tt_move = ent->get_move();
-        tt_bound = ent->get_bound();
-        tt_score = ent->get_score(stack->ply);
-        tt_eval = ent->get_eval();
-        tt_depth = ent->get_depth();
-        tt_pv |= ent->get_tt_pv();
-    }
-
-    if(root_node && valid_score(root_moves[multipv_idx].score)) {
+    if(root_node && valid_score(root_moves[multipv_idx].score))
         tt_move = root_moves[multipv_idx];
-    }
 
     if(!pv_node                                         //
        && !stack->skipped                               //
@@ -736,19 +726,11 @@ Score Search::quiescence(Score alpha, Score beta, Stack *stack) {
     bool tt_hit = false;
     TTEntry *ent = tt.lookup(hash, &tt_hit);
 
-    Move tt_move = Move::none();
-    Bound tt_bound = NO_BOUND;
-    Score tt_score = VALUE_NONE;
-    Score tt_eval = VALUE_NONE;
-    bool tt_pv = false;
-
-    if(tt_hit) {
-        tt_move = ent->get_move();
-        tt_bound = ent->get_bound();
-        tt_score = ent->get_score(stack->ply);
-        tt_eval = ent->get_eval();
-        tt_pv |= ent->get_tt_pv();
-    }
+    Move tt_move = tt_hit ? ent->get_move() : Move::none();
+    Bound tt_bound = tt_hit ? ent->get_bound() : NO_BOUND;
+    Score tt_score = tt_hit ? ent->get_score(stack->ply) : VALUE_NONE;
+    Score tt_eval = tt_hit ? ent->get_eval() : VALUE_NONE;
+    bool tt_pv = tt_hit && ent->get_tt_pv();
 
     if(!pv_node && valid_score(tt_score) && valid_tt_score(tt_score, beta, tt_bound))
         return tt_score;
