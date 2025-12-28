@@ -116,16 +116,9 @@ Move *gen_piece_moves(const Board &board, Move *ml, U64 pieces, const U64 target
         if(pinned & sq_bb(from))
             attacks &= line(from, our_ksq);
 
-        if constexpr(gt != ADD_NOISY) {
-            U64 target = attacks & ~occ;
-            while(target)
-                *ml++ = Move(from, pop_lsb(target), QUIET);
-        }
-
-        if constexpr(gt != ADD_QUIETS) {
-            U64 target = attacks & them_bb;
-            while(target)
-                *ml++ = Move(from, pop_lsb(target), CAPTURE);
+        while(attacks) {
+            Square to = pop_lsb(attacks);
+            *ml++ = Move(from, to, (them_bb & sq_bb(to)) ? CAPTURE : QUIET);
         }
     }
 

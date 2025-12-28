@@ -261,8 +261,9 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
         tt_pv |= ent->get_tt_pv();
     }
 
-    if(root_node)
+    if(root_node && valid_score(root_moves[multipv_idx].score)) {
         tt_move = root_moves[multipv_idx];
+    }
 
     if(!pv_node                                         //
        && !stack->skipped                               //
@@ -962,15 +963,10 @@ bool Search::is_limit_reached() const {
 
 void Search::sort_rootmoves(int offset) {
     assert(offset >= 0);
-
-    for(int i = offset; i < root_moves.size(); i++) {
-        int best = i;
-        for(int j = i + 1; j < root_moves.size(); j++)
-            if(root_moves[j].score > root_moves[i].score)
-                best = j;
-        if(best != i)
-            std::swap(root_moves[i], root_moves[best]);
-    }
+    auto it = root_moves.begin() + offset;
+    std::stable_sort(it, root_moves.end(), [](const RootMove &a, const RootMove &b) {
+        return a.score > b.score; //
+    });
 }
 
 bool Search::found_rootmove(const Move &move) {
