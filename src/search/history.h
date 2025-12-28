@@ -124,7 +124,8 @@ inline int History::get_corr_value(const Board &board, const Stack *stack) const
 
     if(prev_move && valid_piece(prev_pc))
         for(auto i : {2, 4})
-            value += *(stack - i)->cont_corr[prev_pc][prev_move.to()];
+            if((stack - i)->move)
+                value += *(stack - i)->cont_corr[prev_pc][prev_move.to()];
 
     return value / 256;
 }

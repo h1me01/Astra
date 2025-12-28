@@ -133,8 +133,11 @@ void History::update_cont_corr(Score raw_eval, Score real_score, int depth, cons
     Move prev_move = (stack - 1)->move;
     Piece prev_pc = (stack - 1)->moved_piece;
 
-    if(prev_move && valid_piece(prev_pc))
-        for(auto i : {2, 4})
+    if(!prev_move || !valid_piece(prev_pc))
+        return;
+
+    for(auto i : {2, 4})
+        if((stack - i)->move)
             update_corr(*(stack - i)->cont_corr[prev_pc][prev_move.to()], diff, depth);
 }
 
