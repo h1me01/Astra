@@ -563,7 +563,7 @@ movesloop:
 
             r -= history_score / (move.is_quiet() ? quiet_hist_div : noisy_hist_div);
 
-            const int r_depth = std::clamp(new_depth - r, 1, new_depth + 1);
+            const int r_depth = std::clamp(new_depth - r, 1, new_depth + 1) + pv_node;
 
             score = -negamax<NodeType::NON_PV>(r_depth, -alpha - 1, -alpha, stack + 1, true);
 
