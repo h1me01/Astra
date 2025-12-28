@@ -591,8 +591,13 @@ movesloop:
         }
 
         // principal variation search
-        if(pv_node && (made_moves == 1 || score > alpha))
+        if(pv_node && (made_moves == 1 || score > alpha)) {
+            // extend tt move if we are about to dive into quiescence
+            if(move == tt_move && tt_depth > 1 && root_depth > 8)
+                new_depth = std::max(new_depth, 1);
+
             score = -negamax<NodeType::PV>(new_depth, -beta, -alpha, stack + 1);
+        }
 
         undo_move(move);
 
