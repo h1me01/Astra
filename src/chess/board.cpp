@@ -157,13 +157,16 @@ std::string Board::fen() const {
     if(castling.empty())
         castling = "-";
 
-    std::string ep = valid_sq(info.ep_sq) ? std::to_string(info.ep_sq) : "-";
+    fen << (stm == WHITE ? " w " : " b ");
+    fen << castling << " ";
 
-    fen << (stm == WHITE ? " w " : " b ") //
-        << castling << " "                //
-        << ep << " "                      //
-        << info.fmr_counter << " "        //
-        << (!ply_count() ? 1 : (ply_count() + 1) / 2);
+    if(valid_sq(info.ep_sq))
+        fen << info.ep_sq << " ";
+    else
+        fen << "- ";
+
+    fen << info.fmr_counter << " ";
+    fen << (ply_count() ? (ply_count() + 1) / 2 : 1);
 
     return fen.str();
 }
@@ -389,6 +392,7 @@ bool Board::legal(const Move &move) const {
     const U64 occ = occupancy();
     const U64 from_bb = sq_bb(from);
 
+    assert(pseudo_legal(move));
     assert(piece_at(ksq) == make_piece(stm, KING));
 
     if(move.is_ep()) {
@@ -537,10 +541,6 @@ bool Board::pseudo_legal(const Move &move) const {
     else if(!(attacks_bb(pt, from, occ) & sq_bb(to))) {
         return false;
     }
-
-    // if a pinned piece move causes a discovered check, then it's not pseudo legal
-    if(info.blockers[stm] & from_bb && !(line(from, to) & sq_bb(ksq)))
-        return false;
 
     return true;
 }

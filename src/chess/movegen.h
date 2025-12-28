@@ -16,11 +16,11 @@ Move *make_promotions(Move *ml, Square to) {
     assert(!(to >= a2 && to <= h7));
     assert(mt == PQ_QUEEN || mt == PC_QUEEN);
 
-    if(gt != ADD_QUIETS) {
+    if(gt != ADD_QUIETS)
         *ml++ = Move(to - d, to, mt);
-        if(gt == ADD_NOISY && mt == PQ_QUEEN)
-            return ml;
-    }
+
+    if((gt == ADD_NOISY && mt == PQ_QUEEN) || (gt == ADD_QUIETS && mt == PC_QUEEN))
+        return ml;
 
     *ml++ = Move(to - d, to, MoveType(mt - 1));
     *ml++ = Move(to - d, to, MoveType(mt - 2));
@@ -42,6 +42,8 @@ Move *gen_pawn_moves(const Board &board, Move *ml, const U64 targets) {
     const U64 empty_sqs = ~occ;
     const U64 pawns = board.piece_bb(us, PAWN);
     const U64 pawns_non7 = pawns & ~rank7_bb;
+    const U64 pawns_on7 = pawns & rank7_bb;
+    const U64 checkers = board.state().checkers;
 
     // single and double pawn pushes, no promotions
     if constexpr(gt != ADD_NOISY) {
@@ -78,7 +80,7 @@ Move *gen_pawn_moves(const Board &board, Move *ml, const U64 targets) {
 
         // en passant
         Square ep_sq = board.en_passant();
-        if(valid_sq(ep_sq)) {
+        if(valid_sq(ep_sq) && !(board.in_check() && ((targets ^ checkers) & sq_bb(ep_sq + up)))) {
             assert(sq_rank(ep_sq) == rel_rank(us, RANK_6));
 
             b1 = pawns_non7 & pawn_attacks_bb(them, ep_sq);
@@ -88,21 +90,17 @@ Move *gen_pawn_moves(const Board &board, Move *ml, const U64 targets) {
     }
 
     // promotions
-    const U64 pawns_on7 = pawns & rank7_bb;
+    U64 b1 = shift<up_right>(pawns_on7) & them_bb & targets;
+    while(b1)
+        ml = make_promotions<gt, up_right, PC_QUEEN>(ml, pop_lsb(b1));
 
-    if(gt != ADD_QUIETS) {
-        U64 pb1 = shift<up_right>(pawns_on7) & them_bb & targets;
-        while(pb1)
-            ml = make_promotions<gt, up_right, PC_QUEEN>(ml, pop_lsb(pb1));
+    U64 b2 = shift<up_left>(pawns_on7) & them_bb & targets;
+    while(b2)
+        ml = make_promotions<gt, up_left, PC_QUEEN>(ml, pop_lsb(b2));
 
-        U64 pb2 = shift<up_left>(pawns_on7) & them_bb & targets;
-        while(pb2)
-            ml = make_promotions<gt, up_left, PC_QUEEN>(ml, pop_lsb(pb2));
-    }
-
-    U64 pb3 = shift<up>(pawns_on7) & empty_sqs & targets;
-    while(pb3)
-        ml = make_promotions<gt, up, PQ_QUEEN>(ml, pop_lsb(pb3));
+    U64 b3 = shift<up>(pawns_on7) & empty_sqs & targets;
+    while(b3)
+        ml = make_promotions<gt, up, PQ_QUEEN>(ml, pop_lsb(b3));
 
     return ml;
 }
