@@ -86,6 +86,7 @@ U64 between_bb(Square sq1, Square sq2);
 U64 line(Square sq1, Square sq2);
 
 U64 pawn_attacks_bb(Color c, Square sq);
+U64 pawn_attacks_bb(Color c, U64 pawns);
 
 U64 attacks_bb(PieceType pt, Square sq, const U64 occ = 0);
 

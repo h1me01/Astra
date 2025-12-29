@@ -713,20 +713,11 @@ Threats Board::threats() const {
 
     Threats threats;
 
-    // king must be excluded so we don't block the slider attacks
-    const U64 occ = occupancy() ^ sq_bb(king_sq());
-
-    const U64 pawns = piece_bb(them, PAWN);
-    threats[PAWN] = (them == WHITE) ? shift<NORTH_WEST>(pawns) | shift<NORTH_EAST>(pawns)
-                                    : shift<SOUTH_WEST>(pawns) | shift<SOUTH_EAST>(pawns);
-
-    for(PieceType pt : {KNIGHT, BISHOP, ROOK}) {
-        threats[pt] = 0;
-
-        U64 pc_bb = piece_bb(them, pt);
-        while(pc_bb)
-            threats[pt] |= attacks_bb(pt, pop_lsb(pc_bb), occ);
-    }
+    threats[PAWN] = 0;
+    threats[KNIGHT] = threats[BISHOP] = attacks_by<PAWN>(them);
+    threats[ROOK] = attacks_by<KNIGHT>(them) | attacks_by<BISHOP>(them) | threats[KNIGHT];
+    threats[QUEEN] = attacks_by<ROOK>(them) | threats[ROOK];
+    threats[KING] = attacks_by<QUEEN>(them) | threats[QUEEN];
 
     return threats;
 }
