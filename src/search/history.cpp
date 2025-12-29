@@ -47,7 +47,6 @@ void History::update(             //
     Stack *stack,                 //
     int depth                     //
 ) {
-    const Color stm = board.side_to_move();
     const int bonus = history_bonus(depth);
     const int malus = history_malus(depth);
 
@@ -61,18 +60,11 @@ void History::update(             //
         // idea from ethereal
         // only update quiet history if best move was important
         if(depth > 3 || quiets.size() > 1) {
-            const int quiet_bonus = bonus * quiet_hist_bonus_mult / 1024;
+            update_quiet_hist(board, best_move, stack, bonus * quiet_hist_bonus_mult / 1024);
+
             const int quiet_malus = malus * quiet_hist_malus_mult / 1024;
-
-            update_quiet_hist(stm, best_move, quiet_bonus);
-            update_pawn_hist(board, best_move, quiet_bonus);
-            update_cont_hist(board.piece_at(best_move.from()), best_move.to(), stack, quiet_bonus);
-
-            for(const auto &m : quiets) {
-                update_quiet_hist(stm, m, -quiet_malus);
-                update_pawn_hist(board, m, -quiet_malus);
-                update_cont_hist(board.piece_at(m.from()), m.to(), stack, -quiet_malus);
-            }
+            for(const auto &m : quiets)
+                update_quiet_hist(board, m, stack, -quiet_malus);
         }
     } else {
         update_noisy_hist(board, best_move, bonus * noisy_hist_bonus_mult / 1024);
@@ -82,7 +74,13 @@ void History::update(             //
         update_noisy_hist(board, m, -malus * noisy_hist_malus_mult / 1024);
 }
 
-void History::update_quiet_hist(Color c, const Move &move, int bonus) {
+void History::update_quiet_hist(const Board &board, const Move &move, Stack *stack, int bonus) {
+    update_heuristic_hist(board.side_to_move(), move, bonus);
+    update_pawn_hist(board, move, bonus);
+    update_cont_hist(board.piece_at(move.from()), move.to(), stack, bonus);
+}
+
+void History::update_heuristic_hist(Color c, const Move &move, int bonus) {
     assert(move);
     int16_t &value = heuristic_hist[c][move.from()][move.to()];
     value += adjusted_bonus(value, bonus);

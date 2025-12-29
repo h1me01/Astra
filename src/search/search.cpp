@@ -265,7 +265,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
         if(tt_move && tt_score >= beta) {
             if(tt_move.is_quiet()) {
                 int bonus = std::min(tt_hist_bonus_mult * depth + tt_hist_bonus_minus, int(max_tt_hist_bonus));
-                history.update_quiet_hist(stm, tt_move, bonus);
+                history.update_quiet_hist(board, tt_move, stack, bonus);
             }
 
             Square prev_sq = (stack - 1)->move ? (stack - 1)->move.to() : NO_SQUARE;
@@ -351,7 +351,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
             int(static_h_max)                                                     //
         );
 
-        history.update_quiet_hist(~stm, (stack - 1)->move, bonus);
+        history.update_heuristic_hist(~stm, (stack - 1)->move, bonus);
     }
 
     // razoring

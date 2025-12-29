@@ -26,7 +26,8 @@ class History {
                 Stack *stack,                 //
                 int depth);
 
-    void update_quiet_hist(Color c, const Move &move, int bonus);
+    void update_quiet_hist(const Board &board, const Move &move, Stack *stack, int bonus);
+    void update_heuristic_hist(Color c, const Move &move, int bonus);
     void update_noisy_hist(const Board &board, const Move &move, int bonus);
     void update_pawn_hist(const Board &board, const Move &move, int bonus);
     void update_cont_hist(const Piece pc, const Square to, Stack *stack, int bonus);
