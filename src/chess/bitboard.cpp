@@ -258,12 +258,6 @@ U64 pawn_attacks_bb(Color c, Square sq) {
     return PAWN_ATTACKS[c][sq];
 }
 
-U64 pawn_attacks_bb(Color c, U64 pawns) {
-    assert(valid_color(c));
-    return (c == WHITE) ? shift<NORTH_WEST>(pawns) | shift<NORTH_EAST>(pawns)
-                        : shift<SOUTH_WEST>(pawns) | shift<SOUTH_EAST>(pawns);
-}
-
 U64 attacks_bb(PieceType pt, Square sq, const U64 occ) {
     assert(valid_sq(sq));
     assert(valid_piece_type(pt) && pt != PAWN);

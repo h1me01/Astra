@@ -15,17 +15,17 @@ namespace chess {
 class Threats {
   public:
     U64 operator[](PieceType pt) const {
-        assert(valid_piece_type(pt));
+        assert(pt >= PAWN && pt <= ROOK);
         return data[pt];
     }
 
     U64 &operator[](PieceType pt) {
-        assert(valid_piece_type(pt));
+        assert(pt >= PAWN && pt <= ROOK);
         return data[pt];
     }
 
   private:
-    U64 data[NUM_PIECE_TYPES]{};
+    U64 data[4]{};
 };
 
 class Board {
@@ -62,7 +62,6 @@ class Board {
 
     Threats threats() const;
 
-    template <PieceType pt> U64 attacks_by(Color c) const;
     U64 attackers_to(Color c, Square sq, U64 occ) const;
 
     U64 occupancy(Color c) const;
@@ -137,20 +136,6 @@ inline bool Board::non_pawn_mat(Color c) const {
         if(piece_bb(c, pt))
             return true;
     return false;
-}
-
-template <PieceType pt> //
-inline U64 Board::attacks_by(Color c) const {
-    if constexpr(pt == PAWN)
-        return pawn_attacks_bb(c, piece_bb(c, PAWN));
-    else {
-        const U64 occ = occupancy();
-        U64 threats = 0;
-        U64 attackers = piece_bb(c, pt);
-        while(attackers)
-            threats |= attacks_bb<pt>(pop_lsb(attackers), occ);
-        return threats;
-    }
 }
 
 inline U64 Board::attackers_to(Color c, Square sq, const U64 occ) const {
