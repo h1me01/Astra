@@ -377,7 +377,6 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
        && !stack->skipped                                                //
        && board.non_pawn_mat(stm)                                        //
        && stack->ply >= nmp_min_ply                                      //
-       && eval >= stack->static_eval                                     //
        && stack->static_eval + nmp_depth_mult * depth - nmp_base >= beta //
     ) {
         assert(!(stack - 1)->move.is_null());
