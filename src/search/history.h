@@ -15,7 +15,7 @@ class History {
     static int history_malus(int depth);
 
   public:
-    int16_t cont_hist[2][NUM_PIECES + 1][NUM_SQUARES][NUM_PIECES + 1][NUM_SQUARES];
+    int16_t cont_hist[2][2][NUM_PIECES + 1][NUM_SQUARES][NUM_PIECES + 1][NUM_SQUARES];
 
     void clear();
 
