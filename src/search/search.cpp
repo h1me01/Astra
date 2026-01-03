@@ -212,7 +212,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
 
     // check for upcoming repetition
     if(!root_node && alpha < SCORE_DRAW && board.upcoming_repetition(stack->ply)) {
-        alpha = SCORE_DRAW;
+        alpha = draw_score(nodes);
         if(alpha >= beta)
             return alpha;
     }
@@ -227,7 +227,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
 
     if(!root_node) {
         if(stack->ply >= MAX_PLY - 1)
-            return in_check ? SCORE_DRAW : evaluate();
+            return in_check ? draw_score(nodes) : evaluate();
         if(board.is_draw(stack->ply))
             return SCORE_DRAW;
 
@@ -721,7 +721,7 @@ Score Search::quiescence(Score alpha, Score beta, Stack *stack) {
 
     // check for upcoming repetition
     if(alpha < SCORE_DRAW && board.upcoming_repetition(stack->ply)) {
-        alpha = SCORE_DRAW;
+        alpha = draw_score(nodes);
         if(alpha >= beta)
             return alpha;
     }
@@ -908,6 +908,10 @@ Score Search::evaluate() {
     eval = (230 + material / 42) * eval / 440;
 
     return std::clamp(eval, int(-SCORE_MATE_IN_MAX_PLY), int(SCORE_MATE_IN_MAX_PLY));
+}
+
+Score Search::draw_score(U64 nodes) const {
+    return 1 + Score(nodes & 0x2);
 }
 
 Score Search::adjust_eval(int32_t eval, Stack *stack) const {

@@ -134,6 +134,7 @@ class Search {
     void undo_move(Move move);
 
     Score evaluate();
+    Score draw_score(U64 nodes) const;
     Score adjust_eval(int32_t eval, Stack *stack) const;
 
     unsigned int probe_wdl() const;
