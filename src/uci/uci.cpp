@@ -11,7 +11,7 @@
 
 namespace uci {
 
-const std::string version = "6.2";
+const std::string version = "7.0-dev";
 
 // bench positions from stockfish
 
