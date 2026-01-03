@@ -42,13 +42,12 @@ DEFINE_VEC_AT(fvec_t, fvec_at)
 
 #undef DEFINE_VEC_AT
 
-template <typename T> //
-void transpose(T *weights, int rows, int cols) {
-    T transposed[cols * rows];
+template <typename T> void transpose(T *weights, int rows, int cols) {
+    std::vector<T> transposed(cols * rows);
     for(int i = 0; i < cols; i++)
         for(int j = 0; j < rows; j++)
             transposed[i * rows + j] = weights[j * cols + i];
-    std::memcpy(weights, transposed, sizeof(T) * cols * rows);
+    std::memcpy(weights, transposed.data(), sizeof(T) * cols * rows);
 }
 
 } // namespace nnue

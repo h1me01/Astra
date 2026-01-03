@@ -15,8 +15,20 @@ void partial_insertion_sort(MoveList<ScoredMove> &ml, int idx) {
 
 // MovePicker
 
-MovePicker::MovePicker(SearchType st, const Board &board, const History &history, const Stack *stack, const Move &tt_move)
-    : st(st), board(board), history(history), stack(stack) {
+template <SearchType st>
+MovePicker<st>::MovePicker(          //
+    Board &board,                    //
+    Move tt_move,                    //
+    CounterHistory &counter_history, //
+    QuietHistory &quiet_history,     //
+    PawnHistory &pawn_history,       //
+    NoisyHistory &noisy_history,     //
+    Stack *stack)
+    : board(board),                 //
+      quiet_history(quiet_history), //
+      pawn_history(pawn_history),   //
+      noisy_history(noisy_history), //
+      stack(stack) {
 
     if(st == PC_SEARCH)
         stage = GEN_NOISY;
@@ -31,14 +43,14 @@ MovePicker::MovePicker(SearchType st, const Board &board, const History &history
         this->tt_move = tt_move;
 
         killer = (stack->killer != tt_move) ? stack->killer : Move::none();
-        counter = (stack - 1)->move ? history.get_counter((stack - 1)->move) : Move::none();
+        counter = counter_history.get((stack - 1)->move);
 
         if(counter == tt_move || counter == killer)
             counter = Move::none();
     }
 }
 
-Move MovePicker::next(bool skip_quiets) {
+template <SearchType st> Move MovePicker<st>::next(bool skip_quiets) {
     switch(stage) {
     case PLAY_TT_MOVE:
         stage = GEN_NOISY;
@@ -123,16 +135,16 @@ Move MovePicker::next(bool skip_quiets) {
 
 // private functions
 
-void MovePicker::gen_score_noisy() {
+template <SearchType st> void MovePicker<st>::gen_score_noisy() {
     ml_main.gen<ADD_NOISY>(board);
 
     for(auto &m : ml_main) {
         const PieceType captured = m.is_ep() ? PAWN : piece_type(board.piece_at(m.to()));
-        m.score = history.get_noisy_hist(board, m) + 16 * PIECE_VALUES[captured];
+        m.score = noisy_history.get(board, m) + 16 * PIECE_VALUES[captured];
     }
 }
 
-void MovePicker::gen_score_quiets() {
+template <SearchType st> void MovePicker<st>::gen_score_quiets() {
     ml_main.gen<ADD_QUIETS>(board);
     Threats threats = board.threats();
 
@@ -141,7 +153,7 @@ void MovePicker::gen_score_quiets() {
         const PieceType pt = piece_type(pc);
         const Square to = m.to();
 
-        m.score = 2 * (history.get_heuristic_hist(board.side_to_move(), m) + history.get_pawn_hist(board, m));
+        m.score = 2 * (quiet_history.get(board.side_to_move(), m) + pawn_history.get(board, m));
         for(int i : {1, 2, 4, 6})
             m.score += static_cast<int>((*(stack - i)->cont_hist)[pc][to]);
 
@@ -163,5 +175,9 @@ void MovePicker::gen_score_quiets() {
         m.score += (can_check && board.see(m, -quiet_checker_bonus)) * 16384;
     }
 }
+
+template class MovePicker<N_SEARCH>;
+template class MovePicker<Q_SEARCH>;
+template class MovePicker<PC_SEARCH>;
 
 } // namespace search

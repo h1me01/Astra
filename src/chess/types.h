@@ -20,16 +20,16 @@ constexpr int PIECE_VALUES[] = {100, 360, 385, 635, 1200, 0, 0};
 constexpr int MAX_PLY = 128;
 constexpr int MAX_MOVES = 128;
 
-constexpr Score VALUE_DRAW = 0;
-constexpr Score VALUE_NONE = 32002;
-constexpr Score VALUE_INFINITE = 32001;
+constexpr Score SCORE_DRAW = 0;
+constexpr Score SCORE_NONE = 32002;
+constexpr Score SCORE_INFINITE = 32001;
 
-constexpr Score VALUE_MATE = 32000;
-constexpr Score VALUE_MATE_IN_MAX_PLY = VALUE_MATE - MAX_PLY;
+constexpr Score SCORE_MATE = 32000;
+constexpr Score SCORE_MATE_IN_MAX_PLY = SCORE_MATE - MAX_PLY;
 
-constexpr Score VALUE_TB = VALUE_MATE_IN_MAX_PLY - 1;
-constexpr Score VALUE_TB_WIN_IN_MAX_PLY = VALUE_TB - MAX_PLY;
-constexpr Score VALUE_TB_LOSS_IN_MAX_PLY = -VALUE_TB_WIN_IN_MAX_PLY;
+constexpr Score SCORE_TB = SCORE_MATE_IN_MAX_PLY - 1;
+constexpr Score SCORE_TB_WIN_IN_MAX_PLY = SCORE_TB - MAX_PLY;
+constexpr Score SCORE_TB_LOSS_IN_MAX_PLY = -SCORE_TB_WIN_IN_MAX_PLY;
 
 constexpr int NUM_COLORS = 2;
 enum Color {
@@ -148,7 +148,7 @@ class Move {
         return MoveType(data >> 12);
     }
 
-    Move &operator=(const Move &move) {
+    Move &operator=(const Move move) {
         if(this != &move)
             data = move.data;
         return *this;
@@ -223,11 +223,11 @@ class Move {
         return data;
     }
 
-    bool operator==(const Move &move) const {
+    bool operator==(const Move move) const {
         return data == move.data;
     }
 
-    bool operator!=(const Move &move) const {
+    bool operator!=(const Move move) const {
         return data != move.data;
     }
 
@@ -249,7 +249,7 @@ class Move {
 struct ScoredMove : public Move {
     ScoredMove() : Move(), score(0) {}
 
-    ScoredMove(const Move &move) //
+    ScoredMove(const Move move) //
         : Move(move), score(0) {}
 
     ScoredMove(const ScoredMove &other) //

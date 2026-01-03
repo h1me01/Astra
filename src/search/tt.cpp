@@ -13,7 +13,7 @@
 
 namespace search {
 
-// helper
+// Helper
 
 void *alloc_align(size_t size) {
 #if defined(__linux__)
@@ -33,7 +33,7 @@ void free_align(void *ptr) {
     _mm_free(ptr);
 }
 
-// constants
+// Constants
 
 constexpr int AGE_STEP = 0x8;
 constexpr int AGE_CYCLE = 255 + AGE_STEP;
@@ -128,7 +128,7 @@ void TTable::increment() {
 
 TTEntry *TTable::lookup(U64 hash, bool *hit) const {
     uint16_t hash16 = static_cast<uint16_t>(hash);
-    TTEntry *entries = buckets[index(hash)].entries;
+    auto *entries = buckets[index(hash)].entries;
 
     for(int i = 0; i < BUCKET_SIZE; i++) {
         uint16_t entry_hash = entries[i].get_hash();
@@ -139,7 +139,7 @@ TTEntry *TTable::lookup(U64 hash, bool *hit) const {
         }
     }
 
-    TTEntry *replace = &entries[0];
+    auto *replace = &entries[0];
     int min_value = replace->get_depth() - replace->relative_age();
 
     for(int i = 1; i < BUCKET_SIZE; i++) {
@@ -158,7 +158,7 @@ int TTable::hashfull() const {
     int used = 0;
     for(int i = 0; i < 1000; i++) {
         for(int j = 0; j < BUCKET_SIZE; j++) {
-            const TTEntry *entry = &buckets[i].entries[j];
+            const auto *entry = &buckets[i].entries[j];
             if(entry->get_age() == age && entry->get_hash() != 0)
                 used++;
         }

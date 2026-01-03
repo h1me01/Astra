@@ -6,7 +6,7 @@
 
 namespace chess {
 
-// helper
+// Helper
 
 std::pair<Square, Square> Board::castle_rook_sqs(Color c, Square to) {
     assert(to == rel_sq(c, g1) || to == rel_sq(c, c1));
@@ -171,7 +171,7 @@ std::string Board::fen() const {
     return fen.str();
 }
 
-nnue::DirtyPieces Board::make_move(const Move &move) {
+nnue::DirtyPieces Board::make_move(Move move) {
     const Square from = move.from();
     const Square to = move.to();
     const Piece pc = piece_at(from);
@@ -283,7 +283,7 @@ nnue::DirtyPieces Board::make_move(const Move &move) {
     return dirty_pieces;
 }
 
-void Board::undo_move(const Move &move) {
+void Board::undo_move(Move move) {
     const Square from = move.from();
     const Square to = move.to();
     const Piece captured = state().captured;
@@ -352,7 +352,7 @@ void Board::perft(int depth) {
             return ml.size();
 
         U64 nodes = 0;
-        for(const Move &move : ml) {
+        for(const auto &move : ml) {
             make_move(move);
             nodes += perft_ref(d - 1, perft_ref);
             undo_move(move);
@@ -367,7 +367,7 @@ void Board::perft(int depth) {
     ml.gen<ADD_LEGALS>(*this);
 
     U64 total_nodes = 0;
-    for(const Move &move : ml) {
+    for(const auto &move : ml) {
         make_move(move);
         U64 nodes = perft(depth - 1, perft);
         undo_move(move);
@@ -384,7 +384,7 @@ void Board::perft(int depth) {
     std::cout << "Total time : " << time_ms << " ms\n\n";
 }
 
-bool Board::legal(const Move &move) const {
+bool Board::legal(Move move) const {
     const Square from = move.from();
     const Square to = move.to();
     const Square ksq = king_sq();
@@ -426,7 +426,7 @@ bool Board::legal(const Move &move) const {
     return !(state().blockers[stm] & from_bb) || (line(from, to) & sq_bb(ksq));
 }
 
-bool Board::pseudo_legal(const Move &move) const {
+bool Board::pseudo_legal(Move move) const {
     const StateInfo &info = state();
 
     const Square from = move.from();
@@ -545,7 +545,7 @@ bool Board::pseudo_legal(const Move &move) const {
     return true;
 }
 
-bool Board::gives_check(const Move &move) const {
+bool Board::gives_check(Move move) const {
     assert(move);
     assert(piece_color(piece_at(move.from())) == stm);
 
@@ -626,7 +626,7 @@ bool Board::upcoming_repetition(int ply) const {
     return false;
 }
 
-bool Board::see(const Move &move, int threshold) const {
+bool Board::see(Move move, int threshold) const {
     assert(move);
 
     if(move.is_prom() || move.is_ep() || move.is_castling())
@@ -738,7 +738,7 @@ void Board::init_movegen_info() {
 
     const U64 occ = occupancy();
 
-    auto helper = [&](Color c) {
+    for(Color c : {WHITE, BLACK}) {
         info.blockers[c] = 0;
         info.pinners[~c] = 0;
 
@@ -759,10 +759,7 @@ void Board::init_movegen_info() {
                     info.pinners[~c] |= sq_bb(sq);
             }
         }
-    };
-
-    helper(WHITE);
-    helper(BLACK);
+    }
 
     info.checkers = attackers_to(~stm, king_sq(), occ);
 

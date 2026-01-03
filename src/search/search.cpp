@@ -42,6 +42,16 @@ void Search::idle() {
     }
 }
 
+void Search::clear_histories() {
+    counter_history.clear();
+    quiet_history.clear();
+    noisy_history.clear();
+    pawn_history.clear();
+    cont_history.clear();
+    corr_histories.clear();
+    cont_corr_history.clear();
+}
+
 void Search::start() {
     tm.start();
 
@@ -51,10 +61,6 @@ void Search::start() {
     completed_depth = 0;
 
     root_moves.gen<ADD_LEGALS>(board);
-    if(!root_moves.size()) {
-        std::cout << "Position has no legal moves" << std::endl;
-        return;
-    }
 
     limits.multipv = std::min(limits.multipv, root_moves.size());
 
@@ -70,8 +76,8 @@ void Search::start() {
     Stack *stack = stack_arr + 6;
     for(int i = 0; i < MAX_PLY + 6; i++) {
         stack_arr[i].ply = i - 6;
-        stack_arr[i].static_eval = VALUE_NONE;
-        stack_arr[i].cont_hist = &history.cont_hist[0][0][NO_PIECE][0];
+        stack_arr[i].static_eval = SCORE_NONE;
+        stack_arr[i].cont_hist = cont_history.get();
     }
 
     int stability = 0;
@@ -132,7 +138,6 @@ void Search::start() {
         best_move = best_thread->root_moves[0];
     }
 
-    assert(best_move);
     std::cout << "bestmove " << best_move << std::endl;
 }
 
@@ -140,14 +145,14 @@ Score Search::aspiration(int depth, Stack *stack) {
     sel_depth = 0;
 
     Score score;
-    Score alpha = -VALUE_INFINITE;
-    Score beta = VALUE_INFINITE;
+    Score alpha = -SCORE_INFINITE;
+    Score beta = SCORE_INFINITE;
 
     int delta = asp_delta;
     if(depth >= asp_depth) {
         Score avg_score = root_moves[multipv_idx].avg_score;
-        alpha = std::max(avg_score - delta, int(-VALUE_INFINITE));
-        beta = std::min(avg_score + delta, int(VALUE_INFINITE));
+        alpha = std::max(avg_score - delta, int(-SCORE_INFINITE));
+        beta = std::min(avg_score + delta, int(SCORE_INFINITE));
     }
 
     int fail_high_count = 0;
@@ -161,10 +166,10 @@ Score Search::aspiration(int depth, Stack *stack) {
 
         if(score <= alpha) {
             beta = (alpha + beta) / 2;
-            alpha = std::max(alpha - delta, int(-VALUE_INFINITE));
+            alpha = std::max(alpha - delta, int(-SCORE_INFINITE));
             fail_high_count = 0;
         } else if(score >= beta) {
-            beta = std::min(beta + delta, int(VALUE_INFINITE));
+            beta = std::min(beta + delta, int(SCORE_INFINITE));
             fail_high_count++;
         } else {
             break;
@@ -206,8 +211,8 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
     depth = std::min(depth, MAX_PLY - 1);
 
     // check for upcoming repetition
-    if(!root_node && alpha < VALUE_DRAW && board.upcoming_repetition(stack->ply)) {
-        alpha = VALUE_DRAW;
+    if(!root_node && alpha < SCORE_DRAW && board.upcoming_repetition(stack->ply)) {
+        alpha = SCORE_DRAW;
         if(alpha >= beta)
             return alpha;
     }
@@ -222,9 +227,9 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
 
     if(!root_node) {
         if(stack->ply >= MAX_PLY - 1)
-            return in_check ? VALUE_DRAW : evaluate();
+            return in_check ? SCORE_DRAW : evaluate();
         if(board.is_draw(stack->ply))
-            return VALUE_DRAW;
+            return SCORE_DRAW;
 
         // mate distance pruning
         alpha = std::max(mated_in(stack->ply), alpha);
@@ -233,8 +238,8 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
             return alpha;
     }
 
-    Score best_score = -VALUE_INFINITE;
-    Score max_score = VALUE_INFINITE;
+    Score best_score = -SCORE_INFINITE;
+    Score max_score = SCORE_INFINITE;
     Score raw_eval, eval, probcut_beta;
     Move best_move = Move::none();
     bool improving = false;
@@ -243,12 +248,12 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
 
     // look up in tt
     bool tt_hit = false;
-    TTEntry *ent = tt.lookup(hash, &tt_hit);
+    auto *ent = tt.lookup(hash, &tt_hit);
 
     Move tt_move = tt_hit ? ent->get_move() : Move::none();
     Bound tt_bound = tt_hit ? ent->get_bound() : NO_BOUND;
-    Score tt_score = tt_hit ? ent->get_score(stack->ply) : VALUE_NONE;
-    Score tt_eval = tt_hit ? ent->get_eval() : VALUE_NONE;
+    Score tt_score = tt_hit ? ent->get_score(stack->ply) : SCORE_NONE;
+    Score tt_eval = tt_hit ? ent->get_eval() : SCORE_NONE;
     int tt_depth = tt_hit ? ent->get_depth() : 0;
     bool tt_pv = pv_node || (tt_hit && ent->get_tt_pv());
 
@@ -265,13 +270,13 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
         if(tt_move && tt_score >= beta) {
             if(tt_move.is_quiet()) {
                 int bonus = std::min(tt_hist_bonus_mult * depth + tt_hist_bonus_minus, int(max_tt_hist_bonus));
-                history.update_quiet_hist(stm, tt_move, bonus);
+                quiet_history.update(stm, tt_move, bonus);
             }
 
             Square prev_sq = (stack - 1)->move ? (stack - 1)->move.to() : NO_SQUARE;
             if(valid_sq(prev_sq) && !(stack - 1)->move.is_cap() && (stack - 1)->made_moves <= 3) {
                 int malus = std::min(tt_hist_malus_mult * depth + tt_hist_malus_minus, int(max_tt_hist_malus));
-                history.update_cont_hist((stack - 1)->moved_piece, prev_sq, stack - 1, -malus);
+                cont_history.update((stack - 1)->moved_piece, prev_sq, -malus, stack - 1);
             }
         }
 
@@ -286,16 +291,16 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
         if(tb_result != TB_RESULT_FAILED) {
             Bound tb_bound;
             Score tb_score;
-            tb_hits++;
+            tb_hits.store(tb_hits.load(std::memory_order_relaxed) + 1, std::memory_order_relaxed);
 
             if(tb_result == TB_LOSS) {
-                tb_score = stack->ply - VALUE_TB;
+                tb_score = stack->ply - SCORE_TB;
                 tb_bound = UPPER_BOUND;
             } else if(tb_result == TB_WIN) {
-                tb_score = VALUE_TB - stack->ply;
+                tb_score = SCORE_TB - stack->ply;
                 tb_bound = LOWER_BOUND;
             } else {
-                tb_score = VALUE_DRAW;
+                tb_score = SCORE_DRAW;
                 tb_bound = EXACT_BOUND;
             }
 
@@ -303,7 +308,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
                || (tb_bound == LOWER_BOUND && tb_score >= beta)  //
                || (tb_bound == UPPER_BOUND && tb_score <= alpha) //
             ) {
-                ent->store(hash, Move::none(), tb_score, VALUE_NONE, tb_bound, depth, stack->ply, tt_pv);
+                ent->store(hash, Move::none(), tb_score, SCORE_NONE, tb_bound, depth, stack->ply, tt_pv);
                 return tb_score;
             }
 
@@ -320,7 +325,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
 
     // set eval and static eval
     if(in_check) {
-        raw_eval = eval = stack->static_eval = VALUE_NONE;
+        raw_eval = eval = stack->static_eval = SCORE_NONE;
         goto movesloop;
     } else if(stack->skipped)
         raw_eval = eval = stack->static_eval;
@@ -331,7 +336,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
         if(valid_score(tt_score) && valid_tt_score(tt_score, eval + 1, tt_bound))
             eval = tt_score;
         else if(!tt_hit)
-            ent->store(hash, Move::none(), VALUE_NONE, raw_eval, NO_BOUND, 0, stack->ply, tt_pv);
+            ent->store(hash, Move::none(), SCORE_NONE, raw_eval, NO_BOUND, 0, stack->ply, tt_pv);
     }
 
     if(valid_score((stack - 2)->static_eval))
@@ -351,7 +356,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
             int(static_h_max)                                                     //
         );
 
-        history.update_quiet_hist(~stm, (stack - 1)->move, bonus);
+        quiet_history.update(~stm, (stack - 1)->move, bonus);
     }
 
     // razoring
@@ -386,7 +391,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
 
         stack->move = Move::null();
         stack->moved_piece = NO_PIECE;
-        stack->cont_hist = &history.cont_hist[0][0][NO_PIECE][0];
+        stack->cont_hist = cont_history.get();
 
         board.make_nullmove();
         Score score = -negamax<NodeType::NON_PV>(depth - R, -beta, -beta + 1, stack + 1, !cut_node);
@@ -421,7 +426,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
        && !is_decisive(beta)                                  //
        && !(valid_score(tt_score) && tt_score < probcut_beta) //
     ) {
-        MovePicker mp(PC_SEARCH, board, history, stack, tt_move);
+        MovePicker<PC_SEARCH> mp(board, tt_move, counter_history, quiet_history, pawn_history, noisy_history, stack);
         mp.probcut_threshold = probcut_beta - stack->static_eval;
 
         const int probcut_depth = std::max(depth - 4, 0);
@@ -453,7 +458,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
 
 movesloop:
 
-    MovePicker mp(N_SEARCH, board, history, stack, tt_move);
+    MovePicker<N_SEARCH> mp(board, tt_move, counter_history, quiet_history, pawn_history, noisy_history, stack);
     Move move = Move::none();
 
     MoveList<Move> quiets, noisy;
@@ -472,8 +477,19 @@ movesloop:
         stack->made_moves = ++made_moves;
 
         const int reduction = REDUCTIONS[depth][made_moves];
-        const int history_score = move.is_quiet() ? history.get_quiet_hist(board, move, stack) //
-                                                  : history.get_noisy_hist(board, move);
+
+        int history_score = 0;
+        if(move.is_quiet()) {
+            Piece pc = board.piece_at(move.from());
+
+            history_score = quiet_history.get(board.side_to_move(), move)                //
+                            + pawn_history.get(board, move)                              //
+                            + static_cast<int>((*(stack - 1)->cont_hist)[pc][move.to()]) //
+                            + static_cast<int>((*(stack - 2)->cont_hist)[pc][move.to()]) //
+                            + static_cast<int>((*(stack - 4)->cont_hist)[pc][move.to()]);
+        } else {
+            history_score = noisy_history.get(board, move);
+        }
 
         if(!root_node && !is_loss(best_score)) {
             // late move pruning
@@ -543,7 +559,7 @@ movesloop:
 
         make_move(move, stack);
 
-        Score score = VALUE_NONE;
+        Score score = SCORE_NONE;
 
         // late move reductions
         if(depth >= 2 && made_moves >= 3 && !(tt_pv && move.is_noisy())) {
@@ -577,11 +593,11 @@ movesloop:
                 if(!move.is_cap()) {
                     int bonus = 0;
                     if(score <= alpha)
-                        bonus = -History::history_bonus(new_depth);
+                        bonus = -history_bonus(new_depth);
                     else if(score >= beta)
-                        bonus = History::history_bonus(new_depth);
+                        bonus = history_bonus(new_depth);
 
-                    history.update_cont_hist(stack->moved_piece, move.to(), stack, bonus);
+                    cont_history.update(stack->moved_piece, move.to(), bonus, stack);
                 }
             }
         }
@@ -615,7 +631,7 @@ movesloop:
                 rm->pv = (stack + 1)->pv;
                 rm->pv[0] = move;
             } else {
-                rm->score = -VALUE_INFINITE;
+                rm->score = -SCORE_INFINITE;
             }
         }
 
@@ -629,8 +645,7 @@ movesloop:
                     update_pv(move, stack);
 
                 if(score >= beta) {
-                    history.update(board, best_move, quiets, noisy, stack,
-                                   depth + (best_score > beta + hist_bonus_margin));
+                    update_histories(best_move, quiets, noisy, depth + (best_score > beta + hist_bonus_margin), stack);
                     break;
                 }
 
@@ -653,7 +668,7 @@ movesloop:
     if(!made_moves) {
         if(stack->skipped)
             return alpha;
-        return in_check ? mated_in(stack->ply) : VALUE_DRAW;
+        return in_check ? mated_in(stack->ply) : SCORE_DRAW;
     }
 
     if(pv_node)
@@ -674,8 +689,8 @@ movesloop:
        && !(best_move && best_move.is_cap())                    //
        && valid_tt_score(best_score, stack->static_eval, bound) //
     ) {
-        history.update_mat_corr(board, raw_eval, best_score, depth);
-        history.update_cont_corr(raw_eval, best_score, depth, stack);
+        corr_histories.update(board, raw_eval, best_score, depth);
+        cont_corr_history.update(raw_eval, best_score, depth, stack);
     }
 
     assert(valid_score(best_score));
@@ -695,48 +710,48 @@ Score Search::quiescence(Score alpha, Score beta, Stack *stack) {
     if(pv_node)
         stack->pv.length = stack->ply;
 
+    if(pv_node)
+        sel_depth = std::max(sel_depth, stack->ply);
+
     if(threads.is_stopped())
         return 0;
 
     if(board.is_draw(stack->ply))
-        return VALUE_DRAW;
+        return SCORE_DRAW;
 
     // check for upcoming repetition
-    if(alpha < VALUE_DRAW && board.upcoming_repetition(stack->ply)) {
-        alpha = VALUE_DRAW;
+    if(alpha < SCORE_DRAW && board.upcoming_repetition(stack->ply)) {
+        alpha = SCORE_DRAW;
         if(alpha >= beta)
             return alpha;
     }
-
-    if(pv_node)
-        sel_depth = std::max(sel_depth, stack->ply);
 
     const bool in_check = board.in_check();
     const U64 hash = board.hash();
 
     if(stack->ply >= MAX_PLY - 1)
-        return in_check ? VALUE_DRAW : evaluate();
+        return in_check ? SCORE_DRAW : evaluate();
 
     Move best_move = Move::none();
 
-    Score best_score = -VALUE_INFINITE;
+    Score best_score = -SCORE_INFINITE;
     Score raw_eval, futility;
 
     // look up in tt
     bool tt_hit = false;
-    TTEntry *ent = tt.lookup(hash, &tt_hit);
+    auto *ent = tt.lookup(hash, &tt_hit);
 
     Move tt_move = tt_hit ? ent->get_move() : Move::none();
     Bound tt_bound = tt_hit ? ent->get_bound() : NO_BOUND;
-    Score tt_score = tt_hit ? ent->get_score(stack->ply) : VALUE_NONE;
-    Score tt_eval = tt_hit ? ent->get_eval() : VALUE_NONE;
+    Score tt_score = tt_hit ? ent->get_score(stack->ply) : SCORE_NONE;
+    Score tt_eval = tt_hit ? ent->get_eval() : SCORE_NONE;
     bool tt_pv = tt_hit && ent->get_tt_pv();
 
     if(!pv_node && valid_score(tt_score) && valid_tt_score(tt_score, beta, tt_bound))
         return tt_score;
 
     if(in_check) {
-        futility = raw_eval = stack->static_eval = VALUE_NONE;
+        futility = raw_eval = stack->static_eval = SCORE_NONE;
     } else {
         raw_eval = valid_score(tt_eval) ? tt_eval : evaluate();
         best_score = stack->static_eval = adjust_eval(raw_eval, stack);
@@ -750,7 +765,7 @@ Score Search::quiescence(Score alpha, Score beta, Stack *stack) {
             if(!is_decisive(best_score))
                 best_score = (best_score + beta) / 2;
             if(!tt_hit)
-                ent->store(hash, Move::none(), VALUE_NONE, raw_eval, NO_BOUND, 0, stack->ply, false);
+                ent->store(hash, Move::none(), SCORE_NONE, raw_eval, NO_BOUND, 0, stack->ply, false);
             return best_score;
         }
 
@@ -760,7 +775,7 @@ Score Search::quiescence(Score alpha, Score beta, Stack *stack) {
 
     const Square prev_sq = ((stack - 1)->move) ? ((stack - 1)->move).to() : NO_SQUARE;
 
-    MovePicker mp(Q_SEARCH, board, history, stack, tt_move);
+    MovePicker<Q_SEARCH> mp(board, tt_move, counter_history, quiet_history, pawn_history, noisy_history, stack);
     Move move = Move::none();
 
     int made_moves = 0;
@@ -828,28 +843,28 @@ Score Search::quiescence(Score alpha, Score beta, Stack *stack) {
     return best_score;
 }
 
-void Search::make_move(const Move &move, Stack *stack) {
+void Search::make_move(Move move, Stack *stack) {
     assert(stack != nullptr);
 
-    nodes++;
+    nodes.store(nodes.load(std::memory_order_relaxed) + 1, std::memory_order_relaxed);
 
     stack->move = move;
     stack->moved_piece = board.piece_at(move.from());
 
-    nnue::Accum &accum = accum_list.increment();
+    auto &accum = accum_list.increment();
 
-    if(nnue::needs_refresh(stack->moved_piece, move.from(), move.to()))
+    if(nnue::needs_refresh(stack->moved_piece, move))
         accum.set_refresh(piece_color(stack->moved_piece));
 
     auto dirty_pieces = board.make_move(move);
-    accum.set_info(dirty_pieces, board.king_sq(WHITE), board.king_sq(BLACK));
+    accum.update(dirty_pieces, board.king_sq(WHITE), board.king_sq(BLACK));
 
-    stack->cont_hist = &history.cont_hist[board.in_check()][move.is_cap()][stack->moved_piece][move.to()];
+    stack->cont_hist = cont_history.get(board.in_check(), move.is_cap(), stack->moved_piece, move.to());
 
     tt.prefetch(board.hash());
 }
 
-void Search::undo_move(const Move &move) {
+void Search::undo_move(Move move) {
     accum_list.decrement();
     board.undo_move(move);
 }
@@ -858,13 +873,13 @@ Score Search::evaluate() {
     assert(accum_list[0].is_initialized(WHITE));
     assert(accum_list[0].is_initialized(BLACK));
 
-    nnue::Accum &acc = accum_list.back();
+    auto &acc = accum_list.back();
 
     for(Color view : {WHITE, BLACK}) {
         if(acc.is_initialized(view))
             continue;
 
-        const int accums_idx = accum_list.get_idx();
+        const int accums_idx = accum_list.size() - 1;
         assert(accums_idx > 0);
 
         // apply lazy update
@@ -892,17 +907,17 @@ Score Search::evaluate() {
 
     eval = (230 + material / 42) * eval / 440;
 
-    return std::clamp(eval, int(-VALUE_MATE_IN_MAX_PLY), int(VALUE_MATE_IN_MAX_PLY));
+    return std::clamp(eval, int(-SCORE_MATE_IN_MAX_PLY), int(SCORE_MATE_IN_MAX_PLY));
 }
 
 Score Search::adjust_eval(int32_t eval, Stack *stack) const {
     eval = (eval * (200 - board.fifty_move_count())) / 200;
-    eval += history.get_corr_value(board, stack);
+    eval += (corr_histories.get(board) + cont_corr_history.get(stack)) / 256;
 
     return std::clamp(                         //
         eval,                                  //
-        int32_t(VALUE_TB_LOSS_IN_MAX_PLY + 1), //
-        int32_t(VALUE_TB_WIN_IN_MAX_PLY - 1)   //
+        int32_t(SCORE_TB_LOSS_IN_MAX_PLY + 1), //
+        int32_t(SCORE_TB_WIN_IN_MAX_PLY - 1)   //
     );
 }
 
@@ -952,34 +967,63 @@ void Search::sort_rootmoves(int offset) {
     });
 }
 
-bool Search::found_rootmove(const Move &move) {
+bool Search::found_rootmove(Move move) {
     for(int i = multipv_idx; i < root_moves.size(); i++)
         if(root_moves[i] == move)
             return true;
     return false;
 }
 
-void Search::update_pv(const Move &move, Stack *stack) {
+void Search::update_pv(Move move, Stack *stack) {
     stack->pv.length = (stack + 1)->pv.length;
     stack->pv[stack->ply] = move;
 
-    for(int i = stack->ply + 1; i < (stack + 1)->pv.length; i++)
+    for(int i = stack->ply + 1; i < stack->pv.length; i++)
         stack->pv[i] = (stack + 1)->pv[i];
 }
 
+void Search::update_quiet_histories(Move best_move, int bonus, Stack *stack) {
+    quiet_history.update(board.side_to_move(), best_move, bonus);
+    pawn_history.update(board, best_move, bonus);
+    cont_history.update(board.piece_at(best_move.from()), best_move.to(), bonus, stack);
+}
+
+void Search::update_histories(Move best_move, MoveList<Move> &quiets, MoveList<Move> &noisy, int depth, Stack *stack) {
+    int bonus = history_bonus(depth);
+    int malus = -history_malus(depth);
+
+    if(best_move.is_quiet()) {
+        stack->killer = best_move;
+
+        counter_history.update(best_move, (stack - 1)->move);
+
+        if(depth > 3 || quiets.size() > 1) {
+            update_quiet_histories(best_move, bonus * quiet_hist_bonus_mult / 1024, stack);
+
+            int quiet_malus = malus * quiet_hist_malus_mult / 1024;
+            for(const auto &m : quiets)
+                update_quiet_histories(m, quiet_malus, stack);
+        }
+    } else {
+        noisy_history.update(board, best_move, bonus * noisy_hist_bonus_mult / 1024);
+    }
+
+    for(const auto &m : noisy)
+        noisy_history.update(board, m, malus * noisy_hist_malus_mult / 1024);
+}
+
 void Search::print_uci_info() const {
-    const RootMove &rm = root_moves[multipv_idx];
+    const auto &rm = root_moves[multipv_idx];
     const int64_t elapsed_time = tm.elapsed_time();
     const U64 total_nodes = threads.total_nodes();
-    const PVLine &pv_line = rm.pv;
 
     std::cout << "info depth " << completed_depth //
-              << " seldepth " << sel_depth        //
+              << " seldepth " << rm.sel_depth     //
               << " multipv " << multipv_idx + 1   //
               << " score ";                       //
 
-    if(std::abs(rm.score) >= VALUE_MATE_IN_MAX_PLY)
-        std::cout << "mate " << (VALUE_MATE - std::abs(rm.score) + 1) / 2 * (rm.score > 0 ? 1 : -1);
+    if(std::abs(rm.score) >= SCORE_MATE_IN_MAX_PLY)
+        std::cout << "mate " << (SCORE_MATE - std::abs(rm.score) + 1) / 2 * (rm.score > 0 ? 1 : -1);
     else
         std::cout << "cp " << (100 * rm.score / 250);
 
@@ -991,8 +1035,8 @@ void Search::print_uci_info() const {
               << " pv " << rm;
 
     // print rest of the pv
-    for(int i = 1; i < pv_line.length; i++) {
-        const Move &move = pv_line[i];
+    for(int i = 1; i < rm.pv.length; i++) {
+        Move move = rm.pv[i];
         if(!move)
             break;
         std::cout << " " << move;

@@ -25,7 +25,15 @@ constexpr bool valid_piece(Piece pc) {
 }
 
 constexpr bool valid_score(Score score) {
-    return score != VALUE_NONE;
+    return score != SCORE_NONE;
+}
+
+constexpr bool valid_file(File f) {
+    return f >= FILE_A && f <= FILE_H;
+}
+
+constexpr bool valid_rank(Rank r) {
+    return r >= RANK_1 && r <= RANK_8;
 }
 
 // gets opposite color
@@ -35,8 +43,8 @@ constexpr Color operator~(Color c) {
 }
 
 constexpr Square make_square(Rank r, File f) {
-    assert(r >= RANK_1 && r <= RANK_8);
-    assert(f >= FILE_A && f <= FILE_H);
+    assert(valid_rank(r));
+    assert(valid_file(f));
     return Square((r << 3) + f);
 }
 
@@ -113,22 +121,22 @@ constexpr Rank rel_rank(Color c, Rank r) {
 
 constexpr Score mate_in(int ply) {
     assert(ply >= 0);
-    return VALUE_MATE - ply;
+    return SCORE_MATE - ply;
 }
 
 constexpr Score mated_in(int ply) {
     assert(ply >= 0);
-    return -VALUE_MATE + ply;
+    return -SCORE_MATE + ply;
 }
 
 constexpr bool is_loss(const Score score) {
     assert(valid_score(score));
-    return score <= VALUE_TB_LOSS_IN_MAX_PLY;
+    return score <= SCORE_TB_LOSS_IN_MAX_PLY;
 }
 
 constexpr bool is_win(const Score score) {
     assert(valid_score(score));
-    return score >= VALUE_TB_WIN_IN_MAX_PLY;
+    return score >= SCORE_TB_WIN_IN_MAX_PLY;
 }
 
 constexpr bool is_decisive(const Score score) {
@@ -186,11 +194,11 @@ inline std::ostream &operator<<(std::ostream &os, Piece pc) {
     return os << PIECE_STR[pc];
 }
 
-inline std::ostream &operator<<(std::ostream &os, const Move &move) {
+inline std::ostream &operator<<(std::ostream &os, Move move) {
     if(move.is_none())
-        os << "NO MOVE";
+        return os << "NO MOVE";
     else if(move.is_null())
-        os << "NULL MOVE";
+        return os << "NULL MOVE";
     else
         os << move.from() << move.to();
 

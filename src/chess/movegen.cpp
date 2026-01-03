@@ -172,9 +172,6 @@ Move *gen_moves(const Board &board, Move *ml) {
                          : gen_all_moves<BLACK, gt>(board, ml);
 }
 
-template Move *gen_moves<ADD_NOISY>(const Board &board, Move *ml);
-template Move *gen_moves<ADD_QUIETS>(const Board &board, Move *ml);
-
 template <> //
 Move *gen_moves<ADD_LEGALS>(const Board &board, Move *ml) {
     const Color us = board.side_to_move();
@@ -194,5 +191,8 @@ Move *gen_moves<ADD_LEGALS>(const Board &board, Move *ml) {
 
     return ml;
 }
+
+template Move *gen_moves<ADD_NOISY>(const Board &board, Move *ml);
+template Move *gen_moves<ADD_QUIETS>(const Board &board, Move *ml);
 
 } // namespace chess

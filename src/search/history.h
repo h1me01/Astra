@@ -9,123 +9,208 @@ using namespace chess;
 
 namespace search {
 
-class History {
+inline int history_bonus(int d) {
+    return std::min(int(max_hist_bonus), hist_bonus_mult * d + hist_bonus_minus);
+}
+
+inline int history_malus(int d) {
+    return std::min(int(max_hist_malus), hist_malus_mult * d + hist_malus_minus);
+}
+
+class CounterHistory {
   public:
-    static int history_bonus(int depth);
-    static int history_malus(int depth);
-
-  public:
-    int16_t cont_hist[2][2][NUM_PIECES + 1][NUM_SQUARES][NUM_PIECES + 1][NUM_SQUARES];
-
-    void clear();
-
-    void update(const Board &board,           //
-                const Move &best_move,        //
-                const MoveList<Move> &quiets, //
-                const MoveList<Move> &noisy,  //
-                Stack *stack,                 //
-                int depth);
-
-    void update_quiet_hist(Color c, const Move &move, int bonus);
-    void update_noisy_hist(const Board &board, const Move &move, int bonus);
-    void update_pawn_hist(const Board &board, const Move &move, int bonus);
-    void update_cont_hist(const Piece pc, const Square to, Stack *stack, int bonus);
-
-    void update_mat_corr(const Board &board, Score raw_eval, Score real_score, int depth);
-    void update_cont_corr(Score raw_eval, Score real_score, int depth, const Stack *stack);
-
-    Move get_counter(const Move &move) const;
-
-    int get_heuristic_hist(Color stm, const Move &move) const;
-    int get_noisy_hist(const Board &board, const Move &move) const;
-    int get_quiet_hist(const Board &board, const Move &move, const Stack *stack) const;
-    int get_pawn_hist(const Board &board, const Move &move) const;
-
-    int get_corr_value(const Board &board, const Stack *stack) const;
-
-  private:
-    static constexpr size_t CORR_SIZE = 16384;
-    static constexpr size_t PAWN_HIST_SIZE = 8192;
-
-  private:
-    Move counters[NUM_SQUARES][NUM_SQUARES];
-
-    int16_t heuristic_hist[NUM_COLORS][NUM_SQUARES][NUM_SQUARES];
-    int16_t noisy_hist[NUM_PIECES][NUM_SQUARES][NUM_PIECE_TYPES + 1];
-    int16_t pawn_hist[PAWN_HIST_SIZE][NUM_PIECES][NUM_SQUARES];
-
-    int16_t pawn_corr[NUM_COLORS][CORR_SIZE];
-    int16_t w_non_pawn_corr[NUM_COLORS][CORR_SIZE];
-    int16_t b_non_pawn_corr[NUM_COLORS][CORR_SIZE];
-    int16_t cont_corr[NUM_PIECES][NUM_SQUARES][NUM_PIECES][NUM_SQUARES];
-
-    int ph_idx(U64 hash) const {
-        return hash % PAWN_HIST_SIZE;
+    CounterHistory() {
+        clear();
     }
 
-    int corr_idx(U64 hash) const {
-        return hash % CORR_SIZE;
+    void clear() {
+        for(auto &row : data)
+            for(auto &elem : row)
+                elem = Move::none();
+    }
+
+    void update(Move move, Move prev_move) {
+        assert(move);
+
+        if(prev_move)
+            data[prev_move.from()][prev_move.to()] = move;
+    }
+
+    Move get(Move prev_move) const {
+        return prev_move ? data[prev_move.from()][prev_move.to()] : Move::none();
+    }
+
+  private:
+    Move data[NUM_SQUARES][NUM_SQUARES];
+};
+
+class QuietHistory {
+  public:
+    QuietHistory() {
+        clear();
+    }
+
+    void clear() {
+        std::memset(data, 0, sizeof(data));
+    }
+
+    void update(Color c, Move move, int bonus);
+
+    int get(Color c, Move move) const {
+        assert(move);
+        return data[c][move.from()][move.to()];
+    }
+
+  private:
+    int16_t data[NUM_COLORS][NUM_SQUARES][NUM_SQUARES];
+};
+
+class NoisyHistory {
+  public:
+    NoisyHistory() {
+        clear();
+    }
+
+    void clear() {
+        std::memset(data, 0, sizeof(data));
+    }
+
+    void update(const Board &board, Move move, int bonus);
+
+    int get(const Board &board, Move move) const {
+        assert(move);
+
+        Piece pc = board.piece_at(move.from());
+        PieceType captured = piece_type(board.captured_piece(move));
+
+        assert(valid_piece(pc));
+        assert(captured != KING);
+        assert(valid_piece_type(captured) || move.is_prom());
+
+        return data[pc][move.to()][captured];
+    }
+
+  private:
+    int16_t data[NUM_PIECES][NUM_SQUARES][NUM_PIECE_TYPES + 1];
+};
+
+class PawnHistory {
+  public:
+    PawnHistory() {
+        clear();
+    }
+
+    void clear() {
+        std::memset(data, 0, sizeof(data));
+    }
+
+    void update(const Board &board, Move move, int bonus);
+
+    int get(const Board &board, Move move) const {
+        assert(move);
+
+        Piece pc = board.piece_at(move.from());
+        assert(valid_piece(pc));
+
+        return data[idx(board.pawn_hash())][pc][move.to()];
+    }
+
+  private:
+    static constexpr size_t size = 8192;
+
+  private:
+    int16_t data[size][NUM_PIECES][NUM_SQUARES];
+
+    int idx(U64 hash) const {
+        return hash & (size - 1);
     }
 };
 
-inline Move History::get_counter(const Move &prev_move) const {
-    assert(prev_move);
-    return counters[prev_move.from()][prev_move.to()];
-}
+class ContinuationHistory {
+  public:
+    ContinuationHistory() {
+        clear();
+    }
 
-inline int History::get_heuristic_hist(Color stm, const Move &move) const {
-    assert(move);
-    return heuristic_hist[stm][move.from()][move.to()];
-}
+    void clear() {
+        std::memset(data, 0, sizeof(data));
+    }
 
-inline int History::get_noisy_hist(const Board &board, const Move &move) const {
-    assert(move);
+    void update(Piece pc, Square to, int bonus, Stack *stack);
 
-    Piece pc = board.piece_at(move.from());
-    PieceType captured = piece_type(board.captured_piece(move));
+    PieceToContinuation *get() {
+        return &data[0][0][NO_PIECE][0];
+    }
 
-    assert(valid_piece(pc));
-    assert(captured != KING);
-    assert(valid_piece_type(captured) || move.is_prom());
+    PieceToContinuation *get(bool in_check, bool is_cap, Piece pc, Square to) {
+        assert(valid_piece(pc));
+        assert(valid_sq(to));
 
-    return noisy_hist[pc][move.to()][captured];
-}
+        return &data[in_check][is_cap][pc][to];
+    }
 
-inline int History::get_quiet_hist(const Board &board, const Move &move, const Stack *stack) const {
-    assert(move);
+  private:
+    int16_t data[2][2][NUM_PIECES + 1][NUM_SQUARES][NUM_PIECES + 1][NUM_SQUARES];
+};
 
-    Square to = move.to();
-    Piece pc = board.piece_at(move.from());
+class CorrectionHistories {
+  public:
+    CorrectionHistories() {
+        clear();
+    }
 
-    assert(valid_piece(pc));
+    void clear() {
+        std::memset(pawn, 0, sizeof(pawn));
+        std::memset(w_non_pawn, 0, sizeof(w_non_pawn));
+        std::memset(b_non_pawn, 0, sizeof(b_non_pawn));
+    }
 
-    return get_heuristic_hist(board.side_to_move(), move)        //
-           + get_pawn_hist(board, move)                          //
-           + static_cast<int>((*(stack - 1)->cont_hist)[pc][to]) //
-           + static_cast<int>((*(stack - 2)->cont_hist)[pc][to]) //
-           + static_cast<int>((*(stack - 4)->cont_hist)[pc][to]);
-}
+    void update(const Board &board, Score eval, Score score, int d);
 
-inline int History::get_pawn_hist(const Board &board, const Move &move) const {
-    assert(move);
-    Piece pc = board.piece_at(move.from());
-    assert(valid_piece(pc));
-    return pawn_hist[ph_idx(board.pawn_hash())][pc][move.to()];
-}
+    int get(const Board &board) const {
+        Color stm = board.side_to_move();
+        return pawn[stm][idx(board.pawn_hash())]                  //
+               + w_non_pawn[stm][idx(board.non_pawn_hash(WHITE))] //
+               + b_non_pawn[stm][idx(board.non_pawn_hash(BLACK))];
+    }
 
-inline int History::get_corr_value(const Board &board, const Stack *stack) const {
-    Color stm = board.side_to_move();
-    Move prev_move = (stack - 1)->move;
-    Move pprev_move = (stack - 2)->move;
+  private:
+    static constexpr size_t size = 16384;
 
-    int value = pawn_corr[stm][corr_idx(board.pawn_hash())]                  //
-                + w_non_pawn_corr[stm][corr_idx(board.non_pawn_hash(WHITE))] //
-                + b_non_pawn_corr[stm][corr_idx(board.non_pawn_hash(BLACK))];
+  private:
+    int16_t pawn[NUM_COLORS][size];
+    int16_t w_non_pawn[NUM_COLORS][size];
+    int16_t b_non_pawn[NUM_COLORS][size];
 
-    if(prev_move && pprev_move)
-        value += cont_corr[(stack - 1)->moved_piece][prev_move.to()][(stack - 2)->moved_piece][pprev_move.to()];
+    int idx(U64 hash) const {
+        return hash & (size - 1);
+    }
+};
 
-    return value / 256;
-}
+class ContinuationCorrectionHistory {
+  public:
+    ContinuationCorrectionHistory() {
+        clear();
+    }
+
+    void clear() {
+        std::memset(data, 0, sizeof(data));
+    }
+
+    void update(Score eval, Score score, int d, const Stack *stack);
+
+    int get(const Stack *stack) const {
+        Move m1 = (stack - 1)->move;
+        Move m2 = (stack - 2)->move;
+
+        if(!m1 || !m2)
+            return 0;
+
+        return data[(stack - 1)->moved_piece][m1.to()][(stack - 2)->moved_piece][m2.to()];
+    }
+
+  private:
+    int16_t data[NUM_PIECES][NUM_SQUARES][NUM_PIECES][NUM_SQUARES];
+};
 
 } // namespace search

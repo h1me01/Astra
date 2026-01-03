@@ -117,7 +117,7 @@ LayerOutput<uint8_t, FT_SIZE> NNUE::prep_l1_input(const Color stm, const Accum &
     return output;
 }
 
-NNUE::NNZOutput NNUE::find_nnz([[maybe_unused]] const LayerOutput<uint8_t, FT_SIZE> &input) {
+NNUE::NNZOutput NNUE::find_nnz(const LayerOutput<uint8_t, FT_SIZE> &input) {
     int count = 0;
     alignas(ALIGNMENT) LayerOutput<uint16_t, FT_SIZE / 4> indices;
 
@@ -125,7 +125,7 @@ NNUE::NNZOutput NNUE::find_nnz([[maybe_unused]] const LayerOutput<uint8_t, FT_SI
     __m128i base = _mm_setzero_si128();
 
     for(int i = 0; i < FT_SIZE; i += 2 * simd::INT16_VEC_SIZE) {
-        uint32_t nnz = simd::nnz_nonzero_mask(ivec_at(input, i));
+        uint32_t nnz = simd::nnz_non_zero_mask(ivec_at(input, i));
 
         for(int j = 0; j < simd::INT32_VEC_SIZE; j += 8) {
             uint16_t lookup = (nnz >> j) & 0xFF;

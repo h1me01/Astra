@@ -21,29 +21,23 @@ void Accum::update(Accum &prev, Color view) {
     assert(is_initialized(view));
 }
 
-// AccumTable
+// AccumList
 
-void AccumTable::reset() {
-    for(Color c : {WHITE, BLACK})
-        for(int i = 0; i < 2 * INPUT_BUCKETS; i++)
-            entries[c][i].reset();
-}
-
-void AccumTable::refresh(Color view, Board &board, Accum &accum) {
+void AccumList::refresh(Color view, Board &board) {
     assert(valid_color(view));
 
     const Square ksq = board.king_sq(view);
     const int ksq_idx = INPUT_BUCKET[rel_sq(view, ksq)];
-    AccumEntry &entry = entries[view][(sq_file(ksq) > FILE_D) * INPUT_BUCKETS + ksq_idx];
 
-    Accum &entry_acc = entry.get_accum();
+    auto &entry = entries[view][(sq_file(ksq) > FILE_D) * INPUT_BUCKETS + ksq_idx];
+    auto &entry_acc = entry.get_accum();
 
     for(Color c : {WHITE, BLACK}) {
         for(PieceType pt : {PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING}) {
             Piece pc = make_piece(c, pt);
 
             const U64 pc_bb = board.piece_bb(c, pt);
-            const U64 entry_bb = entry.get_piece_bb(c, pt);
+            const U64 entry_bb = entry(c, pt);
 
             U64 to_set = pc_bb & ~entry_bb;
             while(to_set)
@@ -53,10 +47,11 @@ void AccumTable::refresh(Color view, Board &board, Accum &accum) {
             while(to_clear)
                 nnue.remove(entry_acc, entry_acc, pc, pop_lsb(to_clear), ksq, view);
 
-            entry.set_piecebb(c, pt, pc_bb);
+            entry(c, pt) = pc_bb;
         }
     }
 
+    auto &accum = back();
     std::memcpy(accum.get_data(view), entry_acc.get_data(view), sizeof(int16_t) * FT_SIZE);
     accum.set_initialized(view);
 }

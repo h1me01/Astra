@@ -38,7 +38,7 @@ class MoveList {
         *last++ = m;
     }
 
-    int idx_of(const T &move) const {
+    int idx_of(const T move) const {
         for(int i = 0; i < size(); i++)
             if(list[i] == move)
                 return i;

@@ -42,23 +42,23 @@ class Board {
 
     void reset_ply();
 
-    nnue::DirtyPieces make_move(const Move &move);
-    void undo_move(const Move &move);
+    nnue::DirtyPieces make_move(Move move);
+    void undo_move(Move move);
 
     void make_nullmove();
     void undo_nullmove();
 
     void perft(int depth);
 
-    bool legal(const Move &move) const;
-    bool pseudo_legal(const Move &move) const;
+    bool legal(Move move) const;
+    bool pseudo_legal(Move move) const;
 
     bool in_check() const;
     bool is_draw(int ply) const;
     bool non_pawn_mat(Color c) const;
-    bool gives_check(const Move &move) const;
+    bool gives_check(Move move) const;
     bool upcoming_repetition(int ply) const;
-    bool see(const Move &move, int threshold) const;
+    bool see(Move move, int threshold) const;
 
     Threats threats() const;
 
@@ -80,7 +80,7 @@ class Board {
     U64 non_pawn_hash(Color c) const;
 
     Piece piece_at(Square sq) const;
-    Piece captured_piece(const Move &move) const;
+    Piece captured_piece(Move move) const;
 
     Square king_sq(Color c) const;
     Square king_sq() const;
@@ -196,7 +196,7 @@ inline Piece Board::piece_at(Square sq) const {
     return board[sq];
 }
 
-inline Piece Board::captured_piece(const Move &move) const {
+inline Piece Board::captured_piece(Move move) const {
     assert(move);
     if(move.is_ep())
         return make_piece(~stm, PAWN);

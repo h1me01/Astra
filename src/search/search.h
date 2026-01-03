@@ -18,10 +18,14 @@ namespace search {
 
 void init_reductions();
 
-enum class NodeType {
-    ROOT,
-    PV,
-    NON_PV,
+enum class NodeType { ROOT, PV, NON_PV };
+
+struct Limits {
+    Time time;
+    U64 nodes = 0;
+    int depth = MAX_PLY - 1;
+    int multipv = 1;
+    bool infinite = false;
 };
 
 struct RootMove : public Move {
@@ -54,8 +58,8 @@ struct RootMove : public Move {
 
     int sel_depth = 0;
     U64 nodes = 0;
-    Score score = VALUE_NONE;
-    Score avg_score = VALUE_NONE;
+    Score score = SCORE_NONE;
+    Score avg_score = SCORE_NONE;
 
     PVLine pv{};
 };
@@ -63,7 +67,7 @@ struct RootMove : public Move {
 class Search {
   public:
     Search() : exiting(false), searching(false) {
-        history.clear();
+        clear_histories();
     }
 
     bool exiting;
@@ -76,11 +80,7 @@ class Search {
     Limits limits;
 
     void idle();
-    void print_uci_info() const;
-
-    void clear_histories() {
-        history.clear();
-    }
+    void clear_histories();
 
     U64 get_nodes() const {
         return nodes;
@@ -100,20 +100,25 @@ class Search {
 
   private:
     TimeMan tm;
-    History history;
 
     nnue::AccumList accum_list;
     MoveList<RootMove> root_moves;
 
-    uint64_t nodes, tb_hits;
+    CounterHistory counter_history;
+    QuietHistory quiet_history;
+    NoisyHistory noisy_history;
+    PawnHistory pawn_history;
+    ContinuationHistory cont_history;
+    CorrectionHistories corr_histories;
+    ContinuationCorrectionHistory cont_corr_history;
 
-    int nmp_min_ply;
+    std::atomic<uint64_t> nodes, tb_hits;
 
+    int multipv_idx;
     int sel_depth;
     int root_depth;
     int completed_depth;
-
-    int multipv_idx;
+    int nmp_min_ply;
 
     void start();
 
@@ -125,8 +130,8 @@ class Search {
     template <NodeType nt> //
     Score quiescence(Score alpha, Score beta, Stack *stack);
 
-    void make_move(const Move &move, Stack *stack);
-    void undo_move(const Move &move);
+    void make_move(Move move, Stack *stack);
+    void undo_move(Move move);
 
     Score evaluate();
     Score adjust_eval(int32_t eval, Stack *stack) const;
@@ -136,9 +141,14 @@ class Search {
     bool is_limit_reached() const;
 
     void sort_rootmoves(int offset);
-    bool found_rootmove(const Move &move);
+    bool found_rootmove(Move move);
 
-    void update_pv(const Move &move, Stack *stack);
+    void update_pv(Move move, Stack *stack);
+
+    void update_quiet_histories(Move best_move, int bonus, Stack *stack);
+    void update_histories(Move best_move, MoveList<Move> &quiets, MoveList<Move> &noisy, int depth, Stack *stack);
+
+    void print_uci_info() const;
 };
 
 } // namespace search

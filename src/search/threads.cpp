@@ -71,7 +71,7 @@ Search *ThreadPool::pick_best() {
         return best_thread;
 
     std::unordered_map<uint16_t, int> votes;
-    Score min_score = VALUE_INFINITE;
+    Score min_score = SCORE_INFINITE;
 
     for(auto &th : threads) {
         if(!th->get_completed_depth())
@@ -91,19 +91,20 @@ Search *ThreadPool::pick_best() {
     for(auto &th : threads) {
         Search *thread = th.get();
 
-        const RootMove &rm = thread->get_best_rootmove();
+        const auto &rm = thread->get_best_rootmove();
         if(!thread->get_completed_depth())
             continue;
 
-        const RootMove &best_rm = best_thread->get_best_rootmove();
+        const auto &best_rm = best_thread->get_best_rootmove();
 
         if(is_decisive(best_rm.score)) {
             if(rm.score > best_rm.score)
                 best_thread = thread;
-        } else if(is_win(rm.score))
+        } else if(is_win(rm.score)) {
             best_thread = thread;
-        else if(!is_loss(rm.score) && votes[rm.raw()] > votes[best_rm.raw()])
+        } else if(!is_loss(rm.score) && votes[rm.raw()] > votes[best_rm.raw()]) {
             best_thread = thread;
+        }
     }
 
     return best_thread;

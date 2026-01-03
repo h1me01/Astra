@@ -86,7 +86,7 @@ inline float hor_sum_ps(fvec_t *v) {
 #endif
 }
 
-inline uint32_t nnz_nonzero_mask(ivec_t v) {
+inline uint32_t nnz_non_zero_mask(ivec_t v) {
 #if defined(__AVX512F__) && defined(__AVX512BW__)
     return _mm512_cmpgt_epi32_mask(v, ZERO_IVEC);
 #else
@@ -120,7 +120,7 @@ inline ivec_t double_dpbusd_epi32(ivec_t sum, ivec_t a, ivec_t b, ivec_t c, ivec
 inline void permute_simd_data(__m128i *vec, int count) {
     count /= (sizeof(__m128i) / sizeof(int16_t));
 
-#if (defined(__AVX512F__) && defined(__AVX512BW__))
+#if(defined(__AVX512F__) && defined(__AVX512BW__))
     const int PACKUS_BLOCKS = 8;
     const int PERMUTATION[PACKUS_BLOCKS] = {0, 2, 4, 6, 1, 3, 5, 7};
 #else

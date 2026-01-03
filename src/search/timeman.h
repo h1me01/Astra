@@ -13,14 +13,6 @@ struct Time {
     int64_t maximum = 0;
 };
 
-struct Limits {
-    Time time;
-    U64 nodes = 0;
-    int depth = MAX_PLY - 1;
-    int multipv = 1;
-    bool infinite = false;
-};
-
 class TimeMan {
   private:
     using Clock = std::chrono::steady_clock;

@@ -1,10 +1,13 @@
 #pragma once
 
 #include "../chess/misc.h"
+#include "history.h"
 
 using namespace chess;
 
 namespace search {
+
+using PieceToContinuation = int16_t[NUM_PIECES + 1][NUM_SQUARES];
 
 struct PVLine {
     Move pv[MAX_PLY + 1];
@@ -44,10 +47,10 @@ struct Stack {
     Move skipped = Move::none();
 
     Piece moved_piece = NO_PIECE;
-    Score static_eval = VALUE_NONE;
+    Score static_eval = SCORE_NONE;
 
     PVLine pv;
-    int16_t (*cont_hist)[NUM_PIECES + 1][NUM_SQUARES] = nullptr;
+    PieceToContinuation *cont_hist = nullptr;
 };
 
 } // namespace search

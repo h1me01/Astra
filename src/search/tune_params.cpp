@@ -44,7 +44,7 @@ bool set_param(const std::string &name, int value) {
 }
 
 void params_to_spsa() {
-    for(auto &param : params) {
+    for(const auto &param : params) {
         std::cout << param->name << ", "                                                        //
                   << "int" << ", "                                                              //
                   << param->value << ", "                                                       //

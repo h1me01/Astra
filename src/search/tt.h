@@ -6,11 +6,11 @@ using namespace chess;
 
 namespace search {
 
-enum Bound : uint8_t { //
-    NO_BOUND = 0,
-    LOWER_BOUND = 1,
-    UPPER_BOUND = 2,
-    EXACT_BOUND = 3
+enum Bound : uint8_t {
+    NO_BOUND,
+    LOWER_BOUND,
+    UPPER_BOUND,
+    EXACT_BOUND,
 };
 
 #pragma pack(push, 1)
@@ -21,6 +21,7 @@ class TTEntry {
     void refresh_age();
 
     int relative_age() const;
+
     uint8_t get_age() const;
 
     U64 get_hash() const {
@@ -37,7 +38,7 @@ class TTEntry {
 
     Score get_score(int ply) const {
         if(!valid_score(score))
-            return VALUE_NONE;
+            return SCORE_NONE;
         if(is_win(score))
             return score - ply;
         if(is_loss(score))
@@ -61,8 +62,8 @@ class TTEntry {
     uint16_t hash = 0;
     uint8_t depth = 0;
     uint16_t move = 0;
-    Score score = VALUE_NONE;
-    Score eval = VALUE_NONE;
+    Score score = SCORE_NONE;
+    Score eval = SCORE_NONE;
     uint8_t agepvbound = NO_BOUND;
 };
 #pragma pack(pop)

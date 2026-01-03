@@ -14,14 +14,14 @@ constexpr U64 OOO_MASK[NUM_COLORS] = {0x11ULL, 0x1100000000000000ULL};
 
 } // namespace bitboards
 
-constexpr U64 file_mask(File file) {
-    assert(file >= 0 && file < 8);
-    return 0x0101010101010101ULL << file;
+constexpr U64 file_mask(File f) {
+    assert(valid_file(f));
+    return 0x0101010101010101ULL << f;
 }
 
-constexpr U64 rank_mask(Rank rank) {
-    assert(rank >= 0 && rank < 8);
-    return 0xFFULL << (rank * 8);
+constexpr U64 rank_mask(Rank r) {
+    assert(valid_rank(r));
+    return 0xFFULL << (r * 8);
 }
 
 constexpr U64 ks_castle_path_mask(Color c) {
