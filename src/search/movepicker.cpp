@@ -19,7 +19,6 @@ template <SearchType st>
 MovePicker<st>::MovePicker(          //
     Board &board,                    //
     Move tt_move,                    //
-    CounterHistory &counter_history, //
     QuietHistory &quiet_history,     //
     PawnHistory &pawn_history,       //
     NoisyHistory &noisy_history,     //
@@ -41,12 +40,6 @@ MovePicker<st>::MovePicker(          //
     } else {
         stage = PLAY_TT_MOVE;
         this->tt_move = tt_move;
-
-        killer = (stack->killer != tt_move) ? stack->killer : Move::none();
-        counter = counter_history.get((stack - 1)->move);
-
-        if(counter == tt_move || counter == killer)
-            counter = Move::none();
     }
 }
 
@@ -84,18 +77,7 @@ template <SearchType st> Move MovePicker<st>::next(bool skip_quiets) {
         if(st == Q_SEARCH && !board.in_check())
             return Move::none();
 
-        // in evasion qsearch we can falltrough the killer and counter since we did not set them
-        stage = PLAY_KILLER;
-        [[fallthrough]];
-    case PLAY_KILLER:
-        stage = PLAY_COUNTER;
-        if(!skip_quiets && board.pseudo_legal(killer))
-            return killer;
-        [[fallthrough]];
-    case PLAY_COUNTER:
         stage = GEN_QUIETS;
-        if(!skip_quiets && board.pseudo_legal(counter))
-            return counter;
         [[fallthrough]];
     case GEN_QUIETS:
         idx = 0;
@@ -109,7 +91,7 @@ template <SearchType st> Move MovePicker<st>::next(bool skip_quiets) {
         while(idx < ml_main.size() && !skip_quiets) {
             partial_insertion_sort(ml_main, idx);
             Move move = ml_main[idx++];
-            if(move != tt_move && move != killer && move != counter)
+            if(move != tt_move)
                 return move;
         }
 
