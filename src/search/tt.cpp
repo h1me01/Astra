@@ -46,7 +46,7 @@ void TTEntry::refresh_age() {
 }
 
 int TTEntry::relative_age() const {
-    return 4 * ((AGE_CYCLE + tt.get_age() - agepvbound) & AGE_MASK);
+    return (AGE_CYCLE + tt.get_age() - agepvbound) & AGE_MASK;
 }
 
 uint8_t TTEntry::get_age() const {
@@ -66,7 +66,7 @@ void TTEntry::store(U64 hash, Move move, Score score, Score eval, Bound bound, i
             score -= ply;
     }
 
-    if(bound == EXACT_BOUND || this->hash != hash16 || depth + 4 + 2 * pv > this->depth) {
+    if(bound == EXACT_BOUND || this->hash != hash16 || depth + 4 + 2 * pv > this->depth || relative_age()) {
         this->hash = hash16;
         this->depth = depth;
         this->score = score;
@@ -140,10 +140,10 @@ TTEntry *TTable::lookup(U64 hash, bool *hit) const {
     }
 
     auto *replace = &entries[0];
-    int min_value = replace->get_depth() - replace->relative_age();
+    int min_value = replace->get_depth() - 4 * replace->relative_age();
 
     for(int i = 1; i < BUCKET_SIZE; i++) {
-        int value = entries[i].get_depth() - entries[i].relative_age();
+        int value = entries[i].get_depth() - 4 * entries[i].relative_age();
         if(value < min_value) {
             min_value = value;
             replace = &entries[i];
