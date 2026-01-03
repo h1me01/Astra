@@ -997,13 +997,11 @@ void Search::update_histories(Move best_move, MoveList<Move> &quiets, MoveList<M
 
         counter_history.update(best_move, (stack - 1)->move);
 
-        if(depth > 3 || quiets.size() > 1) {
-            update_quiet_histories(best_move, bonus * quiet_hist_bonus_mult / 1024, stack);
+        update_quiet_histories(best_move, bonus * quiet_hist_bonus_mult / 1024, stack);
 
-            int quiet_malus = malus * quiet_hist_malus_mult / 1024;
-            for(const auto &m : quiets)
-                update_quiet_histories(m, quiet_malus, stack);
-        }
+        int quiet_malus = malus * quiet_hist_malus_mult / 1024;
+        for(const auto &m : quiets)
+            update_quiet_histories(m, quiet_malus, stack);
     } else {
         noisy_history.update(board, best_move, bonus * noisy_hist_bonus_mult / 1024);
     }
