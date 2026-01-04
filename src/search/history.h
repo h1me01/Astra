@@ -197,20 +197,29 @@ class ContinuationCorrectionHistory {
         std::memset(data, 0, sizeof(data));
     }
 
-    void update(Score eval, Score score, int d, const Stack *stack);
+    void update(const Board &board, Score eval, Score score, int d, const Stack *stack);
 
-    int get(const Stack *stack) const {
-        Move m1 = (stack - 1)->move;
-        Move m2 = (stack - 2)->move;
-
-        if(!m1 || !m2)
+    int get(const Board &board, const Stack *stack) const {
+        Move m = (stack - 1)->move;
+        if(!m || !(stack - 2)->move)
             return 0;
 
-        return data[(stack - 1)->moved_piece][m1.to()][(stack - 2)->moved_piece][m2.to()];
+        Piece pc = board.piece_at(m.to());
+        assert(valid_piece(pc));
+
+        return (*(stack - 2)->cont_corr_hist)[pc][m.to()];
+    }
+
+    PieceToContinuation *get() {
+        return &data[NO_PIECE][0];
+    }
+
+    PieceToContinuation *get(Piece pc, Square to) {
+        return &data[pc][to];
     }
 
   private:
-    int16_t data[NUM_PIECES][NUM_SQUARES][NUM_PIECES][NUM_SQUARES];
+    int16_t data[NUM_PIECES + 1][NUM_SQUARES][NUM_PIECES + 1][NUM_SQUARES];
 };
 
 } // namespace search

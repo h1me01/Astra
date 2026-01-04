@@ -51,6 +51,7 @@ struct Stack {
 
     PVLine pv;
     PieceToContinuation *cont_hist = nullptr;
+    PieceToContinuation *cont_corr_hist = nullptr;
 };
 
 } // namespace search
