@@ -60,6 +60,8 @@ void ContinuationHistory::update(Piece pc, Square to, int bonus, Stack *stack) {
     assert(valid_sq(to));
 
     for(int i : {1, 2, 4, 6}) {
+        if(!(stack - i)->move)
+            return;
         auto &value = (*(stack - i)->cont_hist)[pc][to];
         value += adjusted_bonus(value, bonus);
     }
