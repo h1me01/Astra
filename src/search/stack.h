@@ -43,7 +43,6 @@ struct Stack {
     int made_moves = 0;
 
     Move move = Move::none();
-    Move killer = Move::none();
     Move skipped = Move::none();
 
     Piece moved_piece = NO_PIECE;

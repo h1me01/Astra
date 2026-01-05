@@ -43,7 +43,6 @@ void Search::idle() {
 }
 
 void Search::clear_histories() {
-    counter_history.clear();
     quiet_history.clear();
     noisy_history.clear();
     pawn_history.clear();
@@ -245,8 +244,6 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
     Move best_move = Move::none();
     bool improving = false;
 
-    (stack + 1)->killer = Move::none();
-
     // look up in tt
     bool tt_hit = false;
     auto *ent = tt.lookup(hash, &tt_hit);
@@ -428,7 +425,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
        && !is_decisive(beta)                                  //
        && !(valid_score(tt_score) && tt_score < probcut_beta) //
     ) {
-        MovePicker<PC_SEARCH> mp(board, tt_move, counter_history, quiet_history, pawn_history, noisy_history, stack);
+        MovePicker<PC_SEARCH> mp(board, tt_move, quiet_history, pawn_history, noisy_history, stack);
         mp.probcut_threshold = probcut_beta - stack->static_eval;
 
         const int probcut_depth = std::max(depth - 4, 0);
@@ -460,7 +457,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
 
 movesloop:
 
-    MovePicker<N_SEARCH> mp(board, tt_move, counter_history, quiet_history, pawn_history, noisy_history, stack);
+    MovePicker<N_SEARCH> mp(board, tt_move, quiet_history, pawn_history, noisy_history, stack);
     Move move = Move::none();
 
     MoveList<Move> quiets, noisy;
@@ -777,7 +774,7 @@ Score Search::quiescence(Score alpha, Score beta, Stack *stack) {
 
     const Square prev_sq = ((stack - 1)->move) ? ((stack - 1)->move).to() : NO_SQUARE;
 
-    MovePicker<Q_SEARCH> mp(board, tt_move, counter_history, quiet_history, pawn_history, noisy_history, stack);
+    MovePicker<Q_SEARCH> mp(board, tt_move, quiet_history, pawn_history, noisy_history, stack);
     Move move = Move::none();
 
     int made_moves = 0;
@@ -996,10 +993,6 @@ void Search::update_histories(Move best_move, MoveList<Move> &quiets, MoveList<M
     int malus = -history_malus(depth);
 
     if(best_move.is_quiet()) {
-        stack->killer = best_move;
-
-        counter_history.update(best_move, (stack - 1)->move);
-
         if(depth > 3 || quiets.size() > 1) {
             update_quiet_histories(best_move, bonus * quiet_hist_bonus_mult / 1024, stack);
 

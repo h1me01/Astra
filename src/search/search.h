@@ -104,7 +104,6 @@ class Search {
     nnue::AccumList accum_list;
     MoveList<RootMove> root_moves;
 
-    CounterHistory counter_history;
     QuietHistory quiet_history;
     NoisyHistory noisy_history;
     PawnHistory pawn_history;

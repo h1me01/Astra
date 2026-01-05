@@ -18,8 +18,6 @@ enum Stage {
     PLAY_TT_MOVE,
     GEN_NOISY,
     PLAY_NOISY,
-    PLAY_KILLER,
-    PLAY_COUNTER,
     GEN_QUIETS,
     PLAY_QUIETS,
     PLAY_BAD_NOISY,
@@ -31,7 +29,6 @@ class MovePicker {
     MovePicker(                          //
         Board &board,                    //
         Move tt_move,                    //
-        CounterHistory &counter_history, //
         QuietHistory &quiet_history,     //
         PawnHistory &pawn_history,       //
         NoisyHistory &noisy_history,     //
@@ -51,7 +48,7 @@ class MovePicker {
     const NoisyHistory &noisy_history;
     const Stack *stack;
 
-    Move tt_move, killer, counter;
+    Move tt_move;
     MoveList<ScoredMove> ml_main, ml_bad_noisy;
 
     void gen_score_noisy();

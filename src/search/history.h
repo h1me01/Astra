@@ -17,33 +17,6 @@ inline int history_malus(int d) {
     return std::min(int(max_hist_malus), hist_malus_mult * d + hist_malus_minus);
 }
 
-class CounterHistory {
-  public:
-    CounterHistory() {
-        clear();
-    }
-
-    void clear() {
-        for(auto &row : data)
-            for(auto &elem : row)
-                elem = Move::none();
-    }
-
-    void update(Move move, Move prev_move) {
-        assert(move);
-
-        if(prev_move)
-            data[prev_move.from()][prev_move.to()] = move;
-    }
-
-    Move get(Move prev_move) const {
-        return prev_move ? data[prev_move.from()][prev_move.to()] : Move::none();
-    }
-
-  private:
-    Move data[NUM_SQUARES][NUM_SQUARES];
-};
-
 class QuietHistory {
   public:
     QuietHistory() {
