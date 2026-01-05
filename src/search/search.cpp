@@ -484,8 +484,7 @@ movesloop:
             history_score = quiet_history.get(board.side_to_move(), move)                //
                             + pawn_history.get(board, move)                              //
                             + static_cast<int>((*(stack - 1)->cont_hist)[pc][move.to()]) //
-                            + static_cast<int>((*(stack - 2)->cont_hist)[pc][move.to()]) //
-                            + static_cast<int>((*(stack - 4)->cont_hist)[pc][move.to()]);
+                            + static_cast<int>((*(stack - 2)->cont_hist)[pc][move.to()]);
         } else {
             history_score = noisy_history.get(board, move);
         }
