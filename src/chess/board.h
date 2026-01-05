@@ -155,8 +155,7 @@ inline U64 Board::occupancy() const {
 }
 
 inline U64 Board::piece_bb(Color c, PieceType pt) const {
-    assert(valid_color(c));
-    assert(valid_piece_type(pt));
+    assert(valid_color(c) && valid_piece_type(pt));
     return pieces_bb[make_piece(c, pt)];
 }
 
@@ -268,8 +267,7 @@ inline void Board::update_hash(Piece pc, U64 hash) {
 }
 
 inline void Board::put_piece(Piece pc, Square sq) {
-    assert(valid_sq(sq));
-    assert(valid_piece(pc));
+    assert(valid_piece(pc) && valid_sq(sq));
 
     board[sq] = pc;
     pieces_bb[pc] |= sq_bb(sq);
@@ -292,8 +290,7 @@ inline void Board::remove_piece(Square sq) {
 }
 
 inline void Board::move_piece(Square from, Square to) {
-    assert(valid_sq(to));
-    assert(valid_sq(from));
+    assert(valid_sq(from) && valid_sq(to));
 
     Piece pc = piece_at(from);
     assert(valid_piece(pc));

@@ -116,8 +116,7 @@ class ContinuationHistory {
     }
 
     PieceToContinuation *get(bool in_check, bool is_cap, Piece pc, Square to) {
-        assert(valid_piece(pc));
-        assert(valid_sq(to));
+        assert(valid_piece(pc) && valid_sq(to));
 
         return &data[in_check][is_cap][pc][to];
     }

@@ -31,8 +31,7 @@ U64 side_hash() {
 }
 
 U64 psq_hash(Piece pc, Square sq) {
-    assert(valid_sq(sq));
-    assert(valid_piece(pc));
+    assert(valid_piece(pc) && valid_sq(sq));
     return psq[pc][sq];
 }
 

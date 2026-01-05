@@ -56,8 +56,7 @@ void PawnHistory::update(const Board &board, Move move, int bonus) {
 // Continuation History
 
 void ContinuationHistory::update(Piece pc, Square to, int bonus, Stack *stack) {
-    assert(valid_piece(pc));
-    assert(valid_sq(to));
+    assert(valid_piece(pc) && valid_sq(to));
 
     for(int i : {1, 2, 4, 6}) {
         if(!(stack - i)->move)
@@ -70,6 +69,8 @@ void ContinuationHistory::update(Piece pc, Square to, int bonus, Stack *stack) {
 // Correction Histories
 
 void CorrectionHistories::update(const Board &board, Score eval, Score score, int d) {
+    assert(valid_score(eval) && valid_score(score));
+
     Color stm = board.side_to_move();
     int diff = score - eval;
 
@@ -81,6 +82,8 @@ void CorrectionHistories::update(const Board &board, Score eval, Score score, in
 // Continuation Correction History
 
 void ContinuationCorrectionHistory::update(const Board &board, Score eval, Score score, int d, const Stack *stack) {
+    assert(valid_score(eval) && valid_score(score));
+
     Move m = (stack - 1)->move;
     if(!m || !(stack - 2)->move)
         return;

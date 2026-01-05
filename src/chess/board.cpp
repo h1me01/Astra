@@ -231,8 +231,7 @@ nnue::DirtyPieces Board::make_move(Move move) {
         } else if(move.is_prom()) {
             Piece prom_pc = make_piece(stm, move.prom_type());
 
-            assert(valid_piece(prom_pc));
-            assert(piece_type(prom_pc) != PAWN);
+            assert(valid_piece(prom_pc) && piece_type(prom_pc) != PAWN);
 
             dirty_pieces.pop(); // remove pawn from dirty pieces
 

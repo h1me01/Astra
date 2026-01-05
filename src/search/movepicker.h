@@ -26,12 +26,12 @@ enum Stage {
 template <SearchType st> //
 class MovePicker {
   public:
-    MovePicker(                          //
-        Board &board,                    //
-        Move tt_move,                    //
-        QuietHistory &quiet_history,     //
-        PawnHistory &pawn_history,       //
-        NoisyHistory &noisy_history,     //
+    MovePicker(                      //
+        Board &board,                //
+        Move tt_move,                //
+        QuietHistory &quiet_history, //
+        PawnHistory &pawn_history,   //
+        NoisyHistory &noisy_history, //
         Stack *stack);
 
     int probcut_threshold = 0;

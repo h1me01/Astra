@@ -94,7 +94,7 @@ class Search {
         return completed_depth;
     }
 
-    const RootMove &get_best_rootmove() const {
+    const RootMove &get_best_move() const {
         return root_moves[0];
     }
 
@@ -139,8 +139,8 @@ class Search {
 
     bool is_limit_reached() const;
 
-    void sort_rootmoves(int offset);
-    bool found_rootmove(Move move);
+    void sort_root_moves(int offset);
+    bool found_root_move(Move move);
 
     void update_pv(Move move, Stack *stack);
 

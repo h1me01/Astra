@@ -245,26 +245,22 @@ U64 bishop_attacks_bb(Square sq, const U64 occ = 0) {
 // actual used functions
 
 U64 between_bb(Square sq1, Square sq2) {
-    assert(valid_sq(sq1));
-    assert(valid_sq(sq2));
+    assert(valid_sq(sq1) && valid_sq(sq2));
     return SQUARES_BETWEEN[sq1][sq2];
 }
 
 U64 line(Square sq1, Square sq2) {
-    assert(valid_sq(sq1));
-    assert(valid_sq(sq2));
+    assert(valid_sq(sq1) && valid_sq(sq2));
     return LINE[sq1][sq2];
 }
 
 U64 pawn_attacks_bb(Color c, Square sq) {
-    assert(valid_sq(sq));
-    assert(valid_color(c));
+    assert(valid_color(c) && valid_sq(sq));
     return PAWN_ATTACKS[c][sq];
 }
 
 U64 attacks_bb(PieceType pt, Square sq, const U64 occ) {
-    assert(valid_sq(sq));
-    assert(valid_piece_type(pt) && pt != PAWN);
+    assert(valid_piece_type(pt) && valid_sq(sq) && pt != PAWN);
 
     switch(pt) {
     case ROOK:

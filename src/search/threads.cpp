@@ -76,7 +76,7 @@ Search *ThreadPool::pick_best() {
     for(auto &th : threads) {
         if(!th->get_completed_depth())
             continue;
-        min_score = std::min(min_score, Score(th->get_best_rootmove().score));
+        min_score = std::min(min_score, Score(th->get_best_move().score));
     }
 
     for(auto &th : threads) {
@@ -84,18 +84,18 @@ Search *ThreadPool::pick_best() {
         if(!root_depth)
             continue;
 
-        const auto &rm = th->get_best_rootmove();
+        const auto &rm = th->get_best_move();
         votes[rm.raw()] += (rm.score - min_score + 10) * root_depth;
     }
 
     for(auto &th : threads) {
         Search *thread = th.get();
 
-        const auto &rm = thread->get_best_rootmove();
+        const auto &rm = thread->get_best_move();
         if(!thread->get_completed_depth())
             continue;
 
-        const auto &best_rm = best_thread->get_best_rootmove();
+        const auto &best_rm = best_thread->get_best_move();
 
         if(is_decisive(best_rm.score)) {
             if(rm.score > best_rm.score)

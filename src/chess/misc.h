@@ -25,7 +25,7 @@ constexpr bool valid_piece(Piece pc) {
 }
 
 constexpr bool valid_score(Score score) {
-    return score != SCORE_NONE;
+    return score > -SCORE_INFINITE && score < SCORE_INFINITE;
 }
 
 constexpr bool valid_file(File f) {
@@ -43,14 +43,12 @@ constexpr Color operator~(Color c) {
 }
 
 constexpr Square make_square(Rank r, File f) {
-    assert(valid_rank(r));
-    assert(valid_file(f));
+    assert(valid_rank(r) && valid_file(f));
     return Square((r << 3) + f);
 }
 
 constexpr Piece make_piece(Color c, PieceType pt) {
-    assert(valid_color(c));
-    assert(valid_piece_type(pt));
+    assert(valid_color(c) && valid_piece_type(pt));
     return Piece(pt + 6 * c);
 }
 
@@ -108,14 +106,12 @@ constexpr File sq_file(Square sq) {
 }
 
 constexpr Square rel_sq(Color c, Square sq) {
-    assert(valid_sq(sq));
-    assert(valid_color(c));
+    assert(valid_color(c) && valid_sq(sq));
     return c == WHITE ? sq : Square(sq ^ 56);
 }
 
 constexpr Rank rel_rank(Color c, Rank r) {
-    assert(valid_color(c));
-    assert(r >= RANK_1 && r <= RANK_8);
+    assert(valid_color(c) && valid_rank(r));
     return c == WHITE ? r : Rank(RANK_8 - r);
 }
 
@@ -125,21 +121,20 @@ constexpr Score mate_in(int ply) {
 }
 
 constexpr Score mated_in(int ply) {
-    assert(ply >= 0);
-    return -SCORE_MATE + ply;
+    return -mate_in(ply);
 }
 
-constexpr bool is_loss(const Score score) {
-    assert(valid_score(score));
-    return score <= SCORE_TB_LOSS_IN_MAX_PLY;
-}
-
-constexpr bool is_win(const Score score) {
-    assert(valid_score(score));
+constexpr bool is_win(Score score) {
+    assert(valid_score(score) || std::abs(score) == SCORE_INFINITE);
     return score >= SCORE_TB_WIN_IN_MAX_PLY;
 }
 
-constexpr bool is_decisive(const Score score) {
+constexpr bool is_loss(Score score) {
+    assert(valid_score(score) || std::abs(score) == SCORE_INFINITE);
+    return score <= SCORE_TB_LOSS_IN_MAX_PLY;
+}
+
+constexpr bool is_decisive(Score score) {
     return is_loss(score) || is_win(score);
 }
 
@@ -184,10 +179,8 @@ inline Square sq_from(std::string_view square_str) {
 
 inline std::ostream &operator<<(std::ostream &os, Square sq) {
     if(sq == NO_SQUARE)
-        return os << "NO SQUARE";
-    char file_char = 'a' + sq_file(sq);
-    char rank_char = '1' + sq_rank(sq);
-    return os << file_char << rank_char;
+        return os << "no square";
+    return os << char('a' + sq_file(sq)) << char('1' + sq_rank(sq));
 }
 
 inline std::ostream &operator<<(std::ostream &os, Piece pc) {
@@ -196,9 +189,9 @@ inline std::ostream &operator<<(std::ostream &os, Piece pc) {
 
 inline std::ostream &operator<<(std::ostream &os, Move move) {
     if(move.is_none())
-        return os << "NO MOVE";
+        return os << "none";
     else if(move.is_null())
-        return os << "NULL MOVE";
+        return os << "null";
     else
         os << move.from() << move.to();
 

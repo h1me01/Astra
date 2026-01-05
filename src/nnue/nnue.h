@@ -91,9 +91,8 @@ class NNUE {
 
     alignas(ALIGNMENT) uint16_t nnz_lookup[256][8];
 
-    int feature_idx(Square psq, Square ksq, Piece pc, Color view) const {
-        assert(valid_sq(psq));
-        assert(valid_piece(pc));
+    int feature_idx(Piece pc, Square psq, Square ksq, Color view) const {
+        assert(valid_piece(pc) && valid_sq(psq));
 
         if(sq_file(ksq) > FILE_D)
             psq = Square(psq ^ 7); // mirror psq horizontally if king is on other half

@@ -232,7 +232,7 @@ float NNUE::forward_l3(int bucket, const LayerOutput<float, L2_SIZE> &input) {
 }
 
 void NNUE::put(Accum &acc, const Accum &prev, Piece pc, Square psq, Square ksq, Color view) const {
-    const int idx = feature_idx(psq, ksq, pc, view);
+    const int idx = feature_idx(pc, psq, ksq, view);
     const auto weights = ptr_cast<const ivec_t>(&ft_weights[idx * FT_SIZE]);
 
     auto acc_data = ptr_cast<ivec_t>(acc.get_data(view));
@@ -245,7 +245,7 @@ void NNUE::put(Accum &acc, const Accum &prev, Piece pc, Square psq, Square ksq, 
 }
 
 void NNUE::remove(Accum &acc, const Accum &prev, Piece pc, Square psq, Square ksq, Color view) const {
-    const int idx = feature_idx(psq, ksq, pc, view);
+    const int idx = feature_idx(pc, psq, ksq, view);
     const auto weights = ptr_cast<const ivec_t>(&ft_weights[idx * FT_SIZE]);
 
     auto acc_data = ptr_cast<ivec_t>(acc.get_data(view));
@@ -258,8 +258,8 @@ void NNUE::remove(Accum &acc, const Accum &prev, Piece pc, Square psq, Square ks
 }
 
 void NNUE::move(Accum &acc, const Accum &prev, Piece pc, Square from, Square to, Square ksq, Color view) const {
-    const int from_idx = feature_idx(from, ksq, pc, view);
-    const int to_idx = feature_idx(to, ksq, pc, view);
+    const int from_idx = feature_idx(pc, from, ksq, view);
+    const int to_idx = feature_idx(pc, to, ksq, view);
     const auto weights_from = ptr_cast<const ivec_t>(&ft_weights[from_idx * FT_SIZE]);
     const auto weights_to = ptr_cast<const ivec_t>(&ft_weights[to_idx * FT_SIZE]);
 

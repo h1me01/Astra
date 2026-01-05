@@ -94,7 +94,7 @@ void Search::start() {
 
         completed_depth = root_depth;
 
-        if(this == threads.main_thread())
+        if(is_main_thread)
             for(multipv_idx = 0; multipv_idx < limits.multipv; multipv_idx++)
                 print_uci_info();
 
@@ -159,7 +159,7 @@ Score Search::aspiration(int depth, Stack *stack) {
     while(true) {
         score = negamax<NodeType::ROOT>(std::max(1, root_depth - fail_high_count), alpha, beta, stack);
 
-        sort_rootmoves(multipv_idx);
+        sort_root_moves(multipv_idx);
 
         if(threads.is_stopped())
             return 0;
@@ -178,7 +178,7 @@ Score Search::aspiration(int depth, Stack *stack) {
         delta += delta / 3;
     }
 
-    sort_rootmoves(0);
+    sort_root_moves(0);
 
     return score;
 }
@@ -192,7 +192,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut
     assert(stack->ply >= 0);
     assert(!(pv_node && cut_node));
     assert(pv_node || (alpha == beta - 1));
-    assert(valid_score(alpha + 1) && valid_score(beta - 1) && alpha < beta);
+    assert(-SCORE_INFINITE <= alpha && alpha < beta && beta <= SCORE_INFINITE);
 
     if(pv_node)
         stack->pv.length = stack->ply;
@@ -462,20 +462,19 @@ movesloop:
 
     MoveList<Move> quiets, noisy;
     int made_moves = 0;
-    stack->made_moves = 0;
 
     bool skip_quiets = false;
     while((move = mp.next(skip_quiets))) {
         if(move == stack->skipped || !board.legal(move))
             continue;
-        if(root_node && !found_rootmove(move))
+        if(root_node && !found_root_move(move))
             continue;
 
         U64 start_nodes = nodes;
 
         stack->made_moves = ++made_moves;
 
-        const int reduction = REDUCTIONS[depth][made_moves];
+        int r = REDUCTIONS[depth][made_moves];
 
         int history_score = 0;
         if(move.is_quiet()) {
@@ -495,7 +494,7 @@ movesloop:
                 skip_quiets = true;
 
             if(move.is_quiet()) {
-                const int r_depth = std::max(0, depth - reduction + history_score / hist_div);
+                const int r_depth = std::max(0, depth - r + history_score / hist_div);
 
                 // futility pruning
                 const Score futility = stack->static_eval + fp_base + r_depth * fp_mult;
@@ -561,7 +560,6 @@ movesloop:
 
         // late move reductions
         if(depth >= 2 && made_moves >= 3 && !(tt_pv && move.is_noisy())) {
-            int r = reduction;
 
             r += !improving;
 
@@ -703,7 +701,7 @@ Score Search::quiescence(Score alpha, Score beta, Stack *stack) {
 
     assert(stack->ply >= 0);
     assert(pv_node || (alpha == beta - 1));
-    assert(valid_score(alpha + 1) && valid_score(beta - 1) && alpha < beta);
+    assert(-SCORE_INFINITE <= alpha && alpha < beta && beta <= SCORE_INFINITE);
 
     if(pv_node)
         stack->pv.length = stack->ply;
@@ -958,7 +956,7 @@ bool Search::is_limit_reached() const {
     return false;
 }
 
-void Search::sort_rootmoves(int offset) {
+void Search::sort_root_moves(int offset) {
     assert(offset >= 0);
     auto it = root_moves.begin() + offset;
     std::stable_sort(it, root_moves.end(), [](const RootMove &a, const RootMove &b) {
@@ -966,7 +964,7 @@ void Search::sort_rootmoves(int offset) {
     });
 }
 
-bool Search::found_rootmove(Move move) {
+bool Search::found_root_move(Move move) {
     for(int i = multipv_idx; i < root_moves.size(); i++)
         if(root_moves[i] == move)
             return true;
@@ -991,16 +989,14 @@ void Search::update_histories(Move best_move, MoveList<Move> &quiets, MoveList<M
     int bonus = history_bonus(depth);
     int malus = -history_malus(depth);
 
-    if(best_move.is_quiet()) {
-        if(depth > 3 || quiets.size() > 1) {
-            update_quiet_histories(best_move, bonus * quiet_hist_bonus_mult / 1024, stack);
-
-            int quiet_malus = malus * quiet_hist_malus_mult / 1024;
-            for(const auto &m : quiets)
-                update_quiet_histories(m, quiet_malus, stack);
-        }
-    } else {
+    if(best_move.is_noisy()) {
         noisy_history.update(board, best_move, bonus * noisy_hist_bonus_mult / 1024);
+    } else if(depth > 3 || quiets.size() > 1) {
+        update_quiet_histories(best_move, bonus * quiet_hist_bonus_mult / 1024, stack);
+
+        int quiet_malus = malus * quiet_hist_malus_mult / 1024;
+        for(const auto &m : quiets)
+            update_quiet_histories(m, quiet_malus, stack);
     }
 
     for(const auto &m : noisy)

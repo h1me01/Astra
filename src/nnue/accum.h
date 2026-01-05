@@ -77,9 +77,7 @@ class Accum {
     }
 
     void update(const DirtyPieces &dpcs, Square wksq, Square bksq) {
-        assert(valid_sq(wksq));
-        assert(valid_sq(bksq));
-
+        assert(valid_sq(wksq) && valid_sq(bksq));
         dirty_pcs = dpcs;
         this->wksq = wksq;
         this->bksq = bksq;
