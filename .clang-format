@@ -19,3 +19,4 @@ PenaltyBreakBeforeFirstCallParameter: 1000
 PenaltyBreakString: 500
 PenaltyExcessCharacter: 10
 AlwaysBreakAfterReturnType: None
+AlwaysBreakTemplateDeclarations: true

@@ -123,10 +123,10 @@ class Search {
 
     Score aspiration(int depth, Stack *stack);
 
-    template <NodeType nt> //
+    template <NodeType nt>
     Score negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut_node = false);
 
-    template <NodeType nt> //
+    template <NodeType nt>
     Score quiescence(Score alpha, Score beta, Stack *stack);
 
     void make_move(Move move, Stack *stack);

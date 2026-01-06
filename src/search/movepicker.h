@@ -23,16 +23,16 @@ enum Stage {
     PLAY_BAD_NOISY,
 };
 
-template <SearchType st> //
+template <SearchType st>
 class MovePicker {
   public:
-    MovePicker(                      //
-        Board &board,                //
-        Move tt_move,                //
-        QuietHistory &quiet_history, //
-        PawnHistory &pawn_history,   //
-        NoisyHistory &noisy_history, //
-        Stack *stack);
+    MovePicker(                            //
+        const Board &board,                //
+        const Move tt_move,                //
+        const QuietHistory &quiet_history, //
+        const PawnHistory &pawn_history,   //
+        const NoisyHistory &noisy_history, //
+        const Stack *stack);
 
     int probcut_threshold = 0;
 

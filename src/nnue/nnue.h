@@ -32,7 +32,7 @@ inline bool needs_refresh(Piece pc, Move m) {
            sq_file(m.from()) + sq_file(m.to()) == 7;
 }
 
-template <typename T, size_t N> //
+template <typename T, size_t N>
 class LayerOutput {
   public:
     LayerOutput() {

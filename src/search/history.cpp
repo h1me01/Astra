@@ -8,8 +8,8 @@ namespace search {
 
 // Helper
 
-int adjusted_bonus(int v, int bonus) {
-    return bonus - v * std::abs(bonus) / 16384;
+void update_history(int16_t &v, int bonus) {
+    v += bonus - v * std::abs(bonus) / 16384;
 }
 
 void update_correction(int16_t &v, int diff, int d) {
@@ -20,10 +20,8 @@ void update_correction(int16_t &v, int diff, int d) {
 // Quiet Histories
 
 void QuietHistory::update(Color c, Move move, int bonus) {
-    assert(move);
-
-    auto &value = data[c][move.from()][move.to()];
-    value += adjusted_bonus(value, bonus);
+    assert(valid_color(c) && move);
+    update_history(data[c][move.from()][move.to()], bonus);
 }
 
 // Noisy History
@@ -37,8 +35,7 @@ void NoisyHistory::update(const Board &board, Move move, int bonus) {
     assert(valid_piece(pc));
     assert(valid_piece_type(captured) || move.is_prom());
 
-    auto &value = data[pc][move.to()][captured];
-    value += adjusted_bonus(value, bonus);
+    update_history(data[pc][move.to()][captured], bonus);
 }
 
 // Pawn History
@@ -49,8 +46,7 @@ void PawnHistory::update(const Board &board, Move move, int bonus) {
     Piece pc = board.piece_at(move.from());
     assert(valid_piece(pc));
 
-    auto &value = data[idx(board.pawn_hash())][pc][move.to()];
-    value += adjusted_bonus(value, bonus);
+    update_history(data[idx(board.pawn_hash())][pc][move.to()], bonus);
 }
 
 // Continuation History
@@ -61,8 +57,7 @@ void ContinuationHistory::update(Piece pc, Square to, int bonus, Stack *stack) {
     for(int i : {1, 2, 4, 6}) {
         if(!(stack - i)->move)
             return;
-        auto &value = (*(stack - i)->cont_hist)[pc][to];
-        value += adjusted_bonus(value, bonus);
+        update_history((*(stack - i)->cont_hist)[pc][to], bonus);
     }
 }
 

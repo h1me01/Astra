@@ -2,7 +2,7 @@
 
 namespace chess {
 
-template <GenType gt, Direction d, MoveType mt> //
+template <GenType gt, Direction d, MoveType mt>
 Move *make_promotions(Move *ml, Square to) {
     assert(valid_sq(to));
     assert(!(to >= a2 && to <= h7));
@@ -21,7 +21,7 @@ Move *make_promotions(Move *ml, Square to) {
     return ml;
 }
 
-template <Color us, GenType gt> //
+template <Color us, GenType gt>
 Move *gen_pawn_moves(const Board &board, Move *ml, const U64 targets) {
     constexpr Color them = ~us;
     constexpr U64 rank7_bb = rank_mask(rel_rank(us, RANK_7));
@@ -99,7 +99,7 @@ Move *gen_pawn_moves(const Board &board, Move *ml, const U64 targets) {
     return ml;
 }
 
-template <Color us, GenType gt, PieceType pt> //
+template <Color us, GenType gt, PieceType pt>
 Move *gen_piece_moves(const Board &board, Move *ml, U64 pieces, const U64 targets) {
     assert(pt != PAWN);
 
@@ -125,7 +125,7 @@ Move *gen_piece_moves(const Board &board, Move *ml, U64 pieces, const U64 target
     return ml;
 }
 
-template <Color us, GenType gt> //
+template <Color us, GenType gt>
 Move *gen_all_moves(const Board &board, Move *ml) {
     const StateInfo &info = board.state();
     const Square our_ksq = board.king_sq(us);
@@ -165,14 +165,14 @@ Move *gen_all_moves(const Board &board, Move *ml) {
     return ml;
 }
 
-template <GenType gt> //
+template <GenType gt>
 Move *gen_moves(const Board &board, Move *ml) {
     Color us = board.side_to_move();
     return (us == WHITE) ? gen_all_moves<WHITE, gt>(board, ml) //
                          : gen_all_moves<BLACK, gt>(board, ml);
 }
 
-template <> //
+template <>
 Move *gen_moves<ADD_LEGALS>(const Board &board, Move *ml) {
     const Color us = board.side_to_move();
     const Square our_ksq = board.king_sq(us);

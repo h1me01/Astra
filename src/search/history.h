@@ -30,7 +30,7 @@ class QuietHistory {
     void update(Color c, Move move, int bonus);
 
     int get(Color c, Move move) const {
-        assert(move);
+        assert(valid_color(c) && move);
         return data[c][move.from()][move.to()];
     }
 

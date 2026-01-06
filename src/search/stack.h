@@ -49,6 +49,7 @@ struct Stack {
     Score static_eval = SCORE_NONE;
 
     PVLine pv;
+
     PieceToContinuation *cont_hist = nullptr;
     PieceToContinuation *cont_corr_hist = nullptr;
 };

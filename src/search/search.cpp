@@ -183,7 +183,7 @@ Score Search::aspiration(int depth, Stack *stack) {
     return score;
 }
 
-template <NodeType nt> //
+template <NodeType nt>
 Score Search::negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut_node) {
 
     constexpr bool root_node = (nt == NodeType::ROOT);
@@ -694,7 +694,7 @@ movesloop:
     return best_score;
 }
 
-template <NodeType nt> //
+template <NodeType nt>
 Score Search::quiescence(Score alpha, Score beta, Stack *stack) {
 
     constexpr bool pv_node = (nt != NodeType::NON_PV);

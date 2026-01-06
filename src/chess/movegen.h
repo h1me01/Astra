@@ -10,15 +10,15 @@ enum GenType {
     ADD_LEGALS = 3,
 };
 
-template <GenType gt> //
+template <GenType gt>
 Move *gen_moves(const Board &board, Move *ml);
 
-template <typename T> //
+template <typename T>
 class MoveList {
   public:
     MoveList() : last(list) {}
 
-    template <GenType gt> //
+    template <GenType gt>
     void gen(const Board &board) {
         last = list; // reset the list
 

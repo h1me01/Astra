@@ -89,8 +89,11 @@ class Board {
 
     Color side_to_move() const;
 
-    template <PieceType pt> int count(Color c) const;
-    template <PieceType pt> int count() const;
+    template <PieceType pt>
+    int count(Color c) const;
+
+    template <PieceType pt>
+    int count() const;
 
     int ply_count() const;
     int fifty_move_count() const;
@@ -220,7 +223,7 @@ inline Color Board::side_to_move() const {
     return stm;
 }
 
-template <PieceType pt> //
+template <PieceType pt>
 inline int Board::count(Color c) const {
     int count = 0;
     if(c != BLACK)
@@ -230,7 +233,7 @@ inline int Board::count(Color c) const {
     return count;
 }
 
-template <PieceType pt> //
+template <PieceType pt>
 inline int Board::count() const {
     return pop_count(piece_bb(pt));
 }

@@ -16,13 +16,13 @@ void partial_insertion_sort(MoveList<ScoredMove> &ml, int idx) {
 // MovePicker
 
 template <SearchType st>
-MovePicker<st>::MovePicker(      //
-    Board &board,                //
-    Move tt_move,                //
-    QuietHistory &quiet_history, //
-    PawnHistory &pawn_history,   //
-    NoisyHistory &noisy_history, //
-    Stack *stack)
+MovePicker<st>::MovePicker(            //
+    const Board &board,                //
+    const Move tt_move,                //
+    const QuietHistory &quiet_history, //
+    const PawnHistory &pawn_history,   //
+    const NoisyHistory &noisy_history, //
+    const Stack *stack)
     : board(board),                 //
       quiet_history(quiet_history), //
       pawn_history(pawn_history),   //
@@ -44,7 +44,8 @@ MovePicker<st>::MovePicker(      //
     }
 }
 
-template <SearchType st> Move MovePicker<st>::next(bool skip_quiets) {
+template <SearchType st>
+Move MovePicker<st>::next(bool skip_quiets) {
     switch(stage) {
     case PLAY_TT_MOVE:
         stage = GEN_NOISY;
@@ -118,7 +119,7 @@ template <SearchType st> Move MovePicker<st>::next(bool skip_quiets) {
 
 // private functions
 
-template <SearchType st> //
+template <SearchType st>
 void MovePicker<st>::gen_score_noisy() {
     ml_main.gen<ADD_NOISY>(board);
 
@@ -128,7 +129,7 @@ void MovePicker<st>::gen_score_noisy() {
     }
 }
 
-template <SearchType st> //
+template <SearchType st>
 void MovePicker<st>::gen_score_quiets() {
     ml_main.gen<ADD_QUIETS>(board);
     Threats threats = board.threats();

@@ -65,7 +65,7 @@ inline Square pop_lsb(U64 &b) {
     return Square(n);
 }
 
-template <Direction d> //
+template <Direction d>
 constexpr U64 shift(const U64 b) {
     switch(d) {
         // clang-format off
@@ -89,7 +89,7 @@ U64 pawn_attacks_bb(Color c, Square sq);
 
 U64 attacks_bb(PieceType pt, Square sq, const U64 occ = 0);
 
-template <PieceType pt> //
+template <PieceType pt>
 U64 attacks_bb(Square sq, const U64 occ = 0) {
     return attacks_bb(pt, sq, occ);
 }
