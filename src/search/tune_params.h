@@ -77,6 +77,8 @@ PARAM(nmp_rbase, 4, 1, 5);
 PARAM(nmp_rdepth_div, 3, 1, 6);
 PARAM(nmp_rmin, 4, 1, 10);
 
+PARAM(iir_depth, 4, 4, 6);
+
 PARAM(probcut_margin, 217, 1, 500);
 
 PARAM(hist_div, 7778, 1, 16384);
