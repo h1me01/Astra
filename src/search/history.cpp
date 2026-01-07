@@ -14,7 +14,7 @@ void update_history(int16_t &v, int bonus) {
 
 void update_correction(int16_t &v, int diff, int d) {
     int bonus = std::clamp(diff * d / 8, -256, 256);
-    v = bonus - int(v) * std::abs(bonus) / 1024;
+    v += bonus - int(v) * std::abs(bonus) / 1024;
 }
 
 // Quiet Histories
