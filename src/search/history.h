@@ -137,7 +137,7 @@ class CorrectionHistories {
         std::memset(b_non_pawn, 0, sizeof(b_non_pawn));
     }
 
-    void update(const Board &board, Score eval, Score score, int d);
+    void update(const Board &board, int bonus);
 
     int get(const Board &board) const {
         Color stm = board.side_to_move();
@@ -169,7 +169,7 @@ class ContinuationCorrectionHistory {
         std::memset(data, 0, sizeof(data));
     }
 
-    void update(const Board &board, Score eval, Score score, int d, const Stack *stack);
+    void update(const Board &board, int bonus, const Stack *stack);
 
     int get(const Board &board, const Stack *stack) const {
         Move m = (stack - 1)->move;

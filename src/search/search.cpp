@@ -685,8 +685,9 @@ movesloop:
        && !(best_move && best_move.is_cap())                    //
        && valid_tt_score(best_score, stack->static_eval, bound) //
     ) {
-        corr_histories.update(board, raw_eval, best_score, depth);
-        cont_corr_history.update(board, raw_eval, best_score, depth, stack);
+        int bonus = std::clamp((best_score - raw_eval) * depth / 8, -256, 256);
+        corr_histories.update(board, bonus);
+        cont_corr_history.update(board, bonus, stack);
     }
 
     assert(valid_score(best_score));

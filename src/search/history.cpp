@@ -12,9 +12,8 @@ void update_history(int16_t &v, int bonus) {
     v += bonus - v * std::abs(bonus) / 16384;
 }
 
-void update_correction(int16_t &v, int diff, int d) {
-    int bonus = std::clamp(diff * d / 8, -256, 256);
-    v += bonus - int(v) * std::abs(bonus) / 1024;
+void update_correction(int16_t &v, int bonus) {
+    v += bonus - v * std::abs(bonus) / 1024;
 }
 
 // Quiet Histories
@@ -63,22 +62,17 @@ void ContinuationHistory::update(Piece pc, Square to, int bonus, Stack *stack) {
 
 // Correction Histories
 
-void CorrectionHistories::update(const Board &board, Score eval, Score score, int d) {
-    assert(valid_score(eval) && valid_score(score));
-
+void CorrectionHistories::update(const Board &board, int bonus) {
     Color stm = board.side_to_move();
-    int diff = score - eval;
 
-    update_correction(pawn[stm][idx(board.pawn_hash())], diff, d);
-    update_correction(w_non_pawn[stm][idx(board.non_pawn_hash(WHITE))], diff, d);
-    update_correction(b_non_pawn[stm][idx(board.non_pawn_hash(BLACK))], diff, d);
+    update_correction(pawn[stm][idx(board.pawn_hash())], bonus);
+    update_correction(w_non_pawn[stm][idx(board.non_pawn_hash(WHITE))], bonus);
+    update_correction(b_non_pawn[stm][idx(board.non_pawn_hash(BLACK))], bonus);
 }
 
 // Continuation Correction History
 
-void ContinuationCorrectionHistory::update(const Board &board, Score eval, Score score, int d, const Stack *stack) {
-    assert(valid_score(eval) && valid_score(score));
-
+void ContinuationCorrectionHistory::update(const Board &board, int bonus, const Stack *stack) {
     Move m = (stack - 1)->move;
     if(!m || !(stack - 2)->move)
         return;
@@ -86,7 +80,7 @@ void ContinuationCorrectionHistory::update(const Board &board, Score eval, Score
     Piece pc = board.piece_at(m.to());
     assert(valid_piece(pc));
 
-    update_correction((*(stack - 2)->cont_corr_hist)[pc][m.to()], (score - eval), d);
+    update_correction((*(stack - 2)->cont_corr_hist)[pc][m.to()], bonus);
 }
 
 } // namespace search
