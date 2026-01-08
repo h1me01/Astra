@@ -530,7 +530,7 @@ movesloop:
            && tt_bound & LOWER_BOUND      //
            && stack->ply < 2 * root_depth //
         ) {
-            Score sbeta = tt_score - 6 * depth / 8;
+            Score sbeta = tt_score - (1 + tt_pv && !pv_node) * depth;
 
             stack->skipped = move;
             Score score = negamax<NodeType::NON_PV>((depth - 1) / 2, sbeta - 1, sbeta, stack, cut_node);
