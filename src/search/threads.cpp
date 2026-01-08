@@ -5,6 +5,7 @@
 namespace search {
 
 void ThreadPool::set_count(int count) {
+    stop();
     wait();
     terminate();
 
