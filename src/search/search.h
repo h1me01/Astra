@@ -26,6 +26,7 @@ struct Limits {
     int depth = MAX_PLY - 1;
     int multipv = 1;
     bool infinite = false;
+    std::vector<std::string> search_moves{};
 };
 
 struct RootMove : public Move {

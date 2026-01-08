@@ -59,7 +59,19 @@ void Search::start() {
     nmp_min_ply = 0;
     completed_depth = 0;
 
-    root_moves.gen<ADD_LEGALS>(board);
+    if(limits.search_moves.size() > 0) {
+        MoveList<Move> legal_moves;
+        legal_moves.gen<ADD_LEGALS>(board);
+
+        for(const auto &m : legal_moves) {
+            std::ostringstream ss;
+            ss << m;
+            if(std::find(limits.search_moves.begin(), limits.search_moves.end(), ss.str()) != limits.search_moves.end())
+                root_moves.add(RootMove(m));
+        }
+    } else {
+        root_moves.gen<ADD_LEGALS>(board);
+    }
 
     limits.multipv = std::min(limits.multipv, root_moves.size());
 
@@ -950,9 +962,9 @@ bool Search::is_limit_reached() const {
         return false; // only main thread checks limits
     if(limits.infinite)
         return false;
-    if(limits.nodes != 0 && threads.total_nodes() >= limits.nodes)
+    if(limits.nodes && threads.total_nodes() >= limits.nodes)
         return true;
-    if(limits.time.maximum != 0 && tm.elapsed_time() >= limits.time.maximum)
+    if(limits.time.maximum && tm.elapsed_time() >= limits.time.maximum)
         return true;
     return false;
 }

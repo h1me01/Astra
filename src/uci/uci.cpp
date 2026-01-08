@@ -162,7 +162,6 @@ void UCI::new_game() {
 void UCI::go(std::istringstream &is) {
     search::Limits limits;
 
-    int64_t move_time = 0;
     int64_t w_time = 0, b_time = 0;
 
     int moves_to_go = 0;
@@ -177,6 +176,9 @@ void UCI::go(std::istringstream &is) {
             else
                 board.perft(depth);
             return;
+        } else if(token == "searchmoves") {
+            while(is >> token)
+                limits.search_moves.push_back(token);
         } else if(token == "wtime")
             is >> w_time;
         else if(token == "btime")
@@ -188,7 +190,7 @@ void UCI::go(std::istringstream &is) {
         else if(token == "movestogo")
             is >> moves_to_go;
         else if(token == "movetime")
-            is >> move_time;
+            is >> limits.time.maximum;
         else if(token == "depth")
             is >> limits.depth;
         else if(token == "nodes")
@@ -203,15 +205,11 @@ void UCI::go(std::istringstream &is) {
 
     Color stm = board.side_to_move();
     int64_t time_left = (stm == WHITE) ? w_time : b_time;
-    int inc = (stm == WHITE) ? w_inc : b_inc;
 
-    if(move_time != 0) {
-        limits.time.optimum = move_time;
-        limits.time.maximum = move_time;
-    } else if(time_left != 0) {
+    if(time_left != 0) {
         limits.time = search::TimeMan::get_optimum( //
             time_left,                              //
-            inc,                                    //
+            (stm == WHITE) ? w_inc : b_inc,         //
             std::max(moves_to_go, 0),               //
             std::stoi(options.get("MoveOverhead"))  //
         );
