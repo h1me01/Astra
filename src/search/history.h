@@ -133,6 +133,7 @@ class CorrectionHistories {
 
     void clear() {
         std::memset(pawn, 0, sizeof(pawn));
+        std::memset(minor_piece, 0, sizeof(minor_piece));
         std::memset(w_non_pawn, 0, sizeof(w_non_pawn));
         std::memset(b_non_pawn, 0, sizeof(b_non_pawn));
     }
@@ -142,6 +143,7 @@ class CorrectionHistories {
     int get(const Board &board) const {
         Color stm = board.side_to_move();
         return pawn[stm][idx(board.pawn_hash())]                  //
+               + minor_piece[stm][idx(board.minor_piece_hash())]  //
                + w_non_pawn[stm][idx(board.non_pawn_hash(WHITE))] //
                + b_non_pawn[stm][idx(board.non_pawn_hash(BLACK))];
     }
@@ -151,6 +153,7 @@ class CorrectionHistories {
 
   private:
     int16_t pawn[NUM_COLORS][size];
+    int16_t minor_piece[NUM_COLORS][size];
     int16_t w_non_pawn[NUM_COLORS][size];
     int16_t b_non_pawn[NUM_COLORS][size];
 

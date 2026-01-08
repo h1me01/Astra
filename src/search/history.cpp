@@ -66,6 +66,7 @@ void CorrectionHistories::update(const Board &board, int bonus) {
     Color stm = board.side_to_move();
 
     update_correction(pawn[stm][idx(board.pawn_hash())], bonus);
+    update_correction(minor_piece[stm][idx(board.minor_piece_hash())], bonus);
     update_correction(w_non_pawn[stm][idx(board.non_pawn_hash(WHITE))], bonus);
     update_correction(b_non_pawn[stm][idx(board.non_pawn_hash(BLACK))], bonus);
 }

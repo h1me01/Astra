@@ -13,6 +13,7 @@ struct StateInfo {
 
     U64 hash = 0;
     U64 pawn_hash = 0;
+    U64 minor_piece_hash = 0;
     U64 non_pawn_hash[NUM_COLORS] = {0};
 
     U64 checkers = 0;

@@ -77,6 +77,7 @@ class Board {
 
     U64 hash() const;
     U64 pawn_hash() const;
+    U64 minor_piece_hash() const;
     U64 non_pawn_hash(Color c) const;
 
     Piece piece_at(Square sq) const;
@@ -188,6 +189,10 @@ inline U64 Board::pawn_hash() const {
     return state().pawn_hash;
 }
 
+inline U64 Board::minor_piece_hash() const {
+    return state().minor_piece_hash;
+}
+
 inline U64 Board::non_pawn_hash(Color c) const {
     assert(valid_color(c));
     return state().non_pawn_hash[c];
@@ -261,12 +266,16 @@ inline void Board::update_hash(Piece pc, U64 hash) {
     assert(valid_piece(pc));
 
     StateInfo &info = state();
+    PieceType pt = piece_type(pc);
 
     info.hash ^= hash;
-    if(piece_type(pc) == PAWN)
+    if(pt == PAWN) {
         info.pawn_hash ^= hash;
-    else
+    } else {
         info.non_pawn_hash[piece_color(pc)] ^= hash;
+        if(pt <= BISHOP)
+            info.minor_piece_hash ^= hash;
+    }
 }
 
 inline void Board::put_piece(Piece pc, Square sq) {

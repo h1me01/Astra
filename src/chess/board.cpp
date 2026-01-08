@@ -58,6 +58,7 @@ void Board::set_fen(const std::string &fen) {
 
     info.hash = 0;
     info.pawn_hash = 0;
+    info.minor_piece_hash = 0;
     info.non_pawn_hash[WHITE] = 0;
     info.non_pawn_hash[BLACK] = 0;
 
