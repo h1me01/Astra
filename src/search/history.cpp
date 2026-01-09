@@ -53,11 +53,9 @@ void PawnHistory::update(const Board &board, Move move, int bonus) {
 void ContinuationHistory::update(Piece pc, Square to, int bonus, Stack *stack) {
     assert(valid_piece(pc) && valid_sq(to));
 
-    for(int i : {1, 2, 4, 6}) {
-        if(!(stack - i)->move)
-            return;
-        update_history((*(stack - i)->cont_hist)[pc][to], bonus);
-    }
+    for(int i : {1, 2, 4, 6})
+        if((stack - i)->move)
+            update_history((*(stack - i)->cont_hist)[pc][to], bonus);
 }
 
 // Correction Histories
