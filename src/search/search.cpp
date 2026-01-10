@@ -1006,7 +1006,7 @@ void Search::update_histories(Move best_move, MoveList<Move> &quiets, MoveList<M
 
     if(best_move.is_noisy()) {
         noisy_history.update(board, best_move, bonus * noisy_hist_bonus_mult / 1024);
-    } else if(depth > 3 || quiets.size() > 1) {
+    } else if(depth > 3 || quiets.size() > 0) {
         update_quiet_histories(best_move, bonus * quiet_hist_bonus_mult / 1024, stack);
 
         int quiet_malus = malus * quiet_hist_malus_mult / 1024;
