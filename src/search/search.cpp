@@ -106,7 +106,7 @@ void Search::start() {
 
         completed_depth = root_depth;
 
-        if(is_main_thread)
+        if(is_main_thread && !limits.minimal)
             for(multipv_idx = 0; multipv_idx < limits.multipv; multipv_idx++)
                 print_uci_info();
 
@@ -148,6 +148,8 @@ void Search::start() {
     if(best_thread != this) {
         best_thread->print_uci_info();
         best_move = best_thread->root_moves[0];
+    } else if(limits.minimal) {
+        print_uci_info();
     }
 
     std::cout << "bestmove " << best_move << std::endl;

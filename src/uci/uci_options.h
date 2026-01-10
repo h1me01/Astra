@@ -6,7 +6,7 @@
 
 namespace uci {
 
-enum class OptionType { NONE, SPIN, STRING };
+enum class OptionType { NONE, SPIN, STRING, CHECK };
 
 class Option {
   public:
@@ -14,11 +14,15 @@ class Option {
         : type(type), default_val(val), val(val), min(min), max(max) {}
 
     void set(const std::string &value) {
+        assert(type != OptionType::NONE);
+
         if(type == OptionType::SPIN) {
             int n = std::stoi(value);
             if(n >= min && n <= max)
                 val = value;
-        } else if(type == OptionType::STRING) {
+            else
+                assert(false);
+        } else {
             val = value;
         }
     }
@@ -37,6 +41,10 @@ class Option {
 
     int get_max() const {
         return max;
+    }
+
+    bool operator==(const std::string &other) const {
+        return val == other;
     }
 
     operator std::string() const {
@@ -59,11 +67,22 @@ class Options {
         apply(name);
     }
 
-    Option get(const std::string &name) const {
+    Option &get(const std::string &name) {
         auto it = options.find(name);
         if(it != options.end())
             return it->second;
-        return Option();
+        assert(false);
+        options[name] = Option();
+        return options[name];
+    }
+
+    const Option &get(const std::string &name) const {
+        auto it = options.find(name);
+        if(it != options.end())
+            return it->second;
+        assert(false);
+        static const Option empty_option;
+        return empty_option;
     }
 
   private:

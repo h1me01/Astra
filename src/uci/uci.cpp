@@ -73,7 +73,8 @@ const std::vector<std::string> bench_positions = {
 UCI::UCI() {
     std::cout << "Astra by Semih Oezalp" << std::endl;
 
-    options.add("SyzygyPath", {OptionType::STRING, "", 0, 0});
+    options.add("SyzygyPath", {OptionType::STRING});
+    options.add("Minimal", {OptionType::CHECK, "false"});
     options.add("MoveOverhead", {OptionType::SPIN, "10", 1, 10000});
     options.add("MultiPV", {OptionType::SPIN, "1", 1, 218});
     options.add("Threads", {OptionType::SPIN, "1", 1, 128});
@@ -216,6 +217,7 @@ void UCI::go(std::istringstream &is) {
     }
 
     limits.multipv = std::stoi(options.get("MultiPV"));
+    limits.minimal = (options.get("Minimal") == "true");
 
     // start search
     search::threads.launch_workers(board, limits);
@@ -224,6 +226,9 @@ void UCI::go(std::istringstream &is) {
 void UCI::bench() {
     new_game();
     U64 nodes = 0;
+
+    std::string minimal_val = options.get("Minimal");
+    options.get("Minimal").set("true");
 
     auto start = std::chrono::high_resolution_clock::now();
     for(const auto &pos : bench_positions) {
@@ -241,6 +246,7 @@ void UCI::bench() {
     }
 
     search::threads.stop();
+    options.get("Minimal").set(minimal_val);
 
     auto end = std::chrono::high_resolution_clock::now();
     auto total_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
