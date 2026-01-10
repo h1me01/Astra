@@ -84,11 +84,11 @@ class Search {
     void clear_histories();
 
     U64 get_nodes() const {
-        return nodes;
+        return nodes.load(std::memory_order_relaxed);
     }
 
     U64 get_tb_hits() const {
-        return tb_hits;
+        return tb_hits.load(std::memory_order_relaxed);
     }
 
     int get_completed_depth() const {
