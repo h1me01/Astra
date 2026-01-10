@@ -10,11 +10,11 @@ using namespace chess;
 namespace search {
 
 inline int history_bonus(int d) {
-    return std::min(int(max_hist_bonus), hist_bonus_mult * d + hist_bonus_minus);
+    return std::min<int>(max_hist_bonus, hist_bonus_mult * d + hist_bonus_minus);
 }
 
 inline int history_malus(int d) {
-    return std::min(int(max_hist_malus), hist_malus_mult * d + hist_malus_minus);
+    return std::min<int>(max_hist_malus, hist_malus_mult * d + hist_malus_minus);
 }
 
 class QuietHistory {
@@ -48,9 +48,9 @@ class NoisyHistory {
         std::memset(data, 0, sizeof(data));
     }
 
-    void update(const Board &board, Move move, int bonus);
+    void update(const Board& board, Move move, int bonus);
 
-    int get(const Board &board, Move move) const {
+    int get(const Board& board, Move move) const {
         assert(move);
 
         Piece pc = board.piece_at(move.from());
@@ -77,9 +77,9 @@ class PawnHistory {
         std::memset(data, 0, sizeof(data));
     }
 
-    void update(const Board &board, Move move, int bonus);
+    void update(const Board& board, Move move, int bonus);
 
-    int get(const Board &board, Move move) const {
+    int get(const Board& board, Move move) const {
         assert(move);
 
         Piece pc = board.piece_at(move.from());
@@ -109,13 +109,13 @@ class ContinuationHistory {
         std::memset(data, 0, sizeof(data));
     }
 
-    void update(Piece pc, Square to, int bonus, Stack *stack);
+    void update(Piece pc, Square to, int bonus, Stack* stack);
 
-    PieceToContinuation *get() {
+    PieceToContinuation* get() {
         return &data[0][0][NO_PIECE][0];
     }
 
-    PieceToContinuation *get(bool in_check, bool is_cap, Piece pc, Square to) {
+    PieceToContinuation* get(bool in_check, bool is_cap, Piece pc, Square to) {
         assert(valid_piece(pc) && valid_sq(to));
 
         return &data[in_check][is_cap][pc][to];
@@ -138,9 +138,9 @@ class CorrectionHistories {
         std::memset(b_non_pawn, 0, sizeof(b_non_pawn));
     }
 
-    void update(const Board &board, int bonus);
+    void update(const Board& board, int bonus);
 
-    int get(const Board &board) const {
+    int get(const Board& board) const {
         Color stm = board.side_to_move();
         return pawn[stm][idx(board.pawn_hash())]                  //
                + minor_piece[stm][idx(board.minor_piece_hash())]  //
@@ -172,11 +172,11 @@ class ContinuationCorrectionHistory {
         std::memset(data, 0, sizeof(data));
     }
 
-    void update(const Board &board, int bonus, const Stack *stack);
+    void update(const Board& board, int bonus, const Stack* stack);
 
-    int get(const Board &board, const Stack *stack) const {
+    int get(const Board& board, const Stack* stack) const {
         Move m = (stack - 1)->move;
-        if(!m || !(stack - 2)->move)
+        if (!m || !(stack - 2)->move)
             return 0;
 
         Piece pc = board.piece_at(m.to());
@@ -185,11 +185,11 @@ class ContinuationCorrectionHistory {
         return (*(stack - 2)->cont_corr_hist)[pc][m.to()];
     }
 
-    PieceToContinuation *get() {
+    PieceToContinuation* get() {
         return &data[NO_PIECE][0];
     }
 
-    PieceToContinuation *get(Piece pc, Square to) {
+    PieceToContinuation* get(Piece pc, Square to) {
         return &data[pc][to];
     }
 

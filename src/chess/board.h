@@ -19,7 +19,7 @@ class Threats {
         return data[pt];
     }
 
-    U64 &operator[](PieceType pt) {
+    U64& operator[](PieceType pt) {
         assert(pt >= PAWN && pt <= ROOK);
         return data[pt];
     }
@@ -33,11 +33,11 @@ class Board {
     Board() = default;
     Board(const std::string fen);
 
-    Board &operator=(const Board &other);
+    Board& operator=(const Board& other);
 
     void print() const;
 
-    void set_fen(const std::string &fen);
+    void set_fen(const std::string& fen);
     std::string fen() const;
 
     void reset_ply();
@@ -99,8 +99,8 @@ class Board {
     int ply_count() const;
     int fifty_move_count() const;
 
-    StateInfo &state();
-    const StateInfo &state() const;
+    StateInfo& state();
+    const StateInfo& state() const;
 
   private:
     Color stm;
@@ -130,14 +130,14 @@ inline bool Board::in_check() const {
 
 // doesn't include stalemate
 inline bool Board::is_draw(int ply) const {
-    const StateInfo &info = state();
+    const StateInfo& info = state();
     return info.fmr_counter > 99 || (info.repetition && info.repetition < ply);
 }
 
 // checks if there is any non-pawn material on the board of the current side to move
 inline bool Board::non_pawn_mat(Color c) const {
-    for(auto pt : {KNIGHT, BISHOP, ROOK, QUEEN})
-        if(piece_bb(c, pt))
+    for (auto pt : {KNIGHT, BISHOP, ROOK, QUEEN})
+        if (piece_bb(c, pt))
             return true;
     return false;
 }
@@ -205,9 +205,9 @@ inline Piece Board::piece_at(Square sq) const {
 
 inline Piece Board::captured_piece(Move move) const {
     assert(move);
-    if(move.is_ep())
+    if (move.is_ep())
         return make_piece(~stm, PAWN);
-    if(move.is_cap())
+    if (move.is_cap())
         return piece_at(move.to());
     return NO_PIECE;
 }
@@ -230,12 +230,7 @@ inline Color Board::side_to_move() const {
 
 template <PieceType pt>
 inline int Board::count(Color c) const {
-    int count = 0;
-    if(c != BLACK)
-        count += pop_count(piece_bb(WHITE, pt));
-    if(c != WHITE)
-        count += pop_count(piece_bb(BLACK, pt));
-    return count;
+    return pop_count(piece_bb(c, pt));
 }
 
 template <PieceType pt>
@@ -252,11 +247,11 @@ inline int Board::fifty_move_count() const {
     return state().fmr_counter;
 }
 
-inline StateInfo &Board::state() {
+inline StateInfo& Board::state() {
     return state_list.back();
 }
 
-inline const StateInfo &Board::state() const {
+inline const StateInfo& Board::state() const {
     return state_list.back();
 }
 
@@ -265,15 +260,15 @@ inline const StateInfo &Board::state() const {
 inline void Board::update_hash(Piece pc, U64 hash) {
     assert(valid_piece(pc));
 
-    StateInfo &info = state();
+    StateInfo& info = state();
     PieceType pt = piece_type(pc);
 
     info.hash ^= hash;
-    if(pt == PAWN) {
+    if (pt == PAWN) {
         info.pawn_hash ^= hash;
     } else {
         info.non_pawn_hash[piece_color(pc)] ^= hash;
-        if(pt <= BISHOP)
+        if (pt <= BISHOP)
             info.minor_piece_hash ^= hash;
     }
 }

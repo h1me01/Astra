@@ -5,14 +5,17 @@
 
 namespace search {
 
-Param::Param(std::string name, int value, int min, int max) //
-    : name(std::move(name)), value(value), min(min), max(max) {
-    if(value < min || value > max) {
+Param::Param(std::string name, int value, int min, int max)
+    : name(std::move(name)),
+      value(value),
+      min(min),
+      max(max) {
+    if (value < min || value > max) {
         std::cerr << "Value out of range for search parameter " << name << std::endl;
         return;
     }
 
-    if(min >= max) {
+    if (min >= max) {
         std::cerr << "Invalid range for search parameter " << name << std::endl;
         return;
     }
@@ -20,14 +23,14 @@ Param::Param(std::string name, int value, int min, int max) //
     params.push_back(this);
 }
 
-bool set_param(const std::string &name, int value) {
+bool set_param(const std::string& name, int value) {
     bool found = false;
 
-    for(auto *param : params) {
-        if(param->name != name)
+    for (auto* param : params) {
+        if (param->name != name)
             continue;
 
-        if(value < param->min || value > param->max) {
+        if (value < param->min || value > param->max) {
             std::cerr << "Value out of range for search parameter " << name << std::endl;
             return true;
         }
@@ -37,21 +40,18 @@ bool set_param(const std::string &name, int value) {
         break;
     }
 
-    if(!found)
+    if (!found)
         std::cerr << "Unknown search parameter " << name << std::endl;
 
     return found;
 }
 
 void params_to_spsa() {
-    for(const auto &param : params) {
-        std::cout << param->name << ", "                                                        //
-                  << "int" << ", "                                                              //
-                  << param->value << ", "                                                       //
-                  << param->min << ", "                                                         //
-                  << param->max << ", "                                                         //
-                  << std::max(0.5, static_cast<double>(param->max - param->min) / 20.0) << ", " //
-                  << 0.002 << "\n";
+    for (const auto& param : params) {
+        std::cout << param->name                                                                 //
+                  << ", int" << ", " << param->value << ", " << param->min << ", " << param->max //
+                  << ", " << std::max<double>(0.5, (param->max - param->min) / 20.0)             //
+                  << ", " << 0.002 << "\n";
     }
 }
 

@@ -81,43 +81,43 @@ UCI::UCI() {
     options.add("Hash", {OptionType::SPIN, "16", 1, 8192});
 }
 
-void UCI::loop(int argc, char **argv) {
-    if(argc > 1 && !strncmp(argv[1], "bench", 5)) {
+void UCI::loop(int argc, char** argv) {
+    if (argc > 1 && !strncmp(argv[1], "bench", 5)) {
         bench();
         return;
     }
 
     std::string line, token;
-    while(std::getline(std::cin, line)) {
+    while (std::getline(std::cin, line)) {
         std::istringstream is(line);
         token.clear();
         is >> std::skipws >> token;
 
-        if(token == "uci") {
+        if (token == "uci") {
             std::cout << "id name Astra " << version << std::endl;
             std::cout << "id author Semih Oezalp" << std::endl;
             options.print();
             std::cout << "uciok" << std::endl;
-        } else if(token == "isready")
+        } else if (token == "isready")
             std::cout << "readyok" << std::endl;
-        else if(token == "ucinewgame")
+        else if (token == "ucinewgame")
             new_game();
-        else if(token == "position")
+        else if (token == "position")
             update_position(is);
-        else if(token == "go")
+        else if (token == "go")
             go(is);
-        else if(token == "bench")
+        else if (token == "bench")
             bench();
-        else if(token == "tune")
+        else if (token == "tune")
             search::params_to_spsa();
-        else if(token == "setoption")
+        else if (token == "setoption")
             options.set(is.str());
-        else if(token == "d")
+        else if (token == "d")
             board.print();
-        else if(token == "stop") {
+        else if (token == "stop") {
             search::threads.stop();
             search::threads.wait();
-        } else if(token == "quit") {
+        } else if (token == "quit") {
             search::threads.stop();
             search::threads.wait();
             tb_free();
@@ -127,14 +127,14 @@ void UCI::loop(int argc, char **argv) {
     }
 }
 
-void UCI::update_position(std::istringstream &is) {
+void UCI::update_position(std::istringstream& is) {
     std::string token, fen;
 
     is >> token;
-    if(token == "startpos")
+    if (token == "startpos")
         fen = STARTING_FEN;
-    else if(token == "fen")
-        while(is >> token && token != "moves")
+    else if (token == "fen")
+        while (is >> token && token != "moves")
             fen += token + " ";
     else {
         std::cout << "Unknown command: " << token << std::endl;
@@ -142,13 +142,13 @@ void UCI::update_position(std::istringstream &is) {
     }
 
     board.set_fen(fen);
-    while(is >> token) {
-        if(token == "moves")
+    while (is >> token) {
+        if (token == "moves")
             continue;
         board.make_move(parse_move(token));
         // if half move clock gets reseted, then we can reset the history
         // since the last positions should not be considered in the repetition
-        if(!board.fifty_move_count())
+        if (!board.fifty_move_count())
             board.reset_ply();
     }
 }
@@ -160,7 +160,7 @@ void UCI::new_game() {
     search::threads.new_game();
 }
 
-void UCI::go(std::istringstream &is) {
+void UCI::go(std::istringstream& is) {
     search::Limits limits;
 
     int64_t w_time = 0, b_time = 0;
@@ -169,34 +169,34 @@ void UCI::go(std::istringstream &is) {
     int w_inc = 0, b_inc = 0;
 
     std::string token;
-    while(is >> token) {
-        if(token == "perft") {
+    while (is >> token) {
+        if (token == "perft") {
             int depth;
-            if(!(is >> depth))
+            if (!(is >> depth))
                 std::cout << "No depth value provided for perft\n";
             else
                 board.perft(depth);
             return;
-        } else if(token == "searchmoves") {
-            while(is >> token)
+        } else if (token == "searchmoves") {
+            while (is >> token)
                 limits.search_moves.push_back(token);
-        } else if(token == "wtime")
+        } else if (token == "wtime")
             is >> w_time;
-        else if(token == "btime")
+        else if (token == "btime")
             is >> b_time;
-        else if(token == "winc")
+        else if (token == "winc")
             is >> w_inc;
-        else if(token == "binc")
+        else if (token == "binc")
             is >> b_inc;
-        else if(token == "movestogo")
+        else if (token == "movestogo")
             is >> moves_to_go;
-        else if(token == "movetime")
+        else if (token == "movetime")
             is >> limits.time.maximum;
-        else if(token == "depth")
+        else if (token == "depth")
             is >> limits.depth;
-        else if(token == "nodes")
+        else if (token == "nodes")
             is >> limits.nodes;
-        else if(token == "infinite")
+        else if (token == "infinite")
             limits.infinite = true;
         else {
             std::cout << "Unknown command: " << token << "\n";
@@ -207,7 +207,7 @@ void UCI::go(std::istringstream &is) {
     Color stm = board.side_to_move();
     int64_t time_left = (stm == WHITE) ? w_time : b_time;
 
-    if(time_left != 0) {
+    if (time_left != 0) {
         limits.time = search::TimeMan::get_optimum( //
             time_left,                              //
             (stm == WHITE) ? w_inc : b_inc,         //
@@ -231,8 +231,8 @@ void UCI::bench() {
     options.get("Minimal").set("true");
 
     auto start = std::chrono::high_resolution_clock::now();
-    for(const auto &pos : bench_positions) {
-        std::cout << "\ninput: " << pos << std::endl;
+    for (const auto& pos : bench_positions) {
+        std::cout << "\nfen: " << pos << std::endl;
 
         std::istringstream iss("fen " + pos);
         update_position(iss);
@@ -255,14 +255,14 @@ void UCI::bench() {
     std::cout << nodes << " nodes " << nodes * 1000 / total_time << " nps" << std::endl;
 }
 
-Move UCI::parse_move(const std::string &str_move) const {
+Move UCI::parse_move(const std::string& str_move) const {
     MoveList<Move> ml;
     ml.gen<ADD_LEGALS>(board);
 
-    for(const auto &move : ml) {
+    for (const auto& move : ml) {
         std::ostringstream ss;
         ss << move;
-        if(ss.str() == str_move)
+        if (ss.str() == str_move)
             return move;
     }
 

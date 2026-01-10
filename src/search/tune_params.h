@@ -18,9 +18,9 @@ struct Param {
     }
 };
 
-inline std::vector<Param *> params;
+inline std::vector<Param*> params;
 
-bool set_param(const std::string &name, int value);
+bool set_param(const std::string& name, int value);
 void params_to_spsa();
 
 #ifdef TUNE

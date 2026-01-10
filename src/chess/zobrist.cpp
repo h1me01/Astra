@@ -7,7 +7,8 @@ namespace chess::zobrist {
 // psuedorandom number generator from stockfish
 class PRNG {
   public:
-    explicit PRNG(U64 seed) : s(seed) {}
+    explicit PRNG(U64 seed)
+        : s(seed) {}
 
     template <typename T>
     T rand() {
@@ -31,15 +32,15 @@ U64 psq[NUM_PIECES][NUM_SQUARES];
 void init() {
     PRNG rng(1070372);
 
-    for(int p = WHITE_PAWN; p <= BLACK_KING; p++)
-        for(int sq = a1; sq <= h8; sq++)
+    for (int p = WHITE_PAWN; p <= BLACK_KING; p++)
+        for (int sq = a1; sq <= h8; sq++)
             psq[p][sq] = rng.rand<U64>();
 
-    for(int f = FILE_A; f <= FILE_H; f++)
+    for (int f = FILE_A; f <= FILE_H; f++)
         ep[f] = rng.rand<U64>();
 
     castle[0] = 0;
-    for(int i = 1; i < 16; i++)
+    for (int i = 1; i < 16; i++)
         castle[i] = rng.rand<U64>();
 
     side = rng.rand<U64>();
@@ -60,7 +61,7 @@ U64 castling_hash(int idx) {
 }
 
 U64 ep_hash(Square sq) {
-    if(!valid_sq(sq))
+    if (!valid_sq(sq))
         return 0;
     return ep[sq_file(sq)];
 }

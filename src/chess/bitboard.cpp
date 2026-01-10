@@ -187,7 +187,7 @@ U64 sliding_attacks(Square sq, const U64 occ, const U64 mask) {
 }
 
 void init_rook_attacks() {
-    for(Square sq = a1; sq <= h8; ++sq) {
+    for (Square sq = a1; sq <= h8; ++sq) {
         U64 blockers = 0;
         do {
 #if defined(__BMI2__)
@@ -198,7 +198,7 @@ void init_rook_attacks() {
             ROOK_ATTACKS[sq][idx] = sliding_attacks(sq, blockers, file_mask(sq_file(sq))) |
                                     sliding_attacks(sq, blockers, rank_mask(sq_rank(sq)));
             blockers = (blockers - ROOK_MASKS[sq]) & ROOK_MASKS[sq];
-        } while(blockers);
+        } while (blockers);
     }
 }
 
@@ -215,7 +215,7 @@ U64 rook_attacks_bb(Square sq, const U64 occ = 0) {
 }
 
 void init_bishop_attacks() {
-    for(Square sq = a1; sq <= h8; ++sq) {
+    for (Square sq = a1; sq <= h8; ++sq) {
         U64 blockers = 0;
         do {
 #if defined(__BMI2__)
@@ -226,7 +226,7 @@ void init_bishop_attacks() {
             BISHOP_ATTACKS[sq][idx] = sliding_attacks(sq, blockers, diag_mask(sq)) | //
                                       sliding_attacks(sq, blockers, anti_diag_mask(sq));
             blockers = (blockers - BISHOP_MASKS[sq]) & BISHOP_MASKS[sq];
-        } while(blockers);
+        } while (blockers);
     }
 }
 
@@ -262,7 +262,7 @@ U64 pawn_attacks_bb(Color c, Square sq) {
 U64 attacks_bb(PieceType pt, Square sq, const U64 occ) {
     assert(valid_piece_type(pt) && valid_sq(sq) && pt != PAWN);
 
-    switch(pt) {
+    switch (pt) {
     case ROOK:
         return rook_attacks_bb(sq, occ);
     case BISHOP:
@@ -290,24 +290,24 @@ void init() {
     };
 
     // initialize pawn attacks
-    for(Square sq = a1; sq <= h8; ++sq) {
+    for (Square sq = a1; sq <= h8; ++sq) {
         const U64 b = sq_bb(sq);
         PAWN_ATTACKS[WHITE][sq] = shift<NORTH_WEST>(b) | shift<NORTH_EAST>(b);
         PAWN_ATTACKS[BLACK][sq] = shift<SOUTH_WEST>(b) | shift<SOUTH_EAST>(b);
     }
 
-    for(Square sq = a1; sq <= h8; ++sq) {
+    for (Square sq = a1; sq <= h8; ++sq) {
         // king attacks
-        for(int offset : {-9, -8, -7, -1, 1, 7, 8, 9}) {
+        for (int offset : {-9, -8, -7, -1, 1, 7, 8, 9}) {
             Square target = Square(int(sq) + offset);
-            if(in_bounds(sq, target, 1))
+            if (in_bounds(sq, target, 1))
                 PSEUDO_ATTACKS[KING][sq] |= sq_bb(target);
         }
 
         // knight attacks
-        for(int offset : {-17, -15, -10, -6, 6, 10, 15, 17}) {
+        for (int offset : {-17, -15, -10, -6, 6, 10, 15, 17}) {
             Square target = Square(int(sq) + offset);
-            if(in_bounds(sq, target, 2))
+            if (in_bounds(sq, target, 2))
                 PSEUDO_ATTACKS[KNIGHT][sq] |= sq_bb(target);
         }
 
@@ -318,10 +318,10 @@ void init() {
     }
 
     // initialize squares between and line tables
-    for(Square sq1 = a1; sq1 <= h8; ++sq1) {
-        for(PieceType pt : {BISHOP, ROOK}) {
-            for(Square sq2 = a1; sq2 <= h8; ++sq2) {
-                if(PSEUDO_ATTACKS[pt][sq1] & sq_bb(sq2)) {
+    for (Square sq1 = a1; sq1 <= h8; ++sq1) {
+        for (PieceType pt : {BISHOP, ROOK}) {
+            for (Square sq2 = a1; sq2 <= h8; ++sq2) {
+                if (PSEUDO_ATTACKS[pt][sq1] & sq_bb(sq2)) {
                     LINE[sq1][sq2] = (attacks_bb(pt, sq1) & attacks_bb(pt, sq2)) | sq_bb(sq1) | sq_bb(sq2);
                     SQUARES_BETWEEN[sq1][sq2] = attacks_bb(pt, sq1, sq_bb(sq2)) & attacks_bb(pt, sq2, sq_bb(sq1));
                 }

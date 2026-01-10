@@ -24,7 +24,7 @@ class Accum;
 inline bool needs_refresh(Piece pc, Move m) {
     assert(m);
 
-    if(piece_type(pc) != KING)
+    if (piece_type(pc) != KING)
         return false;
 
     Color view = piece_color(pc);
@@ -39,7 +39,7 @@ class LayerOutput {
         std::memset(data, 0, sizeof(T) * N);
     }
 
-    LayerOutput(T *init_data) {
+    LayerOutput(T* init_data) {
         std::memcpy(data, init_data, sizeof(T) * N);
     }
 
@@ -48,16 +48,16 @@ class LayerOutput {
         return data[idx];
     }
 
-    T &operator[](size_t idx) {
+    T& operator[](size_t idx) {
         assert(idx < N);
         return data[idx];
     }
 
-    operator T *() {
+    operator T*() {
         return data;
     }
 
-    operator const T *() const {
+    operator const T*() const {
         return data;
     }
 
@@ -68,13 +68,13 @@ class LayerOutput {
 class NNUE {
   public:
     void init();
-    void init_accum(Accum &acc) const;
+    void init_accum(Accum& acc) const;
 
-    int32_t forward(Board &board, const Accum &acc);
+    int32_t forward(Board& board, const Accum& acc);
 
-    void put(Accum &acc, const Accum &prev, Piece pc, Square psq, Square ksq, Color view) const;
-    void remove(Accum &acc, const Accum &prev, Piece pc, Square psq, Square ksq, Color view) const;
-    void move(Accum &acc, const Accum &prev, Piece pc, Square from, Square to, Square ksq, Color view) const;
+    void put(Accum& acc, const Accum& prev, Piece pc, Square psq, Square ksq, Color view) const;
+    void remove(Accum& acc, const Accum& prev, Piece pc, Square psq, Square ksq, Color view) const;
+    void move(Accum& acc, const Accum& prev, Piece pc, Square from, Square to, Square ksq, Color view) const;
 
   private:
     using NNZOutput = std::pair<int, LayerOutput<uint16_t, FT_SIZE / 4>>;
@@ -94,7 +94,7 @@ class NNUE {
     int feature_idx(Piece pc, Square psq, Square ksq, Color view) const {
         assert(valid_piece(pc) && valid_sq(psq));
 
-        if(sq_file(ksq) > FILE_D)
+        if (sq_file(ksq) > FILE_D)
             psq = Square(psq ^ 7); // mirror psq horizontally if king is on other half
 
         return rel_sq(view, psq)                 //
@@ -103,14 +103,14 @@ class NNUE {
                + INPUT_BUCKET[rel_sq(view, ksq)] * FEATURE_SIZE;
     }
 
-    LayerOutput<uint8_t, FT_SIZE> prep_l1_input(const Color stm, const Accum &acc);
-    NNZOutput find_nnz(const LayerOutput<uint8_t, FT_SIZE> &input);
-    LayerOutput<float, L1_SIZE> forward_l1(int bucket, const LayerOutput<uint8_t, FT_SIZE> &input);
-    LayerOutput<float, L2_SIZE> forward_l2(int bucket, const LayerOutput<float, L1_SIZE> &input);
-    float forward_l3(int bucket, const LayerOutput<float, L2_SIZE> &input);
+    LayerOutput<uint8_t, FT_SIZE> prep_l1_input(const Color stm, const Accum& acc);
+    NNZOutput find_nnz(const LayerOutput<uint8_t, FT_SIZE>& input);
+    LayerOutput<float, L1_SIZE> forward_l1(int bucket, const LayerOutput<uint8_t, FT_SIZE>& input);
+    LayerOutput<float, L2_SIZE> forward_l2(int bucket, const LayerOutput<float, L1_SIZE>& input);
+    float forward_l3(int bucket, const LayerOutput<float, L2_SIZE>& input);
 };
 
-// global variable
+// Global Variable
 
 extern NNUE nnue;
 

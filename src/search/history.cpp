@@ -8,11 +8,11 @@ namespace search {
 
 // Helper
 
-void update_history(int16_t &v, int bonus) {
+void update_history(int16_t& v, int bonus) {
     v += bonus - v * std::abs(bonus) / 16384;
 }
 
-void update_correction(int16_t &v, int bonus) {
+void update_correction(int16_t& v, int bonus) {
     v += bonus - v * std::abs(bonus) / 1024;
 }
 
@@ -25,7 +25,7 @@ void QuietHistory::update(Color c, Move move, int bonus) {
 
 // Noisy History
 
-void NoisyHistory::update(const Board &board, Move move, int bonus) {
+void NoisyHistory::update(const Board& board, Move move, int bonus) {
     assert(move);
 
     Piece pc = board.piece_at(move.from());
@@ -39,7 +39,7 @@ void NoisyHistory::update(const Board &board, Move move, int bonus) {
 
 // Pawn History
 
-void PawnHistory::update(const Board &board, Move move, int bonus) {
+void PawnHistory::update(const Board& board, Move move, int bonus) {
     assert(move);
 
     Piece pc = board.piece_at(move.from());
@@ -50,17 +50,17 @@ void PawnHistory::update(const Board &board, Move move, int bonus) {
 
 // Continuation History
 
-void ContinuationHistory::update(Piece pc, Square to, int bonus, Stack *stack) {
+void ContinuationHistory::update(Piece pc, Square to, int bonus, Stack* stack) {
     assert(valid_piece(pc) && valid_sq(to));
 
-    for(int i : {1, 2, 4, 6})
-        if((stack - i)->move)
+    for (int i : {1, 2, 4, 6})
+        if ((stack - i)->move)
             update_history((*(stack - i)->cont_hist)[pc][to], bonus);
 }
 
 // Correction Histories
 
-void CorrectionHistories::update(const Board &board, int bonus) {
+void CorrectionHistories::update(const Board& board, int bonus) {
     Color stm = board.side_to_move();
 
     update_correction(pawn[stm][idx(board.pawn_hash())], bonus);
@@ -71,9 +71,9 @@ void CorrectionHistories::update(const Board &board, int bonus) {
 
 // Continuation Correction History
 
-void ContinuationCorrectionHistory::update(const Board &board, int bonus, const Stack *stack) {
+void ContinuationCorrectionHistory::update(const Board& board, int bonus, const Stack* stack) {
     Move m = (stack - 1)->move;
-    if(!m || !(stack - 2)->move)
+    if (!m || !(stack - 2)->move)
         return;
 
     Piece pc = board.piece_at(m.to());

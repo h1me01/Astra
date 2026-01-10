@@ -59,7 +59,7 @@ inline int pop_count(U64 b) {
 }
 
 // returns and removes index of the least significant bit in bitboard
-inline Square pop_lsb(U64 &b) {
+inline Square pop_lsb(U64& b) {
     int n = lsb(b);
     b &= b - 1;
     return Square(n);
@@ -67,7 +67,7 @@ inline Square pop_lsb(U64 &b) {
 
 template <Direction d>
 constexpr U64 shift(const U64 b) {
-    switch(d) {
+    switch (d) {
         // clang-format off
         case NORTH:      return b << 8;
         case SOUTH:      return b >> 8;

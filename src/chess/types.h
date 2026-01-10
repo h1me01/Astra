@@ -32,12 +32,12 @@ constexpr Score SCORE_TB_WIN_IN_MAX_PLY = SCORE_TB - MAX_PLY;
 constexpr Score SCORE_TB_LOSS_IN_MAX_PLY = -SCORE_TB_WIN_IN_MAX_PLY;
 
 constexpr int NUM_COLORS = 2;
-enum Color {
+enum Color : uint8_t {
     WHITE,
     BLACK,
 };
 
-enum Direction {
+enum Direction : int8_t {
     NORTH = 8,
     SOUTH = -8,
     EAST = 1,
@@ -49,7 +49,7 @@ enum Direction {
 };
 
 constexpr int NUM_PIECE_TYPES = 6;
-enum PieceType {
+enum PieceType : uint8_t {
     PAWN,
     KNIGHT,
     BISHOP,
@@ -61,7 +61,7 @@ enum PieceType {
 
 // clang-format off
 constexpr int NUM_PIECES = 12;
-enum Piece {
+enum Piece: uint8_t {
     WHITE_PAWN, WHITE_KNIGHT, WHITE_BISHOP, WHITE_ROOK, WHITE_QUEEN, WHITE_KING,
     BLACK_PAWN, BLACK_KNIGHT, BLACK_BISHOP, BLACK_ROOK, BLACK_QUEEN, BLACK_KING,
     NO_PIECE
@@ -76,7 +76,7 @@ constexpr PieceType PIECE_TO_PIECE_TYPE[] = {
 
 // clang-format off
 constexpr int NUM_SQUARES = 64;
-enum Square
+enum Square: uint8_t
 {
     a1, b1, c1, d1, e1, f1, g1, h1,
     a2, b2, c2, d2, e2, f2, g2, h2,
@@ -90,7 +90,7 @@ enum Square
 };
 // clang-format on
 
-enum File {
+enum File : uint8_t {
     FILE_A,
     FILE_B,
     FILE_C,
@@ -101,7 +101,7 @@ enum File {
     FILE_H,
 };
 
-enum Rank {
+enum Rank : uint8_t {
     RANK_1,
     RANK_2,
     RANK_3,
@@ -113,8 +113,7 @@ enum Rank {
 };
 
 // clang-format off
-enum MoveType
-{
+enum MoveType : uint8_t {
     QUIET,
     CAPTURE,
     CASTLING,
@@ -127,11 +126,14 @@ enum MoveType
 class Move {
   public:
     // default no move (a1a1)
-    Move() : data(0) {}
+    Move()
+        : data(0) {}
 
-    explicit constexpr Move(uint16_t m) : data(m) {}
+    explicit constexpr Move(uint16_t m)
+        : data(m) {}
 
-    Move(const Move &other) : data(other.data) {}
+    Move(const Move& other)
+        : data(other.data) {}
 
     Move(Square from, Square to, MoveType mt) //
         : data((mt << 12) | (to << 6) | from) {}
@@ -148,8 +150,8 @@ class Move {
         return MoveType(data >> 12);
     }
 
-    Move &operator=(const Move move) {
-        if(this != &move)
+    Move& operator=(const Move move) {
+        if (this != &move)
             data = move.data;
         return *this;
     }
@@ -201,7 +203,7 @@ class Move {
     }
 
     PieceType prom_type() const {
-        switch(type()) {
+        switch (type()) {
         case PQ_KNIGHT:
         case PC_KNIGHT:
             return KNIGHT;
@@ -247,27 +249,32 @@ class Move {
 };
 
 struct ScoredMove : public Move {
-    ScoredMove() : Move(), score(0) {}
+    ScoredMove()
+        : Move(),
+          score(0) {}
 
-    ScoredMove(const Move move) //
-        : Move(move), score(0) {}
+    ScoredMove(const Move move)
+        : Move(move),
+          score(0) {}
 
-    ScoredMove(const ScoredMove &other) //
-        : Move(other), score(other.score) {}
+    ScoredMove(const ScoredMove& other)
+        : Move(other),
+          score(other.score) {}
 
-    ScoredMove &operator=(const ScoredMove &other) {
-        if(this != &other) {
+    ScoredMove& operator=(const ScoredMove& other) {
+        if (this != &other) {
             Move::operator=(other);
             score = other.score;
         }
         return *this;
     }
 
-    ScoredMove(ScoredMove &&other) noexcept //
-        : Move(std::move(other)), score(other.score) {}
+    ScoredMove(ScoredMove&& other) noexcept
+        : Move(std::move(other)),
+          score(other.score) {}
 
-    ScoredMove &operator=(ScoredMove &&other) noexcept {
-        if(this != &other) {
+    ScoredMove& operator=(ScoredMove&& other) noexcept {
+        if (this != &other) {
             Move::operator=(std::move(other));
             score = other.score;
         }

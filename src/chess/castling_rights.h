@@ -7,7 +7,8 @@ namespace chess {
 
 class CastlingRights {
   public:
-    CastlingRights() : mask(0) {}
+    CastlingRights()
+        : mask(0) {}
 
     void add_kingside(Color c) {
         mask |= oo_mask(c);

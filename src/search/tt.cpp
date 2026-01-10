@@ -15,21 +15,21 @@ namespace search {
 
 // Helper
 
-void *alloc_align(size_t size) {
+void* alloc_align(size_t size) {
 #if defined(__linux__)
     constexpr size_t alignment = 2 * 1024 * 1024;
 #else
     constexpr size_t alignment = 4096;
 #endif
     size = ((size + alignment - 1) / alignment) * alignment;
-    void *ptr = _mm_malloc(size, alignment);
+    void* ptr = _mm_malloc(size, alignment);
 #if defined(__linux__)
     madvise(ptr, size, MADV_HUGEPAGE);
 #endif
     return ptr;
 }
 
-void free_align(void *ptr) {
+void free_align(void* ptr) {
     _mm_free(ptr);
 }
 
@@ -56,17 +56,17 @@ uint8_t TTEntry::get_age() const {
 void TTEntry::store(U64 hash, Move move, Score score, Score eval, Bound bound, int depth, int ply, bool pv) {
     uint16_t hash16 = static_cast<uint16_t>(hash);
 
-    if(move || this->hash != hash16)
+    if (move || this->hash != hash16)
         this->move = move.raw();
 
-    if(valid_score(score)) {
-        if(is_win(score))
+    if (valid_score(score)) {
+        if (is_win(score))
             score += ply;
-        if(is_loss(score))
+        if (is_loss(score))
             score -= ply;
     }
 
-    if(bound == EXACT_BOUND || this->hash != hash16 || depth + 4 + 2 * pv > this->depth) {
+    if (bound == EXACT_BOUND || this->hash != hash16 || depth + 4 + 2 * pv > this->depth) {
         this->hash = hash16;
         this->depth = depth;
         this->score = score;
@@ -77,7 +77,8 @@ void TTEntry::store(U64 hash, Move move, Score score, Score eval, Bound bound, i
 
 // TTable
 
-TTable::TTable(U64 size_mb) : buckets(nullptr) {
+TTable::TTable(U64 size_mb)
+    : buckets(nullptr) {
     init(size_mb);
 }
 
@@ -86,13 +87,13 @@ TTable::~TTable() {
 }
 
 void TTable::init(U64 size_mb) {
-    if(buckets)
+    if (buckets)
         free_align(buckets);
 
     U64 size_bytes = size_mb * 1024 * 1024;
     bucket_size = size_bytes / sizeof(TTBucket);
 
-    buckets = static_cast<TTBucket *>(alloc_align(size_bytes));
+    buckets = static_cast<TTBucket*>(alloc_align(size_bytes));
 
     clear();
 }
@@ -106,19 +107,19 @@ void TTable::clear() {
     std::vector<std::thread> threads;
     threads.reserve(worker_count);
 
-    for(int i = 0; i < worker_count; i++) {
+    for (int i = 0; i < worker_count; i++) {
         threads.emplace_back([this, i, chunk_size]() {
-            for(U64 j = 0; j < chunk_size; ++j)
+            for (U64 j = 0; j < chunk_size; ++j)
                 buckets[i * chunk_size + j] = TTBucket{};
         });
     }
 
     const U64 cleared = chunk_size * worker_count;
-    if(cleared < bucket_size)
-        for(U64 i = cleared; i < bucket_size; ++i)
+    if (cleared < bucket_size)
+        for (U64 i = cleared; i < bucket_size; ++i)
             buckets[i] = TTBucket{};
 
-    for(auto &t : threads)
+    for (auto& t : threads)
         t.join();
 }
 
@@ -126,25 +127,25 @@ void TTable::increment() {
     age += AGE_STEP;
 }
 
-TTEntry *TTable::lookup(U64 hash, bool *hit) const {
+TTEntry* TTable::lookup(U64 hash, bool* hit) const {
     uint16_t hash16 = static_cast<uint16_t>(hash);
-    auto *entries = buckets[index(hash)].entries;
+    auto* entries = buckets[index(hash)].entries;
 
-    for(int i = 0; i < BUCKET_SIZE; i++) {
+    for (int i = 0; i < BUCKET_SIZE; i++) {
         uint16_t entry_hash = entries[i].get_hash();
-        if(entry_hash == hash16 || !entry_hash) {
+        if (entry_hash == hash16 || !entry_hash) {
             entries[i].refresh_age();
             *hit = (entry_hash == hash16);
             return &entries[i];
         }
     }
 
-    auto *replace = &entries[0];
+    auto* replace = &entries[0];
     int min_value = replace->get_depth() - replace->relative_age();
 
-    for(int i = 1; i < BUCKET_SIZE; i++) {
+    for (int i = 1; i < BUCKET_SIZE; i++) {
         int value = entries[i].get_depth() - entries[i].relative_age();
-        if(value < min_value) {
+        if (value < min_value) {
             min_value = value;
             replace = &entries[i];
         }
@@ -156,17 +157,17 @@ TTEntry *TTable::lookup(U64 hash, bool *hit) const {
 
 int TTable::hashfull() const {
     int used = 0;
-    for(int i = 0; i < 1000; i++) {
-        for(int j = 0; j < BUCKET_SIZE; j++) {
-            const auto *entry = &buckets[i].entries[j];
-            if(entry->get_age() == age && entry->get_hash() != 0)
+    for (int i = 0; i < 1000; i++) {
+        for (int j = 0; j < BUCKET_SIZE; j++) {
+            const auto* entry = &buckets[i].entries[j];
+            if (entry->get_age() == age && entry->get_hash() != 0)
                 used++;
         }
     }
     return used / BUCKET_SIZE;
 }
 
-// global variable
+// Global Variable
 
 TTable tt(16);
 

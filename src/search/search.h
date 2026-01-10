@@ -18,7 +18,11 @@ namespace search {
 
 void init_reductions();
 
-enum class NodeType { ROOT, PV, NON_PV };
+enum NodeType : uint8_t {
+    ROOT,
+    PV,
+    NON_PV,
+};
 
 struct Limits {
     Time time;
@@ -33,21 +37,22 @@ struct Limits {
 struct RootMove : public Move {
     RootMove() = default;
 
-    explicit RootMove(Move m) : Move(m) {}
+    explicit RootMove(Move m)
+        : Move(m) {}
 
-    RootMove(const RootMove &other) = default;
-    RootMove &operator=(const RootMove &other) = default;
+    RootMove(const RootMove& other) = default;
+    RootMove& operator=(const RootMove& other) = default;
 
-    RootMove(RootMove &&other) noexcept
-        : Move(std::move(other)),     //
-          sel_depth(other.sel_depth), //
-          nodes(other.nodes),         //
-          score(other.score),         //
-          avg_score(other.avg_score), //
+    RootMove(RootMove&& other) noexcept
+        : Move(std::move(other)),
+          sel_depth(other.sel_depth),
+          nodes(other.nodes),
+          score(other.score),
+          avg_score(other.avg_score),
           pv(std::move(other.pv)) {}
 
-    RootMove &operator=(RootMove &&other) noexcept {
-        if(this != &other) {
+    RootMove& operator=(RootMove&& other) noexcept {
+        if (this != &other) {
             Move::operator=(std::move(other));
             sel_depth = other.sel_depth;
             nodes = other.nodes;
@@ -68,7 +73,9 @@ struct RootMove : public Move {
 
 class Search {
   public:
-    Search() : exiting(false), searching(false) {
+    Search()
+        : exiting(false),
+          searching(false) {
         clear_histories();
     }
 
@@ -96,7 +103,7 @@ class Search {
         return completed_depth;
     }
 
-    const RootMove &get_best_move() const {
+    const RootMove& get_best_move() const {
         return root_moves[0];
     }
 
@@ -123,19 +130,19 @@ class Search {
 
     void start();
 
-    Score aspiration(int depth, Stack *stack);
+    Score aspiration(int depth, Stack* stack);
 
     template <NodeType nt>
-    Score negamax(int depth, Score alpha, Score beta, Stack *stack, bool cut_node = false);
+    Score negamax(int depth, Score alpha, Score beta, Stack* stack, bool cut_node = false);
 
     template <NodeType nt>
-    Score quiescence(Score alpha, Score beta, Stack *stack);
+    Score quiescence(Score alpha, Score beta, Stack* stack);
 
-    void make_move(Move move, Stack *stack);
+    void make_move(Move move, Stack* stack);
     void undo_move(Move move);
 
     Score evaluate();
-    Score adjust_eval(int32_t eval, Stack *stack) const;
+    Score adjust_eval(int32_t eval, Stack* stack) const;
 
     unsigned int probe_wdl() const;
 
@@ -144,10 +151,10 @@ class Search {
     void sort_root_moves(int offset);
     bool found_root_move(Move move);
 
-    void update_pv(Move move, Stack *stack);
+    void update_pv(Move move, Stack* stack);
 
-    void update_quiet_histories(Move best_move, int bonus, Stack *stack);
-    void update_histories(Move best_move, MoveList<Move> &quiets, MoveList<Move> &noisy, int depth, Stack *stack);
+    void update_quiet_histories(Move best_move, int bonus, Stack* stack);
+    void update_histories(Move best_move, MoveList<Move>& quiets, MoveList<Move>& noisy, int depth, Stack* stack);
 
     void print_uci_info() const;
 };

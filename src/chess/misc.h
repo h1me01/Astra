@@ -62,7 +62,7 @@ constexpr Color piece_color(Piece pc) {
     return Color(pc > 5);
 }
 
-inline Square &operator++(Square &sq) {
+inline Square& operator++(Square& sq) {
     return sq = Square(int(sq) + 1);
 }
 
@@ -78,13 +78,13 @@ constexpr Square operator-(Square sq, Direction d) {
     return _sq;
 }
 
-constexpr Square &operator+=(Square &sq, Direction d) {
+constexpr Square& operator+=(Square& sq, Direction d) {
     sq = sq + d;
     assert(valid_sq(sq));
     return sq;
 }
 
-constexpr Square &operator-=(Square &sq, Direction d) {
+constexpr Square& operator-=(Square& sq, Direction d) {
     sq = sq - d;
     assert(valid_sq(sq));
     return sq;
@@ -139,8 +139,8 @@ constexpr bool is_decisive(Score score) {
 }
 
 inline void print_bb(const U64 b) {
-    for(int rank = 7; rank >= 0; --rank) {
-        for(int file = 0; file < 8; ++file) {
+    for (int rank = 7; rank >= 0; --rank) {
+        for (int file = 0; file < 8; ++file) {
             U64 mask = 1ULL << (rank * 8 + file);
             std::cout << ((b & mask) ? "1 " : "0 ");
         }
@@ -149,13 +149,13 @@ inline void print_bb(const U64 b) {
     std::cout << std::endl;
 }
 
-inline std::vector<std::string> split(const std::string &str, char del) {
+inline std::vector<std::string> split(const std::string& str, char del) {
     std::vector<std::string> parts;
 
     std::string current;
-    for(const char c : str) {
-        if(c == del) {
-            if(!current.empty()) {
+    for (const char c : str) {
+        if (c == del) {
+            if (!current.empty()) {
                 parts.push_back(current);
                 current.clear();
             }
@@ -164,7 +164,7 @@ inline std::vector<std::string> split(const std::string &str, char del) {
         }
     }
 
-    if(!current.empty())
+    if (!current.empty())
         parts.push_back(current);
 
     return parts;
@@ -177,25 +177,25 @@ inline Square sq_from(std::string_view square_str) {
     return Square(index);
 }
 
-inline std::ostream &operator<<(std::ostream &os, Square sq) {
-    if(sq == NO_SQUARE)
+inline std::ostream& operator<<(std::ostream& os, Square sq) {
+    if (sq == NO_SQUARE)
         return os << "no square";
     return os << char('a' + sq_file(sq)) << char('1' + sq_rank(sq));
 }
 
-inline std::ostream &operator<<(std::ostream &os, Piece pc) {
+inline std::ostream& operator<<(std::ostream& os, Piece pc) {
     return os << PIECE_STR[pc];
 }
 
-inline std::ostream &operator<<(std::ostream &os, Move move) {
-    if(move.is_none())
+inline std::ostream& operator<<(std::ostream& os, Move move) {
+    if (move.is_none())
         return os << "none";
-    else if(move.is_null())
+    else if (move.is_null())
         return os << "null";
     else
         os << move.from() << move.to();
 
-    if(move.is_prom()) {
+    if (move.is_prom()) {
         const PieceType pt = move.prom_type();
         os << Piece(pt + 6);
     }

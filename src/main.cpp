@@ -1,6 +1,6 @@
 #include "uci/uci.h"
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     bitboards::init();
     zobrist::init();
     cuckoo::init();

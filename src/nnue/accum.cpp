@@ -5,14 +5,14 @@ namespace nnue {
 
 // Accum
 
-void Accum::update(Accum &prev, Color view) {
-    for(int i = 0; i < dirty_pcs.size(); i++) {
+void Accum::update(Accum& prev, Color view) {
+    for (int i = 0; i < dirty_pcs.size(); i++) {
         auto dpc = dirty_pcs[i];
         Square ksq = (view == WHITE) ? wksq : bksq;
 
-        if(!valid_sq(dpc.from))
+        if (!valid_sq(dpc.from))
             nnue.put(*this, prev, dpc.pc, dpc.to, ksq, view);
-        else if(!valid_sq(dpc.to))
+        else if (!valid_sq(dpc.to))
             nnue.remove(*this, prev, dpc.pc, dpc.from, ksq, view);
         else
             nnue.move(*this, prev, dpc.pc, dpc.from, dpc.to, ksq, view);
@@ -23,35 +23,35 @@ void Accum::update(Accum &prev, Color view) {
 
 // AccumList
 
-void AccumList::refresh(Color view, Board &board) {
+void AccumList::refresh(Color view, Board& board) {
     assert(valid_color(view));
 
     const Square ksq = board.king_sq(view);
     const int ksq_idx = INPUT_BUCKET[rel_sq(view, ksq)];
 
-    auto &entry = entries[view][(sq_file(ksq) > FILE_D) * INPUT_BUCKETS + ksq_idx];
-    auto &entry_acc = entry.get_accum();
+    auto& entry = entries[view][(sq_file(ksq) > FILE_D) * INPUT_BUCKETS + ksq_idx];
+    auto& entry_acc = entry.get_accum();
 
-    for(Color c : {WHITE, BLACK}) {
-        for(PieceType pt : {PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING}) {
+    for (Color c : {WHITE, BLACK}) {
+        for (PieceType pt : {PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING}) {
             Piece pc = make_piece(c, pt);
 
             const U64 pc_bb = board.piece_bb(c, pt);
             const U64 entry_bb = entry(c, pt);
 
             U64 to_set = pc_bb & ~entry_bb;
-            while(to_set)
+            while (to_set)
                 nnue.put(entry_acc, entry_acc, pc, pop_lsb(to_set), ksq, view);
 
             U64 to_clear = entry_bb & ~pc_bb;
-            while(to_clear)
+            while (to_clear)
                 nnue.remove(entry_acc, entry_acc, pc, pop_lsb(to_clear), ksq, view);
 
             entry(c, pt) = pc_bb;
         }
     }
 
-    auto &accum = back();
+    auto& accum = back();
     std::memcpy(accum.get_data(view), entry_acc.get_data(view), sizeof(int16_t) * FT_SIZE);
     accum.set_initialized(view);
 }

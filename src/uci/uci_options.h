@@ -11,14 +11,18 @@ enum class OptionType { NONE, SPIN, STRING, CHECK };
 class Option {
   public:
     Option(OptionType type = OptionType::NONE, std::string val = "", int min = 0, int max = 0)
-        : type(type), default_val(val), val(val), min(min), max(max) {}
+        : type(type),
+          default_val(val),
+          val(val),
+          min(min),
+          max(max) {}
 
-    void set(const std::string &value) {
+    void set(const std::string& value) {
         assert(type != OptionType::NONE);
 
-        if(type == OptionType::SPIN) {
+        if (type == OptionType::SPIN) {
             int n = std::stoi(value);
-            if(n >= min && n <= max)
+            if (n >= min && n <= max)
                 val = value;
             else
                 assert(false);
@@ -43,7 +47,7 @@ class Option {
         return max;
     }
 
-    bool operator==(const std::string &other) const {
+    bool operator==(const std::string& other) const {
         return val == other;
     }
 
@@ -60,25 +64,25 @@ class Option {
 class Options {
   public:
     void print() const;
-    void set(const std::string &info);
+    void set(const std::string& info);
 
-    void add(std::string name, const Option &option) {
+    void add(std::string name, const Option& option) {
         options[name] = option;
         apply(name);
     }
 
-    Option &get(const std::string &name) {
+    Option& get(const std::string& name) {
         auto it = options.find(name);
-        if(it != options.end())
+        if (it != options.end())
             return it->second;
         assert(false);
         options[name] = Option();
         return options[name];
     }
 
-    const Option &get(const std::string &name) const {
+    const Option& get(const std::string& name) const {
         auto it = options.find(name);
-        if(it != options.end())
+        if (it != options.end())
             return it->second;
         assert(false);
         static const Option empty_option;
@@ -88,8 +92,8 @@ class Options {
   private:
     std::unordered_map<std::string, Option> options;
 
-    void update_syzygy_path(const std::string &path);
-    void apply(const std::string &name);
+    void update_syzygy_path(const std::string& path);
+    void apply(const std::string& name);
 };
 
 } // namespace uci

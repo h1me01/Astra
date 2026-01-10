@@ -8,13 +8,13 @@ using namespace chess;
 
 namespace search {
 
-enum SearchType {
+enum SearchType : uint8_t {
     N_SEARCH,
     Q_SEARCH,
     PC_SEARCH,
 };
 
-enum Stage {
+enum Stage : uint8_t {
     PLAY_TT_MOVE,
     GEN_NOISY,
     PLAY_NOISY,
@@ -26,13 +26,14 @@ enum Stage {
 template <SearchType st>
 class MovePicker {
   public:
-    MovePicker(                            //
-        const Board &board,                //
-        const Move tt_move,                //
-        const QuietHistory &quiet_history, //
-        const PawnHistory &pawn_history,   //
-        const NoisyHistory &noisy_history, //
-        const Stack *stack);
+    MovePicker(
+        const Board& board,
+        const Move tt_move,
+        const QuietHistory& quiet_history,
+        const PawnHistory& pawn_history,
+        const NoisyHistory& noisy_history,
+        const Stack* stack
+    );
 
     int probcut_threshold = 0;
 
@@ -42,11 +43,11 @@ class MovePicker {
     int idx;
     Stage stage;
 
-    const Board &board;
-    const QuietHistory &quiet_history;
-    const PawnHistory &pawn_history;
-    const NoisyHistory &noisy_history;
-    const Stack *stack;
+    const Board& board;
+    const QuietHistory& quiet_history;
+    const PawnHistory& pawn_history;
+    const NoisyHistory& noisy_history;
+    const Stack* stack;
 
     Move tt_move;
     MoveList<ScoredMove> ml_main, ml_bad_noisy;

@@ -37,11 +37,11 @@ class TTEntry {
     }
 
     Score get_score(int ply) const {
-        if(!valid_score(score))
+        if (!valid_score(score))
             return SCORE_NONE;
-        if(is_win(score))
+        if (is_win(score))
             return score - ply;
-        if(is_loss(score))
+        if (is_loss(score))
             return score + ply;
         return score;
     }
@@ -87,7 +87,7 @@ class TTable {
 
     void increment();
 
-    TTEntry *lookup(U64 hash, bool *hit) const;
+    TTEntry* lookup(U64 hash, bool* hit) const;
 
     int hashfull() const;
 
@@ -102,7 +102,7 @@ class TTable {
   private:
     uint8_t age;
     U64 bucket_size;
-    TTBucket *buckets;
+    TTBucket* buckets;
 
     size_t index(U64 hash) const {
         return (static_cast<unsigned __int128>(hash) * static_cast<unsigned __int128>(bucket_size)) >> 64;
@@ -113,7 +113,7 @@ inline bool valid_tt_score(Score tt_score, Score score, Bound bound) {
     return (bound & (tt_score >= score ? LOWER_BOUND : UPPER_BOUND));
 }
 
-// global variable
+// Global Variable
 
 extern TTable tt;
 

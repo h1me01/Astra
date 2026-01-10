@@ -24,19 +24,20 @@ struct StateInfo {
 
 class StateInfoList {
   public:
-    StateInfoList() : idx(0) {}
+    StateInfoList()
+        : idx(0) {}
 
-    StateInfo &operator[](int i) {
+    StateInfo& operator[](int i) {
         assert(i >= 0 && i < max_size);
         return list[i];
     }
 
-    const StateInfo &operator[](int i) const {
+    const StateInfo& operator[](int i) const {
         assert(i >= 0 && i < max_size);
         return list[i];
     }
 
-    StateInfo &increment() {
+    StateInfo& increment() {
         assert(idx < max_size);
         idx++;
         list[idx] = list[idx - 1];
@@ -58,12 +59,12 @@ class StateInfoList {
         idx = 0;
     }
 
-    StateInfo &back() {
+    StateInfo& back() {
         assert(idx >= 0 && idx < max_size);
         return list[idx];
     }
 
-    const StateInfo &back() const {
+    const StateInfo& back() const {
         assert(idx >= 0 && idx < max_size);
         return list[idx];
     }

@@ -22,7 +22,8 @@ class TimeMan {
     TimePoint start_time;
 
   public:
-    TimeMan() : start_time(Clock::now()) {}
+    TimeMan()
+        : start_time(Clock::now()) {}
 
     void start() {
         start_time = Clock::now();
@@ -36,11 +37,11 @@ class TimeMan {
         Time time;
 
         int mtg = std::min(50, moves_to_go ? moves_to_go : 50);
-        int64_t adj_time = std::max(static_cast<int64_t>(1LL), time_left + inc * (mtg - 1) - overhead * (mtg + 2));
+        int64_t adj_time = time_left + inc * (mtg - 1) - overhead * (mtg + 2);
 
-        double scale = std::min(                                //
-            moves_to_go ? 1.034612 / mtg : 0.029935,            //
-            (moves_to_go ? 0.88 : 0.213) * time_left / adj_time //
+        double scale = std::min(
+            moves_to_go ? 1.034612 / mtg : 0.029935,
+            (moves_to_go ? 0.88 : 0.213) * time_left / std::max<int64_t>(1LL, adj_time)
         );
 
         time.optimum = time_left * scale;

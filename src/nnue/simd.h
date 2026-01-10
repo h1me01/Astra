@@ -72,7 +72,7 @@ inline fvec_t clamp_ps(fvec_t val, fvec_t min_val, fvec_t max_val) {
     return min_ps(max_ps(val, min_val), max_val);
 }
 
-inline float hor_sum_ps(fvec_t *v) {
+inline float hor_sum_ps(fvec_t* v) {
 #if defined(__AVX512F__)
     return _mm512_reduce_add_ps(v[0]);
 #else
@@ -82,7 +82,7 @@ inline float hor_sum_ps(fvec_t *v) {
     __m128 sum = _mm_add_ps(high, low);
     __m128 high64 = _mm_movehl_ps(sum, sum);
     __m128 sum64 = _mm_add_ps(sum, high64);
-    return reinterpret_cast<float *>(&sum64)[0] + reinterpret_cast<float *>(&sum64)[1];
+    return reinterpret_cast<float*>(&sum64)[0] + reinterpret_cast<float*>(&sum64)[1];
 #endif
 }
 
@@ -117,10 +117,10 @@ inline ivec_t double_dpbusd_epi32(ivec_t sum, ivec_t a, ivec_t b, ivec_t c, ivec
 }
 #endif
 
-inline void permute_simd_data(__m128i *vec, int count) {
+inline void permute_simd_data(__m128i* vec, int count) {
     count /= (sizeof(__m128i) / sizeof(int16_t));
 
-#if(defined(__AVX512F__) && defined(__AVX512BW__))
+#if (defined(__AVX512F__) && defined(__AVX512BW__))
     const int PACKUS_BLOCKS = 8;
     const int PERMUTATION[PACKUS_BLOCKS] = {0, 2, 4, 6, 1, 3, 5, 7};
 #else
@@ -129,10 +129,10 @@ inline void permute_simd_data(__m128i *vec, int count) {
 #endif
 
     __m128i regs[PACKUS_BLOCKS];
-    for(int i = 0; i < count; i += PACKUS_BLOCKS) {
-        for(int j = 0; j < PACKUS_BLOCKS; j++)
+    for (int i = 0; i < count; i += PACKUS_BLOCKS) {
+        for (int j = 0; j < PACKUS_BLOCKS; j++)
             regs[j] = vec[i + j];
-        for(int j = 0; j < PACKUS_BLOCKS; j++)
+        for (int j = 0; j < PACKUS_BLOCKS; j++)
             vec[i + j] = regs[PERMUTATION[j]];
     }
 }

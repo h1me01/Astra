@@ -15,21 +15,22 @@ struct PVLine {
 
     PVLine() = default;
 
-    PVLine(const PVLine &other) : length(other.length) {
-        for(int i = 0; i < length; i++)
+    PVLine(const PVLine& other)
+        : length(other.length) {
+        for (int i = 0; i < length; i++)
             pv[i] = other.pv[i];
     }
 
-    PVLine &operator=(const PVLine &other) {
-        if(this != &other) {
+    PVLine& operator=(const PVLine& other) {
+        if (this != &other) {
             length = other.length;
-            for(int i = 0; i < length; i++)
+            for (int i = 0; i < length; i++)
                 pv[i] = other.pv[i];
         }
         return *this;
     }
 
-    Move &operator[](int depth) {
+    Move& operator[](int depth) {
         return pv[depth];
     }
 
@@ -50,8 +51,8 @@ struct Stack {
 
     PVLine pv;
 
-    PieceToContinuation *cont_hist = nullptr;
-    PieceToContinuation *cont_corr_hist = nullptr;
+    PieceToContinuation* cont_hist = nullptr;
+    PieceToContinuation* cont_corr_hist = nullptr;
 };
 
 } // namespace search
