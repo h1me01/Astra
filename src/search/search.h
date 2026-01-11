@@ -16,8 +16,6 @@ using namespace chess;
 
 namespace search {
 
-void init_reductions();
-
 enum NodeType : uint8_t {
     ROOT,
     PV,
@@ -140,6 +138,8 @@ class Search {
 
     void make_move(Move move, Stack* stack);
     void undo_move(Move move);
+
+    int reduction(int depth, int moves_made) const;
 
     Score evaluate();
     Score adjust_eval(int32_t eval, Stack* stack) const;

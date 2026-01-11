@@ -12,19 +12,6 @@
 
 namespace search {
 
-int REDUCTIONS[MAX_PLY][MAX_MOVES];
-
-void init_reductions() {
-    double base = lmr_base / 100.0;
-    double div_factor = lmr_div / 100.0;
-
-    for (int depth = 1; depth < MAX_PLY; depth++)
-        for (int moves = 1; moves < MAX_MOVES; moves++)
-            REDUCTIONS[depth][moves] = base + log(depth) * log(moves) / div_factor;
-}
-
-// Search
-
 void Search::idle() {
     threads.add_started_thread();
 
@@ -287,7 +274,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack* stack, bool cut
             }
 
             Square prev_sq = (stack - 1)->move ? (stack - 1)->move.to() : NO_SQUARE;
-            if (valid_sq(prev_sq) && !(stack - 1)->move.is_cap() && (stack - 1)->made_moves <= 3) {
+            if (valid_sq(prev_sq) && !(stack - 1)->move.is_cap() && (stack - 1)->move_count <= 3) {
                 int malus = std::min<int>(tt_hist_malus_mult * depth + tt_hist_malus_minus, max_tt_hist_malus);
                 cont_history.update((stack - 1)->moved_piece, prev_sq, -malus, stack - 1);
             }
@@ -474,7 +461,7 @@ movesloop:
     Move move = Move::none();
 
     MoveList<Move> quiets, noisy;
-    int made_moves = 0;
+    int move_count = 0;
 
     bool skip_quiets = false;
     while ((move = mp.next(skip_quiets))) {
@@ -485,9 +472,9 @@ movesloop:
 
         U64 start_nodes = nodes;
 
-        stack->made_moves = ++made_moves;
+        stack->move_count = ++move_count;
 
-        int r = REDUCTIONS[depth][made_moves];
+        int r = reduction(depth, move_count);
 
         int history_score = 0;
         if (move.is_quiet()) {
@@ -572,7 +559,7 @@ movesloop:
         Score score = SCORE_NONE;
 
         // late move reductions
-        if (depth >= 2 && made_moves >= 3 && !(tt_pv && move.is_noisy())) {
+        if (depth >= 2 && move_count >= 3 && !(tt_pv && move.is_noisy())) {
 
             r += !improving;
 
@@ -611,12 +598,12 @@ movesloop:
             }
         }
         // full depth search if lmr was skipped
-        else if (!pv_node || made_moves > 1) {
+        else if (!pv_node || move_count > 1) {
             score = -negamax<NON_PV>(new_depth, -alpha - 1, -alpha, stack + 1, !cut_node);
         }
 
         // principal variation search
-        if (pv_node && (made_moves == 1 || score > alpha))
+        if (pv_node && (move_count == 1 || score > alpha))
             score = -negamax<PV>(new_depth, -beta, -alpha, stack + 1);
 
         undo_move(move);
@@ -634,7 +621,7 @@ movesloop:
             rm->nodes += nodes - start_nodes;
             rm->avg_score = valid_score(rm->avg_score) ? (rm->avg_score + score) / 2 : score;
 
-            if (made_moves == 1 || score > alpha) {
+            if (move_count == 1 || score > alpha) {
                 rm->score = score;
                 rm->sel_depth = sel_depth;
                 rm->pv = (stack + 1)->pv;
@@ -665,7 +652,7 @@ movesloop:
             }
         }
 
-        if (move != best_move && made_moves <= 32) {
+        if (move != best_move && move_count <= 32) {
             if (move.is_quiet())
                 quiets.add(move);
             else
@@ -674,7 +661,7 @@ movesloop:
     }
 
     // check for mate/stalemate
-    if (!made_moves) {
+    if (!move_count) {
         if (stack->skipped)
             return alpha;
         return in_check ? mated_in(stack->ply) : SCORE_DRAW;
@@ -788,12 +775,12 @@ Score Search::quiescence(Score alpha, Score beta, Stack* stack) {
     MovePicker<Q_SEARCH> mp(board, tt_move, quiet_history, pawn_history, noisy_history, stack);
     Move move = Move::none();
 
-    int made_moves = 0;
+    int move_count = 0;
     while ((move = mp.next())) {
         if (!board.legal(move))
             continue;
 
-        made_moves++;
+        move_count++;
 
         if (!is_loss(best_score)) {
             // if we are not losing while in check, we can skip quiet moves
@@ -801,7 +788,7 @@ Score Search::quiescence(Score alpha, Score beta, Stack* stack) {
                 break;
 
             if (prev_sq != move.to() && !move.is_prom() && !board.gives_check(move)) {
-                if (made_moves > 2)
+                if (move_count > 2)
                     break;
 
                 // futility pruning
@@ -840,7 +827,7 @@ Score Search::quiescence(Score alpha, Score beta, Stack* stack) {
         }
     }
 
-    if (in_check && !made_moves)
+    if (in_check && !move_count)
         return mated_in(stack->ply);
     if (best_score >= beta && !is_decisive(best_score))
         best_score = (best_score + beta) / 2;
@@ -878,6 +865,13 @@ void Search::make_move(Move move, Stack* stack) {
 void Search::undo_move(Move move) {
     accum_list.decrement();
     board.undo_move(move);
+}
+
+int Search::reduction(int depth, int move_count) const {
+    double base = lmr_base / 100.0;
+    double div_factor = lmr_div / 100.0;
+
+    return base + log(depth) * log(move_count) / div_factor;
 }
 
 Score Search::evaluate() {
