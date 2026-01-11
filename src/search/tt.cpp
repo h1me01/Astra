@@ -42,7 +42,7 @@ constexpr int AGE_MASK = 0xF8;
 // TTEntry
 
 void TTEntry::refresh_age() {
-    agepvbound = tt.get_age() | (agepvbound & (AGE_STEP - 1));
+    agepvbound = static_cast<uint8_t>(tt.get_age() | (agepvbound & (AGE_STEP - 1)));
 }
 
 int TTEntry::relative_age() const {
@@ -57,7 +57,7 @@ void TTEntry::store(U64 hash, Move move, Score score, Score eval, Bound bound, i
     uint16_t hash16 = static_cast<uint16_t>(hash);
 
     if (move || this->hash != hash16)
-        this->move = move.raw();
+        this->move = move;
 
     if (valid_score(score)) {
         if (is_win(score))

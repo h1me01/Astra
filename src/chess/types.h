@@ -10,7 +10,7 @@
 namespace chess {
 
 using U64 = uint64_t;
-using Score = int16_t;
+using Score = int;
 
 const std::string PIECE_STR = "PNBRQKpnbrqk.";
 const std::string STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";

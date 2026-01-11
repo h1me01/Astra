@@ -15,8 +15,8 @@ namespace search {
 int REDUCTIONS[MAX_PLY][MAX_MOVES];
 
 void init_reductions() {
-    const double base = static_cast<double>(lmr_base) / 100.0;
-    const double div_factor = static_cast<double>(lmr_div) / 100.0;
+    double base = lmr_base / 100.0;
+    double div_factor = lmr_div / 100.0;
 
     for (int depth = 1; depth < MAX_PLY; depth++)
         for (int moves = 1; moves < MAX_MOVES; moves++)
@@ -166,8 +166,8 @@ Score Search::aspiration(int depth, Stack* stack) {
     int delta = asp_delta;
     if (depth >= asp_depth) {
         Score avg_score = root_moves[multipv_idx].avg_score;
-        alpha = std::max<int>(avg_score - delta, -SCORE_INFINITE);
-        beta = std::min<int>(avg_score + delta, SCORE_INFINITE);
+        alpha = std::max(avg_score - delta, -SCORE_INFINITE);
+        beta = std::min(avg_score + delta, SCORE_INFINITE);
     }
 
     int fail_high_count = 0;
@@ -181,10 +181,10 @@ Score Search::aspiration(int depth, Stack* stack) {
 
         if (score <= alpha) {
             beta = (alpha + beta) / 2;
-            alpha = std::max<int>(alpha - delta, -SCORE_INFINITE);
+            alpha = std::max(alpha - delta, -SCORE_INFINITE);
             fail_high_count = 0;
         } else if (score >= beta) {
-            beta = std::min<int>(beta + delta, SCORE_INFINITE);
+            beta = std::min(beta + delta, SCORE_INFINITE);
             fail_high_count++;
         } else {
             break;
@@ -918,14 +918,14 @@ Score Search::evaluate() {
 
     eval = (230 + material / 42) * eval / 440;
 
-    return std::clamp<int>(eval, -SCORE_MATE_IN_MAX_PLY, SCORE_MATE_IN_MAX_PLY);
+    return std::clamp(eval, -SCORE_MATE_IN_MAX_PLY, SCORE_MATE_IN_MAX_PLY);
 }
 
 Score Search::adjust_eval(int32_t eval, Stack* stack) const {
     eval = (eval * (200 - board.fifty_move_count())) / 200;
     eval += (corr_histories.get(board) + cont_corr_history.get(board, stack)) / 256;
 
-    return std::clamp<int>(eval, SCORE_TB_LOSS_IN_MAX_PLY + 1, SCORE_TB_WIN_IN_MAX_PLY - 1);
+    return std::clamp(eval, SCORE_TB_LOSS_IN_MAX_PLY + 1, SCORE_TB_WIN_IN_MAX_PLY - 1);
 }
 
 unsigned int Search::probe_wdl() const {

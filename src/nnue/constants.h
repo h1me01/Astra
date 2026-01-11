@@ -31,6 +31,6 @@ constexpr int INPUT_BUCKET[64] = {
     12, 12, 12, 12, 12, 12, 12, 12, //
 };
 
-constexpr float DEQUANT_MULT = static_cast<float>(1 << FT_SHIFT) / static_cast<float>(FT_QUANT * FT_QUANT * L1_QUANT);
+constexpr float DEQUANT_MULT = (1 << FT_SHIFT) / static_cast<float>(FT_QUANT * FT_QUANT * L1_QUANT);
 
 } // namespace nnue

@@ -79,7 +79,7 @@ void NNUE::init_accum(Accum& acc) const {
     std::memcpy(acc.get_data(BLACK), nnue.ft_biases, sizeof(int16_t) * FT_SIZE);
 }
 
-int32_t NNUE::forward(Board& board, const Accum& acc) {
+Score NNUE::forward(Board& board, const Accum& acc) {
     assert(acc.is_initialized(WHITE) && acc.is_initialized(BLACK));
 
     const int bucket = (pop_count(board.occupancy()) - 2) / 4;
@@ -88,7 +88,7 @@ int32_t NNUE::forward(Board& board, const Accum& acc) {
     auto l1_input = prep_l1_input(board.side_to_move(), acc);
     auto l1_output = forward_l1(bucket, l1_input);
     auto l2_output = forward_l2(bucket, l1_output);
-    return static_cast<int32_t>(forward_l3(bucket, l2_output));
+    return forward_l3(bucket, l2_output);
 }
 
 LayerOutput<uint8_t, FT_SIZE> NNUE::prep_l1_input(const Color stm, const Accum& acc) {

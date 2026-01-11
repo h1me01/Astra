@@ -33,7 +33,7 @@ class TTEntry {
     }
 
     Move get_move() const {
-        return Move(move);
+        return move;
     }
 
     Score get_score(int ply) const {
@@ -61,9 +61,9 @@ class TTEntry {
   private:
     uint16_t hash = 0;
     uint8_t depth = 0;
-    uint16_t move = 0;
-    Score score = SCORE_NONE;
-    Score eval = SCORE_NONE;
+    Move move = Move::none();
+    int16_t score = SCORE_NONE;
+    int16_t eval = SCORE_NONE;
     uint8_t agepvbound = NO_BOUND;
 };
 #pragma pack(pop)

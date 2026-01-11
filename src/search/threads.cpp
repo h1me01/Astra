@@ -71,13 +71,13 @@ Search* ThreadPool::pick_best() {
     if (threads.size() == 1 || best_thread->limits.multipv != 1)
         return best_thread;
 
-    std::unordered_map<uint16_t, int> votes;
+    std::unordered_map<uint16_t, Score> votes;
     Score min_score = SCORE_INFINITE;
 
     for (auto& th : threads) {
         if (!th->get_completed_depth())
             continue;
-        min_score = std::min<int>(min_score, th->get_best_move().score);
+        min_score = std::min(min_score, th->get_best_move().score);
     }
 
     for (auto& th : threads) {
