@@ -132,6 +132,8 @@ void Search::start() {
     threads.stop();
     threads.wait(false);
 
+    multipv_idx = 0;
+
     Search* best_thread = threads.pick_best();
     if (best_thread != this) {
         best_thread->print_uci_info();
@@ -870,7 +872,6 @@ void Search::undo_move(Move move) {
 int Search::reduction(int depth, int move_count) const {
     double base = lmr_base / 100.0;
     double div_factor = lmr_div / 100.0;
-
     return base + log(depth) * log(move_count) / div_factor;
 }
 
