@@ -32,6 +32,7 @@ class Board {
   public:
     Board() = default;
     Board(const std::string fen);
+    Board(const Board& other) = default;
 
     Board& operator=(const Board& other);
 

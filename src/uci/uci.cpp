@@ -3,6 +3,7 @@
 #include <chrono>
 #include <cstring> // strncmp
 
+#include "../datagen/gen_fens.h"
 #include "../search/threads.h"
 #include "../search/tune_params.h"
 #include "../third_party/fathom/src/tbprobe.h"
@@ -68,6 +69,14 @@ const std::vector<std::string> bench_positions = {
 };
 // clang-format on
 
+// Helper
+
+bool starts_with_command(int argc, char** argv, const std::string& command) {
+    if (argc < 2) return false;
+    std::string first_arg = argv[1];
+    return first_arg.find(command) == 0;
+}
+
 // UCI
 
 UCI::UCI() {
@@ -82,8 +91,11 @@ UCI::UCI() {
 }
 
 void UCI::loop(int argc, char** argv) {
-    if (argc > 1 && !strncmp(argv[1], "bench", 5)) {
+    if (starts_with_command(argc, argv, "bench")) {
         bench();
+        return;
+    } else if (starts_with_command(argc, argv, "genfens")) {
+        datagen::generate_fens(argc, argv);
         return;
     }
 
