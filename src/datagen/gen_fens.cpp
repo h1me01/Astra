@@ -30,7 +30,7 @@ Board random_board(const std::string& startpos, const int num_moves) {
     for (int i = 0; i < num_moves; ++i) {
         legal_moves.gen<ADD_LEGALS>(board);
         if (!legal_moves.size())
-            random_board(startpos, num_moves); // restart if no legal moves
+            return random_board(startpos, num_moves); // restart if no legal moves
 
         Move move = legal_moves[std::rand() % legal_moves.size()];
         board.make_move(move);
