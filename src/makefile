@@ -58,13 +58,15 @@ ENGINE_SRC := search/history.cpp \
 			  search/threads.cpp \
 			  search/tune_params.cpp
 
+DATAGEN_SRC := datagen/gen_fens.cpp
+
 SYZYGY_SRC := third_party/fathom/src/tbprobe.c
 
 MAIN_SRC := main.cpp \
 			uci/uci.cpp \
 			uci/uci_options.cpp
 
-SRC := $(CHESS_SRC) $(EVAL_SRC) $(ENGINE_SRC) $(SYZYGY_SRC) $(MAIN_SRC)
+SRC := $(CHESS_SRC) $(EVAL_SRC) $(ENGINE_SRC) $(DATAGEN_SRC) $(SYZYGY_SRC) $(MAIN_SRC)
 
 TARGET := $(if $(EXE),$(EXE),astra)
 
