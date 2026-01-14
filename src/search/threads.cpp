@@ -11,7 +11,6 @@ void ThreadPool::set_count(int count) {
 
     started_threads = 0;
 
-    // create new threads
     threads.reserve(count);
     running_threads.reserve(count);
 
@@ -33,7 +32,6 @@ void ThreadPool::wait(bool include_main) {
 }
 
 void ThreadPool::terminate() {
-    // signal all threads to exit
     for (auto& th : threads) {
         std::lock_guard lock(th->mutex);
         th->exiting = true;

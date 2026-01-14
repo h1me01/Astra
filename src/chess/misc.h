@@ -36,7 +36,6 @@ constexpr bool valid_rank(Rank r) {
     return r >= RANK_1 && r <= RANK_8;
 }
 
-// gets opposite color
 constexpr Color operator~(Color c) {
     assert(valid_color(c));
     return Color(c ^ BLACK);
@@ -62,7 +61,7 @@ constexpr Color piece_color(Piece pc) {
     return Color(pc > 5);
 }
 
-inline Square& operator++(Square& sq) {
+constexpr Square& operator++(Square& sq) {
     return sq = Square(int(sq) + 1);
 }
 

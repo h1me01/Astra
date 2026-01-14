@@ -70,7 +70,6 @@ void Search::start() {
     if (is_main_thread)
         tt.increment();
 
-    // init stack
     Stack stack_arr[MAX_PLY + 6]; // +6 for continuation history
     Stack* stack = stack_arr + 6;
     for (int i = 0; i < MAX_PLY + 6; i++) {
@@ -106,14 +105,12 @@ void Search::start() {
         if (is_main_thread && root_depth >= 5 && limits.time.optimum) {
             double stability_factor = (tm_stability_base / 100.0) - stability * (tm_stability_mult / 1000.0);
 
-            // adjust time optimum based on last score
             double result_change_factor = (tm_results_base / 100.0)                                        //
                                           + (tm_results_mult1 / 1000.0) * (scores[root_depth - 1] - score) //
                                           + (tm_results_mult2 / 1000.0) * (scores[root_depth - 3] - score);
 
             result_change_factor = std::clamp(result_change_factor, tm_results_min / 100.0, tm_results_max / 100.0);
 
-            // adjust time optimum based on node count
             double node_ratio = root_moves[0].nodes / static_cast<double>(nodes);
             double node_count_factor = (1.0 - node_ratio) * (tm_node_mult / 100.0) + (tm_node_base / 100.0);
 
@@ -394,9 +391,9 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack* stack, bool cut
         stack->cont_hist = cont_history.get();
         stack->cont_corr_hist = cont_corr_history.get();
 
-        board.make_nullmove();
+        board.make_move();
         Score score = -negamax<NON_PV>(depth - R, -beta, -beta + 1, stack + 1, !cut_node);
-        board.undo_nullmove();
+        board.undo_move();
 
         if (threads.is_stopped())
             return 0;
@@ -514,7 +511,7 @@ movesloop:
                     continue;
             } else {
                 // see pruning
-                if (!board.see(move, depth * see_cap_margin))
+                if (!board.see(move, depth * see_noisy_margin))
                     continue;
             }
         }
@@ -850,13 +847,9 @@ void Search::make_move(Move move, Stack* stack) {
     stack->move = move;
     stack->moved_piece = board.piece_at(move.from());
 
-    auto& accum = accum_list.increment();
-
-    if (nnue::needs_refresh(stack->moved_piece, move))
-        accum.set_refresh(piece_color(stack->moved_piece));
-
     auto dirty_pieces = board.make_move(move);
-    accum.update(dirty_pieces, board.king_sq(WHITE), board.king_sq(BLACK));
+
+    accum_list.increment(dirty_pieces);
 
     stack->cont_hist = cont_history.get(board.in_check(), move.is_cap(), stack->moved_piece, move.to());
     stack->cont_corr_hist = cont_corr_history.get(stack->moved_piece, move.to());
@@ -876,13 +869,13 @@ int Search::reduction(int depth, int move_count) const {
 }
 
 Score Search::evaluate() {
-    assert(accum_list[0].is_initialized(WHITE));
-    assert(accum_list[0].is_initialized(BLACK));
+    assert(accum_list[0].initialized[WHITE]);
+    assert(accum_list[0].initialized[BLACK]);
 
     auto& acc = accum_list.back();
 
-    for (Color view : {WHITE, BLACK}) {
-        if (acc.is_initialized(view))
+    for (Color c : {WHITE, BLACK}) {
+        if (acc.initialized[c])
             continue;
 
         const int accums_idx = accum_list.size() - 1;
@@ -890,14 +883,14 @@ Score Search::evaluate() {
 
         // apply lazy update
         for (int i = accums_idx; i >= 0; i--) {
-            if (accum_list[i].needs_refresh(view)) {
-                accum_list.refresh(view, board);
+            if (accum_list[i].needs_refresh(c)) {
+                accum_list.refresh(c, board);
                 break;
             }
 
-            if (accum_list[i].is_initialized(view)) {
+            if (accum_list[i].initialized[c]) {
                 for (int j = i + 1; j <= accums_idx; j++)
-                    accum_list[j].update(accum_list[j - 1], view);
+                    accum_list[j].update(accum_list[j - 1], c);
                 break;
             }
         }
@@ -936,12 +929,12 @@ unsigned int Search::probe_wdl() const {
     return tb_probe_wdl(
         w_occ,
         b_occ,
-        board.piece_bb(KING),
-        board.piece_bb(QUEEN),
-        board.piece_bb(ROOK),
-        board.piece_bb(BISHOP),
-        board.piece_bb(KNIGHT),
-        board.piece_bb(PAWN),
+        board.piece_bb<KING>(WHITE),
+        board.piece_bb<QUEEN>(WHITE),
+        board.piece_bb<ROOK>(WHITE),
+        board.piece_bb<BISHOP>(WHITE),
+        board.piece_bb<KNIGHT>(WHITE),
+        board.piece_bb<PAWN>(WHITE),
         board.fifty_move_count(),
         board.state().castling_rights.any(),
         valid_sq(ep_sq) ? ep_sq : 0,
@@ -1028,7 +1021,6 @@ void Search::print_uci_info() const {
               << " time " << elapsed_time                           //
               << " pv " << rm;
 
-    // print rest of the pv
     for (int i = 1; i < rm.pv.length; i++) {
         Move move = rm.pv[i];
         if (!move)

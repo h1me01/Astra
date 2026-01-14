@@ -54,7 +54,7 @@ class NoisyHistory {
         assert(move);
 
         Piece pc = board.piece_at(move.from());
-        PieceType captured = piece_type(board.captured_piece(move));
+        PieceType captured = piece_type(board.capture_piece(move));
 
         assert(valid_piece(pc));
         assert(captured != KING);

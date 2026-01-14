@@ -75,12 +75,12 @@ void NNUE::init() {
 }
 
 void NNUE::init_accum(Accum& acc) const {
-    std::memcpy(acc.get_data(WHITE), nnue.ft_biases, sizeof(int16_t) * FT_SIZE);
-    std::memcpy(acc.get_data(BLACK), nnue.ft_biases, sizeof(int16_t) * FT_SIZE);
+    std::memcpy(acc.data[WHITE], nnue.ft_biases, sizeof(int16_t) * FT_SIZE);
+    std::memcpy(acc.data[BLACK], nnue.ft_biases, sizeof(int16_t) * FT_SIZE);
 }
 
 Score NNUE::forward(Board& board, const Accum& acc) {
-    assert(acc.is_initialized(WHITE) && acc.is_initialized(BLACK));
+    assert(acc.initialized[WHITE] && acc.initialized[BLACK]);
 
     const int bucket = (pop_count(board.occupancy()) - 2) / 4;
     assert(0 <= bucket && bucket < OUTPUT_BUCKETS);
@@ -95,7 +95,7 @@ LayerOutput<uint8_t, FT_SIZE> NNUE::prep_l1_input(const Color stm, const Accum& 
     LayerOutput<uint8_t, FT_SIZE> output;
 
     for (Color c : {stm, ~stm}) {
-        const auto acc_data = acc.get_data(c);
+        const auto acc_data = acc.data[c];
         const int out_offset = (c == stm) ? 0 : FT_SIZE / 2;
 
         for (int i = 0; i < FT_SIZE / 2; i += 2 * simd::INT16_VEC_SIZE) {
@@ -231,26 +231,26 @@ void NNUE::put(Accum& acc, const Accum& prev, Piece pc, Square psq, Square ksq, 
     const int idx = feature_idx(pc, psq, ksq, view);
     const auto weights = ptr_cast<const ivec_t>(&ft_weights[idx * FT_SIZE]);
 
-    auto acc_data = ptr_cast<ivec_t>(acc.get_data(view));
-    const auto prev_data = acc.is_initialized(view) ? acc_data : ptr_cast<const ivec_t>(prev.get_data(view));
+    auto acc_data = ptr_cast<ivec_t>(acc.data[view]);
+    const auto prev_data = acc.initialized[view] ? acc_data : ptr_cast<const ivec_t>(prev.data[view]);
 
     for (int i = 0; i < FT_SIZE / simd::INT16_VEC_SIZE; i++)
         acc_data[i] = add_epi16(prev_data[i], weights[i]);
 
-    acc.set_initialized(view);
+    acc.initialized[view] = true;
 }
 
 void NNUE::remove(Accum& acc, const Accum& prev, Piece pc, Square psq, Square ksq, Color view) const {
     const int idx = feature_idx(pc, psq, ksq, view);
     const auto weights = ptr_cast<const ivec_t>(&ft_weights[idx * FT_SIZE]);
 
-    auto acc_data = ptr_cast<ivec_t>(acc.get_data(view));
-    const auto prev_data = acc.is_initialized(view) ? acc_data : ptr_cast<const ivec_t>(prev.get_data(view));
+    auto acc_data = ptr_cast<ivec_t>(acc.data[view]);
+    const auto prev_data = acc.initialized[view] ? acc_data : ptr_cast<const ivec_t>(prev.data[view]);
 
     for (int i = 0; i < FT_SIZE / simd::INT16_VEC_SIZE; i++)
         acc_data[i] = sub_epi16(prev_data[i], weights[i]);
 
-    acc.set_initialized(view);
+    acc.initialized[view] = true;
 }
 
 void NNUE::move(Accum& acc, const Accum& prev, Piece pc, Square from, Square to, Square ksq, Color view) const {
@@ -259,13 +259,13 @@ void NNUE::move(Accum& acc, const Accum& prev, Piece pc, Square from, Square to,
     const auto weights_from = ptr_cast<const ivec_t>(&ft_weights[from_idx * FT_SIZE]);
     const auto weights_to = ptr_cast<const ivec_t>(&ft_weights[to_idx * FT_SIZE]);
 
-    auto acc_data = ptr_cast<ivec_t>(acc.get_data(view));
-    const auto prev_data = acc.is_initialized(view) ? acc_data : ptr_cast<const ivec_t>(prev.get_data(view));
+    auto acc_data = ptr_cast<ivec_t>(acc.data[view]);
+    const auto prev_data = acc.initialized[view] ? acc_data : ptr_cast<const ivec_t>(prev.data[view]);
 
     for (int i = 0; i < FT_SIZE / simd::INT16_VEC_SIZE; i++)
         acc_data[i] = add_epi16(prev_data[i], sub_epi16(weights_to[i], weights_from[i]));
 
-    acc.set_initialized(view);
+    acc.initialized[view] = true;
 }
 
 // Global Variable

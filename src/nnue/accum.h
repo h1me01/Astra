@@ -25,21 +25,30 @@ struct DirtyPiece {
 
 class DirtyPieces {
   public:
-    DirtyPieces()
-        : idx(0) {}
+    DirtyPieces() {
+        reset();
+    }
 
     void reset() {
         idx = 0;
+        needs_refresh[WHITE] = needs_refresh[BLACK] = false;
+    }
+
+    void add(Piece pc, Square from, Square to) {
+        assert(valid_piece(pc) && idx < 3);
+        dpcs[idx++] = DirtyPiece(pc, from, to);
+
+        if (piece_type(pc) == KING) {
+            Color c = piece_color(pc);
+            needs_refresh[c] |= INPUT_BUCKET[rel_sq(c, from)] != INPUT_BUCKET[rel_sq(c, to)] //
+                                || sq_file(from) + sq_file(to) == 7;
+        }
     }
 
     void pop() {
         assert(idx > 0);
-        idx--;
-    }
-
-    void add(Piece pc, Square from, Square to) {
-        assert(idx < 3);
-        dpcs[idx++] = DirtyPiece(pc, from, to);
+        if (idx > 0)
+            idx--;
     }
 
     DirtyPiece& operator[](int i) {
@@ -51,80 +60,45 @@ class DirtyPieces {
         return idx;
     }
 
+  public:
+    Square wksq, bksq;
+    bool needs_refresh[NUM_COLORS];
+
   private:
     int idx;
     DirtyPiece dpcs[3]; // only 3 pieces at max can be updated per move
 };
 
-class Accum {
-  public:
+struct Accum {
+    bool initialized[NUM_COLORS];
+    DirtyPieces dpcs;
+    alignas(ALIGNMENT) int16_t data[NUM_COLORS][FT_SIZE];
+
     Accum() {
         reset();
     }
 
-    void update(Accum& prev, Color view);
-
     void reset() {
-        dirty_pcs.reset();
-        wksq = bksq = NO_SQUARE;
-        initialized[WHITE] = refresh[WHITE] = false;
-        initialized[BLACK] = refresh[BLACK] = false;
+        dpcs.reset();
+        initialized[WHITE] = initialized[BLACK] = false;
     }
 
-    void set_initialized(Color view) {
-        assert(valid_color(view));
-        this->initialized[view] = true;
+    bool needs_refresh(Color c) const {
+        assert(valid_color(c));
+        return dpcs.needs_refresh[c];
     }
 
-    void set_refresh(Color view) {
-        assert(valid_color(view));
-        this->refresh[view] = true;
-    }
-
-    void update(const DirtyPieces& dpcs, Square wksq, Square bksq) {
-        assert(valid_sq(wksq) && valid_sq(bksq));
-        dirty_pcs = dpcs;
-        this->wksq = wksq;
-        this->bksq = bksq;
-    }
-
-    bool is_initialized(Color view) const {
-        assert(valid_color(view));
-        return initialized[view];
-    }
-
-    bool needs_refresh(Color view) const {
-        assert(valid_color(view));
-        return refresh[view];
-    }
-
-    int16_t* get_data(Color view) {
-        assert(valid_color(view));
-        return data[view];
-    }
-
-    int16_t* get_data(Color view) const {
-        assert(valid_color(view));
-        return const_cast<int16_t*>(data[view]);
-    }
-
-  private:
-    Square wksq, bksq;
-
-    bool initialized[NUM_COLORS];
-    bool refresh[NUM_COLORS];
-
-    DirtyPieces dirty_pcs;
-
-    alignas(ALIGNMENT) int16_t data[NUM_COLORS][FT_SIZE];
+    void update(Accum& prev, Color view);
 };
 
 // idea from koivisto
-class AccumEntry {
-  public:
+struct AccumEntry {
+    Accum accum;
+    U64 pieces_bb[NUM_COLORS][NUM_PIECE_TYPES];
+
     void reset() {
         std::memset(pieces_bb, 0, sizeof(pieces_bb));
-        nnue.init_accum(acc);
+        nnue.init_accum(accum);
     }
 
     U64& operator()(Color c, PieceType pt) {
@@ -134,33 +108,12 @@ class AccumEntry {
     const U64& operator()(Color c, PieceType pt) const {
         return pieces_bb[c][pt];
     }
-
-    Accum& get_accum() {
-        return acc;
-    }
-
-  private:
-    Accum acc;
-    U64 pieces_bb[NUM_COLORS][NUM_PIECE_TYPES];
 };
 
 class AccumList {
   public:
     AccumList()
-        : idx(0),
-          data{} {}
-
-    void decrement() {
-        if (idx > 0)
-            idx--;
-    }
-
-    Accum& increment() {
-        idx++;
-        assert(idx < MAX_PLY);
-        data[idx].reset();
-        return data[idx];
-    }
+        : idx(0) {}
 
     void reset(Board& board) {
         idx = 0;
@@ -174,6 +127,19 @@ class AccumList {
     }
 
     void refresh(Color view, Board& board);
+
+    void increment(const DirtyPieces& dirty_pieces) {
+        idx++;
+        assert(idx < MAX_PLY);
+        data[idx].reset();
+        data[idx].dpcs = dirty_pieces;
+    }
+
+    void decrement() {
+        assert(idx > 0);
+        if (idx > 0)
+            idx--;
+    }
 
     Accum& operator[](int i) {
         assert(i >= 0 && i <= MAX_PLY);
@@ -201,7 +167,6 @@ class AccumList {
 
   private:
     int idx;
-
     std::array<Accum, MAX_PLY + 1> data;
     AccumEntry entries[NUM_COLORS][2 * INPUT_BUCKETS];
 };

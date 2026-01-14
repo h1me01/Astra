@@ -6,7 +6,12 @@
 
 namespace uci {
 
-enum class OptionType { NONE, SPIN, STRING, CHECK };
+enum class OptionType {
+    NONE,
+    SPIN,
+    STRING,
+    CHECK,
+};
 
 class Option {
   public:
