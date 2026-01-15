@@ -14,13 +14,6 @@ struct Time {
 };
 
 class TimeMan {
-  private:
-    using Clock = std::chrono::steady_clock;
-    using TimePoint = Clock::time_point;
-
-  private:
-    TimePoint start_time;
-
   public:
     TimeMan()
         : start_time(Clock::now()) {}
@@ -49,6 +42,13 @@ class TimeMan {
 
         return time;
     }
+
+  private:
+    using Clock = std::chrono::steady_clock;
+    using TimePoint = Clock::time_point;
+
+  private:
+    TimePoint start_time;
 };
 
 } // namespace search

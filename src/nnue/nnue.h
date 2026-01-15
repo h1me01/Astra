@@ -17,20 +17,9 @@ class Board;
 
 namespace nnue {
 
-class Accum;
+struct Accum;
 
 // (13x768->1536)x2->(16->32->1)x8->selected output
-
-inline bool needs_refresh(Piece pc, Move m) {
-    assert(m);
-
-    if (piece_type(pc) != KING)
-        return false;
-
-    Color view = piece_color(pc);
-    return INPUT_BUCKET[rel_sq(view, m.from())] != INPUT_BUCKET[rel_sq(view, m.to())] ||
-           sq_file(m.from()) + sq_file(m.to()) == 7;
-}
 
 template <typename T, size_t N>
 class LayerOutput {

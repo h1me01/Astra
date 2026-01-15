@@ -29,7 +29,7 @@ void NoisyHistory::update(const Board& board, Move move, int bonus) {
     assert(move);
 
     Piece pc = board.piece_at(move.from());
-    PieceType captured = piece_type(board.captured_piece(move));
+    PieceType captured = piece_type(board.capture_piece(move));
 
     assert(valid_piece(pc));
     assert(valid_piece_type(captured) || move.is_prom());

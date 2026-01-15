@@ -2,6 +2,7 @@
 
 #include "bitboard.h"
 #include "misc.h"
+#include "zobrist.h"
 
 namespace chess {
 
@@ -11,25 +12,27 @@ class CastlingRights {
         : mask(0) {}
 
     void add_kingside(Color c) {
-        mask |= oo_mask(c);
+        mask |= oo_bb(c);
     }
 
     void add_queenside(Color c) {
-        mask |= ooo_mask(c);
+        mask |= ooo_bb(c);
     }
 
-    void update(Square from, Square to) {
+    U64 update(Square from, Square to) {
+        U64 hash = zobrist::castling_hash(hash_idx()); // remove old rights
         mask &= ~(sq_bb(from) | sq_bb(to));
+        return hash ^ zobrist::castling_hash(hash_idx()); // add new rights
     }
 
     bool kingside(const Color c) const {
         assert(valid_color(c));
-        return (mask & oo_mask(c)) == oo_mask(c);
+        return (mask & oo_bb(c)) == oo_bb(c);
     }
 
     bool queenside(const Color c) const {
         assert(valid_color(c));
-        return (mask & ooo_mask(c)) == ooo_mask(c);
+        return (mask & ooo_bb(c)) == ooo_bb(c);
     }
 
     bool any(const Color c) const {

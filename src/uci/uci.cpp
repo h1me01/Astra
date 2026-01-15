@@ -110,23 +110,23 @@ void UCI::loop(int argc, char** argv) {
             std::cout << "id author Semih Oezalp" << std::endl;
             options.print();
             std::cout << "uciok" << std::endl;
-        } else if (token == "isready")
+        } else if (token == "isready") {
             std::cout << "readyok" << std::endl;
-        else if (token == "ucinewgame")
+        } else if (token == "ucinewgame") {
             new_game();
-        else if (token == "position")
+        } else if (token == "position") {
             update_position(is);
-        else if (token == "go")
+        } else if (token == "go") {
             go(is);
-        else if (token == "bench")
+        } else if (token == "bench") {
             bench();
-        else if (token == "tune")
+        } else if (token == "tune") {
             search::params_to_spsa();
-        else if (token == "setoption")
+        } else if (token == "setoption") {
             options.set(is.str());
-        else if (token == "d")
+        } else if (token == "d") {
             board.print();
-        else if (token == "stop") {
+        } else if (token == "stop") {
             search::threads.stop();
             search::threads.wait();
         } else if (token == "quit") {
@@ -134,8 +134,9 @@ void UCI::loop(int argc, char** argv) {
             search::threads.wait();
             tb_free();
             break;
-        } else
+        } else {
             std::cout << "Unknown Command: " << token << std::endl;
+        }
     }
 }
 
@@ -143,12 +144,12 @@ void UCI::update_position(std::istringstream& is) {
     std::string token, fen;
 
     is >> token;
-    if (token == "startpos")
+    if (token == "startpos") {
         fen = STARTING_FEN;
-    else if (token == "fen")
+    } else if (token == "fen") {
         while (is >> token && token != "moves")
             fen += token + " ";
-    else {
+    } else {
         std::cout << "Unknown command: " << token << std::endl;
         return;
     }
@@ -192,25 +193,25 @@ void UCI::go(std::istringstream& is) {
         } else if (token == "searchmoves") {
             while (is >> token)
                 limits.search_moves.push_back(token);
-        } else if (token == "wtime")
+        } else if (token == "wtime") {
             is >> w_time;
-        else if (token == "btime")
+        } else if (token == "btime") {
             is >> b_time;
-        else if (token == "winc")
+        } else if (token == "winc") {
             is >> w_inc;
-        else if (token == "binc")
+        } else if (token == "binc") {
             is >> b_inc;
-        else if (token == "movestogo")
+        } else if (token == "movestogo") {
             is >> moves_to_go;
-        else if (token == "movetime")
+        } else if (token == "movetime") {
             is >> limits.time.maximum;
-        else if (token == "depth")
+        } else if (token == "depth") {
             is >> limits.depth;
-        else if (token == "nodes")
+        } else if (token == "nodes") {
             is >> limits.nodes;
-        else if (token == "infinite")
+        } else if (token == "infinite") {
             limits.infinite = true;
-        else {
+        } else {
             std::cout << "Unknown command: " << token << "\n";
             return;
         }
@@ -220,11 +221,9 @@ void UCI::go(std::istringstream& is) {
     int64_t time_left = (stm == WHITE) ? w_time : b_time;
 
     if (time_left != 0) {
-        limits.time = search::TimeMan::get_optimum( //
-            time_left,                              //
-            (stm == WHITE) ? w_inc : b_inc,         //
-            std::max(moves_to_go, 0),               //
-            std::stoi(options.get("MoveOverhead"))  //
+        int inc = (stm == WHITE) ? w_inc : b_inc;
+        limits.time = search::TimeMan::get_optimum(
+            time_left, inc, std::max(moves_to_go, 0), std::stoi(options.get("MoveOverhead"))
         );
     }
 

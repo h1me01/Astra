@@ -63,10 +63,12 @@ class MoveList {
     }
 
     T& operator[](int i) {
+        assert(i >= 0 && i < size());
         return list[i];
     }
 
     const T& operator[](int i) const {
+        assert(i >= 0 && i < size());
         return list[i];
     }
 

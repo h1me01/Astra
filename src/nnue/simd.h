@@ -44,7 +44,7 @@
 
 namespace simd {
 
-// constants
+// Constants
 
 constexpr int FLOAT_VEC_SIZE = sizeof(fvec_t) / sizeof(float);
 constexpr int INT32_VEC_SIZE = sizeof(ivec_t) / sizeof(int32_t);
@@ -62,7 +62,7 @@ const ivec_t ZERO_IVEC = _mm256_setzero_si256();
 const fvec_t ZERO_FVEC = _mm256_setzero_ps();
 #endif
 
-// utility functions
+// Utility Functions
 
 inline ivec_t clamp_epi16(ivec_t val, ivec_t min_val, ivec_t max_val) {
     return min_epi16(max_epi16(val, min_val), max_val);

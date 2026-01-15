@@ -7,7 +7,7 @@ struct StateInfo {
     Square ep_sq = NO_SQUARE;
     CastlingRights castling_rights;
 
-    int fmr_counter = 0; // fifty move rule
+    int fifty_move_counter = 0;
     int plies_from_null = 0;
     int repetition = 0;
 
@@ -46,7 +46,8 @@ class StateInfoList {
 
     void decrement() {
         assert(idx > 0);
-        idx--;
+        if (idx > 0)
+            idx--;
     }
 
     void clear() {

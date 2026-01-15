@@ -90,7 +90,7 @@ PARAM(fp_depth, 10, 2, 20);
 PARAM(fp_base, 88, 1, 300);
 PARAM(fp_mult, 104, 5, 200);
 
-PARAM(see_cap_margin, -103, -200, -20);
+PARAM(see_noisy_margin, -103, -200, -20);
 PARAM(see_quiet_margin, -15, -100, -1);
 
 PARAM(double_ext_margin, 13, 1, 30);

@@ -46,8 +46,8 @@ class Board {
     nnue::DirtyPieces make_move(Move move);
     void undo_move(Move move);
 
-    void make_nullmove();
-    void undo_nullmove();
+    void make_move();
+    void undo_move();
 
     void perft(int depth);
 
@@ -68,8 +68,11 @@ class Board {
     U64 occupancy(Color c) const;
     U64 occupancy() const;
 
+    template <PieceType pt>
+    U64 piece_bb() const;
+    template <PieceType pt>
+    U64 piece_bb(Color c) const;
     U64 piece_bb(Color c, PieceType pt) const;
-    U64 piece_bb(PieceType pt) const;
 
     U64 diag_sliders(Color c) const;
     U64 orth_sliders(Color c) const;
@@ -82,7 +85,7 @@ class Board {
     U64 non_pawn_hash(Color c) const;
 
     Piece piece_at(Square sq) const;
-    Piece captured_piece(Move move) const;
+    Piece capture_piece(Move move) const;
 
     Square king_sq(Color c) const;
     Square king_sq() const;
@@ -132,26 +135,23 @@ inline bool Board::in_check() const {
 // doesn't include stalemate
 inline bool Board::is_draw(int ply) const {
     const StateInfo& info = state();
-    return info.fmr_counter > 99 || (info.repetition && info.repetition < ply);
+    return info.fifty_move_counter > 99 || (info.repetition && info.repetition < ply);
 }
 
-// checks if there is any non-pawn material on the board of the current side to move
 inline bool Board::non_pawn_mat(Color c) const {
-    for (auto pt : {KNIGHT, BISHOP, ROOK, QUEEN})
-        if (piece_bb(c, pt))
-            return true;
-    return false;
+    return piece_bb<KNIGHT>(c) || piece_bb<BISHOP>(c) || piece_bb<ROOK>(c) || piece_bb<QUEEN>(c);
 }
 
 inline U64 Board::attackers_to(Color c, Square sq, const U64 occ) const {
-    return (pawn_attacks_bb(~c, sq) & piece_bb(c, PAWN)) |   //
-           (attacks_bb<KNIGHT>(sq) & piece_bb(c, KNIGHT)) |  //
+    return (attacks_bb(~c, sq) & piece_bb<PAWN>(c)) |        //
+           (attacks_bb<KNIGHT>(sq) & piece_bb<KNIGHT>(c)) |  //
            (attacks_bb<BISHOP>(sq, occ) & diag_sliders(c)) | //
            (attacks_bb<ROOK>(sq, occ) & orth_sliders(c)) |   //
-           (attacks_bb<KING>(sq) & piece_bb(c, KING));
+           (attacks_bb<KING>(sq) & piece_bb<KING>(c));
 }
 
 inline U64 Board::occupancy(Color c) const {
+    assert(valid_color(c));
     return occ[c];
 }
 
@@ -159,22 +159,29 @@ inline U64 Board::occupancy() const {
     return occupancy(WHITE) | occupancy(BLACK);
 }
 
+template <PieceType pt>
+inline U64 Board::piece_bb(Color c) const {
+    assert(valid_color(c) && valid_piece_type(pt));
+    return pieces_bb[make_piece(c, pt)];
+}
+
 inline U64 Board::piece_bb(Color c, PieceType pt) const {
     assert(valid_color(c) && valid_piece_type(pt));
     return pieces_bb[make_piece(c, pt)];
 }
 
-inline U64 Board::piece_bb(PieceType pt) const {
+template <PieceType pt>
+inline U64 Board::piece_bb() const {
     assert(valid_piece_type(pt));
-    return piece_bb(WHITE, pt) | piece_bb(BLACK, pt);
+    return piece_bb<pt>(WHITE) | piece_bb<pt>(BLACK);
 }
 
 inline U64 Board::diag_sliders(Color c) const {
-    return piece_bb(c, BISHOP) | piece_bb(c, QUEEN);
+    return piece_bb<BISHOP>(c) | piece_bb<QUEEN>(c);
 }
 
 inline U64 Board::orth_sliders(Color c) const {
-    return piece_bb(c, ROOK) | piece_bb(c, QUEEN);
+    return piece_bb<ROOK>(c) | piece_bb<QUEEN>(c);
 }
 
 inline U64 Board::check_squares(PieceType pt) const {
@@ -204,7 +211,8 @@ inline Piece Board::piece_at(Square sq) const {
     return board[sq];
 }
 
-inline Piece Board::captured_piece(Move move) const {
+// returns the piece that would be captured by the given move
+inline Piece Board::capture_piece(Move move) const {
     assert(move);
     if (move.is_ep())
         return make_piece(~stm, PAWN);
@@ -214,7 +222,7 @@ inline Piece Board::captured_piece(Move move) const {
 }
 
 inline Square Board::king_sq(Color c) const {
-    return lsb(piece_bb(c, KING));
+    return lsb(piece_bb<KING>(c));
 }
 
 inline Square Board::king_sq() const {
@@ -231,12 +239,12 @@ inline Color Board::side_to_move() const {
 
 template <PieceType pt>
 inline int Board::count(Color c) const {
-    return pop_count(piece_bb(c, pt));
+    return pop_count(piece_bb<pt>(c));
 }
 
 template <PieceType pt>
 inline int Board::count() const {
-    return pop_count(piece_bb(pt));
+    return pop_count(piece_bb<pt>());
 }
 
 inline int Board::ply_count() const {
@@ -245,7 +253,7 @@ inline int Board::ply_count() const {
 }
 
 inline int Board::fifty_move_count() const {
-    return state().fmr_counter;
+    return state().fifty_move_counter;
 }
 
 inline StateInfo& Board::state() {

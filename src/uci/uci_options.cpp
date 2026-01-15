@@ -16,7 +16,10 @@ std::string print_option_type(OptionType type) {
         return "check";
     case OptionType::STRING:
         return "string";
+    case OptionType::CHECK:
+        return "check";
     default:
+        assert(false);
         return "unknown";
     }
 }
