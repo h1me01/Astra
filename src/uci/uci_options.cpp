@@ -12,8 +12,6 @@ std::string print_option_type(OptionType type) {
     switch (type) {
     case OptionType::SPIN:
         return "spin";
-    case OptionType::CHECK:
-        return "check";
     case OptionType::STRING:
         return "string";
     case OptionType::CHECK:
