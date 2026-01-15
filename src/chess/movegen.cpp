@@ -24,7 +24,7 @@ Move* make_promotions(Move* ml, Square to) {
 template <Color us, GenType gt>
 Move* gen_pawn_moves(const Board& board, Move* ml, const U64 targets) {
     constexpr Color them = ~us;
-    constexpr U64 rank7_bb = rank_mask(rel_rank(us, RANK_7));
+    constexpr U64 rank7_bb = rank_bb(rel_rank(us, RANK_7));
     constexpr Direction up = (us == WHITE ? NORTH : SOUTH);
     constexpr Direction up_right = (us == WHITE ? NORTH_EAST : SOUTH_WEST);
     constexpr Direction up_left = (us == WHITE ? NORTH_WEST : SOUTH_EAST);
@@ -40,7 +40,7 @@ Move* gen_pawn_moves(const Board& board, Move* ml, const U64 targets) {
     // single and double pawn pushes, no promotions
     if constexpr (gt != ADD_NOISY) {
         U64 b1 = shift<up>(pawns_non7) & empty_sqs;
-        U64 b2 = shift<up>(b1 & rank_mask(rel_rank(us, RANK_3))) & empty_sqs & targets;
+        U64 b2 = shift<up>(b1 & rank_bb(rel_rank(us, RANK_3))) & empty_sqs & targets;
 
         b1 &= targets;
 
@@ -155,9 +155,9 @@ Move* gen_all_moves(const Board& board, Move* ml) {
 
     // castling moves
     if ((gt != ADD_NOISY) && !checkers) {
-        if (info.castling_rights.kingside(us) && !(occ & ks_castle_path_mask(us)))
+        if (info.castling_rights.kingside(us) && !(occ & ks_castle_path_bb(us)))
             *ml++ = Move(rel_sq(us, e1), rel_sq(us, g1), CASTLING);
-        if (info.castling_rights.queenside(us) && !(occ & qs_castle_path_mask(us)))
+        if (info.castling_rights.queenside(us) && !(occ & qs_castle_path_bb(us)))
             *ml++ = Move(rel_sq(us, e1), rel_sq(us, c1), CASTLING);
     }
 

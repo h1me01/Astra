@@ -439,9 +439,9 @@ bool Board::pseudo_legal(Move move) const {
         if (pt != KING || in_check())
             return false;
         if (to == rel_sq(stm, g1))
-            return info.castling_rights.kingside(stm) && !(occ & ks_castle_path_mask(stm));
+            return info.castling_rights.kingside(stm) && !(occ & ks_castle_path_bb(stm));
         else
-            return info.castling_rights.queenside(stm) && !(occ & qs_castle_path_mask(stm));
+            return info.castling_rights.queenside(stm) && !(occ & qs_castle_path_bb(stm));
         return false;
     }
 
@@ -467,14 +467,14 @@ bool Board::pseudo_legal(Move move) const {
         // limit move targets based on checks
         targets &= target_bb;
         // limit move targets based on promotion rank
-        targets &= rank_mask(rel_rank(stm, RANK_8));
+        targets &= rank_bb(rel_rank(stm, RANK_8));
 
         return targets & sq_bb(to);
     }
 
     if (pt == PAWN) {
         // no promotion moves allowed here since we already handled them
-        if (sq_bb(to) & (rank_mask(RANK_1) | rank_mask(RANK_8)))
+        if (sq_bb(to) & (rank_bb(RANK_1) | rank_bb(RANK_8)))
             return false;
 
         if (!move.is_ep()) {

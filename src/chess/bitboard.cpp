@@ -20,8 +20,8 @@ U64 LINE[NUM_SQUARES][NUM_SQUARES];
 
 void init_slider_attacks(PieceType pt) {
     for (Square sq = a1; sq <= h8; ++sq) {
-        U64 edges = ((rank_mask<RANK_1>() | rank_mask<RANK_8>()) & ~rank_mask(sq_rank(sq))) |
-                    ((file_mask<FILE_A>() | file_mask<FILE_H>()) & ~file_mask(sq_file(sq)));
+        U64 edges = ((rank_bb<RANK_1>() | rank_bb<RANK_8>()) & ~rank_bb(sq_rank(sq))) |
+                    ((file_bb<FILE_A>() | file_bb<FILE_H>()) & ~file_bb(sq_file(sq)));
         U64 mask = bitboards::sliding_attack(pt, sq, 0) & ~edges;
 
         if (pt == ROOK)
@@ -60,8 +60,8 @@ void init() {
     init_slider_attacks(BISHOP);
 
     for (Square sq = a1; sq <= h8; ++sq) {
-        PAWN_ATTACKS[WHITE][sq] = pawn_attacks_bb(WHITE, sq);
-        PAWN_ATTACKS[BLACK][sq] = pawn_attacks_bb(BLACK, sq);
+        PAWN_ATTACKS[WHITE][sq] = pawn_attacks_bb<WHITE>(sq);
+        PAWN_ATTACKS[BLACK][sq] = pawn_attacks_bb<BLACK>(sq);
         PSEUDO_ATTACKS[KNIGHT][sq] = knight_attacks_bb(sq);
         PSEUDO_ATTACKS[BISHOP][sq] = bishop_attacks_bb(sq, 0);
         PSEUDO_ATTACKS[ROOK][sq] = rook_attacks_bb(sq, 0);

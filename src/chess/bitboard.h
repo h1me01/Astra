@@ -13,43 +13,43 @@ constexpr U64 sq_bb(Square sq) {
 }
 
 template <File f>
-constexpr U64 file_mask() {
+constexpr U64 file_bb() {
     assert(valid_file(f));
     return 0x0101010101010101ULL << f;
 }
 
-constexpr U64 file_mask(File f) {
+constexpr U64 file_bb(File f) {
     assert(valid_file(f));
     return 0x0101010101010101ULL << f;
 }
 
 template <Rank r>
-constexpr U64 rank_mask() {
+constexpr U64 rank_bb() {
     assert(valid_rank(r));
     return 0xFFULL << (r * 8);
 }
 
-constexpr U64 rank_mask(Rank r) {
+constexpr U64 rank_bb(Rank r) {
     assert(valid_rank(r));
     return 0xFFULL << (r * 8);
 }
 
-constexpr U64 ks_castle_path_mask(Color c) {
+constexpr U64 ks_castle_path_bb(Color c) {
     assert(valid_color(c));
     return (c == WHITE) ? 0x60ULL : 0x6000000000000000ULL;
 }
 
-constexpr U64 qs_castle_path_mask(Color c) {
+constexpr U64 qs_castle_path_bb(Color c) {
     assert(valid_color(c));
     return (c == WHITE) ? 0x0EULL : 0x0E00000000000000ULL;
 }
 
-constexpr U64 oo_mask(Color c) {
+constexpr U64 oo_bb(Color c) {
     assert(valid_color(c));
     return (c == WHITE) ? 0x90ULL : 0x9000000000000000ULL;
 }
 
-constexpr U64 ooo_mask(Color c) {
+constexpr U64 ooo_bb(Color c) {
     assert(valid_color(c));
     return (c == WHITE) ? 0x11ULL : 0x1100000000000000ULL;
 }
@@ -74,12 +74,12 @@ constexpr U64 shift(const U64 b) {
         // clang-format off
         case NORTH:      return b << 8;
         case SOUTH:      return b >> 8;
-        case EAST:       return (b & ~file_mask(FILE_H)) << 1;
-        case WEST:       return (b & ~file_mask(FILE_A)) >> 1;
-        case NORTH_EAST: return (b & ~file_mask(FILE_H)) << 9;
-        case NORTH_WEST: return (b & ~file_mask(FILE_A)) << 7;
-        case SOUTH_EAST: return (b & ~file_mask(FILE_H)) >> 7;
-        case SOUTH_WEST: return (b & ~file_mask(FILE_A)) >> 9;
+        case EAST:       return (b & ~file_bb(FILE_H)) << 1;
+        case WEST:       return (b & ~file_bb(FILE_A)) >> 1;
+        case NORTH_EAST: return (b & ~file_bb(FILE_H)) << 9;
+        case NORTH_WEST: return (b & ~file_bb(FILE_A)) << 7;
+        case SOUTH_EAST: return (b & ~file_bb(FILE_H)) >> 7;
+        case SOUTH_WEST: return (b & ~file_bb(FILE_A)) >> 9;
         default:         return 0;
         // clang-format on
     }
@@ -94,9 +94,16 @@ struct SliderAttackTable {
     int shifts[NUM_SQUARES]{};
     U64 attacks[NUM_SQUARES][N]{};
 
-    U64 idx(Square sq, U64 occ) const {
+    U64 attacks_bb(Square sq, U64 occ) const {
         assert(valid_sq(sq));
-        return (occ & mask[sq]) * magics[sq] >> shifts[sq];
+
+#if defined(__BMI2__)
+        int idx = _pext_u64(occ, mask[sq]);
+#else
+        int idx = (occ & mask[sq]) * magics[sq] >> shifts[sq];
+#endif
+
+        return attacks[sq][idx];
     }
 };
 
@@ -150,7 +157,8 @@ inline U64 line(Square sq1, Square sq2) {
     return bitboards::LINE[sq1][sq2];
 }
 
-constexpr U64 pawn_attacks_bb(Color c, Square sq) {
+template <Color c>
+constexpr U64 pawn_attacks_bb(Square sq) {
     assert(valid_color(c) && valid_sq(sq));
 
     U64 b = sq_bb(sq);
@@ -167,26 +175,12 @@ constexpr U64 knight_attacks_bb(Square sq) {
 
 inline U64 rook_attacks_bb(Square sq, const U64 occ) {
     assert(valid_sq(sq));
-
-#if defined(__BMI2__)
-    const int idx = _pext_u64(occ, bitboards::ROOK_TABLE.mask[sq]);
-#else
-    const U64 idx = bitboards::ROOK_TABLE.idx(sq, occ);
-#endif
-
-    return bitboards::ROOK_TABLE.attacks[sq][idx];
+    return bitboards::ROOK_TABLE.attacks_bb(sq, occ);
 }
 
 inline U64 bishop_attacks_bb(Square sq, const U64 occ) {
     assert(valid_sq(sq));
-
-#if defined(__BMI2__)
-    const int idx = _pext_u64(occ, bitboards::BISHOP_TABLE.mask[sq]);
-#else
-    const U64 idx = bitboards::BISHOP_TABLE.idx(sq, occ);
-#endif
-
-    return bitboards::BISHOP_TABLE.attacks[sq][idx];
+    return bitboards::BISHOP_TABLE.attacks_bb(sq, occ);
 }
 
 constexpr U64 king_attacks_bb(Square sq) {

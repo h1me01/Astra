@@ -12,11 +12,11 @@ class CastlingRights {
         : mask(0) {}
 
     void add_kingside(Color c) {
-        mask |= oo_mask(c);
+        mask |= oo_bb(c);
     }
 
     void add_queenside(Color c) {
-        mask |= ooo_mask(c);
+        mask |= ooo_bb(c);
     }
 
     U64 update(Square from, Square to) {
@@ -27,12 +27,12 @@ class CastlingRights {
 
     bool kingside(const Color c) const {
         assert(valid_color(c));
-        return (mask & oo_mask(c)) == oo_mask(c);
+        return (mask & oo_bb(c)) == oo_bb(c);
     }
 
     bool queenside(const Color c) const {
         assert(valid_color(c));
-        return (mask & ooo_mask(c)) == ooo_mask(c);
+        return (mask & ooo_bb(c)) == ooo_bb(c);
     }
 
     bool any(const Color c) const {
