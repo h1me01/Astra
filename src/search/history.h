@@ -3,6 +3,8 @@
 #include "../chess/board.h"
 #include "../chess/movegen.h"
 
+#include "tune_params.h"
+
 #include "stack.h"
 
 using namespace chess;
@@ -142,10 +144,10 @@ class CorrectionHistories {
 
     int get(const Board& board) const {
         Color stm = board.side_to_move();
-        return pawn[stm][idx(board.pawn_hash())]                  //
-               + minor_piece[stm][idx(board.minor_piece_hash())]  //
-               + w_non_pawn[stm][idx(board.non_pawn_hash(WHITE))] //
-               + b_non_pawn[stm][idx(board.non_pawn_hash(BLACK))];
+        return p_corr_weight * pawn[stm][idx(board.pawn_hash())]                   //
+               + m_corr_weight * minor_piece[stm][idx(board.minor_piece_hash())]   //
+               + np_corr_weight * w_non_pawn[stm][idx(board.non_pawn_hash(WHITE))] //
+               + cont_corr_weight * b_non_pawn[stm][idx(board.non_pawn_hash(BLACK))];
     }
 
   private:
@@ -182,7 +184,7 @@ class ContinuationCorrectionHistory {
         Piece pc = board.piece_at(m.to());
         assert(valid_piece(pc));
 
-        return (*(stack - 2)->cont_corr_hist)[pc][m.to()];
+        return cont_corr_weight * (*(stack - 2)->cont_corr_hist)[pc][m.to()];
     }
 
     PieceToContinuation* get() {

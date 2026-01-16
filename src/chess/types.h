@@ -5,8 +5,6 @@
 #include <iostream>
 #include <string>
 
-#include "../search/tune_params.h"
-
 namespace chess {
 
 using U64 = uint64_t;
@@ -14,8 +12,6 @@ using Score = int;
 
 const std::string PIECE_STR = "PNBRQKpnbrqk.";
 const std::string STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-
-constexpr int PIECE_VALUES[] = {100, 360, 385, 635, 1200, 0, 0};
 
 constexpr int MAX_PLY = 128;
 constexpr int MAX_MOVES = 128;
