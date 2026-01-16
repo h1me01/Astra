@@ -16,6 +16,7 @@ make -j
 
 ## Credits
 - Engine Inspiration: [Stockfish](https://github.com/official-stockfish/Stockfish), [Koivisto](https://github.com/Luecx/Koivisto), [Berserk](https://github.com/jhonnold/berserk)
+- Testing Framework: [OpenBench](https://github.com/AndyGrant/OpenBench)
 - Tablebase Probing: [Fathom](https://github.com/jdart1/Fathom)
-- Binary Embedding: [incbin](https://github.com/graphitemaster/incbin)
+- Weights Embedding: [incbin](https://github.com/graphitemaster/incbin)
 - Learning Resource: [Chess Programming Wiki](https://www.chessprogramming.org/Main_Page)
