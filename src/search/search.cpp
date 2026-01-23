@@ -213,7 +213,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack* stack, bool cut
 
     // check for upcoming repetition
     if (!root_node && alpha < SCORE_DRAW && board.upcoming_repetition(stack->ply)) {
-        alpha = SCORE_DRAW;
+        alpha = draw_score();
         if (alpha >= beta)
             return alpha;
     }
@@ -228,9 +228,9 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack* stack, bool cut
 
     if (!root_node) {
         if (stack->ply >= MAX_PLY - 1)
-            return in_check ? SCORE_DRAW : evaluate();
+            return in_check ? draw_score() : evaluate();
         if (board.is_draw(stack->ply))
-            return SCORE_DRAW;
+            return draw_score();
 
         // mate distance pruning
         alpha = std::max(mated_in(stack->ply), alpha);
@@ -703,21 +703,20 @@ Score Search::quiescence(Score alpha, Score beta, Stack* stack) {
     assert(pv_node || (alpha == beta - 1));
     assert(-SCORE_INFINITE <= alpha && alpha < beta && beta <= SCORE_INFINITE);
 
-    if (pv_node)
+    if (pv_node) {
         stack->pv.length = stack->ply;
-
-    if (pv_node)
         sel_depth = std::max(sel_depth, stack->ply);
+    }
 
     if (threads.is_stopped())
         return 0;
 
     if (board.is_draw(stack->ply))
-        return SCORE_DRAW;
+        return draw_score();
 
     // check for upcoming repetition
     if (alpha < SCORE_DRAW && board.upcoming_repetition(stack->ply)) {
-        alpha = SCORE_DRAW;
+        alpha = draw_score();
         if (alpha >= beta)
             return alpha;
     }
@@ -726,7 +725,7 @@ Score Search::quiescence(Score alpha, Score beta, Stack* stack) {
     const U64 hash = board.hash();
 
     if (stack->ply >= MAX_PLY - 1)
-        return in_check ? SCORE_DRAW : evaluate();
+        return in_check ? draw_score() : evaluate();
 
     Move best_move = Move::none();
 
@@ -914,6 +913,10 @@ Score Search::adjust_eval(int32_t eval, Stack* stack) const {
     eval += (corr_histories.get(board) + cont_corr_history.get(board, stack)) / 256;
 
     return std::clamp(eval, SCORE_TB_LOSS_IN_MAX_PLY + 1, SCORE_TB_WIN_IN_MAX_PLY - 1);
+}
+
+Score Search::draw_score() const {
+    return 1 + Score(get_nodes() & 0x2);
 }
 
 unsigned int Search::probe_wdl() const {
