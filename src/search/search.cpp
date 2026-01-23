@@ -121,6 +121,11 @@ void Search::start() {
 
         prev_best_move = best_move;
         scores[root_depth] = score;
+
+        if (is_main_thread && (is_limit_reached() || (limits.nodes && get_nodes() >= 250'000))) {
+            threads.stop();
+            break;
+        }
     }
 
     if (!is_main_thread)
@@ -197,11 +202,6 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack* stack, bool cut
 
     if (pv_node)
         stack->pv.length = stack->ply;
-
-    if (is_limit_reached()) {
-        threads.stop();
-        return 0;
-    }
 
     if (threads.is_stopped())
         return 0;
