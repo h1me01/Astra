@@ -147,7 +147,7 @@ class CorrectionHistories {
         return p_corr_weight * pawn[stm][idx(board.pawn_hash())]                   //
                + m_corr_weight * minor_piece[stm][idx(board.minor_piece_hash())]   //
                + np_corr_weight * w_non_pawn[stm][idx(board.non_pawn_hash(WHITE))] //
-               + cont_corr_weight * b_non_pawn[stm][idx(board.non_pawn_hash(BLACK))];
+               + np_corr_weight * b_non_pawn[stm][idx(board.non_pawn_hash(BLACK))];
     }
 
   private:
