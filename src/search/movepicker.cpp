@@ -126,7 +126,7 @@ void MovePicker<st>::gen_score_noisy() {
 
     for (auto& m : ml_main) {
         PieceType captured = m.is_ep() ? PAWN : piece_type(board.piece_at(m.to()));
-        m.score = noisy_history.get(board, m) + 16 * PIECE_VALUES[captured];
+        m.score = noisy_history.get(board, m) + 16 * piece_values(captured);
     }
 }
 

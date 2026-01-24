@@ -3,6 +3,10 @@
 #include <string>
 #include <vector>
 
+#include "../chess/types.h"
+
+using namespace chess;
+
 // #define TUNE
 
 namespace search {
@@ -29,11 +33,17 @@ void params_to_spsa();
 #define PARAM(name, value, min, max) constexpr int name = value
 #endif
 
+PARAM(pawn_value, 100, 50, 150);
+PARAM(knight_value, 360, 200, 450);
+PARAM(bishop_value, 385, 200, 450);
+PARAM(rook_value, 635, 400, 675);
+PARAM(queen_value, 1200, 700, 1300);
+
 PARAM(pawn_value_see, 98, 50, 150);
-PARAM(knight_value_see, 318, 200, 400);
-PARAM(bishop_value_see, 335, 200, 400);
+PARAM(knight_value_see, 318, 200, 450);
+PARAM(bishop_value_see, 335, 200, 450);
 PARAM(rook_value_see, 504, 400, 675);
-PARAM(queen_value_see, 997, 700, 1500);
+PARAM(queen_value_see, 997, 700, 1300);
 
 PARAM(tm_stability_base, 157, 100, 200);
 PARAM(tm_stability_mult, 35, 0, 250);
@@ -79,7 +89,8 @@ PARAM(nmp_rmin, 4, 1, 10);
 
 PARAM(iir_depth, 4, 4, 6);
 
-PARAM(probcut_margin, 217, 1, 500);
+PARAM(pc_margin, 217, 1, 500);
+PARAM(pc_improving_mult, 60, 1, 120);
 
 PARAM(hist_div, 7778, 1, 16384);
 
@@ -123,5 +134,23 @@ PARAM(noisy_hist_bonus_mult, 1024, 1, 2048);
 PARAM(noisy_hist_malus_mult, 1024, 1, 2048);
 
 PARAM(quiet_checker_bonus, 75, 0, 150);
+
+PARAM(p_corr_weight, 4, 1, 168);
+PARAM(m_corr_weight, 4, 1, 168);
+PARAM(np_corr_weight, 4, 1, 168);
+PARAM(cont_corr_weight, 4, 1, 168);
+
+inline int piece_values(PieceType pt) {
+    // clang-format off
+    switch(pt) {
+        case PAWN:   return pawn_value;
+        case KNIGHT: return knight_value;
+        case BISHOP: return bishop_value;
+        case ROOK:   return rook_value;
+        case QUEEN:  return queen_value;
+        default:     return 0;
+    }
+    // clang-format on
+}
 
 } // namespace search

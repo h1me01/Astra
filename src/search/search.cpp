@@ -418,7 +418,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack* stack, bool cut
         depth--;
 
     // probcut
-    probcut_beta = beta + probcut_margin - 60 * improving;
+    probcut_beta = beta + pc_margin - pc_improving_mult * improving;
     if (!pv_node                                               //
         && depth >= 3                                          //
         && !is_decisive(beta)                                  //
@@ -910,7 +910,7 @@ Score Search::evaluate() {
 
 Score Search::adjust_eval(int32_t eval, Stack* stack) const {
     eval = (eval * (200 - board.fifty_move_count())) / 200;
-    eval += (corr_histories.get(board) + cont_corr_history.get(board, stack)) / 256;
+    eval += (corr_histories.get(board) + cont_corr_history.get(board, stack)) / 1024;
 
     return std::clamp(eval, SCORE_TB_LOSS_IN_MAX_PLY + 1, SCORE_TB_WIN_IN_MAX_PLY - 1);
 }

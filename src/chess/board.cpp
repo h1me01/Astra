@@ -1,6 +1,8 @@
 #include <chrono>
 #include <cstring>
 
+#include "../search/tune_params.h"
+
 #include "board.h"
 #include "movegen.h"
 
