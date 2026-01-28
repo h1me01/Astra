@@ -897,14 +897,6 @@ Score Search::evaluate() {
 
     int eval = nnue::nnue.forward(board, accum_list.back());
 
-    int material = 122 * board.count<PAWN>()     //
-                   + 401 * board.count<KNIGHT>() //
-                   + 427 * board.count<BISHOP>() //
-                   + 663 * board.count<ROOK>()   //
-                   + 1237 * board.count<QUEEN>();
-
-    eval = (230 + material / 42) * eval / 440;
-
     return std::clamp(eval, -SCORE_MATE_IN_MAX_PLY, SCORE_MATE_IN_MAX_PLY);
 }
 
