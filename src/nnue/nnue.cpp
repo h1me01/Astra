@@ -134,7 +134,7 @@ Score NNUE::forward(Board& board, const Accum& acc) {
 
 LayerOutput<uint8_t, FT_SIZE> NNUE::prep_l1_input(const Color stm, const Accum& acc) {
     LayerOutput<uint8_t, FT_SIZE> output;
-    return output;
+
     for (Color c : {stm, ~stm}) {
         const auto acc_data = acc.data[c];
         const int out_offset = (c == stm) ? 0 : FT_SIZE / 2;
