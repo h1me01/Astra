@@ -18,19 +18,6 @@ INCBIN(Weights, NNUE_PATH);
 
 namespace nnue {
 
-// helper for random weights
-
-template <typename T>
-T random_weight(std::mt19937& rng, T range) {
-    if constexpr (std::is_integral_v<T>) {
-        std::uniform_int_distribution<T> dist(-range, range);
-        return dist(rng);
-    } else {
-        std::uniform_real_distribution<T> dist(-range, range);
-        return dist(rng);
-    }
-}
-
 // activation functions
 
 ivec_t crelu(ivec_t val) {
@@ -44,7 +31,6 @@ fvec_t crelu(fvec_t val) {
 // NNUE
 
 void NNUE::init() {
-    /*
     std::size_t offset = 0;
 
     auto load = [&](auto* dest, std::size_t count) {
@@ -61,32 +47,6 @@ void NNUE::init() {
     load(&l2_biases[0][0], OUTPUT_BUCKETS * L2_SIZE);
     load(&l3_weights[0][0], OUTPUT_BUCKETS * L2_SIZE);
     load(&l3_biases[0], OUTPUT_BUCKETS);
-    */
-
-    // randomly initialize the weights
-
-    std::mt19937 rng(123456);
-    for (auto& w : ft_weights)
-        w = random_weight<int16_t>(rng, FT_QUANT * 0.99 - 1);
-    for (auto& b : ft_biases)
-        b = random_weight<int16_t>(rng, FT_QUANT * 0.99 - 1);
-    for (auto& bucket : l1_weights)
-        for (auto& w : bucket)
-            w = random_weight<int8_t>(rng, L1_QUANT * 0.99 - 1);
-    for (auto& bucket : l1_biases)
-        for (auto& b : bucket)
-            b = random_weight<float>(rng, 0.99f);
-    for (auto& bucket : l2_weights)
-        for (auto& w : bucket)
-            w = random_weight<float>(rng, 0.99f);
-    for (auto& bucket : l2_biases)
-        for (auto& b : bucket)
-            b = random_weight<float>(rng, 0.99f);
-    for (auto& bucket : l3_weights)
-        for (auto& w : bucket)
-            w = random_weight<float>(rng, 0.99f);
-    for (auto& b : l3_biases)
-        b = random_weight<float>(rng, 0.99f);
 
     for (size_t i = 0; i < 256; i++) {
         U64 j = i;
