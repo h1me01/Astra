@@ -248,7 +248,7 @@ void UCI::bench() {
         std::istringstream iss("fen " + pos);
         update_position(iss);
         iss.clear();
-        iss.str("depth 13");
+        iss.str("depth 6");
         go(iss);
 
         search::threads.wait();
