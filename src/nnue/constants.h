@@ -6,7 +6,7 @@ constexpr int INPUT_BUCKETS = 1;
 constexpr int FEATURE_SIZE = 768;
 
 constexpr int INPUT_SIZE = INPUT_BUCKETS * FEATURE_SIZE;
-constexpr int FT_SIZE = 128;
+constexpr int FT_SIZE = 512;
 constexpr int L1_SIZE = 16;
 constexpr int L2_SIZE = 32;
 constexpr int OUTPUT_BUCKETS = 8;
