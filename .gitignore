@@ -9,8 +9,9 @@ python/
 openbench/
 
 *.exe
-*.nnue
 astra
 src/build.mk
+
+*selfgen.nnue
 
 CMakeLists.txt
