@@ -121,11 +121,6 @@ void Search::start() {
 
         prev_best_move = best_move;
         scores[root_depth] = score;
-
-        if (is_main_thread && (is_limit_reached() || (limits.nodes && get_nodes() >= 250'000))) {
-            threads.stop();
-            break;
-        }
     }
 
     if (!is_main_thread)
@@ -202,6 +197,11 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack* stack, bool cut
 
     if (pv_node)
         stack->pv.length = stack->ply;
+
+    if (is_limit_reached()) {
+        threads.stop();
+        return 0;
+    }
 
     if (threads.is_stopped())
         return 0;
@@ -1007,7 +1007,7 @@ void Search::print_uci_info() const {
     if (std::abs(rm.score) >= SCORE_MATE_IN_MAX_PLY)
         std::cout << "mate " << (SCORE_MATE - std::abs(rm.score) + 1) / 2 * (rm.score > 0 ? 1 : -1);
     else
-        std::cout << "cp " << rm.score;
+        std::cout << "cp " << (rm.score * 100) / 250;
 
     std::cout << " nodes " << total_nodes                           //
               << " nps " << total_nodes * 1000 / (elapsed_time + 1) //
