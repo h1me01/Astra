@@ -73,7 +73,7 @@ class NNUE {
     alignas(ALIGNMENT) int16_t ft_biases[FT_SIZE];
     alignas(ALIGNMENT) int8_t l1_weights[OUTPUT_BUCKETS][FT_SIZE * L1_SIZE];
     alignas(ALIGNMENT) float l1_biases[OUTPUT_BUCKETS][L1_SIZE];
-    alignas(ALIGNMENT) float l2_weights[OUTPUT_BUCKETS][L1_SIZE * L2_SIZE];
+    alignas(ALIGNMENT) float l2_weights[OUTPUT_BUCKETS][2 * L1_SIZE * L2_SIZE];
     alignas(ALIGNMENT) float l2_biases[OUTPUT_BUCKETS][L2_SIZE];
     alignas(ALIGNMENT) float l3_weights[OUTPUT_BUCKETS][L2_SIZE];
     alignas(ALIGNMENT) float l3_biases[OUTPUT_BUCKETS];
@@ -94,8 +94,8 @@ class NNUE {
 
     LayerOutput<uint8_t, FT_SIZE> prep_l1_input(const Color stm, const Accum& acc);
     NNZOutput find_nnz(const LayerOutput<uint8_t, FT_SIZE>& input);
-    LayerOutput<float, L1_SIZE> forward_l1(int bucket, const LayerOutput<uint8_t, FT_SIZE>& input);
-    LayerOutput<float, L2_SIZE> forward_l2(int bucket, const LayerOutput<float, L1_SIZE>& input);
+    LayerOutput<float, 2 * L1_SIZE> forward_l1(int bucket, const LayerOutput<uint8_t, FT_SIZE>& input);
+    LayerOutput<float, L2_SIZE> forward_l2(int bucket, const LayerOutput<float, 2 * L1_SIZE>& input);
     float forward_l3(int bucket, const LayerOutput<float, L2_SIZE>& input);
 };
 

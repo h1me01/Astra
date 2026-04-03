@@ -43,7 +43,7 @@ void NNUE::init() {
     load(&ft_biases[0], FT_SIZE);
     load(&l1_weights[0][0], OUTPUT_BUCKETS * FT_SIZE * L1_SIZE);
     load(&l1_biases[0][0], OUTPUT_BUCKETS * L1_SIZE);
-    load(&l2_weights[0][0], OUTPUT_BUCKETS * L1_SIZE * L2_SIZE);
+    load(&l2_weights[0][0], OUTPUT_BUCKETS * 2 * L1_SIZE * L2_SIZE);
     load(&l2_biases[0][0], OUTPUT_BUCKETS * L2_SIZE);
     load(&l3_weights[0][0], OUTPUT_BUCKETS * L2_SIZE);
     load(&l3_biases[0], OUTPUT_BUCKETS);
@@ -71,7 +71,7 @@ void NNUE::init() {
         }
         std::memcpy(l1_weights[b], temp_l1_weights, sizeof(temp_l1_weights));
 
-        transpose<float>(l2_weights[b], L2_SIZE, L1_SIZE);
+        transpose<float>(l2_weights[b], L2_SIZE, 2 * L1_SIZE);
     }
 }
 
@@ -86,10 +86,10 @@ Score NNUE::forward(Board& board, const Accum& acc) {
     const int bucket = (pop_count(board.occupancy()) - 2) / 4;
     assert(0 <= bucket && bucket < OUTPUT_BUCKETS);
 
-    auto l1_input = prep_l1_input(board.side_to_move(), acc);
-    auto l1_output = forward_l1(bucket, l1_input);
-    auto l2_output = forward_l2(bucket, l1_output);
-    return forward_l3(bucket, l2_output);
+    auto l1_in = prep_l1_input(board.side_to_move(), acc);
+    auto l1_out = forward_l1(bucket, l1_in);
+    auto l2_out = forward_l2(bucket, l1_out);
+    return forward_l3(bucket, l2_out);
 }
 
 LayerOutput<uint8_t, FT_SIZE> NNUE::prep_l1_input(const Color stm, const Accum& acc) {
@@ -142,8 +142,8 @@ NNUE::NNZOutput NNUE::find_nnz(const LayerOutput<uint8_t, FT_SIZE>& input) {
     return {count, indices};
 }
 
-LayerOutput<float, L1_SIZE> NNUE::forward_l1(int bucket, const LayerOutput<uint8_t, FT_SIZE>& input) {
-    LayerOutput<float, L1_SIZE> output;
+LayerOutput<float, 2 * L1_SIZE> NNUE::forward_l1(int bucket, const LayerOutput<uint8_t, FT_SIZE>& input) {
+    LayerOutput<float, 2 * L1_SIZE> output;
 
     const auto input_packs = ptr_cast<int32_t>(input);
     auto [nnz_count, nnz_indices] = find_nnz(input);
@@ -190,15 +190,16 @@ LayerOutput<float, L1_SIZE> NNUE::forward_l1(int bucket, const LayerOutput<uint8
         auto converted_linear = cvtepi32_ps(ivec_at(linear, i / simd::INT32_VEC_SIZE));
         auto l1_out = fmadd_ps(converted_linear, simd::DEQUANT_MULT_PS, fvec_at(l1_biases[bucket], i));
         fvec_at(output, i) = crelu(l1_out);
+        fvec_at(output, i + L1_SIZE) = min_ps(mul_ps(l1_out, l1_out), simd::ONE_FVEC);
     }
 
     return output;
 }
 
-LayerOutput<float, L2_SIZE> NNUE::forward_l2(int bucket, const LayerOutput<float, L1_SIZE>& input) {
+LayerOutput<float, L2_SIZE> NNUE::forward_l2(int bucket, const LayerOutput<float, 2 * L1_SIZE>& input) {
     LayerOutput<float, L2_SIZE> output(l2_biases[bucket]);
 
-    for (int i = 0; i < L1_SIZE; i++) {
+    for (int i = 0; i < 2 * L1_SIZE; i++) {
         const auto input_val = set1_ps(input[i]);
         const auto weights = ptr_cast<const float>(&l2_weights[bucket][i * L2_SIZE]);
 
