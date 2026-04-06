@@ -12,6 +12,6 @@ openbench/
 astra
 src/build.mk
 
-*selfgen.nnue
+*.nnue
 
 CMakeLists.txt
