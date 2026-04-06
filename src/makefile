@@ -2,7 +2,7 @@
 ROOT := $(realpath $(dir $(abspath $(lastword $(MAKEFILE_LIST)))))
 
 # Default eval file
-DEFAULT_WEIGHTS := v9.nnue
+DEFAULT_WEIGHTS := selfgen_v10.nnue
 
 # Allow custom EVALFILE path via command line
 ifndef EVALFILE
@@ -11,7 +11,7 @@ ifndef EVALFILE
 endif
 
 # URL for the eval file
-EVALFILE_URL := https://github.com/h1me01/Astra/raw/refs/heads/selfgen/src/weights/$(DEFAULT_WEIGHTS)
+EVALFILE_URL := https://github.com/h1me01/Astra-Networks/releases/download/weights/$(DEFAULT_WEIGHTS)
 
 # Compiler
 CXX := g++
