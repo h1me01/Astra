@@ -1007,7 +1007,7 @@ void Search::print_uci_info() const {
     if (std::abs(rm.score) >= SCORE_MATE_IN_MAX_PLY)
         std::cout << "mate " << (SCORE_MATE - std::abs(rm.score) + 1) / 2 * (rm.score > 0 ? 1 : -1);
     else
-        std::cout << "cp " << (rm.score * 100) / 250;
+        std::cout << "cp " << (rm.score * 100) / 200;
 
     std::cout << " nodes " << total_nodes                           //
               << " nps " << total_nodes * 1000 / (elapsed_time + 1) //
