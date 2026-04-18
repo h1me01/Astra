@@ -83,8 +83,8 @@ class NNUE {
     int feature_idx(Piece pc, Square psq, Square ksq, Color view) const {
         assert(valid_piece(pc) && valid_sq(psq));
 
-        // if (sq_file(ksq) > FILE_D)
-        //     psq = Square(psq ^ 7); // mirror psq horizontally if king is on other half
+        if (sq_file(ksq) > FILE_D)
+            psq = Square(psq ^ 7); // mirror psq horizontally if king is on other half
 
         return rel_sq(view, psq)                 //
                + piece_type(pc) * 64             //

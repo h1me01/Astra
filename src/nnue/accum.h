@@ -41,7 +41,7 @@ class DirtyPieces {
         if (piece_type(pc) == KING) {
             Color c = piece_color(pc);
             needs_refresh[c] |= INPUT_BUCKET[rel_sq(c, from)] != INPUT_BUCKET[rel_sq(c, to)] //
-                                || sq_file(from) + sq_file(to) == 7;
+                                || (sq_file(from) > FILE_D) != (sq_file(to) > FILE_D);
         }
     }
 
