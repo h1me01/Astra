@@ -157,7 +157,7 @@ std::string Board::fen() const {
         fen << "- ";
 
     fen << info.fifty_move_counter << " ";
-    fen << (ply_count() ? (ply_count() + 1) / 2 : 1);
+    fen << (ply_count() / 2 + 1);
 
     return fen.str();
 }
@@ -625,8 +625,8 @@ bool Board::see(Move move, int threshold) const {
         if (!(stm_attacker = (attackers & occupancy(curr_stm))))
             break;
 
-        if (info.pinners[~stm] & new_occ) {
-            stm_attacker &= ~info.blockers[stm];
+        if (info.pinners[~curr_stm] & new_occ) {
+            stm_attacker &= ~info.blockers[curr_stm];
             if (!stm_attacker)
                 break;
         }

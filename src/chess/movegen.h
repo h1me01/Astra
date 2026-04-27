@@ -16,12 +16,17 @@ Move* gen_moves(const Board& board, Move* ml);
 template <typename T>
 class MoveList {
   public:
-    MoveList()
-        : last(list) {}
+    MoveList() {
+        clear();
+    }
+
+    void clear() {
+        last = list;
+    }
 
     template <GenType gt>
     void gen(const Board& board) {
-        last = list; // reset the list
+        clear();
 
         if constexpr (std::is_same_v<T, Move>) {
             last = gen_moves<gt>(board, list);

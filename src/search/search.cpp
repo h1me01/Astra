@@ -46,6 +46,7 @@ void Search::start() {
     nmp_min_ply = 0;
     completed_depth = 0;
 
+    root_moves.clear();
     if (limits.search_moves.size() > 0) {
         MoveList<Move> legal_moves;
         legal_moves.gen<ADD_LEGALS>(board);
