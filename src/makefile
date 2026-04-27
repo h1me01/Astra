@@ -2,7 +2,7 @@
 ROOT := $(realpath $(dir $(abspath $(lastword $(MAKEFILE_LIST)))))
 
 # Default eval file
-DEFAULT_WEIGHTS := selfgen_v16.nnue
+DEFAULT_WEIGHTS := selfgen_v17.nnue
 
 # Allow custom EVALFILE path via command line
 ifndef EVALFILE
