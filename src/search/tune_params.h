@@ -68,6 +68,11 @@ PARAM(tm_node_base, 58, 10, 90);
 
 PARAM(lmr_base, 111, 40, 200);
 PARAM(lmr_div, 297, 150, 500);
+PARAM(lmr_depth, 2, 1, 6);
+PARAM(lmr_min_moves, 3, 1, 10);
+
+PARAM(sdr_min_depth, 2, 0, 6);
+PARAM(sdr_max_depth, 14, 0, 20);
 
 PARAM(tt_hist_bonus_mult, 308, 1, 1536);
 PARAM(tt_hist_bonus_minus, 4, -500, 500);
@@ -97,6 +102,7 @@ PARAM(nmp_rmin, 4, 1, 10);
 
 PARAM(iir_depth, 4, 4, 6);
 
+PARAM(pc_depth, 3, 1, 10);
 PARAM(pc_margin, 217, 1, 500);
 PARAM(pc_improving_mult, 60, 1, 120);
 
@@ -112,6 +118,7 @@ PARAM(fp_mult, 104, 5, 200);
 PARAM(see_noisy_margin, -103, -200, -20);
 PARAM(see_quiet_margin, -15, -100, -1);
 
+PARAM(se_depth, 6, 1, 12);
 PARAM(double_ext_margin, 13, 1, 30);
 PARAM(tripple_ext_margin, 93, 10, 250);
 PARAM(zws_margin, 39, 10, 160);

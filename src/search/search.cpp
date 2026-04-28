@@ -421,7 +421,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack* stack, bool cut
     // probcut
     probcut_beta = beta + pc_margin - pc_improving_mult * improving;
     if (!pv_node                                               //
-        && depth >= 3                                          //
+        && depth >= pc_depth                                   //
         && !is_decisive(beta)                                  //
         && !(valid_score(tt_score) && tt_score < probcut_beta) //
     ) {
@@ -521,7 +521,7 @@ movesloop:
         int extensions = 0;
 
         if (!root_node                     //
-            && depth >= 6                  //
+            && depth >= se_depth           //
             && !stack->skipped             //
             && move == tt_move             //
             && tt_depth >= depth - 3       //
@@ -559,7 +559,7 @@ movesloop:
         Score score = SCORE_NONE;
 
         // late move reductions
-        if (depth >= 2 && move_count >= 3 && !(tt_pv && move.is_noisy())) {
+        if (depth >= lmr_depth && move_count >= lmr_min_moves && !(tt_pv && move.is_noisy())) {
 
             r += !improving;
 
@@ -645,7 +645,7 @@ movesloop:
                     break;
                 }
 
-                if (depth > 2 && depth < 14 && !is_decisive(score))
+                if (depth > sdr_min_depth && depth < sdr_max_depth && !is_decisive(score))
                     depth--;
 
                 alpha = score;
