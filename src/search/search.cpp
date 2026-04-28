@@ -274,7 +274,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack* stack, bool cut
             }
 
             Square prev_sq = (stack - 1)->move ? (stack - 1)->move.to() : NO_SQUARE;
-            if (valid_sq(prev_sq) && !(stack - 1)->move.is_cap() && (stack - 1)->move_count <= 3) {
+            if (valid_sq(prev_sq) && (stack - 1)->move.is_quiet() && (stack - 1)->move_count <= 3) {
                 int malus = std::min<int>(tt_hist_malus_mult * depth + tt_hist_malus_minus, max_tt_hist_malus);
                 cont_history.update((stack - 1)->moved_piece, prev_sq, -malus, stack - 1);
             }
@@ -586,7 +586,7 @@ movesloop:
                 if (new_depth > r_depth)
                     score = -negamax<NON_PV>(new_depth, -alpha - 1, -alpha, stack + 1, !cut_node);
 
-                if (!move.is_cap()) {
+                if (move.is_quiet()) {
                     int bonus = 0;
                     if (score <= alpha)
                         bonus = -history_bonus(new_depth);
@@ -682,7 +682,7 @@ movesloop:
 
     // update correction histories
     if (!in_check                                                //
-        && !(best_move && best_move.is_cap())                    //
+        && !(best_move && best_move.is_noisy())                  //
         && valid_tt_score(best_score, stack->static_eval, bound) //
     ) {
         int bonus = std::clamp((best_score - raw_eval) * depth / 8, -256, 256);
@@ -851,7 +851,7 @@ void Search::make_move(Move move, Stack* stack) {
 
     accum_list.increment(dirty_pieces);
 
-    stack->cont_hist = cont_history.get(board.in_check(), move.is_cap(), stack->moved_piece, move.to());
+    stack->cont_hist = cont_history.get(board.in_check(), move.is_noisy(), stack->moved_piece, move.to());
     stack->cont_corr_hist = cont_corr_history.get(stack->moved_piece, move.to());
 
     tt.prefetch(board.hash());
