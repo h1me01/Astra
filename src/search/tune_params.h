@@ -45,6 +45,14 @@ PARAM(bishop_value_see, 335, 200, 450);
 PARAM(rook_value_see, 504, 400, 675);
 PARAM(queen_value_see, 997, 700, 1300);
 
+PARAM(ms_pawn, 100, 1, 200);
+PARAM(ms_knight, 300, 1, 600);
+PARAM(ms_bishop, 300, 1, 600);
+PARAM(ms_rook, 500, 1, 1000);
+PARAM(ms_queen, 1000, 1, 2000);
+PARAM(ms_base, 22806, 1, 45612);
+PARAM(ms_div, 32768, 1, 65536);
+
 PARAM(tm_stability_base, 157, 100, 200);
 PARAM(tm_stability_mult, 35, 0, 250);
 PARAM(tm_stability_max, 4, 1, 20);

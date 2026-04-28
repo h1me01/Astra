@@ -902,6 +902,14 @@ Score Search::evaluate() {
 }
 
 Score Search::adjust_eval(int32_t eval, Stack* stack) const {
+    int material = ms_pawn * board.count<PAWN>()       //
+                   + ms_knight * board.count<KNIGHT>() //
+                   + ms_bishop * board.count<BISHOP>() //
+                   + ms_rook * board.count<ROOK>()     //
+                   + ms_queen * board.count<QUEEN>();
+
+    eval = eval * (ms_base + material) / ms_div;
+
     eval = (eval * (200 - board.fifty_move_count())) / 200;
     eval += (corr_histories.get(board) + cont_corr_history.get(board, stack)) / 1024;
 
