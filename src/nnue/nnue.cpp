@@ -1,34 +1,19 @@
-#include <algorithm>
-#include <cmath>
-#include <cstring> // std::memcpy
-#include <fstream>
-#include <iostream>
-#include <random>
-
-#include "../chess/board.h"
-#include "accum.h"
-#include "nnue.h"
-#include "utils.h"
+#include <cstring>
 
 #include "../third_party/incbin/incbin.h"
+
+#include "../chess/board.h"
+#include "accumulator.h"
+#include "nnue.h"
 
 #define INCBIN_STYLE INCBIN_STYLE_CAMEL
 
 INCBIN(Weights, NNUE_PATH);
 
-namespace nnue {
+namespace astra::nnue {
 
-// activation functions
-
-ivec_t crelu(ivec_t val) {
-    return simd::clamp_epi16(val, simd::ZERO_IVEC, simd::FT_QUANT_IVEC);
-}
-
-fvec_t crelu(fvec_t val) {
-    return simd::clamp_ps(val, simd::ZERO_FVEC, simd::ONE_FVEC);
-}
-
-// NNUE
+constexpr int FT_SHIFT = 9;
+constexpr int INT8_PER_INT32 = sizeof(int32_t) / sizeof(int8_t);
 
 void NNUE::init() {
     std::size_t offset = 0;
@@ -39,24 +24,24 @@ void NNUE::init() {
         offset += bytes;
     };
 
-    load(&ft_weights[0], INPUT_SIZE * FT_SIZE);
-    load(&ft_biases[0], FT_SIZE);
-    load(&l1_weights[0][0], OUTPUT_BUCKETS * FT_SIZE * L1_SIZE);
-    load(&l1_biases[0][0], OUTPUT_BUCKETS * L1_SIZE);
-    load(&l2_weights[0][0], OUTPUT_BUCKETS * 2 * L1_SIZE * L2_SIZE);
-    load(&l2_biases[0][0], OUTPUT_BUCKETS * L2_SIZE);
-    load(&l3_weights[0][0], OUTPUT_BUCKETS * L2_SIZE);
-    load(&l3_biases[0], OUTPUT_BUCKETS);
+    load(&ft_weight_[0], INPUT_SIZE * FT_SIZE);
+    load(&ft_bias_[0], FT_SIZE);
+    load(&l1_weight_[0][0], OUTPUT_BUCKETS * FT_SIZE * L1_SIZE);
+    load(&l1_bias_[0][0], OUTPUT_BUCKETS * L1_SIZE);
+    load(&l2_weight_[0][0], OUTPUT_BUCKETS * 2 * L1_SIZE * L2_SIZE);
+    load(&l2_bias_[0][0], OUTPUT_BUCKETS * L2_SIZE);
+    load(&l3_weight_[0][0], OUTPUT_BUCKETS * L2_SIZE);
+    load(&l3_bias_[0], OUTPUT_BUCKETS);
 
     for (size_t i = 0; i < 256; i++) {
-        U64 j = i;
-        U64 k = 0;
+        uint64_t j = i;
+        uint64_t k = 0;
         while (j)
-            nnz_lookup[i][k++] = pop_lsb(j);
+            nnz_lookup_[i][k++] = pop_lsb(j);
     }
 
-    simd::permute_simd_data(ptr_cast<__m128i>(ft_biases), FT_SIZE);
-    simd::permute_simd_data(ptr_cast<__m128i>(ft_weights), INPUT_SIZE * FT_SIZE);
+    simd::permute_simd_data(ptr_cast<__m128i>(ft_bias_), FT_SIZE);
+    simd::permute_simd_data(ptr_cast<__m128i>(ft_weight_), INPUT_SIZE * FT_SIZE);
 
     for (int b = 0; b < OUTPUT_BUCKETS; b++) {
         int8_t temp_l1_weights[FT_SIZE * L1_SIZE];
@@ -65,63 +50,64 @@ void NNUE::init() {
                 for (int k = 0; k < INT8_PER_INT32; k++) {
                     int src_idx = j * FT_SIZE + i * INT8_PER_INT32 + k;
                     int dst_idx = (i * L1_SIZE + j) * INT8_PER_INT32 + k;
-                    temp_l1_weights[dst_idx] = l1_weights[b][src_idx];
+                    temp_l1_weights[dst_idx] = l1_weight_[b][src_idx];
                 }
             }
         }
-        std::memcpy(l1_weights[b], temp_l1_weights, sizeof(temp_l1_weights));
+        std::memcpy(l1_weight_[b], temp_l1_weights, sizeof(temp_l1_weights));
 
-        transpose<float>(l2_weights[b], L2_SIZE, 2 * L1_SIZE);
+        transpose<float>(l2_weight_[b], L2_SIZE, 2 * L1_SIZE);
     }
 }
 
-void NNUE::init_accum(Accum& acc) const {
-    std::memcpy(acc.data[WHITE], nnue.ft_biases, sizeof(int16_t) * FT_SIZE);
-    std::memcpy(acc.data[BLACK], nnue.ft_biases, sizeof(int16_t) * FT_SIZE);
-}
-
-Score NNUE::forward(Board& board, const Accum& acc) {
-    assert(acc.initialized[WHITE] && acc.initialized[BLACK]);
+int32_t NNUE::forward(Board& board, const Accumulator& acc) {
+    assert(acc.initialized(WHITE));
+    assert(acc.initialized(BLACK));
 
     const int bucket = (pop_count(board.occupancy()) - 2) / 4;
-    assert(0 <= bucket && bucket < OUTPUT_BUCKETS);
+    assert(0 <= bucket);
+    assert(bucket < OUTPUT_BUCKETS);
 
     auto l1_in = prep_l1_input(board.side_to_move(), acc);
     auto l1_out = forward_l1(bucket, l1_in);
     auto l2_out = forward_l2(bucket, l1_out);
-    return forward_l3(bucket, l2_out);
+    return forward_l3(bucket, l2_out) * EVAL_SCALE;
 }
 
-LayerOutput<uint8_t, FT_SIZE> NNUE::prep_l1_input(const Color stm, const Accum& acc) {
-    LayerOutput<uint8_t, FT_SIZE> output;
+AlignedArray<uint8_t, FT_SIZE> NNUE::prep_l1_input(const Color stm, const Accumulator& acc) {
+    AlignedArray<uint8_t, FT_SIZE> output;
+
+    const simd::ivec_t FT_QUANT_IVEC = simd::set1_epi16(FT_QUANT);
+
+    auto crelu = [&](simd::ivec_t val) { return simd::clamp_epi16(val, simd::zero_ivec(), FT_QUANT_IVEC); };
 
     for (Color c : {stm, ~stm}) {
         const auto acc_data = acc.data[c];
         const int out_offset = (c == stm) ? 0 : FT_SIZE / 2;
 
         for (int i = 0; i < FT_SIZE / 2; i += 2 * simd::INT16_VEC_SIZE) {
-            ivec_t r_clipped1 = crelu(ivec_at(acc_data, i));
-            ivec_t r_clipped2 = crelu(ivec_at(acc_data, i + simd::INT16_VEC_SIZE));
+            simd::ivec_t r_clipped1 = crelu(ivec_at(acc_data, i));
+            simd::ivec_t r_clipped2 = crelu(ivec_at(acc_data, i + simd::INT16_VEC_SIZE));
 
-            ivec_t l_clipped1 = min_epi16(ivec_at(acc_data, i + FT_SIZE / 2), simd::FT_QUANT_IVEC);
-            ivec_t l_clipped2 =
-                min_epi16(ivec_at(acc_data, i + FT_SIZE / 2 + simd::INT16_VEC_SIZE), simd::FT_QUANT_IVEC);
-            ivec_t shifted1 = slli_epi16(r_clipped1, 16 - FT_SHIFT);
-            ivec_t shifted2 = slli_epi16(r_clipped2, 16 - FT_SHIFT);
+            simd::ivec_t l_clipped1 = simd::min_epi16(ivec_at(acc_data, i + FT_SIZE / 2), FT_QUANT_IVEC);
+            simd::ivec_t l_clipped2 =
+                simd::min_epi16(ivec_at(acc_data, i + FT_SIZE / 2 + simd::INT16_VEC_SIZE), FT_QUANT_IVEC);
+            simd::ivec_t shifted1 = simd::slli_epi16(r_clipped1, 16 - FT_SHIFT);
+            simd::ivec_t shifted2 = simd::slli_epi16(r_clipped2, 16 - FT_SHIFT);
 
-            ivec_t product1 = mulhi_epi16(shifted1, l_clipped1);
-            ivec_t product2 = mulhi_epi16(shifted2, l_clipped2);
+            simd::ivec_t product1 = simd::mulhi_epi16(shifted1, l_clipped1);
+            simd::ivec_t product2 = simd::mulhi_epi16(shifted2, l_clipped2);
 
-            ivec_at(output, i + out_offset) = packus_epi16(product1, product2);
+            ivec_at(output, i + out_offset) = simd::packus_epi16(product1, product2);
         }
     }
 
     return output;
 }
 
-NNUE::NNZOutput NNUE::find_nnz(const LayerOutput<uint8_t, FT_SIZE>& input) {
+NNUE::NNZOutput NNUE::find_nnz(const AlignedArray<uint8_t, FT_SIZE>& input) {
     int count = 0;
-    alignas(ALIGNMENT) LayerOutput<uint16_t, FT_SIZE / 4> indices;
+    AlignedArray<uint16_t, FT_SIZE / 4> indices;
 
     const __m128i inc = _mm_set1_epi16(8);
     __m128i base = _mm_setzero_si128();
@@ -131,7 +117,7 @@ NNUE::NNZOutput NNUE::find_nnz(const LayerOutput<uint8_t, FT_SIZE>& input) {
 
         for (int j = 0; j < simd::INT32_VEC_SIZE; j += 8) {
             uint16_t lookup = (nnz >> j) & 0xFF;
-            __m128i offsets = _mm_loadu_si128(ptr_cast<__m128i>(&nnz_lookup[lookup]));
+            __m128i offsets = _mm_loadu_si128(ptr_cast<__m128i>(nnz_lookup_[lookup]));
             _mm_storeu_si128(ptr_cast<__m128i>(indices + count), _mm_add_epi16(base, offsets));
 
             count += __builtin_popcount(lookup);
@@ -142,25 +128,25 @@ NNUE::NNZOutput NNUE::find_nnz(const LayerOutput<uint8_t, FT_SIZE>& input) {
     return {count, indices};
 }
 
-LayerOutput<float, 2 * L1_SIZE> NNUE::forward_l1(int bucket, const LayerOutput<uint8_t, FT_SIZE>& input) {
-    LayerOutput<float, 2 * L1_SIZE> output;
+AlignedArray<float, 2 * L1_SIZE> NNUE::forward_l1(int bucket, const AlignedArray<uint8_t, FT_SIZE>& input) {
+    AlignedArray<float, 2 * L1_SIZE> output;
 
     const auto input_packs = ptr_cast<int32_t>(input);
     auto [nnz_count, nnz_indices] = find_nnz(input);
 
-    alignas(ALIGNMENT) ivec_t linear[L1_SIZE / simd::INT32_VEC_SIZE];
-    std::fill_n(linear, L1_SIZE / simd::INT32_VEC_SIZE, simd::ZERO_IVEC);
+    alignas(64) simd::ivec_t linear[L1_SIZE / simd::INT32_VEC_SIZE];
+    std::memset(linear, 0, sizeof(linear));
 
     int i = 0;
     for (; i < nnz_count - 1; i += 2) {
         const int idx1 = nnz_indices[i];
         const int idx2 = nnz_indices[i + 1];
 
-        const auto input1 = set1_epi32(input_packs[idx1]);
-        const auto input2 = set1_epi32(input_packs[idx2]);
+        const auto input1 = simd::set1_epi32(input_packs[idx1]);
+        const auto input2 = simd::set1_epi32(input_packs[idx2]);
 
-        const auto weights1 = &l1_weights[bucket][idx1 * L1_SIZE * INT8_PER_INT32];
-        const auto weights2 = &l1_weights[bucket][idx2 * L1_SIZE * INT8_PER_INT32];
+        const auto weights1 = &l1_weight_[bucket][idx1 * L1_SIZE * INT8_PER_INT32];
+        const auto weights2 = &l1_weight_[bucket][idx2 * L1_SIZE * INT8_PER_INT32];
 
         for (int j = 0; j < L1_SIZE; j += simd::INT32_VEC_SIZE) {
             int o_offset = j / simd::INT32_VEC_SIZE;
@@ -176,8 +162,8 @@ LayerOutput<float, 2 * L1_SIZE> NNUE::forward_l1(int bucket, const LayerOutput<u
 
     for (; i < nnz_count; i++) {
         const int idx = nnz_indices[i];
-        const auto input = set1_epi32(input_packs[idx]);
-        const auto weights = &l1_weights[bucket][idx * L1_SIZE * INT8_PER_INT32];
+        const auto input = simd::set1_epi32(input_packs[idx]);
+        const auto weights = &l1_weight_[bucket][idx * L1_SIZE * INT8_PER_INT32];
 
         for (int j = 0; j < L1_SIZE; j += simd::INT32_VEC_SIZE) {
             int o_offset = j / simd::INT32_VEC_SIZE;
@@ -185,93 +171,56 @@ LayerOutput<float, 2 * L1_SIZE> NNUE::forward_l1(int bucket, const LayerOutput<u
         }
     }
 
+    const simd::fvec_t DEQUANT_MULT_PS =
+        simd::set1_ps((1 << FT_SHIFT) / static_cast<float>(FT_QUANT * FT_QUANT * L1_QUANT));
+
     // activate and add bias to value
     for (int i = 0; i < L1_SIZE; i += simd::FLOAT_VEC_SIZE) {
-        auto converted_linear = cvtepi32_ps(ivec_at(linear, i / simd::INT32_VEC_SIZE));
-        auto l1_out = fmadd_ps(converted_linear, simd::DEQUANT_MULT_PS, fvec_at(l1_biases[bucket], i));
-        fvec_at(output, i) = crelu(l1_out);
-        fvec_at(output, i + L1_SIZE) = min_ps(mul_ps(l1_out, l1_out), simd::ONE_FVEC);
+        auto converted_linear = simd::cvtepi32_ps(ivec_at(linear, i / simd::INT32_VEC_SIZE));
+        auto l1_out = simd::fmadd_ps(converted_linear, DEQUANT_MULT_PS, fvec_at(l1_bias_[bucket], i));
+        fvec_at(output, i) = simd::clamp_ps(l1_out, simd::zero_fvec(), simd::set1_ps(1.0f));
+        fvec_at(output, i + L1_SIZE) = simd::min_ps(simd::mul_ps(l1_out, l1_out), simd::set1_ps(1.0f));
     }
 
     return output;
 }
 
-LayerOutput<float, L2_SIZE> NNUE::forward_l2(int bucket, const LayerOutput<float, 2 * L1_SIZE>& input) {
-    LayerOutput<float, L2_SIZE> output(l2_biases[bucket]);
+AlignedArray<float, L2_SIZE> NNUE::forward_l2(int bucket, const AlignedArray<float, 2 * L1_SIZE>& input) {
+    AlignedArray<float, L2_SIZE> output;
+    std::memcpy(output, l2_bias_[bucket], sizeof(float) * L2_SIZE);
 
     for (int i = 0; i < 2 * L1_SIZE; i++) {
-        const auto input_val = set1_ps(input[i]);
-        const auto weights = ptr_cast<const float>(&l2_weights[bucket][i * L2_SIZE]);
+        const auto input_val = simd::set1_ps(input[i]);
+        const auto weights = ptr_cast<const float>(&l2_weight_[bucket][i * L2_SIZE]);
 
         for (int j = 0; j < L2_SIZE; j += simd::FLOAT_VEC_SIZE)
-            fvec_at(output, j) = fmadd_ps(fvec_at(weights, j), input_val, fvec_at(output, j));
+            fvec_at(output, j) = simd::fmadd_ps(fvec_at(weights, j), input_val, fvec_at(output, j));
     }
 
     for (int i = 0; i < L2_SIZE; i += simd::FLOAT_VEC_SIZE)
-        fvec_at(output, i) = crelu(fvec_at(output, i));
+        fvec_at(output, i) = simd::clamp_ps(fvec_at(output, i), simd::zero_fvec(), simd::set1_ps(1.0f));
 
     return output;
 }
 
-float NNUE::forward_l3(int bucket, const LayerOutput<float, L2_SIZE>& input) {
-    constexpr int VEC_SIZE = 16 / simd::FLOAT_VEC_SIZE;
+float NNUE::forward_l3(int bucket, const AlignedArray<float, L2_SIZE>& input) {
+    const int vec_size = 16 / simd::FLOAT_VEC_SIZE;
 
-    fvec_t output[VEC_SIZE];
-    std::fill_n(output, VEC_SIZE, simd::ZERO_FVEC);
+    simd::fvec_t output[vec_size];
+    std::memset(output, 0, sizeof(output));
 
-    for (int i = 0; i < VEC_SIZE; i++) {
-        for (int j = 0; j < L2_SIZE; j += VEC_SIZE * simd::FLOAT_VEC_SIZE) {
+    for (int i = 0; i < vec_size; i++) {
+        for (int j = 0; j < L2_SIZE; j += vec_size * simd::FLOAT_VEC_SIZE) {
             int idx = j + i * simd::FLOAT_VEC_SIZE;
-            output[i] = fmadd_ps(fvec_at(l3_weights[bucket], idx), fvec_at(input, idx), output[i]);
+            output[i] = simd::fmadd_ps(fvec_at(l3_weight_[bucket], idx), fvec_at(input, idx), output[i]);
         }
     }
 
-    return (simd::hor_sum_ps(output) + l3_biases[bucket]) * EVAL_SCALE;
-}
-
-void NNUE::put(Accum& acc, const Accum& prev, Piece pc, Square psq, Square ksq, Color view) const {
-    const int idx = feature_idx(pc, psq, ksq, view);
-    const auto weights = ptr_cast<const ivec_t>(&ft_weights[idx * FT_SIZE]);
-
-    auto acc_data = ptr_cast<ivec_t>(acc.data[view]);
-    const auto prev_data = acc.initialized[view] ? acc_data : ptr_cast<const ivec_t>(prev.data[view]);
-
-    for (int i = 0; i < FT_SIZE / simd::INT16_VEC_SIZE; i++)
-        acc_data[i] = add_epi16(prev_data[i], weights[i]);
-
-    acc.initialized[view] = true;
-}
-
-void NNUE::remove(Accum& acc, const Accum& prev, Piece pc, Square psq, Square ksq, Color view) const {
-    const int idx = feature_idx(pc, psq, ksq, view);
-    const auto weights = ptr_cast<const ivec_t>(&ft_weights[idx * FT_SIZE]);
-
-    auto acc_data = ptr_cast<ivec_t>(acc.data[view]);
-    const auto prev_data = acc.initialized[view] ? acc_data : ptr_cast<const ivec_t>(prev.data[view]);
-
-    for (int i = 0; i < FT_SIZE / simd::INT16_VEC_SIZE; i++)
-        acc_data[i] = sub_epi16(prev_data[i], weights[i]);
-
-    acc.initialized[view] = true;
-}
-
-void NNUE::move(Accum& acc, const Accum& prev, Piece pc, Square from, Square to, Square ksq, Color view) const {
-    const int from_idx = feature_idx(pc, from, ksq, view);
-    const int to_idx = feature_idx(pc, to, ksq, view);
-    const auto weights_from = ptr_cast<const ivec_t>(&ft_weights[from_idx * FT_SIZE]);
-    const auto weights_to = ptr_cast<const ivec_t>(&ft_weights[to_idx * FT_SIZE]);
-
-    auto acc_data = ptr_cast<ivec_t>(acc.data[view]);
-    const auto prev_data = acc.initialized[view] ? acc_data : ptr_cast<const ivec_t>(prev.data[view]);
-
-    for (int i = 0; i < FT_SIZE / simd::INT16_VEC_SIZE; i++)
-        acc_data[i] = add_epi16(prev_data[i], sub_epi16(weights_to[i], weights_from[i]));
-
-    acc.initialized[view] = true;
+    return simd::hor_sum_ps(output) + l3_bias_[bucket];
 }
 
 // Global Variable
 
 NNUE nnue;
 
-} // namespace nnue
+} // namespace astra::nnue

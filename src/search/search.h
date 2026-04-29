@@ -8,13 +8,11 @@
 #include "../chess/movegen.h"
 
 #include "history.h"
-#include "stack.h"
 #include "timeman.h"
 #include "tt.h"
+#include "types.h"
 
-using namespace chess;
-
-namespace search {
+namespace astra::search {
 
 enum NodeType : uint8_t {
     ROOT,
@@ -22,63 +20,24 @@ enum NodeType : uint8_t {
     NON_PV,
 };
 
-struct Limits {
-    Time time;
-    U64 nodes = 0;
-    int depth = MAX_PLY - 1;
-    int multipv = 1;
-    bool infinite = false;
-    bool minimal = false;
-    std::vector<std::string> search_moves{};
-};
-
 struct RootMove : public Move {
     RootMove() = default;
-
     explicit RootMove(Move m)
         : Move(m) {}
 
-    RootMove(const RootMove& other) = default;
-    RootMove& operator=(const RootMove& other) = default;
-
-    RootMove(RootMove&& other) noexcept
-        : Move(std::move(other)),
-          sel_depth(other.sel_depth),
-          nodes(other.nodes),
-          score(other.score),
-          avg_score(other.avg_score),
-          pv(std::move(other.pv)) {}
-
-    RootMove& operator=(RootMove&& other) noexcept {
-        if (this != &other) {
-            Move::operator=(std::move(other));
-            sel_depth = other.sel_depth;
-            nodes = other.nodes;
-            score = other.score;
-            avg_score = other.avg_score;
-            pv = std::move(other.pv);
-        }
-        return *this;
-    }
-
     int sel_depth = 0;
-    U64 nodes = 0;
+    uint64_t nodes = 0;
     Score score = SCORE_NONE;
     Score avg_score = SCORE_NONE;
-
     PVLine pv{};
 };
 
 class Search {
   public:
-    Search()
-        : exiting(false),
-          searching(false) {
-        clear_histories();
-    }
+    Search() { clear_histories(); }
 
-    bool exiting;
-    bool searching;
+    bool exiting = false;
+    bool searching = false;
 
     std::mutex mutex;
     std::condition_variable cv;
@@ -89,42 +48,31 @@ class Search {
     void idle();
     void clear_histories();
 
-    U64 get_nodes() const {
-        return nodes.load(std::memory_order_relaxed);
-    }
-
-    U64 get_tb_hits() const {
-        return tb_hits.load(std::memory_order_relaxed);
-    }
-
-    int get_completed_depth() const {
-        return completed_depth;
-    }
-
-    const RootMove& get_best_move() const {
-        return root_moves[0];
-    }
+    uint64_t nodes() const { return nodes_.load(std::memory_order_relaxed); }
+    uint64_t tb_hits() const { return tb_hits_.load(std::memory_order_relaxed); }
+    int completed_depth() const { return completed_depth_; }
+    const RootMove& best_root_move() const { return root_moves_[0]; }
 
   private:
-    TimeMan tm;
+    TimeMan tm_;
 
-    nnue::AccumList accum_list;
-    MoveList<RootMove> root_moves;
+    nnue::AccumulatorStack accum_stack_;
+    MoveList<RootMove> root_moves_;
 
-    QuietHistory quiet_history;
-    NoisyHistory noisy_history;
-    PawnHistory pawn_history;
-    ContinuationHistory cont_history;
-    CorrectionHistories corr_histories;
-    ContinuationCorrectionHistory cont_corr_history;
+    QuietHistory quiet_history_;
+    NoisyHistory noisy_history_;
+    PawnHistory pawn_history_;
+    ContinuationHistory cont_history_;
+    CorrectionHistories corr_histories_;
+    ContinuationCorrectionHistory cont_corr_history_;
 
-    std::atomic<uint64_t> nodes, tb_hits;
+    std::atomic<uint64_t> nodes_, tb_hits_;
 
-    int multipv_idx;
-    int sel_depth;
-    int root_depth;
-    int completed_depth;
-    int nmp_min_ply;
+    int multipv_idx_;
+    int sel_depth_;
+    int root_depth_;
+    int completed_depth_;
+    int nmp_min_ply_;
 
     void start();
 
@@ -143,22 +91,16 @@ class Search {
 
     Score evaluate();
     Score adjust_eval(int32_t eval, Stack* stack) const;
-
     Score draw_score() const;
 
     unsigned int probe_wdl() const;
-
     bool is_limit_reached() const;
-
     void sort_root_moves(int offset);
     bool found_root_move(Move move);
-
     void update_pv(Move move, Stack* stack);
-
     void update_quiet_histories(Move best_move, int bonus, Stack* stack);
     void update_histories(Move best_move, MoveList<Move>& quiets, MoveList<Move>& noisy, int depth, Stack* stack);
-
     void print_uci_info() const;
 };
 
-} // namespace search
+} // namespace astra::search

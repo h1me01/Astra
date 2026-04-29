@@ -1,12 +1,14 @@
 #pragma once
 
-#include <fstream>
-#include <unordered_map>
+#include <sstream>
+#include <string>
 
 #include "../search/search.h"
-#include "uci_options.h"
+#include "options.h"
 
-namespace uci {
+namespace astra::uci {
+
+const std::string STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
 class UCI {
   public:
@@ -15,8 +17,8 @@ class UCI {
     void loop(int argc, char** argv);
 
   private:
-    Board board{STARTING_FEN};
-    Options options;
+    Options options_;
+    Board board_{STARTING_FEN};
 
     void update_position(std::istringstream& is);
     void new_game();
@@ -26,4 +28,4 @@ class UCI {
     Move parse_move(const std::string& str_move) const;
 };
 
-} // namespace uci
+} // namespace astra::uci

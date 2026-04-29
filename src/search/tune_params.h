@@ -5,11 +5,9 @@
 
 #include "../chess/types.h"
 
-using namespace chess;
-
 // #define TUNE
 
-namespace search {
+namespace astra::search {
 
 struct Param {
     std::string name;
@@ -17,14 +15,11 @@ struct Param {
 
     Param(std::string name, int value, int min, int max);
 
-    operator int() const {
-        return value;
-    }
+    operator int() const { return value; }
 };
 
-inline std::vector<Param*> params;
-
 bool set_param(const std::string& name, int value);
+void print_params();
 void params_to_spsa();
 
 #ifdef TUNE
@@ -70,9 +65,6 @@ PARAM(lmr_base, 111, 40, 200);
 PARAM(lmr_div, 297, 150, 500);
 PARAM(lmr_depth, 2, 1, 6);
 PARAM(lmr_min_moves, 3, 1, 10);
-
-PARAM(sdr_min_depth, 2, 0, 6);
-PARAM(sdr_max_depth, 14, 0, 20);
 
 PARAM(tt_hist_bonus_mult, 308, 1, 1536);
 PARAM(tt_hist_bonus_minus, 4, -500, 500);
@@ -120,8 +112,11 @@ PARAM(see_quiet_margin, -15, -100, -1);
 
 PARAM(se_depth, 6, 1, 12);
 PARAM(double_ext_margin, 13, 1, 30);
-PARAM(tripple_ext_margin, 93, 10, 250);
+PARAM(triple_ext_margin, 93, 10, 250);
 PARAM(zws_margin, 39, 10, 160);
+
+PARAM(sdr_min_depth, 2, 0, 6);
+PARAM(sdr_max_depth, 14, 0, 20);
 
 PARAM(quiet_hist_div, 8026, 1, 16384);
 PARAM(noisy_hist_div, 4566, 1, 16384);
@@ -155,17 +150,27 @@ PARAM(m_corr_weight, 4, 1, 168);
 PARAM(np_corr_weight, 4, 1, 168);
 PARAM(cont_corr_weight, 4, 1, 168);
 
+#ifdef TUNE
 inline int piece_values(PieceType pt) {
-    // clang-format off
-    switch(pt) {
-        case PAWN:   return pawn_value;
-        case KNIGHT: return knight_value;
-        case BISHOP: return bishop_value;
-        case ROOK:   return rook_value;
-        case QUEEN:  return queen_value;
-        default:     return 0;
+#else
+constexpr int piece_values(PieceType pt) {
+#endif
+    assert(valid_piece_type(pt) || pt == NO_PIECE_TYPE);
+
+    switch (pt) {
+    case PAWN:
+        return pawn_value;
+    case KNIGHT:
+        return knight_value;
+    case BISHOP:
+        return bishop_value;
+    case ROOK:
+        return rook_value;
+    case QUEEN:
+        return queen_value;
+    default:
+        return 0;
     }
-    // clang-format on
 }
 
-} // namespace search
+} // namespace astra::search

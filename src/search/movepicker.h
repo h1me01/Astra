@@ -2,11 +2,9 @@
 
 #include "../chess/movegen.h"
 #include "search.h"
-#include "stack.h"
+#include "types.h"
 
-using namespace chess;
-
-namespace search {
+namespace astra::search {
 
 enum SearchType : uint8_t {
     N_SEARCH,
@@ -32,28 +30,28 @@ class MovePicker {
         const QuietHistory& quiet_history,
         const PawnHistory& pawn_history,
         const NoisyHistory& noisy_history,
-        const Stack* stack
+        const Stack* stack,
+        int probcut_threshold = 0
     );
-
-    int probcut_threshold = 0;
 
     Move next(bool skip_quiets = false);
 
   private:
-    int idx;
-    Stage stage;
+    int idx_;
+    Stage stage_;
 
-    const Board& board;
-    const QuietHistory& quiet_history;
-    const PawnHistory& pawn_history;
-    const NoisyHistory& noisy_history;
-    const Stack* stack;
+    const Board& board_;
+    const QuietHistory& quiet_history_;
+    const PawnHistory& pawn_history_;
+    const NoisyHistory& noisy_history_;
+    const Stack* stack_;
+    int probcut_threshold_;
 
-    Move tt_move;
-    MoveList<ScoredMove> ml_main, ml_bad_noisy;
+    Move tt_move_;
+    MoveList<ScoredMove> ml_main_, ml_bad_noisy_;
 
     void gen_score_noisy();
     void gen_score_quiets();
 };
 
-} // namespace search
+} // namespace astra::search

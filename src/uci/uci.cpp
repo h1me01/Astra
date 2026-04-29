@@ -1,22 +1,17 @@
-#include <algorithm> // std::all_of
-#include <cctype>    // std::isdigit
 #include <chrono>
-#include <cstring> // strncmp
+#include <sstream>
 
-#include "../datagen/gen_fens.h"
+#include "../nnue/nnue.h"
 #include "../search/threads.h"
 #include "../search/tune_params.h"
 #include "../third_party/fathom/src/tbprobe.h"
-
+#include "../util.h"
 #include "uci.h"
 
-namespace uci {
+namespace astra::uci {
 
 const std::string version = "7.0-dev";
 
-// bench positions from stockfish
-
-// clang-format off
 const std::vector<std::string> bench_positions = {
     "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
     "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 10",
@@ -53,49 +48,31 @@ const std::vector<std::string> bench_positions = {
     "r3k2r/3nnpbp/q2pp1p1/p7/Pp1PPPP1/4BNN1/1P5P/R2Q1RK1 w kq - 0 16",
     "3Qb1k1/1r2ppb1/pN1n2q1/Pp1Pp1Pr/4P2p/4BP2/4B1R1/1R5K b - - 11 40",
     "4k3/3q1r2/1N2r1b1/3ppN2/2nPP3/1B1R2n1/2R1Q3/3K4 w - - 5 1",
-    // 5-man positions
-    "8/8/8/8/5kp1/P7/8/1K1N4 w - - 0 1",  // Kc2 - mate
-    "8/8/8/5N2/8/p7/8/2NK3k w - - 0 1",   // Na2 - mate
-    "8/3k4/8/8/8/4B3/4KB2/2B5 w - - 0 1", // draw
-    // 6-man positions
-    "8/8/1P6/5pr1/8/4R3/7k/2K5 w - - 0 1",  // Re5 - mate
-    "8/2p4P/8/kr6/6R1/8/8/1K6 w - - 0 1",   // Ka2 - mate
-    "8/8/3P3k/8/1p6/8/1P6/1K3n2 b - - 0 1", // Nd2 - draw
-    // 7-man positions
-    "8/R7/2q5/8/6k1/8/1P5p/K6R w - - 0 124", // Draw
-    // Mate positions
+    "8/8/8/8/5kp1/P7/8/1K1N4 w - - 0 1",
+    "8/8/8/5N2/8/p7/8/2NK3k w - - 0 1",
+    "8/3k4/8/8/8/4B3/4KB2/2B5 w - - 0 1",
+    "8/8/1P6/5pr1/8/4R3/7k/2K5 w - - 0 1",
+    "8/2p4P/8/kr6/6R1/8/8/1K6 w - - 0 1",
+    "8/8/3P3k/8/1p6/8/1P6/1K3n2 b - - 0 1",
+    "8/R7/2q5/8/6k1/8/1P5p/K6R w - - 0 124",
     "6k1/3b3r/1p1p4/p1n2p2/1PPNpP1q/P3Q1p1/1R1RB1P1/5K2 b - - 0 1",
     "r2r1n2/pp2bk2/2p1p2p/3q4/3PN1QP/2P3R1/P4PP1/5RK1 w - - 0 1",
 };
-// clang-format on
-
-// Helper
-
-bool starts_with_command(int argc, char** argv, const std::string& command) {
-    if (argc < 2) return false;
-    std::string first_arg = argv[1];
-    return first_arg.find(command) == 0;
-}
-
-// UCI
 
 UCI::UCI() {
-    std::cout << "Astra by Semih Oezalp" << std::endl;
+    println("Astra by Semih Oezalp");
 
-    options.add("SyzygyPath", {OptionType::STRING});
-    options.add("Minimal", {OptionType::CHECK, "false"});
-    options.add("MoveOverhead", {OptionType::SPIN, "10", 1, 10000});
-    options.add("MultiPV", {OptionType::SPIN, "1", 1, 218});
-    options.add("Threads", {OptionType::SPIN, "1", 1, 128});
-    options.add("Hash", {OptionType::SPIN, "16", 1, 8192});
+    options_.add("SyzygyPath", {OptionType::STRING});
+    options_.add("Minimal", {OptionType::CHECK, "false"});
+    options_.add("MoveOverhead", {OptionType::SPIN, "10", 1, 10000});
+    options_.add("MultiPV", {OptionType::SPIN, "1", 1, 218});
+    options_.add("Threads", {OptionType::SPIN, "1", 1, 128});
+    options_.add("Hash", {OptionType::SPIN, "16", 1, 8192});
 }
 
 void UCI::loop(int argc, char** argv) {
-    if (starts_with_command(argc, argv, "bench")) {
+    if (argc >= 2 && std::string(argv[1]) == "bench") {
         bench();
-        return;
-    } else if (starts_with_command(argc, argv, "genfens")) {
-        datagen::generate_fens(argc, argv);
         return;
     }
 
@@ -106,36 +83,47 @@ void UCI::loop(int argc, char** argv) {
         is >> std::skipws >> token;
 
         if (token == "uci") {
-            std::cout << "id name Astra " << version << std::endl;
-            std::cout << "id author Semih Oezalp" << std::endl;
-            options.print();
-            std::cout << "uciok" << std::endl;
+            println("id name Astra {}", version);
+            println("id author Semih Oezalp");
+            options_.print();
+            println("uciok");
         } else if (token == "isready") {
-            std::cout << "readyok" << std::endl;
+            println("readyok");
         } else if (token == "ucinewgame") {
             new_game();
         } else if (token == "position") {
             update_position(is);
         } else if (token == "go") {
             go(is);
+        } else if (token == "perft") {
+            int depth;
+            if (!(is >> depth))
+                println("No depth value provided for perft");
+            else
+                board_.perft(depth);
         } else if (token == "bench") {
             bench();
+        } else if (token == "eval") {
+            nnue::AccumulatorStack accum_stack_;
+            accum_stack_.reset(board_);
+            board_.print();
+            println("NNUE evaluation: {}", nnue::nnue.forward(board_, accum_stack_.back()));
         } else if (token == "tune") {
             search::params_to_spsa();
         } else if (token == "setoption") {
-            options.set(is.str());
+            options_.set(is.str());
         } else if (token == "d") {
-            board.print();
+            board_.print();
         } else if (token == "stop") {
-            search::threads.stop();
-            search::threads.wait();
+            search::thread_pool.stop();
+            search::thread_pool.wait();
         } else if (token == "quit") {
-            search::threads.stop();
-            search::threads.wait();
+            search::thread_pool.stop();
+            search::thread_pool.wait();
             tb_free();
             break;
         } else {
-            std::cout << "Unknown Command: " << token << std::endl;
+            println("Unknown Command: {}", token);
         }
     }
 }
@@ -150,27 +138,27 @@ void UCI::update_position(std::istringstream& is) {
         while (is >> token && token != "moves")
             fen += token + " ";
     } else {
-        std::cout << "Unknown command: " << token << std::endl;
+        println("Unknown command: {}", token);
         return;
     }
 
-    board.set_fen(fen);
+    board_.set_fen(fen);
     while (is >> token) {
         if (token == "moves")
             continue;
-        board.make_move(parse_move(token));
-        // if half move clock gets reseted, then we can reset the history
+        board_.make_move(parse_move(token));
+        // if half move clock resets, then we can reset the history
         // since the last positions should not be considered in the repetition
-        if (!board.fifty_move_count())
-            board.reset_ply();
+        if (!board_.fifty_move_count())
+            board_.reset_ply();
     }
 }
 
 void UCI::new_game() {
     search::tt.clear();
-    search::threads.stop();
-    search::threads.wait();
-    search::threads.new_game();
+    search::thread_pool.stop();
+    search::thread_pool.wait();
+    search::thread_pool.new_game();
 }
 
 void UCI::go(std::istringstream& is) {
@@ -183,14 +171,7 @@ void UCI::go(std::istringstream& is) {
 
     std::string token;
     while (is >> token) {
-        if (token == "perft") {
-            int depth;
-            if (!(is >> depth))
-                std::cout << "No depth value provided for perft\n";
-            else
-                board.perft(depth);
-            return;
-        } else if (token == "searchmoves") {
+        if (token == "searchmoves") {
             while (is >> token)
                 limits.search_moves.push_back(token);
         } else if (token == "wtime") {
@@ -212,38 +193,38 @@ void UCI::go(std::istringstream& is) {
         } else if (token == "infinite") {
             limits.infinite = true;
         } else {
-            std::cout << "Unknown command: " << token << "\n";
+            println("Unknown command: {}", token);
             return;
         }
     }
 
-    Color stm = board.side_to_move();
+    Color stm = board_.side_to_move();
     int64_t time_left = (stm == WHITE) ? w_time : b_time;
 
     if (time_left != 0) {
         int inc = (stm == WHITE) ? w_inc : b_inc;
         limits.time = search::TimeMan::get_optimum(
-            time_left, inc, std::max(moves_to_go, 0), std::stoi(options.get("MoveOverhead"))
+            time_left, inc, std::max(moves_to_go, 0), std::stoi(options_.get("MoveOverhead"))
         );
     }
 
-    limits.multipv = std::stoi(options.get("MultiPV"));
-    limits.minimal = (options.get("Minimal") == "true");
+    limits.multipv = std::stoi(options_.get("MultiPV"));
+    limits.minimal = (options_.get("Minimal") == "true");
 
     // start search
-    search::threads.launch_workers(board, limits);
+    search::thread_pool.launch_workers(board_, limits);
 }
 
 void UCI::bench() {
     new_game();
-    U64 nodes = 0;
+    uint64_t nodes = 0;
 
-    std::string minimal_val = options.get("Minimal");
-    options.get("Minimal").set("true");
+    std::string minimal_val = options_.get("Minimal");
+    options_.get("Minimal").set("true");
 
     auto start = std::chrono::high_resolution_clock::now();
     for (const auto& pos : bench_positions) {
-        std::cout << "\nfen: " << pos << std::endl;
+        println("\nfen: {}", pos);
 
         std::istringstream iss("fen " + pos);
         update_position(iss);
@@ -251,24 +232,23 @@ void UCI::bench() {
         iss.str("depth 13");
         go(iss);
 
-        search::threads.wait();
+        search::thread_pool.wait();
 
-        nodes += search::threads.total_nodes();
+        nodes += search::thread_pool.total_nodes();
     }
 
-    search::threads.stop();
-    options.get("Minimal").set(minimal_val);
+    search::thread_pool.stop();
+    options_.get("Minimal").set(minimal_val);
 
     auto end = std::chrono::high_resolution_clock::now();
     auto total_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 
-    std::cout << std::endl;
-    std::cout << nodes << " nodes " << nodes * 1000 / total_time << " nps" << std::endl;
+    println("\n{} nodes {} nps", nodes, nodes * 1000 / total_time);
 }
 
 Move UCI::parse_move(const std::string& str_move) const {
     MoveList<Move> ml;
-    ml.gen<ADD_LEGALS>(board);
+    ml.gen<GenType::LEGAL>(board_);
 
     for (const auto& move : ml) {
         std::ostringstream ss;
@@ -280,4 +260,4 @@ Move UCI::parse_move(const std::string& str_move) const {
     return Move::none();
 }
 
-} // namespace uci
+} // namespace astra::uci

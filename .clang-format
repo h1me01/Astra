@@ -7,4 +7,4 @@ BinPackParameters: false
 BinPackArguments: false
 AlignAfterOpenBracket: BlockIndent
 PackConstructorInitializers: Never
-AllowShortFunctionsOnASingleLine: Empty
+AllowShortFunctionsOnASingleLine: All

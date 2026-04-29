@@ -1,9 +1,13 @@
+#include <algorithm>
 #include <iostream>
 #include <sstream>
 
+#include "../util.h"
 #include "tune_params.h"
 
-namespace search {
+namespace astra::search {
+
+std::vector<Param*> params;
 
 Param::Param(std::string name, int value, int min, int max)
     : name(std::move(name)),
@@ -11,12 +15,12 @@ Param::Param(std::string name, int value, int min, int max)
       min(min),
       max(max) {
     if (value < min || value > max) {
-        std::cerr << "Value out of range for search parameter " << name << std::endl;
+        println("Value out of range for search parameter {}: {} (valid range: {}-{})", this->name, value, min, max);
         return;
     }
 
     if (min >= max) {
-        std::cerr << "Invalid range for search parameter " << name << std::endl;
+        println("Invalid range for search parameter {}: min {} >= max {}", this->name, min, max);
         return;
     }
 
@@ -31,7 +35,13 @@ bool set_param(const std::string& name, int value) {
             continue;
 
         if (value < param->min || value > param->max) {
-            std::cerr << "Value out of range for search parameter " << name << std::endl;
+            println(
+                "Value out of range for search parameter {}: {} (valid range: {}-{})",
+                name,
+                value,
+                param->min,
+                param->max
+            );
             return true;
         }
 
@@ -41,18 +51,29 @@ bool set_param(const std::string& name, int value) {
     }
 
     if (!found)
-        std::cerr << "Unknown search parameter " << name << std::endl;
+        println("Unknown search parameter {}", name);
 
     return found;
 }
 
-void params_to_spsa() {
-    for (const auto& param : params) {
-        std::cout << param->name                                                                 //
-                  << ", int" << ", " << param->value << ", " << param->min << ", " << param->max //
-                  << ", " << std::max<double>(0.5, (param->max - param->min) / 20.0)             //
-                  << ", " << 0.002 << "\n";
+void print_params() {
+    for (auto param : params) {
+        println("option name {} type spin default {} min {} max {}", param->name, param->value, param->min, param->max);
     }
 }
 
-} // namespace search
+void params_to_spsa() {
+    for (const auto& param : params) {
+        println(
+            "{}, int, {}, {}, {}, {}, {}",
+            param->name,
+            param->value,
+            param->min,
+            param->max,
+            std::max<double>(0.5, (param->max - param->min) / 20.0),
+            0.002
+        );
+    }
+}
+
+} // namespace astra::search

@@ -1,7 +1,7 @@
 #pragma once
 
-namespace datagen {
+namespace astra::datagen {
 
 void generate_fens(int argc, char** argv);
 
-} // namespace datagen
+} // namespace astra::datagen

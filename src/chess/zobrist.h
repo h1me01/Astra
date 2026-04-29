@@ -2,19 +2,13 @@
 
 #include "types.h"
 
-namespace chess {
-
-class Board;
-
-namespace zobrist {
+namespace astra::zobrist {
 
 void init();
 
-U64 side_hash();
-U64 ep_hash(Square sq);
-U64 castling_hash(int idx);
-U64 psq_hash(Piece pc, Square sq);
+Hash side();
+Hash ep_sq(Square sq);
+Hash castling(int idx);
+Hash psq(Piece pc, Square sq);
 
-} // namespace zobrist
-
-} // namespace chess
+} // namespace astra::zobrist

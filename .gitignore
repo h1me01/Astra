@@ -9,8 +9,8 @@ python/
 openbench/
 
 *.exe
-astra
-src/build.mk
+astra*
+build.mk
 
 *.nnue
 

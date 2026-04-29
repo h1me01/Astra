@@ -1,13 +1,15 @@
 #pragma once
 
+#include <type_traits>
+
 #include "board.h"
 
-namespace chess {
+namespace astra {
 
-enum GenType : uint8_t {
-    ADD_NOISY = 1,
-    ADD_QUIETS = 2,
-    ADD_LEGALS = 3,
+enum class GenType : uint8_t {
+    NOISY,
+    QUIET,
+    LEGAL,
 };
 
 template <GenType gt>
@@ -16,74 +18,62 @@ Move* gen_moves(const Board& board, Move* ml);
 template <typename T>
 class MoveList {
   public:
-    MoveList() {
-        clear();
-    }
+    static constexpr int MAX_MOVES = 128;
 
-    void clear() {
-        last = list;
-    }
+    MoveList() { clear(); }
+
+    void clear() { last_ = list_; }
 
     template <GenType gt>
     void gen(const Board& board) {
         clear();
 
         if constexpr (std::is_same_v<T, Move>) {
-            last = gen_moves<gt>(board, list);
+            last_ = gen_moves<gt>(board, list_);
         } else {
             Move temp_list[MAX_MOVES];
             Move* temp_last = gen_moves<gt>(board, temp_list);
 
             for (Move* it = temp_list; it != temp_last; ++it)
-                *last++ = T(*it);
+                *last_++ = T(*it);
         }
     }
 
     void add(T m) {
-        assert(last < list + MAX_MOVES);
-        *last++ = m;
+        assert(last_ < list_ + MAX_MOVES);
+        *last_++ = m;
     }
 
     int idx_of(const T move) const {
         for (int i = 0; i < size(); i++)
-            if (list[i] == move)
+            if (list_[i] == move)
                 return i;
         return -1;
     }
 
-    T* begin() {
-        return list;
-    }
-
-    const T* begin() const {
-        return list;
-    }
-
-    T* end() {
-        return last;
-    }
-
-    const T* end() const {
-        return last;
-    }
+    T* begin() { return list_; }
+    const T* begin() const { return list_; }
+    T* end() { return last_; }
+    const T* end() const { return last_; }
 
     T& operator[](int i) {
-        assert(i >= 0 && i < size());
-        return list[i];
+        assert(i >= 0);
+        assert(i < size());
+        return list_[i];
     }
 
     const T& operator[](int i) const {
-        assert(i >= 0 && i < size());
-        return list[i];
+        assert(i >= 0);
+        assert(i < size());
+        return list_[i];
     }
 
-    int size() const {
-        return last - list;
-    }
+    int size() const { return last_ - list_; }
+    bool empty() const { return size() == 0; }
 
   private:
-    T list[MAX_MOVES];
-    T* last;
+    T list_[MAX_MOVES];
+    T* last_;
 };
 
-} // namespace chess
+} // namespace astra
