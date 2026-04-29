@@ -56,7 +56,7 @@ void Options::set(const std::string& info) {
 
     bool found_tune_param = false;
 #ifdef TUNE
-    found_tune_param = set_param(name, std::stoi(value));
+    found_tune_param = search::set_param(name, std::stoi(value));
 #endif
 
     if (options_.count(name))
