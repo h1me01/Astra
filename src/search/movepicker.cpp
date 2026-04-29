@@ -1,6 +1,7 @@
 #include <utility>
 
 #include "movepicker.h"
+#include "tune_params.h"
 
 namespace astra::search {
 
@@ -127,30 +128,28 @@ void MovePicker<st>::gen_score_noisy() {
 template <SearchType st>
 void MovePicker<st>::gen_score_quiets() {
     ml_main_.gen<GenType::QUIET>(board_);
-    Threats threats = board_.threats();
+
+    const Color stm = board_.side_to_move();
+
+    NDArray<Bitboard, NUM_PIECE_TYPES> threats;
+    threats(PAWN) = 0;
+    threats(KNIGHT) = threats(BISHOP) = board_.attacks_by<PAWN>(~stm);
+    threats(ROOK) = board_.attacks_by<KNIGHT>(~stm) | board_.attacks_by<BISHOP>(~stm) | threats(KNIGHT);
+    threats(QUEEN) = board_.attacks_by<ROOK>(~stm) | threats(ROOK);
+    threats(KING) = 0;
 
     for (auto& m : ml_main_) {
-        const Piece pc = board_.piece_at(m.from());
-        const PieceType pt = piece_type(pc);
+        const Square from = m.from();
         const Square to = m.to();
+        const Piece pc = board_.piece_at(from);
+        const PieceType pt = piece_type(pc);
 
-        m.score = 2 * (quiet_history_.get(board_.side_to_move(), m) + pawn_history_.get(board_, m));
+        m.score = 2 * (quiet_history_.get(stm, m) + pawn_history_.get(board_, m));
         for (int i : {1, 2, 4, 6})
             m.score += static_cast<int>((*(stack_ - i)->cont_hist)[pc][to]);
 
-        if (pt != PAWN && pt != KING) {
-            Bitboard danger = threats(PAWN);
-            if (pt == ROOK || pt == QUEEN)
-                danger |= threats(BISHOP) | threats(KNIGHT);
-            if (pt == QUEEN)
-                danger |= threats(ROOK);
-
-            const int bonus = (pt == QUEEN) ? 20480 : (pt == ROOK) ? 12288 : 7168;
-            if (danger & sq_bb(m.from()))
-                m.score += bonus;
-            else if (danger & sq_bb(to))
-                m.score -= bonus;
-        }
+        m.score += mp_threat_mul * piece_values(pt) *
+                   (static_cast<bool>(threats(pt) & sq_bb(from)) - static_cast<bool>(threats(pt) & sq_bb(to)));
 
         bool can_check = board_.check_squares(pt) & sq_bb(to);
         m.score += (can_check && board_.see(m, -quiet_checker_bonus)) * 16384;

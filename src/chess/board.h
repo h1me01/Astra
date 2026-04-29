@@ -14,24 +14,6 @@
 
 namespace astra {
 
-class Threats {
-  public:
-    Bitboard operator()(PieceType pt) const {
-        assert(pt >= PAWN);
-        assert(pt <= ROOK);
-        return data_(pt);
-    }
-
-    Bitboard& operator()(PieceType pt) {
-        assert(pt >= PAWN);
-        assert(pt <= ROOK);
-        return data_(pt);
-    }
-
-  private:
-    NDArray<Bitboard, 4> data_;
-};
-
 class Board {
   public:
     Board() = default;
@@ -61,9 +43,9 @@ class Board {
 
     void perft(int depth);
 
-    Threats threats() const;
-
     Bitboard attackers_to(Color c, Square sq, Bitboard occ) const;
+    template <PieceType pt>
+    Bitboard attacks_by(Color c) const;
     Bitboard occupancy(Color c) const;
     Bitboard occupancy() const;
 
@@ -141,6 +123,20 @@ inline Bitboard Board::attackers_to(Color c, Square sq, const Bitboard occ) cons
            (attacks_bb<BISHOP>(sq, occ) & diag_sliders(c)) | //
            (attacks_bb<ROOK>(sq, occ) & orth_sliders(c)) |   //
            (attacks_bb<KING>(sq) & piece_bb<KING>(c));
+}
+
+template <PieceType pt>
+inline Bitboard Board::attacks_by(Color c) const {
+    if constexpr (pt == PAWN) {
+        return (c == WHITE) ? pawn_attacks_bb<WHITE>(piece_bb<PAWN>(WHITE)) //
+                            : pawn_attacks_bb<BLACK>(piece_bb<PAWN>(BLACK));
+    } else {
+        Bitboard attacks = 0;
+        Bitboard attackers = piece_bb<pt>(c);
+        while (attackers)
+            attacks |= attacks_bb<pt>(pop_lsb(attackers), occupancy());
+        return attacks;
+    }
 }
 
 inline Bitboard Board::occupancy(Color c) const {

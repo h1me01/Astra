@@ -105,13 +105,18 @@ Bitboard between_bb(Square sq1, Square sq2);
 Bitboard line(Square sq1, Square sq2);
 
 template <Color c>
+constexpr Bitboard pawn_attacks_bb(Bitboard b) {
+    assert(valid_color(c));
+
+    return (c == WHITE) ? shift<NORTH_WEST>(b) | shift<NORTH_EAST>(b) //
+                        : shift<SOUTH_WEST>(b) | shift<SOUTH_EAST>(b);
+}
+
+template <Color c>
 constexpr Bitboard pawn_attacks_bb(Square sq) {
     assert(valid_sq(sq));
     assert(valid_color(c));
-
-    Bitboard b = sq_bb(sq);
-    return (c == WHITE) ? shift<NORTH_WEST>(b) | shift<NORTH_EAST>(b) //
-                        : shift<SOUTH_WEST>(b) | shift<SOUTH_EAST>(b);
+    return pawn_attacks_bb<c>(sq_bb(sq));
 }
 
 constexpr Bitboard pawn_attacks_bb(Color c, Square sq) {

@@ -665,29 +665,6 @@ void Board::perft(int depth) {
     println("Total time : {} ms\n", time_ms);
 }
 
-Threats Board::threats() const {
-    const Color them = ~stm_;
-
-    Threats threats;
-
-    // king must be excluded so we don't block the slider attacks
-    const Bitboard occ = occupancy() ^ sq_bb(king_sq());
-
-    const Bitboard pawns = piece_bb<PAWN>(them);
-    threats(PAWN) = (them == WHITE) ? shift<NORTH_WEST>(pawns) | shift<NORTH_EAST>(pawns)
-                                    : shift<SOUTH_WEST>(pawns) | shift<SOUTH_EAST>(pawns);
-
-    for (PieceType pt : {KNIGHT, BISHOP, ROOK}) {
-        threats(pt) = 0;
-
-        Bitboard pc_bb = piece_bb(them, pt);
-        while (pc_bb)
-            threats(pt) |= attacks_bb(pt, pop_lsb(pc_bb), occ);
-    }
-
-    return threats;
-}
-
 // private function
 
 void Board::init_movegen_info() {

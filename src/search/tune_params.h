@@ -150,6 +150,8 @@ PARAM(m_corr_weight, 4, 1, 168);
 PARAM(np_corr_weight, 4, 1, 168);
 PARAM(cont_corr_weight, 4, 1, 168);
 
+PARAM(mp_threat_mul, 19, 1, 40);
+
 #ifdef TUNE
 inline int piece_values(PieceType pt) {
 #else

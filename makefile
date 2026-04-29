@@ -11,19 +11,9 @@ EVALFILE_URL := https://github.com/h1me01/Astra-Networks/releases/download/weigh
 
 CXX := g++
 
-CXXFLAGS := -s \
-			-std=c++20 \
-			-Wall \
-			-Wextra \
-			-Wcast-qual \
-			-O3 \
-			-DNDEBUG \
-			-funroll-loops \
-			-pthread \
-			-fno-exceptions \
-			-flto \
-			-march=native \
-			-DNNUE_PATH=\"$(EVALFILE)\"
+CXXFLAGS := -s -std=c++20 -Wall -Wextra -Wcast-qual -O3 -DNDEBUG \
+            -funroll-loops -pthread -fno-exceptions -flto -march=native \
+            -DNNUE_PATH=\"$(EVALFILE)\"
 
 ifeq ($(OS),Windows_NT)
 	SUFFIX := .exe
@@ -35,37 +25,23 @@ else
 endif
 
 rwildcard = $(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2) $(filter $(subst *,%,$2),$d))
-SRC := $(call rwildcard,./src,*.cpp) src/third_party/fathom/src/tbprobe.c
+SRC := $(call rwildcard,src/,*.cpp) src/third_party/fathom/src/tbprobe.c
+TARGET := $(if $(EXE),$(EXE),astra)$(SUFFIX)
 
-TARGET := $(if $(EXE),$(EXE),astra)
-TARGET_SUFFIX := $(TARGET)$(SUFFIX)
+.PHONY: all download-net clean
 
-all: download-net $(TARGET_SUFFIX)
-$(TARGET_SUFFIX): $(SRC)
-	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
+all: download-net $(TARGET)
+
+$(TARGET): $(SRC)
+	$(CXX) $(CXXFLAGS) -o $@ $^
 
 download-net:
 ifdef DOWNLOAD_NET
-ifeq ($(OS),Windows_NT)
-	@if exist "$(DEFAULT_WEIGHTS)" ( \
-		echo Using $(DEFAULT_WEIGHTS) as network file. \
-	) else ( \
-		echo Downloading $(DEFAULT_WEIGHTS)... && \
-		curl -sL -o "$(DEFAULT_WEIGHTS)" "$(EVALFILE_URL)" \
-	)
-else
-	@if test -f "$(DEFAULT_WEIGHTS)"; then \
-		echo "Using $(DEFAULT_WEIGHTS) as network file."; \
-	else \
-		echo "Downloading $(DEFAULT_WEIGHTS)..."; \
+	@if [ ! -f "$(DEFAULT_WEIGHTS)" ]; then \
+		echo "Downloading $(DEFAULT_WEIGHTS)..." && \
 		curl -sL -o "$(DEFAULT_WEIGHTS)" "$(EVALFILE_URL)"; \
 	fi
 endif
-else
-	@echo "Using network file: $(EVALFILE)"
-endif
 
 clean:
-	$(RM) $(TARGET_SUFFIX)
-
-.PHONY: all download-net clean
+	$(RM) $(TARGET)
