@@ -139,7 +139,7 @@ void Search::start() {
         best_thread->multipv_idx_ = 0;
         best_thread->print_uci_info();
         best_move = best_thread->root_moves_[0];
-    } else if (limits.minimal) {
+    } else if (limits.minimal || best_move != prev_best_move) {
         print_uci_info();
     }
 
