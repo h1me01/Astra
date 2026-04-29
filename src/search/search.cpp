@@ -84,7 +84,6 @@ void Search::start() {
 
     int stability = 0;
     NDArray<Score, MAX_PLY> scores;
-    Move best_move = Move::none();
     Move prev_best_move = Move::none();
 
     for (root_depth_ = 1; root_depth_ <= std::min(MAX_PLY, limits.depth); root_depth_++) {
@@ -100,8 +99,8 @@ void Search::start() {
             for (multipv_idx_ = 0; multipv_idx_ < limits.multipv; multipv_idx_++)
                 print_uci_info();
 
+        Move best_move = root_moves_[0];
         Score score = root_moves_[0].score;
-        best_move = root_moves_[0];
 
         stability = (best_move == prev_best_move) ? std::min<int>(stability + 1, tm_stability_max) : 0;
 
@@ -134,8 +133,10 @@ void Search::start() {
 
     multipv_idx_ = 0;
 
+    Move best_move = root_moves_[0];
     Search* best_thread = thread_pool.pick_best();
     if (best_thread != this) {
+        best_thread->multipv_idx_ = 0;
         best_thread->print_uci_info();
         best_move = best_thread->root_moves_[0];
     } else if (limits.minimal) {
@@ -162,7 +163,6 @@ Score Search::aspiration(int depth, Stack* stack) {
     int fail_high_count = 0;
     while (true) {
         score = negamax<ROOT>(std::max(1, root_depth_ - fail_high_count), alpha, beta, stack);
-
         sort_root_moves(multipv_idx_);
 
         if (thread_pool.is_stopped())
@@ -207,9 +207,6 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack* stack, bool cut
         thread_pool.stop();
         return 0;
     }
-
-    if (thread_pool.is_stopped())
-        return 0;
 
     if (depth <= 0)
         return quiescence<nt>(alpha, beta, stack);
@@ -956,8 +953,6 @@ unsigned int Search::probe_wdl() const {
 bool Search::is_limit_reached() const {
     if (this != thread_pool.main_thread())
         return false; // only main thread checks limits
-    if (limits.infinite)
-        return false;
     if (limits.nodes && thread_pool.total_nodes() >= limits.nodes)
         return true;
     if (limits.time.maximum && tm_.elapsed_time() >= limits.time.maximum)
@@ -967,8 +962,9 @@ bool Search::is_limit_reached() const {
 
 void Search::sort_root_moves(int offset) {
     assert(offset >= 0);
-    auto it = root_moves_.begin() + offset;
-    std::stable_sort(it, root_moves_.end(), [](const RootMove& a, const RootMove& b) { return a.score > b.score; });
+    std::stable_sort(root_moves_.begin() + offset, root_moves_.end(), [](const RootMove& a, const RootMove& b) {
+        return a.score > b.score;
+    });
 }
 
 bool Search::found_root_move(Move move) {

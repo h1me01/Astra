@@ -200,9 +200,7 @@ void UCI::go(std::istringstream& is) {
             is >> limits.depth;
         } else if (token == "nodes") {
             is >> limits.nodes;
-        } else if (token == "infinite") {
-            limits.infinite = true;
-        } else {
+        } else if (token != "infinite") {
             println("Unknown command: {}", token);
             return;
         }
