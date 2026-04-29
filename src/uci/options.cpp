@@ -1,6 +1,8 @@
+#include <algorithm>
 #include <cctype>
 
 #include "../search/threads.h"
+#include "../search/tune_params.h"
 #include "../third_party/fathom/src/tbprobe.h"
 #include "../util.h"
 #include "options.h"
@@ -37,7 +39,9 @@ void Options::print() const {
         astra::println("");
     }
 
-    search::print_params();
+    for (auto param : search::params) {
+        println("option name {} type spin default {} min {} max {}", param->name, param->value, param->min, param->max);
+    }
 }
 
 void Options::set(const std::string& info) {
@@ -48,23 +52,33 @@ void Options::set(const std::string& info) {
         return;
     }
 
-    std::string& name = tokens[2];
-    std::string& value = tokens[4];
+    const std::string& name = tokens[2];
+    const std::string& value = tokens[4];
 
     if (value == "<empty>" || value.empty())
         return;
 
-    bool found_tune_param = false;
-#ifdef TUNE
-    found_tune_param = search::set_param(name, std::stoi(value));
-#endif
-
-    if (options_.count(name))
+    if (options_.count(name)) {
         options_[name].set(value);
-    else if (!found_tune_param)
-        println("Unknown option {}", name);
+        apply(name);
+        return;
+    }
 
-    apply(name);
+    auto it = std::ranges::find_if(search::params, [&](auto* p) { return p->name == name; });
+
+    if (it != std::ranges::end(search::params)) {
+        auto* param = *it;
+        int n = std::stoi(value);
+        if (n < param->min || n > param->max)
+            println(
+                "Value out of range for search parameter {}: {} (valid range: {}-{})", name, n, param->min, param->max
+            );
+        else
+            param->value = n;
+        return;
+    }
+
+    println("Unknown option {}", name);
 }
 
 void Options::update_syzygy_path(const std::string& path) {

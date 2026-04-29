@@ -109,7 +109,17 @@ void UCI::loop(int argc, char** argv) {
             board_.print();
             println("NNUE evaluation: {}", nnue::nnue.forward(board_, accum_stack_.back()));
         } else if (token == "tune") {
-            search::params_to_spsa();
+            for (const auto& param : search::params) {
+                println(
+                    "{}, int, {}, {}, {}, {}, {}",
+                    param->name,
+                    param->value,
+                    param->min,
+                    param->max,
+                    std::max<double>(0.5, (param->max - param->min) / 20.0),
+                    0.002
+                );
+            }
         } else if (token == "setoption") {
             options_.set(is.str());
         } else if (token == "d") {

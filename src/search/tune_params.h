@@ -5,7 +5,7 @@
 
 #include "../chess/types.h"
 
-// #define TUNE
+#define TUNE
 
 namespace astra::search {
 
@@ -18,27 +18,23 @@ struct Param {
     operator int() const { return value; }
 };
 
-bool set_param(const std::string& name, int value);
-void print_params();
-void params_to_spsa();
-
 #ifdef TUNE
 #define PARAM(name, value, min, max) inline Param name(#name, value, min, max)
 #else
 #define PARAM(name, value, min, max) constexpr int name = value
 #endif
 
-PARAM(pawn_value, 100, 50, 150);
-PARAM(knight_value, 360, 200, 450);
-PARAM(bishop_value, 385, 200, 450);
-PARAM(rook_value, 635, 400, 675);
-PARAM(queen_value, 1200, 700, 1300);
+PARAM(pawn_value, 100, 1, 200);
+PARAM(knight_value, 360, 1, 600);
+PARAM(bishop_value, 385, 1, 600);
+PARAM(rook_value, 635, 1, 1000);
+PARAM(queen_value, 1200, 1, 2000);
 
-PARAM(pawn_value_see, 98, 50, 150);
-PARAM(knight_value_see, 318, 200, 450);
-PARAM(bishop_value_see, 335, 200, 450);
-PARAM(rook_value_see, 504, 400, 675);
-PARAM(queen_value_see, 997, 700, 1300);
+PARAM(pawn_value_see, 98, 1, 200);
+PARAM(knight_value_see, 318, 1, 600);
+PARAM(bishop_value_see, 335, 1, 600);
+PARAM(rook_value_see, 504, 1, 1000);
+PARAM(queen_value_see, 997, 1, 2000);
 
 PARAM(ms_pawn, 100, 1, 200);
 PARAM(ms_knight, 300, 1, 600);
@@ -174,5 +170,9 @@ constexpr int piece_values(PieceType pt) {
         return 0;
     }
 }
+
+// Global Variable
+
+extern std::vector<Param*> params;
 
 } // namespace astra::search
