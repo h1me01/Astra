@@ -15,6 +15,8 @@
 
 namespace astra::search {
 
+constexpr int LMR_SCALE = 1024;
+
 void Search::idle() {
     thread_pool.add_started_thread();
 
@@ -476,7 +478,7 @@ movesloop:
 
         stack->move_count = ++move_count;
 
-        int r = reduction(depth, move_count);
+        int r = reduction(depth, move_count) * LMR_SCALE;
 
         int history_score = 0;
         if (move.is_quiet()) {
@@ -496,7 +498,7 @@ movesloop:
                 skip_quiets = true;
 
             if (move.is_quiet()) {
-                const int r_depth = std::max(0, depth - r + history_score / hist_div);
+                const int r_depth = std::max(0, depth - r / LMR_SCALE + history_score / 7778);
 
                 // futility pruning
                 const Score futility = stack->static_eval + fp_base + r_depth * fp_mult;
@@ -563,21 +565,27 @@ movesloop:
         // late move reductions
         if (depth >= lmr_depth && move_count >= lmr_min_moves && !(tt_pv && move.is_noisy())) {
 
-            r += !improving;
+            if (!improving)
+                r += lmr_improving;
 
-            r += 2 * cut_node;
+            if (cut_node)
+                r += lmr_cut_node;
 
-            r += (tt_move && tt_move.is_noisy());
+            if (tt_move && tt_move.is_noisy())
+                r += lmr_tt_move_noisy;
 
-            r -= tt_pv;
+            if (tt_pv)
+                r -= lmr_tt_pv;
 
-            r -= board.in_check();
+            if (board.in_check())
+                r -= lmr_in_check;
 
-            r -= (tt_depth >= depth);
+            if (tt_depth >= depth)
+                r -= lmr_tt_depth;
 
-            r -= history_score / (move.is_quiet() ? quiet_hist_div : noisy_hist_div);
+            r -= (move.is_quiet() ? lmr_quiet_hist_mul : lmr_noisy_hist_mul) * history_score / LMR_SCALE;
 
-            const int r_depth = std::clamp(new_depth - r, 1, new_depth + 1);
+            const int r_depth = std::clamp(new_depth - r / LMR_SCALE, 1, new_depth + 1);
 
             score = -negamax<NON_PV>(r_depth, -alpha - 1, -alpha, stack + 1, true);
 
@@ -870,7 +878,7 @@ void Search::undo_move(Move move) {
 int Search::reduction(int depth, int move_count) const {
     double base = lmr_base / 100.0;
     double div_factor = lmr_div / 100.0;
-    return base + log(depth) * log(move_count) / div_factor;
+    return base + std::log(depth) * std::log(move_count) / div_factor;
 }
 
 Score Search::evaluate() {
