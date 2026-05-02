@@ -113,6 +113,7 @@ PARAM(lmr_min_moves, 2, 1, 10);
 PARAM(lmr_improving, 1024, 1, 2048);
 PARAM(lmr_cut_node, 2048, 1, 4096);
 PARAM(lmr_tt_pv, 1024, 1, 2048);
+PARAM(lmr_tt_score, 655, 1, 2048);
 PARAM(lmr_tt_move_noisy, 1024, 1, 2048);
 PARAM(lmr_in_check, 1024, 1, 2048);
 PARAM(lmr_tt_depth, 1024, 1, 2048);

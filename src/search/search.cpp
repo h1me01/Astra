@@ -574,8 +574,10 @@ movesloop:
             if (tt_move && tt_move.is_noisy())
                 r += lmr_tt_move_noisy;
 
-            if (tt_pv)
+            if (tt_pv) {
                 r -= lmr_tt_pv;
+                r -= lmr_tt_score * (valid_score(tt_score) && tt_score > alpha);
+            }
 
             if (board.in_check())
                 r -= lmr_in_check;
