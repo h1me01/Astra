@@ -478,7 +478,7 @@ movesloop:
 
         stack->move_count = ++move_count;
 
-        int r = reduction(depth, move_count) * LMR_SCALE;
+        int r = reduction(depth, move_count);
 
         int history_score = 0;
         if (move.is_quiet()) {
@@ -876,9 +876,7 @@ void Search::undo_move(Move move) {
 }
 
 int Search::reduction(int depth, int move_count) const {
-    double base = lmr_base / 100.0;
-    double div_factor = lmr_div / 100.0;
-    return base + std::log(depth) * std::log(move_count) / div_factor;
+    return lmr_base + lmr_mul * static_cast<int>(std::log(depth) * std::log(move_count));
 }
 
 Score Search::evaluate() {

@@ -57,9 +57,6 @@ PARAM(tm_results_max, 147, 50, 220);
 PARAM(tm_node_mult, 219, 120, 260);
 PARAM(tm_node_base, 58, 10, 90);
 
-PARAM(lmr_base, 111, 40, 200);
-PARAM(lmr_div, 297, 150, 500);
-
 PARAM(tt_hist_bonus_mult, 308, 1, 1536);
 PARAM(tt_hist_bonus_minus, 4, -500, 500);
 PARAM(max_tt_hist_bonus, 2445, 1, 4096);
@@ -109,6 +106,8 @@ PARAM(double_ext_margin, 13, 1, 30);
 PARAM(triple_ext_margin, 93, 10, 250);
 PARAM(zws_margin, 39, 10, 160);
 
+PARAM(lmr_base, 1134, 1, 2048);
+PARAM(lmr_mul, 355, 1, 512);
 PARAM(lmr_depth, 2, 1, 6);
 PARAM(lmr_min_moves, 2, 1, 10);
 PARAM(lmr_improving, 1024, 1, 2048);
