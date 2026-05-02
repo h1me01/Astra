@@ -655,7 +655,7 @@ movesloop:
                     break;
                 }
 
-                if (depth > 2 && depth < 14 && !is_decisive(score))
+                if (depth > sdr_min_depth && depth < sdr_max_depth && !is_decisive(score))
                     depth--;
 
                 alpha = score;
