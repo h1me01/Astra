@@ -60,7 +60,7 @@ PARAM(tm_node_base, 58, 10, 90);
 PARAM(lmr_base, 111, 40, 200);
 PARAM(lmr_div, 297, 150, 500);
 PARAM(lmr_depth, 2, 1, 6);
-PARAM(lmr_min_moves, 3, 1, 10);
+PARAM(lmr_min_moves, 2, 1, 10);
 PARAM(lmr_improving, 1024, 1, 2048);
 PARAM(lmr_cut_node, 2048, 1, 4096);
 PARAM(lmr_tt_pv, 1024, 1, 2048);

@@ -563,7 +563,7 @@ movesloop:
         Score score = SCORE_NONE;
 
         // late move reductions
-        if (depth >= lmr_depth && move_count >= lmr_min_moves && !(tt_pv && move.is_noisy())) {
+        if (depth >= lmr_depth && move_count >= lmr_min_moves) {
 
             if (!improving)
                 r += lmr_improving;
@@ -576,7 +576,7 @@ movesloop:
 
             if (tt_pv)
                 r -= lmr_tt_pv;
-
+            
             if (board.in_check())
                 r -= lmr_in_check;
 
