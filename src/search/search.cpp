@@ -498,7 +498,7 @@ movesloop:
                 skip_quiets = true;
 
             if (move.is_quiet()) {
-                const int r_depth = std::max(0, depth - r / LMR_SCALE + history_score / 7778);
+                const int r_depth = std::max(0, depth - r / LMR_SCALE + history_score / hist_div);
 
                 // futility pruning
                 const Score futility = stack->static_eval + fp_base + r_depth * fp_mult;
@@ -576,7 +576,7 @@ movesloop:
 
             if (tt_pv)
                 r -= lmr_tt_pv;
-            
+
             if (board.in_check())
                 r -= lmr_in_check;
 
