@@ -574,12 +574,11 @@ movesloop:
 
             if (tt_pv) {
                 r -= lmr_tt_pv;
-                r -= lmr_tt_score * (valid_score(tt_score) && tt_score > alpha);
+                r -= (tt_depth >= depth) * lmr_tt_depth;
+                r -= (valid_score(tt_score) && tt_score > alpha) * lmr_tt_score;
             }
 
             r -= board.in_check() * lmr_in_check;
-
-            r -= (tt_depth >= depth) * lmr_tt_depth;
 
             r -= (move.is_quiet() ? lmr_quiet_hist_mul : lmr_noisy_hist_mul) * history_score / LMR_SCALE;
 
