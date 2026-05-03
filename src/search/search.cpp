@@ -587,7 +587,7 @@ movesloop:
 
             r -= (move.is_quiet() ? lmr_quiet_hist_mul : lmr_noisy_hist_mul) * history_score / LMR_SCALE;
 
-            const int r_depth = std::clamp(new_depth - r / LMR_SCALE, 1, new_depth + 1);
+            const int r_depth = std::clamp(new_depth - r / LMR_SCALE, 1, new_depth + 1) + pv_node;
 
             score = -negamax<NON_PV>(r_depth, -alpha - 1, -alpha, stack + 1, true);
 
