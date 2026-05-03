@@ -531,7 +531,7 @@ movesloop:
             && tt_depth >= depth - 3        //
             && valid_score(tt_score)        //
             && !is_decisive(tt_score)       //
-            && tt_bound & LOWER_BOUND       //
+            && (tt_bound & LOWER_BOUND)     //
             && stack->ply < 2 * root_depth_ //
         ) {
             Score sbeta = tt_score - (1 + (tt_pv && !pv_node)) * depth;
@@ -565,25 +565,21 @@ movesloop:
         // late move reductions
         if (depth >= lmr_depth && move_count >= lmr_min_moves) {
 
-            if (!improving)
-                r += lmr_improving;
+            r += !improving * lmr_improving;
 
             if (cut_node)
                 r += lmr_cut_node;
 
-            if (tt_move && tt_move.is_noisy())
-                r += lmr_tt_move_noisy;
+            r += (tt_move && tt_move.is_noisy()) * lmr_tt_move_noisy;
 
             if (tt_pv) {
                 r -= lmr_tt_pv;
                 r -= lmr_tt_score * (valid_score(tt_score) && tt_score > alpha);
             }
 
-            if (board.in_check())
-                r -= lmr_in_check;
+            r -= board.in_check() * lmr_in_check;
 
-            if (tt_depth >= depth)
-                r -= lmr_tt_depth;
+            r -= (tt_depth >= depth) * lmr_tt_depth;
 
             r -= (move.is_quiet() ? lmr_quiet_hist_mul : lmr_noisy_hist_mul) * history_score / LMR_SCALE;
 
