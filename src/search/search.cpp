@@ -172,10 +172,10 @@ Score Search::aspiration(int depth, Stack* stack) {
 
         if (score <= alpha) {
             beta = (alpha + beta) / 2;
-            alpha = std::max(alpha - delta, -SCORE_INFINITE);
+            alpha = std::max(score - delta, -SCORE_INFINITE);
             fail_high_count = 0;
         } else if (score >= beta) {
-            beta = std::min(beta + delta, SCORE_INFINITE);
+            beta = std::min(score + delta, SCORE_INFINITE);
             fail_high_count++;
         } else {
             break;
