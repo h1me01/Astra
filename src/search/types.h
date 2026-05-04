@@ -9,7 +9,7 @@
 namespace astra::search {
 
 using Score = int;
-using PieceToContinuation = int16_t[NUM_PIECES + 1][NUM_SQUARES];
+using PieceToContinuation = NDArray<int16_t, NUM_PIECES + 1, NUM_SQUARES>;
 
 constexpr int MAX_PLY = 128;
 

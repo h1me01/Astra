@@ -83,18 +83,18 @@ class ContinuationHistory {
   public:
     ContinuationHistory() { clear(); }
 
-    void clear() { std::memset(data_, 0, sizeof(data_)); }
+    void clear() { data_.fill(PieceToContinuation{}); }
     void update(Piece pc, Square to, int bonus, Stack* stack);
 
-    PieceToContinuation* get() { return &data_[0][0][NO_PIECE][0]; }
+    PieceToContinuation* get() { return &data_(0, 0, NO_PIECE, 0); }
     PieceToContinuation* get(bool in_check, bool is_cap, Piece pc, Square to) {
         assert(valid_sq(to));
         assert(valid_piece(pc));
-        return &data_[in_check][is_cap][pc][to];
+        return &data_(in_check, is_cap, pc, to);
     }
 
   private:
-    int16_t data_[2][2][NUM_PIECES + 1][NUM_SQUARES][NUM_PIECES + 1][NUM_SQUARES];
+    NDArray<PieceToContinuation, 2, 2, NUM_PIECES + 1, NUM_SQUARES> data_;
 };
 
 class CorrectionHistories {
@@ -133,7 +133,7 @@ class ContinuationCorrectionHistory {
   public:
     ContinuationCorrectionHistory() { clear(); }
 
-    void clear() { std::memset(data_, 0, sizeof(data_)); }
+    void clear() { data_.fill(PieceToContinuation{}); }
     void update(const Board& board, int bonus, const Stack* stack);
 
     int get(const Board& board, const Stack* stack) const {
@@ -144,14 +144,14 @@ class ContinuationCorrectionHistory {
         Piece pc = board.piece_at(m.to());
         assert(valid_piece(pc));
 
-        return cont_corr_weight * (*(stack - 2)->cont_corr_hist)[pc][m.to()];
+        return cont_corr_weight * (*(stack - 2)->cont_corr_hist)(pc, m.to());
     }
 
-    PieceToContinuation* get() { return &data_[NO_PIECE][0]; }
-    PieceToContinuation* get(Piece pc, Square to) { return &data_[pc][to]; }
+    PieceToContinuation* get() { return &data_(NO_PIECE, 0); }
+    PieceToContinuation* get(Piece pc, Square to) { return &data_(pc, to); }
 
   private:
-    int16_t data_[NUM_PIECES + 1][NUM_SQUARES][NUM_PIECES + 1][NUM_SQUARES];
+    NDArray<PieceToContinuation, NUM_PIECES + 1, NUM_SQUARES> data_;
 };
 
 } // namespace astra::search

@@ -51,7 +51,7 @@ void ContinuationHistory::update(Piece pc, Square to, int bonus, Stack* stack) {
 
     for (int i : {1, 2, 4, 6})
         if ((stack - i)->move)
-            update_history((*(stack - i)->cont_hist)[pc][to], bonus);
+            update_history((*(stack - i)->cont_hist)(pc, to), bonus);
 }
 
 // Correction Histories
@@ -75,7 +75,7 @@ void ContinuationCorrectionHistory::update(const Board& board, int bonus, const 
     Piece pc = board.piece_at(m.to());
     assert(valid_piece(pc));
 
-    update_correction((*(stack - 2)->cont_corr_hist)[pc][m.to()], bonus);
+    update_correction((*(stack - 2)->cont_corr_hist)(pc, m.to()), bonus);
 }
 
 } // namespace astra::search

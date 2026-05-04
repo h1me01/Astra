@@ -144,7 +144,7 @@ void MovePicker<st>::gen_score_quiets() {
 
         m.score = 2 * (quiet_history_.get(stm, m) + pawn_history_.get(board_, m));
         for (int i : {1, 2, 4, 6})
-            m.score += (*(stack_ - i)->cont_hist)[pc][to];
+            m.score += (*(stack_ - i)->cont_hist)(pc, to);
 
         m.score += mp_threat_mul * piece_values(pt) *
                    (static_cast<bool>(threats(pt) & sq_bb(from)) - static_cast<bool>(threats(pt) & sq_bb(to)));
