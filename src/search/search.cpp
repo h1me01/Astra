@@ -467,8 +467,7 @@ movesloop:
     MoveList<Move> quiets, noisy;
     int move_count = 0;
 
-    bool skip_quiets = false;
-    while ((move = mp.next(skip_quiets))) {
+    while ((move = mp.next())) {
         if (move == stack->skipped || !board.is_legal(move))
             continue;
         if (root_node && !found_root_move(move))
@@ -484,10 +483,10 @@ movesloop:
         if (move.is_quiet()) {
             auto pc = board.piece_at(move.from());
 
-            history_score = quiet_history_.get(board.side_to_move(), move)               //
-                            + pawn_history_.get(board, move)                             //
-                            + static_cast<int>((*(stack - 1)->cont_hist)[pc][move.to()]) //
-                            + static_cast<int>((*(stack - 2)->cont_hist)[pc][move.to()]);
+            history_score = quiet_history_.get(board.side_to_move(), move) //
+                            + pawn_history_.get(board, move)               //
+                            + (*(stack - 1)->cont_hist)[pc][move.to()]     //
+                            + (*(stack - 2)->cont_hist)[pc][move.to()];
         } else {
             history_score = noisy_history_.get(board, move);
         }
@@ -495,7 +494,7 @@ movesloop:
         if (!root_node && !is_loss(best_score)) {
             // late move pruning
             if (quiets.size() > (3 + depth * depth) / (2 - improving))
-                skip_quiets = true;
+                mp.skip_quiets();
 
             if (move.is_quiet()) {
                 const int r_depth = std::max(0, depth - r / LMR_SCALE + history_score / hist_div);
@@ -503,11 +502,11 @@ movesloop:
                 // futility pruning
                 const Score futility = stack->static_eval + fp_base + r_depth * fp_mult;
                 if (!in_check && r_depth < fp_depth && futility <= alpha)
-                    skip_quiets = true;
+                    mp.skip_quiets();
 
                 // history pruning
                 if (r_depth < hp_depth && history_score < hp_depth_mult * depth) {
-                    skip_quiets = true;
+                    mp.skip_quiets();
                     continue;
                 }
 

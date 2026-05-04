@@ -41,7 +41,7 @@ MovePicker<st>::MovePicker(
 }
 
 template <SearchType st>
-Move MovePicker<st>::next(bool skip_quiets) {
+Move MovePicker<st>::next() {
     switch (stage_) {
     case PLAY_TT_MOVE:
         stage_ = GEN_NOISY;
@@ -81,12 +81,12 @@ Move MovePicker<st>::next(bool skip_quiets) {
         idx_ = 0;
         stage_ = PLAY_QUIETS;
 
-        if (!skip_quiets)
+        if (!skip_quiets_)
             gen_score_quiets();
 
         [[fallthrough]];
     case PLAY_QUIETS:
-        while (idx_ < ml_main_.size() && !skip_quiets) {
+        while (idx_ < ml_main_.size() && !skip_quiets_) {
             select_best(ml_main_, idx_);
             Move move = ml_main_[idx_++];
             if (move != tt_move_)
@@ -119,10 +119,8 @@ template <SearchType st>
 void MovePicker<st>::gen_score_noisy() {
     ml_main_.gen<GenType::NOISY>(board_);
 
-    for (auto& m : ml_main_) {
-        PieceType captured = m.is_ep() ? PAWN : piece_type(board_.piece_at(m.to()));
-        m.score = noisy_history_.get(board_, m) + 16 * piece_values(captured);
-    }
+    for (auto& m : ml_main_)
+        m.score = noisy_history_.get(board_, m) + 16 * piece_values(piece_type(board_.capture_piece(m)));
 }
 
 template <SearchType st>
@@ -146,7 +144,7 @@ void MovePicker<st>::gen_score_quiets() {
 
         m.score = 2 * (quiet_history_.get(stm, m) + pawn_history_.get(board_, m));
         for (int i : {1, 2, 4, 6})
-            m.score += static_cast<int>((*(stack_ - i)->cont_hist)[pc][to]);
+            m.score += (*(stack_ - i)->cont_hist)[pc][to];
 
         m.score += mp_threat_mul * piece_values(pt) *
                    (static_cast<bool>(threats(pt) & sq_bb(from)) - static_cast<bool>(threats(pt) & sq_bb(to)));

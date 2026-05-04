@@ -27,8 +27,8 @@ void Accumulator::update(const Accumulator& src, Color view) {
 void Accumulator::put(const Accumulator& src, Piece pc, Square psq, Square ksq, Color view) {
     const auto w = ptr_cast<const simd::ivec_t>(nnue.feature_weight(pc, psq, ksq, view));
 
-    auto* dst_vec = ptr_cast<simd::ivec_t>(data[view]);
-    const auto* src_vec = initialized(view) ? dst_vec : ptr_cast<const simd::ivec_t>(src.data[view]);
+    auto* dst_vec = ptr_cast<simd::ivec_t>(&data(view, 0));
+    const auto* src_vec = initialized(view) ? dst_vec : ptr_cast<const simd::ivec_t>(&src.data(view, 0));
 
     for (int i = 0; i < FT_SIZE / simd::INT16_VEC_SIZE; i++)
         dst_vec[i] = simd::add_epi16(src_vec[i], w[i]);
@@ -39,8 +39,8 @@ void Accumulator::put(const Accumulator& src, Piece pc, Square psq, Square ksq, 
 void Accumulator::remove(const Accumulator& src, Piece pc, Square psq, Square ksq, Color view) {
     const auto w = ptr_cast<const simd::ivec_t>(nnue.feature_weight(pc, psq, ksq, view));
 
-    auto* dst_vec = ptr_cast<simd::ivec_t>(data[view]);
-    const auto* src_vec = initialized(view) ? dst_vec : ptr_cast<const simd::ivec_t>(src.data[view]);
+    auto* dst_vec = ptr_cast<simd::ivec_t>(&data(view, 0));
+    const auto* src_vec = initialized(view) ? dst_vec : ptr_cast<const simd::ivec_t>(&src.data(view, 0));
 
     for (int i = 0; i < FT_SIZE / simd::INT16_VEC_SIZE; i++)
         dst_vec[i] = simd::sub_epi16(src_vec[i], w[i]);
@@ -52,8 +52,8 @@ void Accumulator::move(const Accumulator& src, Piece pc, Square from, Square to,
     const auto wf = ptr_cast<const simd::ivec_t>(nnue.feature_weight(pc, from, ksq, view));
     const auto wt = ptr_cast<const simd::ivec_t>(nnue.feature_weight(pc, to, ksq, view));
 
-    auto* dst_vec = ptr_cast<simd::ivec_t>(data[view]);
-    const auto* src_vec = initialized(view) ? dst_vec : ptr_cast<const simd::ivec_t>(src.data[view]);
+    auto* dst_vec = ptr_cast<simd::ivec_t>(&data(view, 0));
+    const auto* src_vec = initialized(view) ? dst_vec : ptr_cast<const simd::ivec_t>(&src.data(view, 0));
 
     for (int i = 0; i < FT_SIZE / simd::INT16_VEC_SIZE; i++)
         dst_vec[i] = simd::add_epi16(src_vec[i], simd::sub_epi16(wt[i], wf[i]));
@@ -93,7 +93,7 @@ void AccumulatorStack::refresh(Color view, Board& board) {
     }
 
     auto& accum = back();
-    std::memcpy(accum.data[view], entry.accum.data[view], sizeof(int16_t) * FT_SIZE);
+    std::memcpy(&accum.data(view, 0), &entry.accum.data(view, 0), sizeof(int16_t) * FT_SIZE);
     accum.initialized(view) = true;
 }
 

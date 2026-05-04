@@ -34,11 +34,14 @@ class MovePicker {
         int probcut_threshold = 0
     );
 
-    Move next(bool skip_quiets = false);
+    void skip_quiets() { skip_quiets_ = true; }
+
+    Move next();
 
   private:
     int idx_;
     Stage stage_;
+    bool skip_quiets_ = false;
 
     const Board& board_;
     const QuietHistory& quiet_history_;

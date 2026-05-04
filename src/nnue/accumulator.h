@@ -4,9 +4,10 @@
 #include <cassert>
 
 #include "../chess/types.h"
+#include "../ndarray.h"
 #include "../search/types.h"
-#include "aligned_array.h"
 #include "arch.h"
+#include "util.h"
 
 namespace astra {
 class Board;
@@ -53,7 +54,7 @@ struct Accumulator {
     DirtyPiece dirty_piece;
     NDArray<Square, NUM_COLORS> king_sq;
     NDArray<bool, NUM_COLORS> initialized;
-    AlignedArray<int16_t, NUM_COLORS, FT_SIZE> data;
+    alignas(64) NDArray<int16_t, NUM_COLORS, FT_SIZE> data;
 
     Accumulator() { clear(); }
 
