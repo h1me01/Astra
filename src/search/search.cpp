@@ -567,15 +567,14 @@ movesloop:
 
             r += !improving * lmr_improving;
 
-            if (cut_node)
-                r += lmr_cut_node;
+            r += cut_node * lmr_cut_node;
 
             r += (tt_move && tt_move.is_noisy()) * lmr_tt_move_noisy;
 
             if (tt_pv) {
-                r -= lmr_tt_pv;
-                r -= (tt_depth >= depth) * lmr_tt_depth;
-                r -= (valid_score(tt_score) && tt_score > alpha) * lmr_tt_score;
+                r -= lmr_tt_pv                            //
+                     + (tt_depth >= depth) * lmr_tt_depth //
+                     + (valid_score(tt_score) && tt_score > alpha) * lmr_tt_score;
             }
 
             r -= board.in_check() * lmr_in_check;
