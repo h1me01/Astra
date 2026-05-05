@@ -468,14 +468,14 @@ bool Board::gives_check(Move move) const {
     if (check_squares(piece_type(piece_at(from))) & sq_bb(to))
         return true;
 
-    if (state().blockers(~stm_) & from)
+    if (state().blockers(~stm_) & sq_bb(from))
         return !(line(from, to) & piece_bb<KING>(~stm_)) || move.is_castling();
 
     if (move.is_prom()) {
-        return attacks_bb(move.prom_type(), to, occ ^ from) & piece_bb<KING>(~stm_);
+        return attacks_bb(move.prom_type(), to, occ ^ sq_bb(from)) & piece_bb<KING>(~stm_);
     } else if (move.is_ep()) {
         Square cap_sq = make_square(sq_rank(from), sq_file(to));
-        Bitboard b = (occ ^ from ^ cap_sq) | to;
+        Bitboard b = (occ ^ sq_bb(from) ^ sq_bb(cap_sq)) | sq_bb(to);
 
         return (attacks_bb<ROOK>(nstm_ksq, b) & orth_sliders(stm_)) |
                (attacks_bb<BISHOP>(nstm_ksq, b) & diag_sliders(stm_));

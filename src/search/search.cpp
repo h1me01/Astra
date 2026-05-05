@@ -923,7 +923,7 @@ Score Search::adjust_eval(int32_t eval, Stack* stack) const {
     return std::clamp(eval, SCORE_TB_LOSS_IN_MAX_PLY + 1, SCORE_TB_WIN_IN_MAX_PLY - 1);
 }
 
-Score Search::draw_score() const { return 1 + Score(nodes() & 0x2); }
+Score Search::draw_score() const { return Score(nodes() & 0x2) - 1; }
 
 unsigned int Search::probe_wdl() const {
     Bitboard w_occ = board.occupancy(WHITE);
