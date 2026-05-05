@@ -15,8 +15,6 @@
 
 namespace astra::search {
 
-constexpr int LMR_SCALE = 1024;
-
 void Search::idle() {
     thread_pool.add_started_thread();
 
@@ -497,7 +495,7 @@ movesloop:
                 mp.skip_quiets();
 
             if (move.is_quiet()) {
-                const int r_depth = std::max(0, depth - r / LMR_SCALE + history_score / hist_div);
+                const int r_depth = std::max(0, depth - r / 1024 + history_score / hist_div);
 
                 // futility pruning
                 const Score futility = stack->static_eval + fp_base + r_depth * fp_mult;
@@ -562,7 +560,7 @@ movesloop:
         Score score = SCORE_NONE;
 
         // late move reductions
-        if (depth >= lmr_depth && move_count >= lmr_min_moves) {
+        if (depth >= 2 && move_count >= 2) {
 
             r += !improving * lmr_improving;
 
@@ -578,9 +576,9 @@ movesloop:
 
             r -= board.in_check() * lmr_in_check;
 
-            r -= (move.is_quiet() ? lmr_quiet_hist_mul : lmr_noisy_hist_mul) * history_score / LMR_SCALE;
+            r -= (move.is_quiet() ? lmr_quiet_hist_mul : lmr_noisy_hist_mul) * history_score / 1024;
 
-            const int r_depth = std::clamp(new_depth - r / LMR_SCALE, 1, new_depth + 1) + pv_node;
+            const int r_depth = std::clamp(new_depth - r / 1024, 1, new_depth + 1) + pv_node;
 
             score = -negamax<NON_PV>(r_depth, -alpha - 1, -alpha, stack + 1, true);
 
@@ -991,17 +989,17 @@ void Search::update_histories(Move best_move, MoveList<Move>& quiets, MoveList<M
     int malus = -history_malus(depth);
 
     if (best_move.is_noisy()) {
-        noisy_history_.update(board, best_move, bonus * noisy_hist_bonus_mult / 1024);
+        noisy_history_.update(board, best_move, noisy_hist_bonus_mult * bonus / 1024);
     } else if (depth > 3 || !quiets.empty()) {
-        update_quiet_histories(best_move, bonus * quiet_hist_bonus_mult / 1024, stack);
+        update_quiet_histories(best_move, quiet_hist_bonus_mult * bonus / 1024, stack);
 
-        int quiet_malus = malus * quiet_hist_malus_mult / 1024;
+        int quiet_malus = quiet_hist_malus_mult * malus / 1024;
         for (const auto& m : quiets)
             update_quiet_histories(m, quiet_malus, stack);
     }
 
     for (const auto& m : noisy)
-        noisy_history_.update(board, m, malus * noisy_hist_malus_mult / 1024);
+        noisy_history_.update(board, m, noisy_hist_malus_mult * malus / 1024);
 }
 
 void Search::print_uci_info() const {

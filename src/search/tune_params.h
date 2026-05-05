@@ -54,7 +54,7 @@ PARAM(tm_results_mult2, 29, 0, 45);
 PARAM(tm_results_min, 101, 0, 150);
 PARAM(tm_results_max, 147, 50, 220);
 
-PARAM(tm_node_mult, 219, 120, 260);
+PARAM(tm_node_mult, 219, 100, 350);
 PARAM(tm_node_base, 58, 10, 90);
 
 PARAM(tt_hist_bonus_mult, 308, 1, 1536);
@@ -65,28 +65,28 @@ PARAM(tt_hist_malus_mult, 311, 1, 1536);
 PARAM(tt_hist_malus_minus, 104, -500, 500);
 PARAM(max_tt_hist_malus, 1646, 1, 4096);
 
-PARAM(static_h_mult, -51, -500, -1);
-PARAM(static_h_min, -108, -1000, -1);
+PARAM(static_h_mult, -51, -200, -1);
+PARAM(static_h_min, -108, -400, -1);
 PARAM(static_h_max, 226, 1, 1000);
 
-PARAM(rzr_base, 318, 1, 750);
+PARAM(rzr_base, 318, 50, 750);
 PARAM(rzr_mult, 234, 1, 500);
 
-PARAM(rfp_depth, 11, 2, 20);
+PARAM(rfp_depth, 11, 1, 20);
 PARAM(rfp_depth_mult, 103, 40, 200);
 PARAM(rfp_improving_mult, 85, 40, 200);
 
 PARAM(nmp_depth_mult, 26, 1, 58);
-PARAM(nmp_base, 192, 1, 400);
+PARAM(nmp_base, 192, 50, 400);
 PARAM(nmp_eval_div, 193, 50, 350);
-PARAM(nmp_rbase, 4, 1, 5);
+PARAM(nmp_rbase, 4, 1, 8);
 PARAM(nmp_rdepth_div, 3, 1, 6);
 PARAM(nmp_rmin, 4, 1, 10);
 
-PARAM(iir_depth, 4, 4, 6);
+PARAM(iir_depth, 4, 1, 8);
 
 PARAM(pc_depth, 3, 1, 10);
-PARAM(pc_margin, 217, 1, 500);
+PARAM(pc_margin, 217, 1, 400);
 PARAM(pc_improving_mult, 60, 1, 120);
 
 PARAM(hist_div, 7778, 1, 16384);
@@ -108,8 +108,6 @@ PARAM(zws_margin, 39, 10, 160);
 
 PARAM(lmr_base, 1134, 1, 2048);
 PARAM(lmr_mul, 355, 1, 512);
-PARAM(lmr_depth, 2, 1, 6);
-PARAM(lmr_min_moves, 2, 1, 10);
 PARAM(lmr_improving, 1024, 1, 2048);
 PARAM(lmr_cut_node, 2048, 1, 4096);
 PARAM(lmr_tt_pv, 1024, 1, 2048);
