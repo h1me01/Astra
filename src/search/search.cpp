@@ -583,8 +583,8 @@ movesloop:
             score = -negamax<NON_PV>(r_depth, -alpha - 1, -alpha, stack + 1, true);
 
             if (score > alpha && new_depth > r_depth) {
-                new_depth += (score > best_score + zws_margin + 2 * new_depth);
-                new_depth -= (score < best_score + new_depth);
+                new_depth += (score > best_score + dp_margin);
+                new_depth -= (score < best_score + ds_margin);
 
                 if (new_depth > r_depth)
                     score = -negamax<NON_PV>(new_depth, -alpha - 1, -alpha, stack + 1, !cut_node);

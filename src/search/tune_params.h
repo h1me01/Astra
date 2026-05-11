@@ -104,7 +104,8 @@ PARAM(see_quiet_margin, -15, -100, -1);
 PARAM(se_depth, 6, 1, 12);
 PARAM(double_ext_margin, 13, 1, 30);
 PARAM(triple_ext_margin, 93, 10, 250);
-PARAM(zws_margin, 39, 10, 160);
+PARAM(dp_margin, 60, 10, 120);
+PARAM(ds_margin, 8, 1, 20);
 
 PARAM(lmr_base, 1134, 1, 2048);
 PARAM(lmr_mul, 355, 1, 512);
