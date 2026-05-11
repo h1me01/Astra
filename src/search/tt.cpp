@@ -4,33 +4,11 @@
 #include <thread>
 #include <vector>
 
-#if defined(__linux__)
-#include <sys/mman.h>
-#include <xmmintrin.h>
-#endif
-
+#include "../util.h"
 #include "threads.h"
 #include "tt.h"
 
 namespace astra::search {
-
-// Helper
-
-void* alloc_align(size_t size) {
-#if defined(__linux__)
-    constexpr size_t alignment = 2 * 1024 * 1024;
-#else
-    constexpr size_t alignment = 4096;
-#endif
-    size = ((size + alignment - 1) / alignment) * alignment;
-    void* ptr = _mm_malloc(size, alignment);
-#if defined(__linux__)
-    madvise(ptr, size, MADV_HUGEPAGE);
-#endif
-    return ptr;
-}
-
-void free_align(void* ptr) { _mm_free(ptr); }
 
 // Constants
 

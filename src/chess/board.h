@@ -48,16 +48,15 @@ class Board {
     Bitboard attacks_by(Color c) const;
     Bitboard occupancy(Color c) const;
     Bitboard occupancy() const;
-
     template <PieceType pt>
     Bitboard piece_bb() const;
     template <PieceType pt>
     Bitboard piece_bb(Color c) const;
     Bitboard piece_bb(Color c, PieceType pt) const;
-
     Bitboard diag_sliders(Color c) const;
     Bitboard orth_sliders(Color c) const;
     Bitboard check_squares(PieceType pt) const;
+
     Hash hash() const;
     Hash pawn_hash() const;
     Hash minor_piece_hash() const;
@@ -169,8 +168,7 @@ inline Bitboard Board::diag_sliders(Color c) const { return piece_bb<BISHOP>(c) 
 inline Bitboard Board::orth_sliders(Color c) const { return piece_bb<ROOK>(c) | piece_bb<QUEEN>(c); }
 
 inline Bitboard Board::check_squares(PieceType pt) const {
-    assert(pt >= PAWN);
-    assert(pt <= KING);
+    assert(valid_piece_type(pt));
     return state().check_squares(pt);
 }
 

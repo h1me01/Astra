@@ -46,6 +46,4 @@ const simd::ivec_t& ivec_at(const T* ptr, size_t offset = 0) {
     return *ptr_cast<const simd::ivec_t>(ptr + offset);
 }
 
-#undef DEFINE_VEC_AT
-
 } // namespace astra::nnue

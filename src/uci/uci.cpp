@@ -259,9 +259,7 @@ Move UCI::parse_move(const std::string& str_move) const {
     ml.gen<GenType::LEGAL>(board_);
 
     for (const auto& move : ml) {
-        std::ostringstream ss;
-        ss << move;
-        if (ss.str() == str_move)
+        if (std::format("{}", move) == str_move)
             return move;
     }
 

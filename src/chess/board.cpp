@@ -24,10 +24,8 @@ inline Square sq_from(std::string_view sq_str) {
     assert(sq_str.size() >= 2);
     int file = sq_str[0] - 'a';
     int rank = sq_str[1] - '1';
-    assert(file >= 0);
-    assert(file < 8);
-    assert(rank >= 0);
-    assert(rank < 8);
+    assert(file >= 0 && file < 8);
+    assert(rank >= 0 && rank < 8);
     return static_cast<Square>(rank * 8 + file);
 }
 

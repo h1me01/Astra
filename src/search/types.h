@@ -50,14 +50,12 @@ struct PVLine {
     uint8_t length = 0;
 
     Move& operator()(int depth) {
-        assert(depth >= 0);
-        assert(depth < MAX_PLY);
+        assert(depth >= 0 && depth < MAX_PLY);
         return pv(depth);
     }
 
     Move operator()(int depth) const {
-        assert(depth >= 0);
-        assert(depth < MAX_PLY);
+        assert(depth >= 0 && depth < MAX_PLY);
         return pv(depth);
     }
 };

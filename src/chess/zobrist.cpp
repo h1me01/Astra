@@ -3,10 +3,12 @@
 
 namespace astra::zobrist {
 
-static Hash SIDE;
-static NDArray<Hash, 8> EP_SQ_HASH;
-static NDArray<Hash, 16> CASTLING;
-static NDArray<Hash, NUM_PIECES, NUM_SQUARES> PSQ;
+namespace {
+Hash SIDE;
+NDArray<Hash, 8> EP_SQ_HASH;
+NDArray<Hash, 16> CASTLING;
+NDArray<Hash, NUM_PIECES, NUM_SQUARES> PSQ;
+} // namespace
 
 // psuedorandom number generator from stockfish
 class PRNG {
@@ -56,8 +58,7 @@ Hash psq(Piece pc, Square sq) {
 }
 
 Hash castling(int idx) {
-    assert(idx >= 0);
-    assert(idx < 16);
+    assert(idx >= 0 && idx < 16);
     return CASTLING(idx);
 }
 

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <type_traits>
 
 #include "board.h"
@@ -45,10 +46,8 @@ class MoveList {
     }
 
     int idx_of(const T move) const {
-        for (int i = 0; i < size(); i++)
-            if (list_[i] == move)
-                return i;
-        return -1;
+        auto it = std::ranges::find(begin(), end(), move);
+        return it != end() ? static_cast<int>(it - begin()) : -1;
     }
 
     T* begin() { return list_; }
@@ -57,14 +56,12 @@ class MoveList {
     const T* end() const { return last_; }
 
     T& operator[](int i) {
-        assert(i >= 0);
-        assert(i < size());
+        assert(i >= 0 && i < size());
         return list_[i];
     }
 
     const T& operator[](int i) const {
-        assert(i >= 0);
-        assert(i < size());
+        assert(i >= 0 && i < size());
         return list_[i];
     }
 

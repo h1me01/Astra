@@ -65,8 +65,7 @@ int32_t NNUE::forward(Board& board, const Accumulator& acc) {
     assert(acc.initialized(BLACK));
 
     const int bucket = (pop_count(board.occupancy()) - 2) / 4;
-    assert(0 <= bucket);
-    assert(bucket < OUTPUT_BUCKETS);
+    assert(0 <= bucket && bucket < OUTPUT_BUCKETS);
 
     alignas(64) auto l1_in = prep_l1_input(board.side_to_move(), acc);
     alignas(64) auto l1_out = forward_l1(bucket, l1_in);

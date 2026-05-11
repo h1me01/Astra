@@ -7,24 +7,24 @@
 
 namespace astra::cuckoo {
 
-static NDArray<Hash, 8192> hashes;
-static NDArray<Move, 8192> moves;
+namespace {
+NDArray<Hash, 8192> HASHES;
+NDArray<Move, 8192> MOVES;
+} // namespace
 
 Hash hash(const int idx) {
-    assert(idx >= 0);
-    assert(idx < 8192);
-    return hashes(idx);
+    assert(idx >= 0 && idx < 8192);
+    return HASHES(idx);
 }
 
 Move move(const int idx) {
-    assert(idx >= 0);
-    assert(idx < 8192);
-    return moves(idx);
+    assert(idx >= 0 && idx < 8192);
+    return MOVES(idx);
 }
 
 void init() {
-    hashes.fill(0);
-    moves.fill(Move::none());
+    HASHES.fill(0);
+    MOVES.fill(Move::none());
 
     int count = 0;
     for (Color c : {WHITE, BLACK}) {
@@ -41,8 +41,8 @@ void init() {
 
                     int i = h1(hash);
                     while (true) {
-                        std::swap(hashes(i), hash);
-                        std::swap(moves(i), move);
+                        std::swap(HASHES(i), hash);
+                        std::swap(MOVES(i), move);
 
                         if (!move)
                             break;

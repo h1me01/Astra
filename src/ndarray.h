@@ -46,10 +46,7 @@ class NDArray {
         return *this;
     }
 
-    constexpr void fill(T value) {
-        for (std::size_t i = 0; i < total; ++i)
-            data_[i] = value;
-    }
+    constexpr void fill(T value) { std::fill(begin(), end(), value); }
 
     template <typename... Idx>
     constexpr T& operator()(Idx... indices) noexcept {
@@ -65,21 +62,8 @@ class NDArray {
         return data_[flat_offset<0>(indices...)];
     }
 
-    constexpr T min() const {
-        T min_val = data_[0];
-        for (std::size_t i = 1; i < total; ++i)
-            if (data_[i] < min_val)
-                min_val = data_[i];
-        return min_val;
-    }
-
-    constexpr T max() const {
-        T max_val = data_[0];
-        for (std::size_t i = 1; i < total; ++i)
-            if (data_[i] > max_val)
-                max_val = data_[i];
-        return max_val;
-    }
+    constexpr T min() const { return *std::ranges::min_element(*this); }
+    constexpr T max() const { return *std::ranges::max_element(*this); }
 
     constexpr T* data() noexcept { return data_; }
     constexpr const T* data() const noexcept { return data_; }

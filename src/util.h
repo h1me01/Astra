@@ -7,6 +7,11 @@
 #include <string_view>
 #include <vector>
 
+#if defined(__linux__)
+#include <sys/mman.h>
+#include <xmmintrin.h>
+#endif
+
 #include "chess/types.h"
 
 template <>
@@ -69,8 +74,8 @@ inline void print_bb(const Bitboard b) {
 
 inline std::string to_lower(const std::string& str) {
     std::string lower_str = str;
-    std::transform(lower_str.begin(), lower_str.end(), lower_str.begin(), [](unsigned char c) {
-        return std::tolower(c);
+    std::ranges::transform(lower_str, lower_str.begin(), [](unsigned char c) {
+        return static_cast<char>(std::tolower(c));
     });
     return lower_str;
 }
@@ -95,6 +100,22 @@ inline std::vector<std::string> split(const std::string& str, char del) {
 
     return parts;
 }
+
+inline void* alloc_align(size_t size) {
+#if defined(__linux__)
+    constexpr size_t alignment = 2 * 1024 * 1024;
+#else
+    constexpr size_t alignment = 4096;
+#endif
+    size = ((size + alignment - 1) / alignment) * alignment;
+    void* ptr = _mm_malloc(size, alignment);
+#if defined(__linux__)
+    madvise(ptr, size, MADV_HUGEPAGE);
+#endif
+    return ptr;
+}
+
+inline void free_align(void* ptr) { _mm_free(ptr); }
 
 inline std::ostream& operator<<(std::ostream& os, Square sq) { return os << std::format("{}", sq); }
 inline std::ostream& operator<<(std::ostream& os, Piece pc) { return os << std::format("{}", pc); }

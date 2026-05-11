@@ -104,6 +104,7 @@ Move* gen_pawn_moves(const Board& board, Move* ml, const Bitboard targets) {
 template <Color us, GenType gt, PieceType pt>
 Move* gen_piece_moves(const Board& board, Move* ml, Bitboard pieces, const Bitboard targets) {
     assert(pt != PAWN);
+    assert(valid_piece_type(pt));
 
     const Square our_ksq = board.king_sq(us);
     const Bitboard us_bb = board.occupancy(us);

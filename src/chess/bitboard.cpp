@@ -9,6 +9,8 @@ namespace astra {
 
 namespace bitboards {
 
+namespace {
+
 template <int N>
 struct SliderAttackTable {
     NDArray<Bitboard, NUM_SQUARES> mask{};
@@ -28,12 +30,14 @@ struct SliderAttackTable {
     }
 };
 
-static SliderAttackTable<4096> ROOK_TABLE;
-static SliderAttackTable<512> BISHOP_TABLE;
+SliderAttackTable<4096> ROOK_TABLE;
+SliderAttackTable<512> BISHOP_TABLE;
 
-static NDArray<Bitboard, NUM_PIECE_TYPES, NUM_SQUARES> PSEUDO_ATTACKS{};
-static NDArray<Bitboard, NUM_SQUARES, NUM_SQUARES> SQUARES_BETWEEN{};
-static NDArray<Bitboard, NUM_SQUARES, NUM_SQUARES> LINE{};
+NDArray<Bitboard, NUM_PIECE_TYPES, NUM_SQUARES> PSEUDO_ATTACKS{};
+NDArray<Bitboard, NUM_SQUARES, NUM_SQUARES> SQUARES_BETWEEN{};
+NDArray<Bitboard, NUM_SQUARES, NUM_SQUARES> LINE{};
+
+} // namespace
 
 Bitboard sliding_attack(PieceType pt, Square sq, Bitboard occ) {
     assert(pt == ROOK || pt == BISHOP);
@@ -57,7 +61,7 @@ Bitboard sliding_attack(PieceType pt, Square sq, Bitboard occ) {
 }
 
 template <typename Table>
-static void init_slider_table(Table& table, PieceType pt) {
+void init_slider_table(Table& table, PieceType pt) {
     for (Square sq = SQ_A1; sq < NUM_SQUARES; ++sq) {
         Bitboard edges = ((rank_bb<RANK_1>() | rank_bb<RANK_8>()) & ~rank_bb(sq_rank(sq))) |
                          ((file_bb<FILE_A>() | file_bb<FILE_H>()) & ~file_bb(sq_file(sq)));

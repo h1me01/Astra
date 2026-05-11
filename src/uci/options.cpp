@@ -52,33 +52,46 @@ void Options::set(const std::string& info) {
         return;
     }
 
-    const std::string& name = tokens[2];
     const std::string& value = tokens[4];
 
     if (value == "<empty>" || value.empty())
         return;
 
-    if (options_.count(name)) {
+    std::string name;
+    const std::string lower_input = to_lower(tokens[2]);
+    for (const auto& [key, _] : options_) {
+        if (to_lower(key) == lower_input) {
+            name = key;
+            break;
+        }
+    }
+
+    if (!name.empty()) {
         options_[name].set(value);
         apply(name);
         return;
     }
 
-    auto it = std::ranges::find_if(search::params, [&](auto* p) { return p->name == name; });
+    auto it = std::ranges::find_if(search::params, [&](auto* p) { return to_lower(p->name) == lower_input; });
 
     if (it != std::ranges::end(search::params)) {
         auto* param = *it;
         int n = std::stoi(value);
-        if (n < param->min || n > param->max)
+        if (n < param->min || n > param->max) {
             println(
-                "Value out of range for search parameter {}: {} (valid range: {}-{})", name, n, param->min, param->max
+                "Value out of range for search parameter {}: {} (valid range: {}-{})",
+                param->name,
+                n,
+                param->min,
+                param->max
             );
-        else
+        } else {
             param->value = n;
+        }
         return;
     }
 
-    println("Unknown option {}", name);
+    println("Unknown option {}", tokens[2]);
 }
 
 void Options::update_syzygy_path(const std::string& path) {

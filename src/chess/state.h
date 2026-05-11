@@ -92,14 +92,12 @@ class StateInfoStack {
     }
 
     StateInfo& operator()(int i) {
-        assert(i >= 0);
-        assert(i <= idx_);
+        assert(i >= 0 && i <= idx_);
         return data_(i);
     }
 
     const StateInfo& operator()(int i) const {
-        assert(i >= 0);
-        assert(i <= idx_);
+        assert(i >= 0 && i <= idx_);
         return data_(i);
     }
 
