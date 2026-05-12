@@ -12,23 +12,9 @@
 
 namespace astra {
 class Board;
-}
+} // namespace astra
 
 namespace astra::nnue {
-
-inline bool needs_refresh(Piece pc, Square from, Square to, Color view) {
-    assert(valid_piece(pc));
-    assert(valid_color(view));
-
-    if (piece_type(pc) != KING || piece_color(pc) != view)
-        return false;
-
-    assert(valid_sq(from));
-    assert(valid_sq(to));
-
-    return INPUT_BUCKET(rel_sq(view, from)) != INPUT_BUCKET(rel_sq(view, to)) ||
-           (sq_file(from) > FILE_D) != (sq_file(to) > FILE_D);
-}
 
 class NNUE {
     using NNZOutput = std::pair<int, NDArray<uint16_t, FT_SIZE / 4>>;
@@ -42,17 +28,17 @@ class NNUE {
     }
 
     int16_t* feature_weight(Piece pc, Square psq, Square ksq, Color view) {
-        assert(valid_sq(psq));
-        assert(valid_piece(pc));
+        assert(is_valid(psq));
+        assert(is_valid(pc));
 
         // mirror psq horizontally if king is on other half
-        if (sq_file(ksq) > FILE_D)
+        if (file_of(ksq) > FILE_D)
             psq = static_cast<Square>(psq ^ 7);
 
-        int idx = rel_sq(view, psq)                    //
-                  + piece_type(pc) * 64                //
-                  + (piece_color(pc) != view) * 6 * 64 //
-                  + INPUT_BUCKET(rel_sq(view, ksq)) * 768;
+        int idx = relative_sq(view, psq)            //
+                  + type_of(pc) * 64                //
+                  + (color_of(pc) != view) * 6 * 64 //
+                  + INPUT_BUCKET(relative_sq(view, ksq)) * 768;
 
         return &ft_weight_(idx * FT_SIZE);
     }

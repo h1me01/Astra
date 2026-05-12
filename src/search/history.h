@@ -29,13 +29,13 @@ class QuietHistory {
 
     void update(Color c, Move move, int bonus) {
         assert(move);
-        assert(valid_color(c));
+        assert(is_valid(c));
         update_history(data_(c, move.from(), move.to()), bonus);
     }
 
     int get(Color c, Move move) const {
         assert(move);
-        assert(valid_color(c));
+        assert(is_valid(c));
         return data_(c, move.from(), move.to());
     }
 
@@ -53,10 +53,10 @@ class NoisyHistory {
         assert(move);
 
         Piece pc = board.piece_at(move.from());
-        PieceType captured = piece_type(board.capture_piece(move));
+        PieceType captured = type_of(board.capture_piece(move));
 
-        assert(valid_piece(pc));
-        assert(valid_piece_type(captured) || move.is_prom());
+        assert(is_valid(pc));
+        assert(is_valid(captured) || move.is_prom());
 
         update_history(data_(pc, move.to(), captured), bonus);
     }
@@ -65,11 +65,11 @@ class NoisyHistory {
         assert(move);
 
         Piece pc = board.piece_at(move.from());
-        PieceType captured = piece_type(board.capture_piece(move));
+        PieceType captured = type_of(board.capture_piece(move));
 
-        assert(valid_piece(pc));
+        assert(is_valid(pc));
         assert(captured != KING);
-        assert(valid_piece_type(captured) || move.is_prom());
+        assert(is_valid(captured) || move.is_prom());
 
         return data_(pc, move.to(), captured);
     }
@@ -90,7 +90,7 @@ class PawnHistory {
         assert(move);
 
         Piece pc = board.piece_at(move.from());
-        assert(valid_piece(pc));
+        assert(is_valid(pc));
 
         update_history(data_(idx(board.pawn_hash()), pc, move.to()), bonus);
     }
@@ -99,7 +99,7 @@ class PawnHistory {
         assert(move);
 
         Piece pc = board.piece_at(move.from());
-        assert(valid_piece(pc));
+        assert(is_valid(pc));
 
         return data_(idx(board.pawn_hash()), pc, move.to());
     }
@@ -117,8 +117,8 @@ class ContinuationHistory {
     void clear() { data_.fill(PieceToContinuation{}); }
 
     void update(Piece pc, Square to, int bonus, Stack* stack) {
-        assert(valid_sq(to));
-        assert(valid_piece(pc));
+        assert(is_valid(to));
+        assert(is_valid(pc));
 
         for (int i : {1, 2, 4, 6})
             if ((stack - i)->move)
@@ -127,8 +127,8 @@ class ContinuationHistory {
 
     PieceToContinuation* get() { return &data_(0, 0, NO_PIECE, 0); }
     PieceToContinuation* get(bool in_check, bool is_cap, Piece pc, Square to) {
-        assert(valid_sq(to));
-        assert(valid_piece(pc));
+        assert(is_valid(to));
+        assert(is_valid(pc));
         return &data_(in_check, is_cap, pc, to);
     }
 
@@ -187,7 +187,7 @@ class ContinuationCorrectionHistory {
             return;
 
         Piece pc = board.piece_at(m.to());
-        assert(valid_piece(pc));
+        assert(is_valid(pc));
 
         update_correction((*(stack - 2)->cont_corr_hist)(pc, m.to()), bonus);
     }
@@ -198,7 +198,7 @@ class ContinuationCorrectionHistory {
             return 0;
 
         Piece pc = board.piece_at(m.to());
-        assert(valid_piece(pc));
+        assert(is_valid(pc));
 
         return cont_corr_weight * (*(stack - 2)->cont_corr_hist)(pc, m.to());
     }

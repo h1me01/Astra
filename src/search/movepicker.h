@@ -51,6 +51,7 @@ class MovePicker {
     int probcut_threshold_;
 
     Move tt_move_;
+    MoveList<Move> ml_;
     MoveList<ScoredMove> ml_main_, ml_bad_noisy_;
 
     void gen_score_noisy();

@@ -9,17 +9,16 @@ namespace astra::nnue {
 // Accum
 
 void Accumulator::update(const Accumulator& src, Color view) {
-    assert(valid_color(view));
+    assert(is_valid(view));
 
-    if (valid_sq(dirty_piece.to))
-        move(src, dirty_piece.pc, dirty_piece.from, dirty_piece.to, king_sq(view), view);
-    else
-        remove(src, dirty_piece.pc, dirty_piece.from, king_sq(view), view);
-
-    if (valid_sq(dirty_piece.put_sq))
-        put(src, dirty_piece.put_pc, dirty_piece.put_sq, king_sq(view), view);
-    if (valid_sq(dirty_piece.remove_sq))
-        remove(src, dirty_piece.remove_pc, dirty_piece.remove_sq, king_sq(view), view);
+    for (const auto& dp : dirty_pieces) {
+        if (dp.is_move())
+            move(src, dp.pc, dp.from, dp.to, king_sq(view), view);
+        if (dp.is_add())
+            put(src, dp.pc, dp.to, king_sq(view), view);
+        if (dp.is_remove())
+            remove(src, dp.pc, dp.from, king_sq(view), view);
+    }
 
     assert(initialized(view));
 }
@@ -30,7 +29,7 @@ void Accumulator::put(const Accumulator& src, Piece pc, Square psq, Square ksq, 
     auto* dst_vec = ptr_cast<simd::ivec_t>(&data(view, 0));
     const auto* src_vec = initialized(view) ? dst_vec : ptr_cast<const simd::ivec_t>(&src.data(view, 0));
 
-    for (int i = 0; i < FT_SIZE / simd::INT16_VEC_SIZE; i++)
+    for (int i = 0; i < FT_SIZE / simd::INT16_VEC_SIZE; ++i)
         dst_vec[i] = simd::add_epi16(src_vec[i], w[i]);
 
     initialized(view) = true;
@@ -42,7 +41,7 @@ void Accumulator::remove(const Accumulator& src, Piece pc, Square psq, Square ks
     auto* dst_vec = ptr_cast<simd::ivec_t>(&data(view, 0));
     const auto* src_vec = initialized(view) ? dst_vec : ptr_cast<const simd::ivec_t>(&src.data(view, 0));
 
-    for (int i = 0; i < FT_SIZE / simd::INT16_VEC_SIZE; i++)
+    for (int i = 0; i < FT_SIZE / simd::INT16_VEC_SIZE; ++i)
         dst_vec[i] = simd::sub_epi16(src_vec[i], w[i]);
 
     initialized(view) = true;
@@ -55,7 +54,7 @@ void Accumulator::move(const Accumulator& src, Piece pc, Square from, Square to,
     auto* dst_vec = ptr_cast<simd::ivec_t>(&data(view, 0));
     const auto* src_vec = initialized(view) ? dst_vec : ptr_cast<const simd::ivec_t>(&src.data(view, 0));
 
-    for (int i = 0; i < FT_SIZE / simd::INT16_VEC_SIZE; i++)
+    for (int i = 0; i < FT_SIZE / simd::INT16_VEC_SIZE; ++i)
         dst_vec[i] = simd::add_epi16(src_vec[i], simd::sub_epi16(wt[i], wf[i]));
 
     initialized(view) = true;
@@ -71,11 +70,11 @@ void AccumulatorEntry::reset() {
 // AccumStack
 
 void AccumulatorStack::refresh(Color view, Board& board) {
-    assert(valid_color(view));
+    assert(is_valid(view));
 
     const Square ksq = board.king_sq(view);
-    const int ksq_idx = INPUT_BUCKET(rel_sq(view, ksq));
-    auto& entry = entries_[view][(sq_file(ksq) > FILE_D) * INPUT_BUCKETS + ksq_idx];
+    const int ksq_idx = INPUT_BUCKET(relative_sq(view, ksq));
+    auto& entry = entries_[view][(file_of(ksq) > FILE_D) * INPUT_BUCKETS + ksq_idx];
 
     for (Color c : {WHITE, BLACK}) {
         for (PieceType pt : {PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING}) {

@@ -23,26 +23,26 @@ search::Score evaluate_board(const std::string& fen, const search::Limits& limit
 }
 
 Board random_board(const std::string& startpos, const int num_moves) {
-    MoveList<Move> legal_moves;
+    MoveList<Move> ml;
 
     while (true) {
         Board board{startpos};
         bool valid = true;
 
         for (int i = 0; i < num_moves; ++i) {
-            legal_moves.gen<GenType::LEGAL>(board);
-            if (legal_moves.empty()) {
+            gen_moves<GenType::LEGAL>(ml, board);
+            if (ml.empty()) {
                 valid = false;
                 break;
             }
-            board.make_move(legal_moves[std::rand() % legal_moves.size()]);
+            board.make_move(ml[std::rand() % ml.size()]);
         }
 
         if (!valid)
             continue;
 
-        legal_moves.gen<GenType::LEGAL>(board);
-        if (!legal_moves.empty())
+        gen_moves<GenType::LEGAL>(ml, board);
+        if (!ml.empty())
             return board;
     }
 }
@@ -103,7 +103,7 @@ void generate_fens(int argc, char** argv) {
         search::Score eval = evaluate_board(board.fen(), limit);
         if (std::abs(eval) <= 800) {
             println("info string genfens {} ", board.fen());
-            counter++;
+            ++counter;
         }
     }
 }

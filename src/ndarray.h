@@ -10,15 +10,15 @@
 
 namespace astra {
 
-template <typename T, std::size_t... Dims>
+template <typename T, size_t... Dims>
 class NDArray {
   public:
-    static constexpr std::size_t ndim = sizeof...(Dims);
-    static constexpr std::size_t total = (Dims * ...);
-    static constexpr std::array<std::size_t, ndim> shape = {Dims...};
-    static constexpr std::array<std::size_t, ndim> strides = []() {
-        std::array<std::size_t, ndim> s{};
-        std::size_t stride = 1;
+    static constexpr size_t ndim = sizeof...(Dims);
+    static constexpr size_t total = (Dims * ...);
+    static constexpr std::array<size_t, ndim> shape = {Dims...};
+    static constexpr std::array<size_t, ndim> strides = []() {
+        std::array<size_t, ndim> s{};
+        size_t stride = 1;
         for (int i = static_cast<int>(ndim) - 1; i >= 0; --i) {
             s[i] = stride;
             stride *= shape[i];
@@ -75,7 +75,7 @@ class NDArray {
 
     friend std::ostream& operator<<(std::ostream& os, const NDArray& arr) {
         os << "NDArray<";
-        for (std::size_t i = 0; i < ndim; ++i) {
+        for (size_t i = 0; i < ndim; ++i) {
             os << shape[i];
             if (i + 1 < ndim)
                 os << "x";
@@ -88,26 +88,26 @@ class NDArray {
   private:
     T data_[total];
 
-    template <std::size_t Axis, typename First, typename... Rest>
-    static constexpr std::size_t flat_offset(First i, Rest... rest) noexcept {
+    template <size_t Axis, typename First, typename... Rest>
+    static constexpr size_t flat_offset(First i, Rest... rest) noexcept {
         if constexpr (sizeof...(Rest) == 0)
-            return static_cast<std::size_t>(i) * strides[Axis];
+            return static_cast<size_t>(i) * strides[Axis];
         else
-            return static_cast<std::size_t>(i) * strides[Axis] + flat_offset<Axis + 1>(rest...);
+            return static_cast<size_t>(i) * strides[Axis] + flat_offset<Axis + 1>(rest...);
     }
 
-    template <std::size_t Axis, typename First, typename... Rest>
+    template <size_t Axis, typename First, typename... Rest>
     static void check_bounds([[maybe_unused]] First i, Rest... rest) {
-        assert(static_cast<std::size_t>(i) < shape[Axis]);
+        assert(static_cast<size_t>(i) < shape[Axis]);
         if constexpr (sizeof...(Rest) > 0)
             check_bounds<Axis + 1>(rest...);
     }
 
-    void print_recursive(std::ostream& os, std::size_t dim, std::size_t offset, int depth) const {
+    void print_recursive(std::ostream& os, size_t dim, size_t offset, int depth) const {
         std::string indent(depth * 2, ' ');
         if (dim == ndim - 1) {
             os << indent << "[";
-            for (std::size_t i = 0; i < shape[dim]; ++i) {
+            for (size_t i = 0; i < shape[dim]; ++i) {
                 os << data_[offset + i];
                 if (i + 1 < shape[dim])
                     os << ", ";
@@ -115,7 +115,7 @@ class NDArray {
             os << "]\n";
         } else {
             os << indent << "[\n";
-            for (std::size_t i = 0; i < shape[dim]; ++i)
+            for (size_t i = 0; i < shape[dim]; ++i)
                 print_recursive(os, dim + 1, offset + i * strides[dim], depth + 1);
             os << indent << "]\n";
         }

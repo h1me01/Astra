@@ -12,49 +12,49 @@
 namespace astra {
 
 constexpr Bitboard sq_bb(Square sq) {
-    assert(valid_sq(sq));
+    assert(is_valid(sq));
     return (1ULL << sq);
 }
 
 template <File f>
 constexpr Bitboard file_bb() {
-    assert(valid_file(f));
+    assert(is_valid(f));
     return 0x0101010101010101ULL << f;
 }
 
 constexpr Bitboard file_bb(File f) {
-    assert(valid_file(f));
+    assert(is_valid(f));
     return 0x0101010101010101ULL << f;
 }
 
 template <Rank r>
 constexpr Bitboard rank_bb() {
-    assert(valid_rank(r));
+    assert(is_valid(r));
     return 0xFFULL << (r * 8);
 }
 
 constexpr Bitboard rank_bb(Rank r) {
-    assert(valid_rank(r));
+    assert(is_valid(r));
     return 0xFFULL << (r * 8);
 }
 
 constexpr Bitboard kingside_castling_bb(Color c) {
-    assert(valid_color(c));
+    assert(is_valid(c));
     return (c == WHITE) ? 0x90ULL : 0x9000000000000000ULL;
 }
 
 constexpr Bitboard queenside_castling_bb(Color c) {
-    assert(valid_color(c));
+    assert(is_valid(c));
     return (c == WHITE) ? 0x11ULL : 0x1100000000000000ULL;
 }
 
 constexpr Bitboard kingside_castling_path_bb(Color c) {
-    assert(valid_color(c));
+    assert(is_valid(c));
     return (c == WHITE) ? 0x60ULL : 0x6000000000000000ULL;
 }
 
 constexpr Bitboard queenside_castling_path_bb(Color c) {
-    assert(valid_color(c));
+    assert(is_valid(c));
     return (c == WHITE) ? 0x0EULL : 0x0E00000000000000ULL;
 }
 
@@ -94,7 +94,7 @@ constexpr Bitboard shift(const Bitboard b) {
 
 constexpr Bitboard valid_destination(Square sq, int step) {
     Square to = static_cast<Square>(static_cast<int>(sq) + step);
-    return valid_sq(to) && std::abs(sq_file(sq) - sq_file(to)) <= 2 ? sq_bb(to) : 0;
+    return is_valid(to) && std::abs(file_of(sq) - file_of(to)) <= 2 ? sq_bb(to) : 0;
 };
 
 namespace bitboards {
@@ -106,7 +106,7 @@ Bitboard line(Square sq1, Square sq2);
 
 template <Color c>
 constexpr Bitboard pawn_attacks_bb(Bitboard b) {
-    assert(valid_color(c));
+    assert(is_valid(c));
 
     return (c == WHITE) ? shift<NORTH_WEST>(b) | shift<NORTH_EAST>(b) //
                         : shift<SOUTH_WEST>(b) | shift<SOUTH_EAST>(b);
@@ -114,8 +114,8 @@ constexpr Bitboard pawn_attacks_bb(Bitboard b) {
 
 template <Color c>
 constexpr Bitboard pawn_attacks_bb(Square sq) {
-    assert(valid_sq(sq));
-    assert(valid_color(c));
+    assert(is_valid(sq));
+    assert(is_valid(c));
     return pawn_attacks_bb<c>(sq_bb(sq));
 }
 
@@ -147,8 +147,8 @@ Bitboard attacks_bb(PieceType pt, Square sq);
 template <PieceType pt>
 Bitboard attacks_bb(Square sq, const Bitboard occ) {
     assert(pt != PAWN);
-    assert(valid_sq(sq));
-    assert(valid_piece_type(pt));
+    assert(is_valid(sq));
+    assert(is_valid(pt));
 
     switch (pt) {
     case ROOK:
@@ -164,8 +164,8 @@ Bitboard attacks_bb(Square sq, const Bitboard occ) {
 
 inline Bitboard attacks_bb(PieceType pt, Square sq, const Bitboard occ) {
     assert(pt != PAWN);
-    assert(valid_sq(sq));
-    assert(valid_piece_type(pt));
+    assert(is_valid(sq));
+    assert(is_valid(pt));
 
     switch (pt) {
     case ROOK:

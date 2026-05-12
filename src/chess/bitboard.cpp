@@ -19,7 +19,7 @@ struct SliderAttackTable {
     NDArray<Bitboard, NUM_SQUARES, N> attacks{};
 
     Bitboard attacks_bb(Square sq, Bitboard occ) const {
-        assert(valid_sq(sq));
+        assert(is_valid(sq));
 
 #if defined(__BMI2__)
         int idx = _pext_u64(occ, mask(sq));
@@ -41,7 +41,7 @@ NDArray<Bitboard, NUM_SQUARES, NUM_SQUARES> LINE{};
 
 Bitboard sliding_attack(PieceType pt, Square sq, Bitboard occ) {
     assert(pt == ROOK || pt == BISHOP);
-    assert(valid_sq(sq));
+    assert(is_valid(sq));
 
     Direction root_dir[4] = {NORTH, SOUTH, EAST, WEST};
     Direction bishop_dir[4] = {NORTH_EAST, SOUTH_EAST, SOUTH_WEST, NORTH_WEST};
@@ -63,8 +63,8 @@ Bitboard sliding_attack(PieceType pt, Square sq, Bitboard occ) {
 template <typename Table>
 void init_slider_table(Table& table, PieceType pt) {
     for (Square sq = SQ_A1; sq < NUM_SQUARES; ++sq) {
-        Bitboard edges = ((rank_bb<RANK_1>() | rank_bb<RANK_8>()) & ~rank_bb(sq_rank(sq))) |
-                         ((file_bb<FILE_A>() | file_bb<FILE_H>()) & ~file_bb(sq_file(sq)));
+        Bitboard edges = ((rank_bb<RANK_1>() | rank_bb<RANK_8>()) & ~rank_bb(rank_of(sq))) |
+                         ((file_bb<FILE_A>() | file_bb<FILE_H>()) & ~file_bb(file_of(sq)));
 
         table.mask(sq) = sliding_attack(pt, sq, 0) & ~edges;
 
@@ -114,32 +114,32 @@ void init() {
 } // namespace bitboards
 
 Bitboard between_bb(Square sq1, Square sq2) {
-    assert(valid_sq(sq1));
-    assert(valid_sq(sq2));
+    assert(is_valid(sq1));
+    assert(is_valid(sq2));
     return bitboards::SQUARES_BETWEEN(sq1, sq2);
 }
 
 Bitboard line(Square sq1, Square sq2) {
-    assert(valid_sq(sq1));
-    assert(valid_sq(sq2));
+    assert(is_valid(sq1));
+    assert(is_valid(sq2));
     return bitboards::LINE(sq1, sq2);
 }
 
 Bitboard rook_attacks_bb(Square sq, const Bitboard occ) {
-    assert(valid_sq(sq));
+    assert(is_valid(sq));
     return bitboards::ROOK_TABLE.attacks_bb(sq, occ);
 }
 
 Bitboard bishop_attacks_bb(Square sq, const Bitboard occ) {
-    assert(valid_sq(sq));
+    assert(is_valid(sq));
     return bitboards::BISHOP_TABLE.attacks_bb(sq, occ);
 }
 
 template <PieceType pt>
 Bitboard attacks_bb(Square sq) {
     assert(pt != PAWN);
-    assert(valid_sq(sq));
-    assert(valid_piece_type(pt));
+    assert(is_valid(sq));
+    assert(is_valid(pt));
     return bitboards::PSEUDO_ATTACKS(pt, sq);
 }
 
@@ -151,8 +151,8 @@ template Bitboard attacks_bb<KING>(Square sq);
 
 Bitboard attacks_bb(PieceType pt, Square sq) {
     assert(pt != PAWN);
-    assert(valid_sq(sq));
-    assert(valid_piece_type(pt));
+    assert(is_valid(sq));
+    assert(is_valid(pt));
     return bitboards::PSEUDO_ATTACKS(pt, sq);
 }
 

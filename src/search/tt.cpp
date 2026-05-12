@@ -28,7 +28,7 @@ void TTEntry::store(Hash hash, Move move, Score score, Score eval, Bound bound, 
     if (move || hash_ != hash16)
         move_ = move;
 
-    if (valid_score(score)) {
+    if (is_valid(score)) {
         if (is_win(score))
             score += ply;
         if (is_loss(score))
@@ -96,7 +96,7 @@ TTEntry* TTable::lookup(Hash hash, bool* hit) const {
     uint16_t hash16 = static_cast<uint16_t>(hash);
     auto& entries = buckets_[index(hash)].entries;
 
-    for (int i = 0; i < TTBucket::SIZE; i++) {
+    for (int i = 0; i < TTBucket::SIZE; ++i) {
         uint16_t entry_hash = entries(i).hash();
         if (entry_hash == hash16 || !entry_hash) {
             entries(i).refresh_age();
@@ -108,7 +108,7 @@ TTEntry* TTable::lookup(Hash hash, bool* hit) const {
     auto* replace = &entries(0);
     int min_value = replace->depth() - 4 * replace->relative_age();
 
-    for (int i = 1; i < TTBucket::SIZE; i++) {
+    for (int i = 1; i < TTBucket::SIZE; ++i) {
         int value = entries(i).depth() - 4 * entries(i).relative_age();
         if (value < min_value) {
             min_value = value;
@@ -122,8 +122,8 @@ TTEntry* TTable::lookup(Hash hash, bool* hit) const {
 
 int TTable::hashfull() const {
     int used = 0;
-    for (int i = 0; i < 1000; i++) {
-        for (int j = 0; j < TTBucket::SIZE; j++) {
+    for (int i = 0; i < 1000; ++i) {
+        for (int j = 0; j < TTBucket::SIZE; ++j) {
             const auto& entry = buckets_[i].entries(j);
             if (entry.age() == age_ && entry.hash() != 0)
                 used++;

@@ -137,9 +137,9 @@ inline void permute_simd_data(__m128i* vec, int count) {
 
     __m128i regs[packus_blocks];
     for (int i = 0; i < count; i += packus_blocks) {
-        for (int j = 0; j < packus_blocks; j++)
+        for (int j = 0; j < packus_blocks; ++j)
             regs[j] = vec[i + j];
-        for (int j = 0; j < packus_blocks; j++)
+        for (int j = 0; j < packus_blocks; ++j)
             vec[i + j] = regs[perm[j]];
     }
 }

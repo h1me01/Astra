@@ -26,7 +26,7 @@ class Board {
 
     void reset_ply();
 
-    nnue::DirtyPiece make_move(Move move);
+    nnue::DirtyPieceStack make_move(Move move);
     void undo_move(Move move);
 
     void make_move();
@@ -40,8 +40,6 @@ class Board {
     bool gives_check(Move move) const;
     bool upcoming_repetition(int ply) const;
     bool see(Move move, int threshold) const;
-
-    void perft(int depth);
 
     Bitboard attackers_to(Color c, Square sq, Bitboard occ) const;
     template <PieceType pt>
@@ -100,8 +98,9 @@ class Board {
 inline void Board::reset_ply() {
     auto current_state = state();
     states_.clear();
-    state() = current_state;
-    state().plies_from_null = 0;
+    StateInfo& info = states_.push();
+    info = current_state;
+    info.plies_from_null = 0;
 }
 
 inline bool Board::in_check() const { return state().checkers > 0; }
@@ -139,7 +138,7 @@ inline Bitboard Board::attacks_by(Color c) const {
 }
 
 inline Bitboard Board::occupancy(Color c) const {
-    assert(valid_color(c));
+    assert(is_valid(c));
     return occ_(c);
 }
 
@@ -147,20 +146,20 @@ inline Bitboard Board::occupancy() const { return occupancy(WHITE) | occupancy(B
 
 template <PieceType pt>
 inline Bitboard Board::piece_bb(Color c) const {
-    assert(valid_color(c));
-    assert(valid_piece_type(pt));
+    assert(is_valid(c));
+    assert(is_valid(pt));
     return piece_bb_(make_piece(c, pt));
 }
 
 inline Bitboard Board::piece_bb(Color c, PieceType pt) const {
-    assert(valid_color(c));
-    assert(valid_piece_type(pt));
+    assert(is_valid(c));
+    assert(is_valid(pt));
     return piece_bb_(make_piece(c, pt));
 }
 
 template <PieceType pt>
 inline Bitboard Board::piece_bb() const {
-    assert(valid_piece_type(pt));
+    assert(is_valid(pt));
     return piece_bb<pt>(WHITE) | piece_bb<pt>(BLACK);
 }
 
@@ -168,7 +167,7 @@ inline Bitboard Board::diag_sliders(Color c) const { return piece_bb<BISHOP>(c) 
 inline Bitboard Board::orth_sliders(Color c) const { return piece_bb<ROOK>(c) | piece_bb<QUEEN>(c); }
 
 inline Bitboard Board::check_squares(PieceType pt) const {
-    assert(valid_piece_type(pt));
+    assert(is_valid(pt));
     return state().check_squares(pt);
 }
 
@@ -177,12 +176,12 @@ inline Hash Board::pawn_hash() const { return state().pawn_hash; }
 inline Hash Board::minor_piece_hash() const { return state().minor_piece_hash; }
 
 inline Hash Board::non_pawn_hash(Color c) const {
-    assert(valid_color(c));
+    assert(is_valid(c));
     return state().non_pawn_hash(c);
 }
 
 inline Piece Board::piece_at(Square sq) const {
-    assert(valid_sq(sq));
+    assert(is_valid(sq));
     return board_(sq);
 }
 
@@ -223,56 +222,56 @@ inline const StateInfo& Board::state() const { return states_.back(); }
 // private functions
 
 inline void Board::update_hash(Piece pc, Hash hash) {
-    assert(valid_piece(pc));
+    assert(is_valid(pc));
 
     StateInfo& info = state();
-    PieceType pt = piece_type(pc);
+    PieceType pt = type_of(pc);
 
     info.hash ^= hash;
     if (pt == PAWN) {
         info.pawn_hash ^= hash;
     } else {
-        info.non_pawn_hash(piece_color(pc)) ^= hash;
+        info.non_pawn_hash(color_of(pc)) ^= hash;
         if (pt <= BISHOP)
             info.minor_piece_hash ^= hash;
     }
 }
 
 inline void Board::put_piece(Piece pc, Square sq) {
-    assert(valid_sq(sq));
-    assert(valid_piece(pc));
+    assert(is_valid(sq));
+    assert(is_valid(pc));
 
     board_(sq) = pc;
     piece_bb_(pc) |= sq_bb(sq);
-    occ_(piece_color(pc)) |= sq_bb(sq);
+    occ_(color_of(pc)) |= sq_bb(sq);
 
     update_hash(pc, zobrist::psq(pc, sq));
 }
 
 inline void Board::remove_piece(Square sq) {
-    assert(valid_sq(sq));
+    assert(is_valid(sq));
 
     Piece pc = piece_at(sq);
-    assert(valid_piece(pc));
+    assert(is_valid(pc));
 
     piece_bb_(pc) ^= sq_bb(sq);
     board_(sq) = NO_PIECE;
-    occ_(piece_color(pc)) ^= sq_bb(sq);
+    occ_(color_of(pc)) ^= sq_bb(sq);
 
     update_hash(pc, zobrist::psq(pc, sq));
 }
 
 inline void Board::move_piece(Square from, Square to) {
-    assert(valid_sq(to));
-    assert(valid_sq(from));
+    assert(is_valid(to));
+    assert(is_valid(from));
 
     Piece pc = piece_at(from);
-    assert(valid_piece(pc));
+    assert(is_valid(pc));
 
     piece_bb_(pc) ^= sq_bb(from) | sq_bb(to);
     board_(to) = pc;
     board_(from) = NO_PIECE;
-    occ_(piece_color(pc)) ^= sq_bb(from) | sq_bb(to);
+    occ_(color_of(pc)) ^= sq_bb(from) | sq_bb(to);
 
     update_hash(pc, zobrist::psq(pc, to) ^ zobrist::psq(pc, from));
 }

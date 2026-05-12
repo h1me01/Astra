@@ -16,7 +16,7 @@ void ThreadPool::set_count(int count) {
     threads_.reserve(count);
     running_threads_.reserve(count);
 
-    for (int i = 0; i < count; i++) {
+    for (int i = 0; i < count; ++i) {
         threads_.emplace_back(std::make_unique<Search>());
         running_threads_.emplace_back(std::make_unique<std::thread>(&Search::idle, threads_[i].get()));
     }
@@ -27,7 +27,7 @@ void ThreadPool::set_count(int count) {
 }
 
 void ThreadPool::wait(bool include_main) {
-    for (size_t i = (include_main ? 0 : 1); i < threads_.size(); i++) {
+    for (size_t i = (include_main ? 0 : 1); i < threads_.size(); ++i) {
         std::unique_lock search_lock(threads_[i]->mutex);
         threads_[i]->cv.wait(search_lock, [this, i] { return !threads_[i]->searching; });
     }

@@ -35,15 +35,15 @@ class PRNG {
 void init() {
     PRNG rng(1070372);
 
-    for (int p = WHITE_PAWN; p <= BLACK_KING; p++)
-        for (int sq = SQ_A1; sq < NUM_SQUARES; sq++)
+    for (int p = WHITE_PAWN; p <= BLACK_KING; ++p)
+        for (int sq = SQ_A1; sq < NUM_SQUARES; ++sq)
             PSQ(p, sq) = rng.rand<Hash>();
 
-    for (int i = FILE_A; i <= FILE_H; i++)
+    for (int i = FILE_A; i <= FILE_H; ++i)
         EP_SQ_HASH(i) = rng.rand<Hash>();
 
     CASTLING(0) = 0;
-    for (int i = 1; i < 16; i++)
+    for (int i = 1; i < 16; ++i)
         CASTLING(i) = rng.rand<Hash>();
 
     SIDE = rng.rand<Hash>();
@@ -52,8 +52,8 @@ void init() {
 Hash side() { return SIDE; }
 
 Hash psq(Piece pc, Square sq) {
-    assert(valid_sq(sq));
-    assert(valid_piece(pc));
+    assert(is_valid(sq));
+    assert(is_valid(pc));
     return PSQ(pc, sq);
 }
 
@@ -63,9 +63,9 @@ Hash castling(int idx) {
 }
 
 Hash ep_sq(Square sq) {
-    if (!valid_sq(sq))
+    if (!is_valid(sq))
         return 0;
-    return EP_SQ_HASH(sq_file(sq));
+    return EP_SQ_HASH(file_of(sq));
 }
 
 } // namespace astra::zobrist

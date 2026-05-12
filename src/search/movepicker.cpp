@@ -9,7 +9,7 @@ void select_best(MoveList<ScoredMove>& ml, int idx) {
     assert(idx >= 0);
 
     int best_idx = idx;
-    for (int i = 1 + idx; i < ml.size(); i++)
+    for (int i = 1 + idx; i < ml.size(); ++i)
         if (ml[i].score > ml[best_idx].score)
             best_idx = i;
 
@@ -117,15 +117,19 @@ Move MovePicker<st>::next() {
 
 template <SearchType st>
 void MovePicker<st>::gen_score_noisy() {
-    ml_main_.gen<GenType::NOISY>(board_);
+    ml_main_.clear();
+    gen_moves<GenType::NOISY>(ml_, board_);
 
-    for (auto& m : ml_main_)
-        m.score = noisy_history_.get(board_, m) + 16 * piece_values(piece_type(board_.capture_piece(m)));
+    for (auto& m : ml_) {
+        int score = noisy_history_.get(board_, m) + 16 * piece_values(type_of(board_.capture_piece(m)));
+        ml_main_.add(ScoredMove{m, score});
+    }
 }
 
 template <SearchType st>
 void MovePicker<st>::gen_score_quiets() {
-    ml_main_.gen<GenType::QUIET>(board_);
+    ml_main_.clear();
+    gen_moves<GenType::QUIET>(ml_, board_);
 
     const Color stm = board_.side_to_move();
 
@@ -136,21 +140,23 @@ void MovePicker<st>::gen_score_quiets() {
     threats(QUEEN) = board_.attacks_by<ROOK>(~stm) | threats(ROOK);
     threats(KING) = 0;
 
-    for (auto& m : ml_main_) {
+    for (auto& m : ml_) {
         const Square from = m.from();
         const Square to = m.to();
         const Piece pc = board_.piece_at(from);
-        const PieceType pt = piece_type(pc);
+        const PieceType pt = type_of(pc);
 
-        m.score = 2 * (quiet_history_.get(stm, m) + pawn_history_.get(board_, m));
+        int score = 2 * (quiet_history_.get(stm, m) + pawn_history_.get(board_, m));
         for (int i : {1, 2, 4, 6})
-            m.score += (*(stack_ - i)->cont_hist)(pc, to);
+            score += (*(stack_ - i)->cont_hist)(pc, to);
 
-        m.score += mp_threat_mul * piece_values(pt) *
-                   (static_cast<bool>(threats(pt) & sq_bb(from)) - static_cast<bool>(threats(pt) & sq_bb(to)));
+        score += mp_threat_mul * piece_values(pt) *
+                 (static_cast<bool>(threats(pt) & sq_bb(from)) - static_cast<bool>(threats(pt) & sq_bb(to)));
 
         bool can_check = board_.check_squares(pt) & sq_bb(to);
-        m.score += (can_check && board_.see(m, -quiet_checker_bonus)) * 16384;
+        score += (can_check && board_.see(m, -quiet_checker_bonus)) * 16384;
+
+        ml_main_.add(ScoredMove{m, score});
     }
 }
 

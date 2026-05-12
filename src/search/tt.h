@@ -25,7 +25,7 @@ class TTEntry {
     Move move() const { return move_; }
 
     Score score(int ply) const {
-        if (!valid_score(score_))
+        if (!is_valid(score_))
             return SCORE_NONE;
         if (is_win(score_))
             return score_ - ply;

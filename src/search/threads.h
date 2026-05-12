@@ -23,7 +23,7 @@ class ThreadPool {
     void terminate();
     void launch_workers(const Board& board, Limits limit);
     Search* pick_best();
-    void add_started_thread() { started_threads_++; }
+    void add_started_thread() { ++started_threads_; }
 
     void new_game() {
         for (auto& th : threads_)

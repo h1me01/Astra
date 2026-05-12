@@ -8,3 +8,4 @@ BinPackArguments: false
 AlignAfterOpenBracket: BlockIndent
 PackConstructorInitializers: Never
 AllowShortFunctionsOnASingleLine: All
+ShortNamespaceLines: 0

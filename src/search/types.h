@@ -24,7 +24,7 @@ constexpr Score SCORE_TB = SCORE_MATE_IN_MAX_PLY - 1;
 constexpr Score SCORE_TB_WIN_IN_MAX_PLY = SCORE_TB - MAX_PLY;
 constexpr Score SCORE_TB_LOSS_IN_MAX_PLY = -SCORE_TB_WIN_IN_MAX_PLY;
 
-constexpr bool valid_score(Score score) { return score > -SCORE_INFINITE && score < SCORE_INFINITE; }
+constexpr bool is_valid(Score score) { return score > -SCORE_INFINITE && score < SCORE_INFINITE; }
 
 constexpr Score mate_in(int ply) {
     assert(ply >= 0);
@@ -34,12 +34,12 @@ constexpr Score mate_in(int ply) {
 constexpr Score mated_in(int ply) { return -mate_in(ply); }
 
 constexpr bool is_win(Score score) {
-    assert(valid_score(score) || std::abs(score) == SCORE_INFINITE);
+    assert(is_valid(score) || std::abs(score) == SCORE_INFINITE);
     return score >= SCORE_TB_WIN_IN_MAX_PLY;
 }
 
 constexpr bool is_loss(Score score) {
-    assert(valid_score(score) || std::abs(score) == SCORE_INFINITE);
+    assert(is_valid(score) || std::abs(score) == SCORE_INFINITE);
     return score <= SCORE_TB_LOSS_IN_MAX_PLY;
 }
 

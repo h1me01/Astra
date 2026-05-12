@@ -25,12 +25,12 @@ class CastlingRights {
     }
 
     bool kingside(const Color c) const {
-        assert(valid_color(c));
+        assert(is_valid(c));
         return (mask_ & kingside_castling_bb(c)) == kingside_castling_bb(c);
     }
 
     bool queenside(const Color c) const {
-        assert(valid_color(c));
+        assert(is_valid(c));
         return (mask_ & queenside_castling_bb(c)) == queenside_castling_bb(c);
     }
 
@@ -38,7 +38,7 @@ class CastlingRights {
     bool any() const { return any(WHITE) || any(BLACK); }
 
     bool on_castling_sq(Square sq) const {
-        assert(valid_sq(sq));
+        assert(is_valid(sq));
         return mask_ & sq_bb(sq);
     }
 
@@ -75,20 +75,21 @@ class StateInfoStack {
     StateInfoStack() { clear(); }
 
     void clear() {
-        idx_ = 0;
+        idx_ = -1;
         data_.fill(StateInfo());
     }
 
     StateInfo& push() {
-        assert(idx_ < MAX_SIZE);
-        idx_++;
-        data_(idx_) = data_(idx_ - 1);
+        assert(idx_ < MAX_SIZE - 1);
+        ++idx_;
+        if (idx_ > 0)
+            data_(idx_) = data_(idx_ - 1); // copy previous state
         return data_(idx_);
     }
 
     void pop() {
-        assert(idx_ > 0);
-        idx_--;
+        assert(!empty());
+        --idx_;
     }
 
     StateInfo& operator()(int i) {
@@ -101,8 +102,17 @@ class StateInfoStack {
         return data_(i);
     }
 
-    StateInfo& back() { return data_(idx_); }
-    const StateInfo& back() const { return data_(idx_); }
+    StateInfo& back() {
+        assert(!empty());
+        return data_(idx_);
+    }
+
+    const StateInfo& back() const {
+        assert(!empty());
+        return data_(idx_);
+    }
+
+    bool empty() const { return idx_ < 0; }
     int size() const { return idx_ + 1; }
 
   private:

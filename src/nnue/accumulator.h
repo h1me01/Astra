@@ -11,7 +11,7 @@
 
 namespace astra {
 class Board;
-}
+} // namespace astra
 
 namespace astra::nnue {
 
@@ -20,38 +20,70 @@ struct DirtyPiece {
     Square from = NO_SQUARE;
     Square to = NO_SQUARE;
 
-    Piece remove_pc = NO_PIECE;
-    Square remove_sq = NO_SQUARE;
+    constexpr DirtyPiece() = default;
+    constexpr DirtyPiece(Piece pc, Square from, Square to)
+        : pc(pc),
+          from(from),
+          to(to) {}
 
-    Piece put_pc = NO_PIECE;
-    Square put_sq = NO_SQUARE;
+    static constexpr DirtyPiece added(Piece pc, Square to) { return DirtyPiece(pc, NO_SQUARE, to); }
+    static constexpr DirtyPiece removed(Piece pc, Square from) { return DirtyPiece(pc, from, NO_SQUARE); }
+    static constexpr DirtyPiece moved(Piece pc, Square from, Square to) { return DirtyPiece(pc, from, to); }
 
-    void move(Piece pc, Square from, Square to) {
-        assert(valid_piece(pc));
-        assert(valid_sq(from));
-        assert(valid_sq(to) || piece_type(pc) == PAWN);
-        this->pc = pc;
-        this->from = from;
-        this->to = to;
+    constexpr bool is_add() const { return is_valid(to) && !is_valid(from); }
+    constexpr bool is_remove() const { return is_valid(from) && !is_valid(to); }
+    constexpr bool is_move() const { return is_valid(from) && is_valid(to); }
+};
+
+class DirtyPieceStack {
+    static constexpr int MAX_SIZE = 3;
+
+  public:
+    DirtyPieceStack() { clear(); }
+
+    void clear() {
+        idx_ = -1;
+        data_.fill(DirtyPiece());
     }
 
-    void remove(Piece pc, Square sq) {
-        assert(valid_piece(pc));
-        assert(valid_sq(sq));
-        this->remove_pc = pc;
-        this->remove_sq = sq;
+    void push(DirtyPiece dp) {
+        assert(idx_ < MAX_SIZE - 1);
+        assert(is_valid(dp.pc));
+        assert(is_valid(dp.from) || is_valid(dp.to));
+        ++idx_;
+        data_(idx_) = dp;
     }
 
-    void put(Piece pc, Square sq) {
-        assert(valid_piece(pc));
-        assert(valid_sq(sq));
-        this->put_pc = pc;
-        this->put_sq = sq;
+    void pop() {
+        assert(!empty());
+        --idx_;
     }
+
+    DirtyPiece& operator()(int i) {
+        assert(i >= 0 && i <= idx_);
+        return data_(i);
+    }
+
+    const DirtyPiece& operator()(int i) const {
+        assert(i >= 0 && i <= idx_);
+        return data_(i);
+    }
+
+    DirtyPiece* begin() { return size() ? &data_(0) : nullptr; }
+    DirtyPiece* end() { return size() ? (&data_(0) + size()) : nullptr; }
+    const DirtyPiece* begin() const { return size() ? &data_(0) : nullptr; }
+    const DirtyPiece* end() const { return size() ? (&data_(0) + size()) : nullptr; }
+
+    bool empty() const { return idx_ < 0; }
+    int size() const { return idx_ + 1; }
+
+  private:
+    int idx_;
+    NDArray<DirtyPiece, MAX_SIZE> data_;
 };
 
 struct Accumulator {
-    DirtyPiece dirty_piece;
+    DirtyPieceStack dirty_pieces;
     NDArray<Square, NUM_COLORS> king_sq;
     NDArray<bool, NUM_COLORS> initialized;
     alignas(64) NDArray<int16_t, NUM_COLORS, FT_SIZE> data;
@@ -60,9 +92,23 @@ struct Accumulator {
 
     // doesn't clear data
     void clear() {
-        dirty_piece = DirtyPiece();
+        dirty_pieces.clear();
         initialized.fill(false);
         king_sq.fill(NO_SQUARE);
+    }
+
+    bool should_refresh(Color view) const {
+        assert(is_valid(view));
+
+        auto it = std::ranges::find_if(dirty_pieces, [](const auto& dp) { return dp.is_move(); });
+        if (it == dirty_pieces.end())
+            return false;
+
+        if (type_of(it->pc) != KING || color_of(it->pc) != view)
+            return false;
+
+        return INPUT_BUCKET(relative_sq(view, it->from)) != INPUT_BUCKET(relative_sq(view, it->to)) ||
+               (file_of(it->from) > FILE_D) != (file_of(it->to) > FILE_D);
     }
 
     void update(const Accumulator& src, Color view);
@@ -89,7 +135,7 @@ class AccumulatorStack {
     void reset(Board& board) {
         idx_ = 0;
         for (Color c : {WHITE, BLACK})
-            for (int i = 0; i < 2 * INPUT_BUCKETS; i++)
+            for (int i = 0; i < 2 * INPUT_BUCKETS; ++i)
                 entries_[c][i].reset();
 
         data_(0).clear();
@@ -100,13 +146,12 @@ class AccumulatorStack {
 
     void refresh(Color view, Board& board);
 
-    void push(DirtyPiece dirty_piece, Square w_ksq, Square b_ksq) {
+    void push(DirtyPieceStack dirty_pieces, Square w_ksq, Square b_ksq) {
         assert(idx_ < MAX_SIZE - 1);
-        assert(valid_piece(dirty_piece.pc));
 
-        idx_++;
+        ++idx_;
         data_(idx_).clear();
-        data_(idx_).dirty_piece = dirty_piece;
+        data_(idx_).dirty_pieces = dirty_pieces;
         data_(idx_).king_sq(WHITE) = w_ksq;
         data_(idx_).king_sq(BLACK) = b_ksq;
     }

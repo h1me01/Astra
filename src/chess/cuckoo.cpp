@@ -50,7 +50,7 @@ void init() {
                         i = (i == h1(hash)) ? h2(hash) : h1(hash);
                     }
 
-                    count++;
+                    ++count;
                 }
             }
         }

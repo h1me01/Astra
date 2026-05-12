@@ -16,10 +16,10 @@ constexpr int FT_SHIFT = 9;
 constexpr int INT8_PER_INT32 = sizeof(int32_t) / sizeof(int8_t);
 
 void NNUE::init() {
-    std::size_t offset = 0;
+    size_t offset = 0;
 
-    auto load = [&](auto* dest, std::size_t count) {
-        const std::size_t bytes = count * sizeof(*dest);
+    auto load = [&](auto* dest, size_t count) {
+        size_t bytes = count * sizeof(*dest);
         std::memcpy(dest, &gWeightsData[offset], bytes);
         offset += bytes;
     };
@@ -33,7 +33,7 @@ void NNUE::init() {
     load(l3_weight_.data(), OUTPUT_BUCKETS * L2_SIZE);
     load(l3_bias_.data(), OUTPUT_BUCKETS);
 
-    for (size_t i = 0; i < 256; i++) {
+    for (size_t i = 0; i < 256; ++i) {
         uint64_t j = i;
         uint64_t k = 0;
         while (j)
@@ -43,11 +43,11 @@ void NNUE::init() {
     simd::permute_simd_data(ptr_cast<__m128i>(ft_bias_.data()), FT_SIZE);
     simd::permute_simd_data(ptr_cast<__m128i>(ft_weight_.data()), INPUT_SIZE * FT_SIZE);
 
-    for (int b = 0; b < OUTPUT_BUCKETS; b++) {
+    for (int b = 0; b < OUTPUT_BUCKETS; ++b) {
         int8_t temp_l1_weights[FT_SIZE * L1_SIZE];
-        for (int i = 0; i < FT_SIZE / INT8_PER_INT32; i++) {
-            for (int j = 0; j < L1_SIZE; j++) {
-                for (int k = 0; k < INT8_PER_INT32; k++) {
+        for (int i = 0; i < FT_SIZE / INT8_PER_INT32; ++i) {
+            for (int j = 0; j < L1_SIZE; ++j) {
+                for (int k = 0; k < INT8_PER_INT32; ++k) {
                     int src_idx = j * FT_SIZE + i * INT8_PER_INT32 + k;
                     int dst_idx = (i * L1_SIZE + j) * INT8_PER_INT32 + k;
                     temp_l1_weights[dst_idx] = l1_weight_(b, src_idx);
@@ -159,7 +159,7 @@ NDArray<float, 2 * L1_SIZE> NNUE::forward_l1(int bucket, const NDArray<uint8_t, 
         }
     }
 
-    for (; i < nnz_count; i++) {
+    for (; i < nnz_count; ++i) {
         const int idx = nnz_indices(i);
         const auto input = simd::set1_epi32(input_packs[idx]);
         const auto weights = &l1_weight_(bucket, idx * L1_SIZE * INT8_PER_INT32);
@@ -188,7 +188,7 @@ NDArray<float, L2_SIZE> NNUE::forward_l2(int bucket, const NDArray<float, 2 * L1
     alignas(64) NDArray<float, L2_SIZE> output;
     std::memcpy(output.data(), &l2_bias_(bucket, 0), sizeof(float) * L2_SIZE);
 
-    for (int i = 0; i < 2 * L1_SIZE; i++) {
+    for (int i = 0; i < 2 * L1_SIZE; ++i) {
         const auto input_val = simd::set1_ps(input(i));
         const auto weights = ptr_cast<const float>(&l2_weight_(bucket, i * L2_SIZE));
 
@@ -208,7 +208,7 @@ float NNUE::forward_l3(int bucket, const NDArray<float, L2_SIZE>& input) {
     simd::fvec_t output[vec_size];
     std::memset(output, 0, sizeof(output));
 
-    for (int i = 0; i < vec_size; i++) {
+    for (int i = 0; i < vec_size; ++i) {
         for (int j = 0; j < L2_SIZE; j += vec_size * simd::FLOAT_VEC_SIZE) {
             int idx = j + i * simd::FLOAT_VEC_SIZE;
             output[i] = simd::fmadd_ps(fvec_at(&l3_weight_(bucket, idx)), fvec_at(&input(idx)), output[i]);

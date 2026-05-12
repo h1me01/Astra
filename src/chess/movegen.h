@@ -13,36 +13,21 @@ enum class GenType : uint8_t {
     LEGAL,
 };
 
-template <GenType gt>
-Move* gen_moves(const Board& board, Move* ml);
-
 template <typename T>
 class MoveList {
   public:
     static constexpr int MAX_MOVES = 128;
 
-    MoveList() { clear(); }
-
-    void clear() { last_ = list_; }
-
-    template <GenType gt>
-    void gen(const Board& board) {
+    MoveList()
+        : idx_(-1) {
         clear();
-
-        if constexpr (std::is_same_v<T, Move>) {
-            last_ = gen_moves<gt>(board, list_);
-        } else {
-            Move temp_list[MAX_MOVES];
-            Move* temp_last = gen_moves<gt>(board, temp_list);
-
-            for (Move* it = temp_list; it != temp_last; ++it)
-                *last_++ = T(*it);
-        }
     }
 
+    void clear() { idx_ = -1; }
+
     void add(T m) {
-        assert(last_ < list_ + MAX_MOVES);
-        *last_++ = m;
+        assert(idx_ < MAX_MOVES - 1);
+        data_(++idx_) = m;
     }
 
     int idx_of(const T move) const {
@@ -50,27 +35,45 @@ class MoveList {
         return it != end() ? static_cast<int>(it - begin()) : -1;
     }
 
-    T* begin() { return list_; }
-    const T* begin() const { return list_; }
-    T* end() { return last_; }
-    const T* end() const { return last_; }
+    T* begin() { return size() ? &data_(0) : nullptr; }
+    T* end() { return size() ? (&data_(0) + size()) : nullptr; }
+    const T* begin() const { return size() ? &data_(0) : nullptr; }
+    const T* end() const { return size() ? (&data_(0) + size()) : nullptr; }
 
     T& operator[](int i) {
         assert(i >= 0 && i < size());
-        return list_[i];
+        return data_(i);
     }
 
     const T& operator[](int i) const {
         assert(i >= 0 && i < size());
-        return list_[i];
+        return data_(i);
     }
 
-    int size() const { return last_ - list_; }
+    T& back() {
+        assert(!empty());
+        return data_(idx_);
+    }
+
+    const T& back() const {
+        assert(!empty());
+        return data_(idx_);
+    }
+
+    void pop() {
+        assert(!empty());
+        --idx_;
+    }
+
+    int size() const { return idx_ + 1; }
     bool empty() const { return size() == 0; }
 
   private:
-    T list_[MAX_MOVES];
-    T* last_;
+    int idx_;
+    NDArray<T, MAX_MOVES> data_;
 };
+
+template <GenType gt>
+void gen_moves(MoveList<Move>& ml, const Board& board);
 
 } // namespace astra

@@ -1,8 +1,5 @@
 #pragma once
 
-#include <algorithm>
-#include <array>
-
 #include "../ndarray.h"
 
 namespace astra::nnue {

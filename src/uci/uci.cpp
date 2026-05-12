@@ -1,6 +1,7 @@
 #include <chrono>
 #include <sstream>
 
+#include "../chess/perft.h"
 #include "../nnue/nnue.h"
 #include "../search/threads.h"
 #include "../search/tune_params.h"
@@ -100,7 +101,7 @@ void UCI::loop(int argc, char** argv) {
             if (!(is >> depth))
                 println("No depth value provided for perft");
             else
-                board_.perft(depth);
+                perft(board_, depth);
         } else if (token == "bench") {
             bench();
         } else if (token == "eval") {
@@ -256,12 +257,11 @@ void UCI::bench() {
 
 Move UCI::parse_move(const std::string& str_move) const {
     MoveList<Move> ml;
-    ml.gen<GenType::LEGAL>(board_);
+    gen_moves<GenType::LEGAL>(ml, board_);
 
-    for (const auto& move : ml) {
+    for (const auto& move : ml)
         if (std::format("{}", move) == str_move)
             return move;
-    }
 
     return Move::none();
 }

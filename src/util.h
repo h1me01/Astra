@@ -19,7 +19,7 @@ struct std::formatter<astra::Square> : std::formatter<std::string_view> {
     auto format(astra::Square sq, std::format_context& ctx) const {
         if (sq == astra::NO_SQUARE)
             return std::formatter<std::string_view>::format("no square", ctx);
-        char buf[2] = {char('a' + astra::sq_file(sq)), char('1' + astra::sq_rank(sq))};
+        char buf[2] = {char('a' + astra::file_of(sq)), char('1' + astra::rank_of(sq))};
         return std::formatter<std::string_view>::format(std::string_view(buf, 2), ctx);
     }
 };
@@ -78,6 +78,16 @@ inline std::string to_lower(const std::string& str) {
         return static_cast<char>(std::tolower(c));
     });
     return lower_str;
+}
+
+template <typename To, typename From>
+To* ptr_cast(From* ptr) {
+    return reinterpret_cast<To*>(ptr);
+}
+
+template <typename To, typename From>
+const To* ptr_cast(const From* ptr) {
+    return reinterpret_cast<const To*>(ptr);
 }
 
 inline std::vector<std::string> split(const std::string& str, char del) {

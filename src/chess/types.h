@@ -191,37 +191,37 @@ struct ScoredMove : public Move {
           score(score) {}
 };
 
-constexpr bool valid_color(Color c) { return c == WHITE || c == BLACK; }
-constexpr bool valid_sq(Square sq) { return sq >= SQ_A1 && sq <= SQ_H8; }
-constexpr bool valid_piece_type(PieceType pt) { return pt >= PAWN && pt <= KING; }
-constexpr bool valid_piece(Piece pc) { return pc >= WHITE_PAWN && pc <= BLACK_KING; }
-constexpr bool valid_file(File f) { return f >= FILE_A && f <= FILE_H; }
-constexpr bool valid_rank(Rank r) { return r >= RANK_1 && r <= RANK_8; }
+constexpr bool is_valid(Color c) { return c == WHITE || c == BLACK; }
+constexpr bool is_valid(Square sq) { return sq >= SQ_A1 && sq <= SQ_H8; }
+constexpr bool is_valid(PieceType pt) { return pt >= PAWN && pt <= KING; }
+constexpr bool is_valid(Piece pc) { return pc >= WHITE_PAWN && pc <= BLACK_KING; }
+constexpr bool is_valid(File f) { return f >= FILE_A && f <= FILE_H; }
+constexpr bool is_valid(Rank r) { return r >= RANK_1 && r <= RANK_8; }
 
 constexpr Color operator~(Color c) {
-    assert(valid_color(c));
+    assert(is_valid(c));
     return static_cast<Color>(c ^ 1);
 }
 
 constexpr Square make_square(Rank r, File f) {
-    assert(valid_rank(r));
-    assert(valid_file(f));
+    assert(is_valid(r));
+    assert(is_valid(f));
     return static_cast<Square>((r << 3) + f);
 }
 
 constexpr Piece make_piece(Color c, PieceType pt) {
-    assert(valid_color(c));
-    assert(valid_piece_type(pt));
+    assert(is_valid(c));
+    assert(is_valid(pt));
     return static_cast<Piece>(pt + 6 * c);
 }
 
-constexpr PieceType piece_type(Piece pc) {
-    assert(valid_piece(pc) || pc == NO_PIECE);
+constexpr PieceType type_of(Piece pc) {
+    assert(is_valid(pc) || pc == NO_PIECE);
     return pc == NO_PIECE ? NO_PIECE_TYPE : static_cast<PieceType>(pc % 6);
 }
 
-constexpr Color piece_color(Piece pc) {
-    assert(valid_piece(pc));
+constexpr Color color_of(Piece pc) {
+    assert(is_valid(pc));
     return static_cast<Color>(pc / 6);
 }
 
@@ -229,13 +229,13 @@ constexpr Square& operator++(Square& sq) { return sq = static_cast<Square>(stati
 
 constexpr Square operator+(Square sq, Direction d) {
     Square _sq = static_cast<Square>(static_cast<int>(sq) + static_cast<int>(d));
-    assert(valid_sq(_sq));
+    assert(is_valid(_sq));
     return _sq;
 }
 
 constexpr Square operator-(Square sq, Direction d) {
     Square _sq = static_cast<Square>(static_cast<int>(sq) - static_cast<int>(d));
-    assert(valid_sq(_sq));
+    assert(is_valid(_sq));
     return _sq;
 }
 
@@ -250,29 +250,29 @@ constexpr Square& operator-=(Square& sq, Direction d) {
 }
 
 constexpr Square ep_sq(Square sq) {
-    assert(valid_sq(sq));
+    assert(is_valid(sq));
     return static_cast<Square>(sq ^ 8);
 }
 
-constexpr Rank sq_rank(Square sq) {
-    assert(valid_sq(sq));
+constexpr Rank rank_of(Square sq) {
+    assert(is_valid(sq));
     return static_cast<Rank>(sq >> 3);
 }
 
-constexpr File sq_file(Square sq) {
-    assert(valid_sq(sq));
+constexpr File file_of(Square sq) {
+    assert(is_valid(sq));
     return static_cast<File>(sq & 0b111);
 }
 
-constexpr Square rel_sq(Color c, Square sq) {
-    assert(valid_sq(sq));
-    assert(valid_color(c));
+constexpr Square relative_sq(Color c, Square sq) {
+    assert(is_valid(sq));
+    assert(is_valid(c));
     return c == WHITE ? sq : static_cast<Square>(sq ^ 56);
 }
 
-constexpr Rank rel_rank(Color c, Rank r) {
-    assert(valid_rank(r));
-    assert(valid_color(c));
+constexpr Rank relative_rank(Color c, Rank r) {
+    assert(is_valid(r));
+    assert(is_valid(c));
     return c == WHITE ? r : static_cast<Rank>(RANK_8 - r);
 }
 

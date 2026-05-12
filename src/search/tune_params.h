@@ -158,7 +158,7 @@ inline int piece_values(PieceType pt) {
 #else
 constexpr int piece_values(PieceType pt) {
 #endif
-    assert(valid_piece_type(pt) || pt == NO_PIECE_TYPE);
+    assert(is_valid(pt) || pt == NO_PIECE_TYPE);
 
     switch (pt) {
     case PAWN:

@@ -8,16 +8,15 @@
 #include "../search/tune_params.h"
 #include "../util.h"
 #include "board.h"
-#include "movegen.h"
 
 namespace astra {
 
 namespace {
 
 std::pair<Square, Square> castling_rook_sqs(Color c, Square to) {
-    assert(to == rel_sq(c, SQ_G1) || to == rel_sq(c, SQ_C1));
-    bool ks = to == rel_sq(c, SQ_G1);
-    return {rel_sq(c, ks ? SQ_H1 : SQ_A1), rel_sq(c, ks ? SQ_F1 : SQ_D1)};
+    assert(to == relative_sq(c, SQ_G1) || to == relative_sq(c, SQ_C1));
+    bool ks = to == relative_sq(c, SQ_G1);
+    return {relative_sq(c, ks ? SQ_H1 : SQ_A1), relative_sq(c, ks ? SQ_F1 : SQ_D1)};
 }
 
 inline Square sq_from(std::string_view sq_str) {
@@ -30,7 +29,7 @@ inline Square sq_from(std::string_view sq_str) {
 }
 
 int piece_values_see(PieceType pt) {
-    assert(valid_piece_type(pt) || pt == NO_PIECE_TYPE);
+    assert(is_valid(pt) || pt == NO_PIECE_TYPE);
 
     switch (pt) {
     case PAWN:
@@ -60,7 +59,7 @@ void Board::set_fen(const std::string& fen) {
     board_.fill(NO_PIECE);
 
     states_.clear();
-    StateInfo& info = state();
+    StateInfo& info = states_.push();
 
     std::vector<std::string> fen_parts = split(fen, ' ');
     if (fen_parts.size() != 6) {
@@ -113,7 +112,7 @@ void Board::print() const {
     astra::print("\n +---+---+---+---+---+---+---+---+\n");
 
     for (int r = RANK_8; r >= RANK_1; r--) {
-        for (int f = FILE_A; f <= FILE_H; f++)
+        for (int f = FILE_A; f <= FILE_H; ++f)
             astra::print(" | {}", piece_at(make_square(static_cast<Rank>(r), static_cast<File>(f))));
         astra::print(" | {}\n +---+---+---+---+---+---+---+---+\n", 1 + r);
     }
@@ -129,10 +128,10 @@ std::string Board::fen() const {
 
     for (int i = 56; i >= 0; i -= 8) {
         int empty = 0;
-        for (int j = 0; j < 8; j++) {
+        for (int j = 0; j < 8; ++j) {
             Piece pc = piece_at(static_cast<Square>(i + j));
-            if (!valid_piece(pc)) {
-                empty++;
+            if (!is_valid(pc)) {
+                ++empty;
             } else {
                 if (empty)
                     fen << empty;
@@ -162,7 +161,7 @@ std::string Board::fen() const {
     fen << (stm_ == WHITE ? " w " : " b ");
     fen << castling << " ";
 
-    if (valid_sq(info.ep_sq))
+    if (is_valid(info.ep_sq))
         fen << info.ep_sq << " ";
     else
         fen << "- ";
@@ -173,29 +172,31 @@ std::string Board::fen() const {
     return fen.str();
 }
 
-nnue::DirtyPiece Board::make_move(Move move) {
+nnue::DirtyPieceStack Board::make_move(Move move) {
+    using nnue::DirtyPiece;
+
     const Square from = move.from();
     const Square to = move.to();
     const Piece pc = piece_at(from);
-    const PieceType pt = piece_type(pc);
+    const PieceType pt = type_of(pc);
     const Piece captured = capture_piece(move);
 
-    nnue::DirtyPiece dirty_piece;
+    nnue::DirtyPieceStack dirty_pieces;
 
     assert(move);
-    assert(valid_piece(pc));
-    assert(piece_type(captured) != KING);
-    assert(valid_piece(captured) == move.is_cap());
+    assert(is_valid(pc));
+    assert(type_of(captured) != KING);
+    assert(is_valid(captured) == move.is_cap());
 
     StateInfo& info = states_.push();
 
-    info.fifty_move_counter++;
-    info.plies_from_null++;
+    ++info.fifty_move_counter;
+    ++info.plies_from_null;
 
     if (pt == PAWN || move.is_cap())
         info.fifty_move_counter = 0;
 
-    if (valid_sq(info.ep_sq)) {
+    if (is_valid(info.ep_sq)) {
         info.hash ^= zobrist::ep_sq(info.ep_sq);
         info.ep_sq = NO_SQUARE;
     }
@@ -207,18 +208,18 @@ nnue::DirtyPiece Board::make_move(Move move) {
         assert(piece_at(rook_from) == make_piece(stm_, ROOK));
 
         move_piece(rook_from, rook_to);
-        dirty_piece.remove(make_piece(stm_, ROOK), rook_from);
-        dirty_piece.put(make_piece(stm_, ROOK), rook_to);
+        dirty_pieces.push(DirtyPiece::removed(make_piece(stm_, ROOK), rook_from));
+        dirty_pieces.push(DirtyPiece::added(make_piece(stm_, ROOK), rook_to));
     }
 
     if (move.is_cap()) {
         Square cap_sq = move.is_ep() ? ep_sq(to) : to;
         remove_piece(cap_sq);
-        dirty_piece.remove(captured, cap_sq);
+        dirty_pieces.push(DirtyPiece::removed(captured, cap_sq));
     }
 
     move_piece(from, to);
-    dirty_piece.move(pc, from, to);
+    dirty_pieces.push(DirtyPiece::moved(pc, from, to));
 
     if (pt == PAWN) {
         Square new_ep_sq = ep_sq(to);
@@ -227,15 +228,16 @@ nnue::DirtyPiece Board::make_move(Move move) {
             info.hash ^= zobrist::ep_sq(new_ep_sq);
         } else if (move.is_prom()) {
             Piece prom_pc = make_piece(stm_, move.prom_type());
-            assert(valid_piece(prom_pc));
-            assert(piece_type(prom_pc) != PAWN);
+            assert(is_valid(prom_pc));
+            assert(type_of(prom_pc) != PAWN);
 
             // remove pawn
             remove_piece(to);
-            dirty_piece.move(pc, from, NO_SQUARE);
+            dirty_pieces.pop();                               // first remove moved pawn
+            dirty_pieces.push(DirtyPiece::removed(pc, from)); // pawn is still in from sq
 
             put_piece(prom_pc, to);
-            dirty_piece.put(prom_pc, to);
+            dirty_pieces.push(DirtyPiece::added(prom_pc, to));
         }
     }
 
@@ -265,7 +267,7 @@ nnue::DirtyPiece Board::make_move(Move move) {
         }
     }
 
-    return dirty_piece;
+    return dirty_pieces;
 }
 
 void Board::undo_move(Move move) {
@@ -274,8 +276,8 @@ void Board::undo_move(Move move) {
     const Piece captured = state().captured;
 
     assert(move);
-    assert(valid_piece(piece_at(to)));
-    assert(!valid_piece(piece_at(from)));
+    assert(is_valid(piece_at(to)));
+    assert(!is_valid(piece_at(from)));
 
     stm_ = ~stm_;
 
@@ -292,7 +294,7 @@ void Board::undo_move(Move move) {
     move_piece(to, from);
 
     if (move.is_cap()) {
-        assert(valid_piece(captured));
+        assert(is_valid(captured));
         put_piece(captured, move.is_ep() ? ep_sq(to) : to);
     }
 
@@ -302,10 +304,10 @@ void Board::undo_move(Move move) {
 void Board::make_move() {
     StateInfo& info = states_.push();
 
-    info.fifty_move_counter++;
+    ++info.fifty_move_counter;
     info.plies_from_null = 0;
 
-    if (valid_sq(info.ep_sq)) {
+    if (is_valid(info.ep_sq)) {
         info.hash ^= zobrist::ep_sq(info.ep_sq);
         info.ep_sq = NO_SQUARE;
     }
@@ -337,7 +339,7 @@ bool Board::is_legal(Move move) const {
 
         Bitboard new_occ = (occ ^ from_bb ^ sq_bb(cap_sq)) | sq_bb(to);
 
-        assert(!valid_piece(piece_at(to)));
+        assert(!is_valid(piece_at(to)));
         assert(piece_at(cap_sq) == make_piece(~stm_, PAWN));
 
         Bitboard attackers = (attacks_bb<BISHOP>(ksq, new_occ) & diag_sliders(~stm_)) |
@@ -347,14 +349,14 @@ bool Board::is_legal(Move move) const {
     }
 
     if (move.is_castling()) {
-        Direction step = (to == rel_sq(stm_, SQ_G1)) ? WEST : EAST;
+        Direction step = (to == relative_sq(stm_, SQ_G1)) ? WEST : EAST;
         for (Square sq = to; sq != from; sq += step)
             if (attackers_to(~stm_, sq, occ))
                 return false;
         return true;
     }
 
-    if (piece_type(from_pc) == KING)
+    if (type_of(from_pc) == KING)
         return !attackers_to(~stm_, to, occ ^ from_bb);
 
     return !(state().blockers(stm_) & from_bb) || (line(from, to) & sq_bb(ksq));
@@ -371,7 +373,7 @@ bool Board::is_pseudo_legal(Move move) const {
     const Piece from_pc = piece_at(from);
     const Piece to_pc = piece_at(to);
     const Piece captured = piece_at(cap_sq);
-    const PieceType pt = piece_type(from_pc);
+    const PieceType pt = type_of(from_pc);
 
     const Bitboard us_bb = occupancy(stm_);
     const Bitboard them_bb = occupancy(~stm_);
@@ -382,13 +384,13 @@ bool Board::is_pseudo_legal(Move move) const {
 
     if (!move)
         return false;
-    if (!valid_piece(from_pc))
+    if (!is_valid(from_pc))
         return false;
-    if (piece_color(from_pc) != stm_)
+    if (color_of(from_pc) != stm_)
         return false;
     if (sq_bb(to) & us_bb)
         return false;
-    if (move.is_cap() != valid_piece(captured))
+    if (move.is_cap() != is_valid(captured))
         return false;
     if (pop_count(info.checkers) > 1 && pt != KING)
         return false;
@@ -399,14 +401,14 @@ bool Board::is_pseudo_legal(Move move) const {
     if (move.is_castling()) {
         if (pt != KING || in_check())
             return false;
-        if (to == rel_sq(stm_, SQ_G1))
+        if (to == relative_sq(stm_, SQ_G1))
             return info.castling_rights.kingside(stm_) && !(occ & kingside_castling_path_bb(stm_));
         else
             return info.castling_rights.queenside(stm_) && !(occ & queenside_castling_path_bb(stm_));
     }
 
     if (move.is_ep())
-        if (pt != PAWN || info.ep_sq != to || valid_piece(to_pc) || captured != make_piece(~stm_, PAWN))
+        if (pt != PAWN || info.ep_sq != to || is_valid(to_pc) || captured != make_piece(~stm_, PAWN))
             return false;
 
     if (move.is_prom()) {
@@ -421,7 +423,7 @@ bool Board::is_pseudo_legal(Move move) const {
         // limit move targets based on checks
         targets &= target_bb;
         // limit move targets based on promotion rank
-        targets &= rank_bb(rel_rank(stm_, RANK_8));
+        targets &= rank_bb(relative_rank(stm_, RANK_8));
 
         return targets & sq_bb(to);
     }
@@ -438,11 +440,11 @@ bool Board::is_pseudo_legal(Move move) const {
             // captures
             valid |= pawn_attacks_bb(stm_, from) & them_bb & sq_bb(to);
             // single push
-            valid |= static_cast<Square>(from + up) == to && !valid_piece(to_pc);
+            valid |= static_cast<Square>(from + up) == to && !is_valid(to_pc);
             // double push
-            valid |= static_cast<Square>(from + 2 * up) == to && //
-                     rel_rank(stm_, RANK_2) == sq_rank(from) &&  //
-                     !valid_piece(to_pc) && !valid_piece(piece_at(to - up));
+            valid |= static_cast<Square>(from + 2 * up) == to &&     //
+                     relative_rank(stm_, RANK_2) == rank_of(from) && //
+                     !is_valid(to_pc) && !is_valid(piece_at(to - up));
 
             if (!valid)
                 return false;
@@ -456,14 +458,14 @@ bool Board::is_pseudo_legal(Move move) const {
 
 bool Board::gives_check(Move move) const {
     assert(move);
-    assert(piece_color(piece_at(move.from())) == stm_);
+    assert(color_of(piece_at(move.from())) == stm_);
 
     const Square from = move.from();
     const Square to = move.to();
     const Square nstm_ksq = king_sq(~stm_);
     const Bitboard occ = occupancy();
 
-    if (check_squares(piece_type(piece_at(from))) & sq_bb(to))
+    if (check_squares(type_of(piece_at(from))) & sq_bb(to))
         return true;
 
     if (state().blockers(~stm_) & sq_bb(from))
@@ -472,13 +474,13 @@ bool Board::gives_check(Move move) const {
     if (move.is_prom()) {
         return attacks_bb(move.prom_type(), to, occ ^ sq_bb(from)) & piece_bb<KING>(~stm_);
     } else if (move.is_ep()) {
-        Square cap_sq = make_square(sq_rank(from), sq_file(to));
+        Square cap_sq = make_square(rank_of(from), file_of(to));
         Bitboard b = (occ ^ sq_bb(from) ^ sq_bb(cap_sq)) | sq_bb(to);
 
         return (attacks_bb<ROOK>(nstm_ksq, b) & orth_sliders(stm_)) |
                (attacks_bb<BISHOP>(nstm_ksq, b) & diag_sliders(stm_));
     } else if (move.is_castling()) {
-        return check_squares(ROOK) & rel_sq(stm_, to > from ? SQ_F1 : SQ_D1);
+        return check_squares(ROOK) & relative_sq(stm_, to > from ? SQ_F1 : SQ_D1);
     } else {
         return false;
     }
@@ -501,12 +503,12 @@ bool Board::upcoming_repetition(int ply) const {
     Hash other_key = orig_key ^ states_(total_plies - offset).hash ^ zobrist::side();
 
     for (int i = 3; i <= distance; i += 2) {
-        offset++;
+        ++offset;
 
         int idx = total_plies - offset;
         other_key ^= states_(idx).hash ^ states_(idx - 1).hash ^ zobrist::side();
 
-        offset++;
+        ++offset;
         idx = total_plies - offset;
 
         if (other_key != 0)
@@ -544,12 +546,12 @@ bool Board::see(Move move, int threshold) const {
     const StateInfo& info = state();
     const Square from = move.from();
     const Square to = move.to();
-    const PieceType attacker = piece_type(piece_at(from));
-    const PieceType victim = piece_type(piece_at(to));
+    const PieceType attacker = type_of(piece_at(from));
+    const PieceType victim = type_of(piece_at(to));
 
-    assert(valid_piece_type(attacker));
-    assert(valid_piece_type(victim) || move.is_quiet());
-    assert(piece_color(piece_at(from)) == stm_);
+    assert(is_valid(attacker));
+    assert(is_valid(victim) || move.is_quiet());
+    assert(color_of(piece_at(from)) == stm_);
 
     int swap = piece_values_see(victim) - threshold;
     if (swap < 0)
@@ -615,52 +617,6 @@ bool Board::see(Move move, int threshold) const {
     }
 
     return bool(res);
-}
-
-void Board::perft(int depth) {
-    if (depth < 1) {
-        println("Invalid depth value: {}", depth);
-        return;
-    }
-
-    auto perft = [&](int d, auto&& perft_ref) -> uint64_t {
-        MoveList<Move> ml;
-        ml.gen<GenType::LEGAL>(*this);
-
-        if (d == 0)
-            return 1;
-        if (d <= 1)
-            return ml.size();
-
-        uint64_t nodes = 0;
-        for (const auto& move : ml) {
-            make_move(move);
-            nodes += perft_ref(d - 1, perft_ref);
-            undo_move(move);
-        }
-        return nodes;
-    };
-
-    auto start = std::chrono::high_resolution_clock::now();
-
-    MoveList<Move> ml;
-    ml.gen<GenType::LEGAL>(*this);
-
-    uint64_t total_nodes = 0;
-    for (const auto& move : ml) {
-        make_move(move);
-        uint64_t nodes = perft(depth - 1, perft);
-        undo_move(move);
-        total_nodes += nodes;
-        println("{}: {}", move, nodes);
-    }
-
-    auto end = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double, std::milli> diff = end - start;
-    double time_ms = diff.count();
-
-    println("\nTotal nodes: {}", total_nodes);
-    println("Total time : {} ms\n", time_ms);
 }
 
 // private function
