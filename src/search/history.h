@@ -18,8 +18,8 @@ void update_correction(int16_t& v, int bonus) { v += bonus - v * std::abs(bonus)
 
 } // namespace
 
-inline int history_bonus(int d) { return std::min<int>(max_hist_bonus, hist_bonus_mult * d + hist_bonus_minus); }
-inline int history_malus(int d) { return std::min<int>(max_hist_malus, hist_malus_mult * d + hist_malus_minus); }
+inline int history_bonus(int d) { return std::min<int>(hist_bonus_max, hist_bonus_mult * d + hist_bonus_bias); }
+inline int history_malus(int d) { return std::min<int>(hist_malus_max, hist_malus_mult * d + hist_malus_bias); }
 
 class QuietHistory {
   public:

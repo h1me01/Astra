@@ -152,7 +152,7 @@ Score Search::aspiration(int depth, Stack* stack) {
     Score beta = SCORE_INFINITE;
 
     int delta = asp_delta;
-    if (depth >= asp_depth) {
+    if (depth >= 4) {
         Score avg_score = root_moves_[multipv_idx_].avg_score;
         alpha = std::max(avg_score - delta, -SCORE_INFINITE);
         beta = std::min(avg_score + delta, SCORE_INFINITE);
@@ -268,13 +268,13 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack* stack, bool cut
     ) {
         if (tt_move && tt_score >= beta) {
             if (tt_move.is_quiet()) {
-                int bonus = std::min<int>(tt_hist_bonus_mult * depth + tt_hist_bonus_minus, max_tt_hist_bonus);
+                int bonus = std::min<int>(tt_hist_bonus_mult * depth + tt_hist_bonus_bias, tt_hist_bonus_max);
                 quiet_history_.update(stm, tt_move, bonus);
             }
 
             Square prev_sq = (stack - 1)->move ? (stack - 1)->move.to() : NO_SQUARE;
             if (is_valid(prev_sq) && (stack - 1)->move.is_quiet() && (stack - 1)->move_count <= 3) {
-                int malus = std::min<int>(tt_hist_malus_mult * depth + tt_hist_malus_minus, max_tt_hist_malus);
+                int malus = std::min<int>(tt_hist_malus_mult * depth + tt_hist_malus_bias, tt_hist_malus_max);
                 cont_history_.update((stack - 1)->moved_piece, prev_sq, -malus, stack - 1);
             }
         }
@@ -350,7 +350,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack* stack, bool cut
         && is_valid((stack - 1)->static_eval) //
     ) {
         int bonus = std::clamp<int>(
-            static_h_mult * (stack->static_eval + (stack - 1)->static_eval) / 16, static_h_min, static_h_max
+            static_hist_mult * (stack->static_eval + (stack - 1)->static_eval) / 16, static_hist_min, static_hist_max
         );
 
         quiet_history_.update(~stm, (stack - 1)->move, bonus);
@@ -362,10 +362,10 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack* stack, bool cut
 
     // reverse futility pruning
     if (!pv_node                                                                    //
+        && depth < 11                                                               //
         && !is_win(eval)                                                            //
         && !is_loss(beta)                                                           //
         && !stack->skipped                                                          //
-        && depth < rfp_depth                                                        //
         && eval - (rfp_depth_mult * depth - rfp_improving_mult * improving) >= beta //
     ) {
         return (eval + beta) / 2;
@@ -382,9 +382,9 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack* stack, bool cut
     ) {
         assert(!(stack - 1)->move.is_null());
 
-        int R = nmp_rbase                //
-                + depth / nmp_rdepth_div //
-                + std::min<int>(nmp_rmin, (eval - beta) / nmp_eval_div);
+        int R = 4           //
+                + depth / 3 //
+                + std::min<int>(4, (eval - beta) / nmp_eval_div);
 
         stack->move = Move::null();
         stack->moved_piece = NO_PIECE;
@@ -414,7 +414,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack* stack, bool cut
     }
 
     // internal iterative reduction
-    if (depth >= iir_depth && !tt_move && (pv_node || cut_node))
+    if (depth >= 4 && !tt_move && (pv_node || cut_node))
         depth--;
 
     // probcut
@@ -497,11 +497,11 @@ movesloop:
 
                 // futility pruning
                 const Score futility = stack->static_eval + fp_base + r_depth * fp_mult;
-                if (!in_check && r_depth < fp_depth && futility <= alpha)
+                if (!in_check && r_depth < 10 && futility <= alpha)
                     mp.skip_quiets();
 
                 // history pruning
-                if (r_depth < hp_depth && history_score < hp_depth_mult * depth) {
+                if (r_depth < 6 && history_score < hp_depth_mult * depth) {
                     mp.skip_quiets();
                     continue;
                 }
@@ -520,7 +520,7 @@ movesloop:
         int extensions = 0;
 
         if (!root_node                      //
-            && depth >= se_depth            //
+            && depth >= 6                   //
             && !stack->skipped              //
             && move == tt_move              //
             && tt_depth >= depth - 3        //
