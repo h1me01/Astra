@@ -4,6 +4,7 @@ venv/
 
 build/
 openbench/
+misc/
 
 *.exe
 astra*
