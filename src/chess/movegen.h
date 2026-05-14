@@ -16,7 +16,7 @@ enum class GenType : uint8_t {
 template <typename T>
 class MoveList {
   public:
-    static constexpr int MAX_MOVES = 128;
+    static constexpr int MAX_MOVES = 256;
 
     MoveList()
         : idx_(-1) {
