@@ -562,7 +562,8 @@ movesloop:
 
             r += !improving * lmr_improving;
 
-            r += cut_node * lmr_cut_node;
+            if (cut_node)
+                r += lmr_cut_node + !tt_move * lmr_cut_node_no_tt_move;
 
             r += (tt_move && tt_move.is_noisy()) * lmr_tt_move_noisy;
 

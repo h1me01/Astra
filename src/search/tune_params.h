@@ -111,6 +111,7 @@ PARAM(lmr_base, 1134, 1, 2048);
 PARAM(lmr_mul, 355, 1, 512);
 PARAM(lmr_improving, 1024, 1, 2048);
 PARAM(lmr_cut_node, 2048, 1, 4096);
+PARAM(lmr_cut_node_no_tt_move, 1024, 1, 2048);
 PARAM(lmr_tt_pv, 1024, 1, 2048);
 PARAM(lmr_tt_depth, 1024, 1, 2048);
 PARAM(lmr_tt_score, 655, 1, 2048);
