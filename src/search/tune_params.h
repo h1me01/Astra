@@ -131,9 +131,8 @@ PARAM(noisy_hist_malus_mul, 1024, 1, 2048);
 PARAM(quiet_histories_bonus_mul, 1024, 1, 2048);
 PARAM(quiet_histories_malus_mul, 1024, 1, 2048);
 
-PARAM(quiet_hist_mul, 1024, 1, 300);
-PARAM(pawn_hist_mul, 1024, 1, 300);
-PARAM(cont_hist_mul, 1024, 1, 300);
+PARAM(pawn_hist_mul, 1024, 1, 2048);
+PARAM(cont_hist_mul, 1024, 1, 2048);
 
 PARAM(quiet_checker_bonus, 75, 0, 150);
 

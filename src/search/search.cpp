@@ -980,7 +980,7 @@ bool Search::found_root_move(Move move) {
 }
 
 void Search::update_quiet_histories(Move best_move, int bonus, Stack* stack) {
-    quiet_history_.update(board.side_to_move(), best_move, quiet_hist_mul * bonus / 1024);
+    quiet_history_.update(board.side_to_move(), best_move, bonus);
     pawn_history_.update(board, best_move, pawn_hist_mul * bonus / 1024);
     cont_history_.update(board.piece_at(best_move.from()), best_move.to(), cont_hist_mul * bonus / 1024, stack);
 }
