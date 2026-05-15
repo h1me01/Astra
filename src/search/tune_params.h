@@ -119,19 +119,21 @@ PARAM(qsee_margin, -20, -200, 50);
 
 PARAM(hist_bonus_margin, 52, 10, 200);
 
-PARAM(quiet_hist_bonus_mult, 308, 1, 1536);
-PARAM(quiet_hist_bonus_bias, 4, -500, 500);
-PARAM(quiet_hist_bonus_max, 2445, 1, 4096);
-PARAM(quiet_hist_malus_mult, 311, 1, 1536);
-PARAM(quiet_hist_malus_bias, 104, -500, 500);
-PARAM(quiet_hist_malus_max, 1646, 1, 4096);
+PARAM(hist_bonus_mult, 308, 1, 1536);
+PARAM(hist_bonus_bias, 4, -500, 500);
+PARAM(hist_bonus_max, 2445, 1, 4096);
+PARAM(hist_malus_mult, 311, 1, 1536);
+PARAM(hist_malus_bias, 104, -500, 500);
+PARAM(hist_malus_max, 1646, 1, 4096);
 
-PARAM(noisy_hist_bonus_mult, 308, 1, 1536);
-PARAM(noisy_hist_bonus_bias, 4, -500, 500);
-PARAM(noisy_hist_bonus_max, 2445, 1, 4096);
-PARAM(noisy_hist_malus_mult, 311, 1, 1536);
-PARAM(noisy_hist_malus_bias, 104, -500, 500);
-PARAM(noisy_hist_malus_max, 1646, 1, 4096);
+PARAM(noisy_hist_bonus_mul, 1024, 1, 2048);
+PARAM(noisy_hist_malus_mul, 1024, 1, 2048);
+PARAM(quiet_histories_bonus_mul, 1024, 1, 2048);
+PARAM(quiet_histories_malus_mul, 1024, 1, 2048);
+
+PARAM(quiet_hist_mul, 1024, 1, 300);
+PARAM(pawn_hist_mul, 1024, 1, 300);
+PARAM(cont_hist_mul, 1024, 1, 300);
 
 PARAM(quiet_checker_bonus, 75, 0, 150);
 
