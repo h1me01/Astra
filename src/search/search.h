@@ -87,8 +87,6 @@ class Search {
     void make_move(Move move, Stack* stack);
     void undo_move(Move move);
 
-    int reduction(int depth, int moves_made) const;
-
     Score evaluate();
     Score adjust_eval(int32_t eval, Stack* stack) const;
     Score draw_score() const;
@@ -97,7 +95,6 @@ class Search {
     bool is_limit_reached() const;
     void sort_root_moves(int offset);
     bool found_root_move(Move move);
-    void update_pv(Move move, Stack* stack);
     void update_quiet_histories(Move best_move, int bonus, Stack* stack);
     void update_histories(Move best_move, MoveList<Move>& quiets, MoveList<Move>& noisy, int depth, Stack* stack);
     void print_uci_info() const;

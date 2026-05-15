@@ -15,6 +15,25 @@
 
 namespace astra::search {
 
+// helper
+namespace {
+
+int history_bonus(int d) { return std::min<int>(hist_bonus_max, hist_bonus_mult * d + hist_bonus_bias); }
+
+int reduction(int depth, int move_count) {
+    return lmr_base + lmr_mul * static_cast<int>(std::log(depth) * std::log(move_count));
+}
+
+void update_pv(Move move, Stack* stack) {
+    stack->pv.length = (stack + 1)->pv.length;
+    stack->pv(stack->ply) = move;
+
+    for (int i = stack->ply + 1; i < stack->pv.length; ++i)
+        stack->pv(i) = (stack + 1)->pv(i);
+}
+
+} // namespace
+
 void Search::idle() {
     thread_pool.add_started_thread();
 
@@ -589,12 +608,7 @@ movesloop:
                     score = -negamax<NON_PV>(new_depth, -alpha - 1, -alpha, stack + 1, !cut_node);
 
                 if (move.is_quiet()) {
-                    int bonus = 0;
-                    if (score <= alpha)
-                        bonus = -history_bonus(new_depth);
-                    else if (score >= beta)
-                        bonus = history_bonus(new_depth);
-
+                    int bonus = (score <= alpha ? -1 : score >= beta ? 1 : 0) * history_bonus(new_depth);
                     cont_history_.update(stack->moved_piece, move.to(), bonus, stack);
                 }
             }
@@ -868,10 +882,6 @@ void Search::undo_move(Move move) {
     board.undo_move(move);
 }
 
-int Search::reduction(int depth, int move_count) const {
-    return lmr_base + lmr_mul * static_cast<int>(std::log(depth) * std::log(move_count));
-}
-
 Score Search::evaluate() {
     assert(accum_stack_[0].initialized(WHITE));
     assert(accum_stack_[0].initialized(BLACK));
@@ -969,14 +979,6 @@ bool Search::found_root_move(Move move) {
     return std::any_of(root_moves_.begin(), root_moves_.end(), [move](const RootMove& rm) { return rm == move; });
 }
 
-void Search::update_pv(Move move, Stack* stack) {
-    stack->pv.length = (stack + 1)->pv.length;
-    stack->pv(stack->ply) = move;
-
-    for (int i = stack->ply + 1; i < stack->pv.length; ++i)
-        stack->pv(i) = (stack + 1)->pv(i);
-}
-
 void Search::update_quiet_histories(Move best_move, int bonus, Stack* stack) {
     quiet_history_.update(board.side_to_move(), best_move, bonus);
     pawn_history_.update(board, best_move, bonus);
@@ -984,21 +986,20 @@ void Search::update_quiet_histories(Move best_move, int bonus, Stack* stack) {
 }
 
 void Search::update_histories(Move best_move, MoveList<Move>& quiets, MoveList<Move>& noisy, int depth, Stack* stack) {
-    int bonus = history_bonus(depth);
-    int malus = -history_malus(depth);
+    const int bonus = history_bonus(depth);
+    const int malus = std::min<int>(hist_malus_max, hist_malus_mult * depth + hist_malus_bias);
 
     if (best_move.is_noisy()) {
         noisy_history_.update(board, best_move, bonus);
     } else if (depth > 3 || !quiets.empty()) {
         update_quiet_histories(best_move, bonus, stack);
 
-        int quiet_malus = malus;
         for (const auto& m : quiets)
-            update_quiet_histories(m, quiet_malus, stack);
+            update_quiet_histories(m, -malus, stack);
     }
 
     for (const auto& m : noisy)
-        noisy_history_.update(board, m, malus);
+        noisy_history_.update(board, m, -malus);
 }
 
 void Search::print_uci_info() const {
