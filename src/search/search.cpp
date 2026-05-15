@@ -18,7 +18,9 @@ namespace astra::search {
 // helper
 namespace {
 
-int history_bonus(int d) { return std::min<int>(hist_bonus_max, hist_bonus_mult * d + hist_bonus_bias); }
+int history_bonus(int d) {
+    return std::min<int>(quiet_hist_bonus_max, quiet_hist_bonus_mult * d + quiet_hist_bonus_bias);
+}
 
 int reduction(int depth, int move_count) {
     return lmr_base + lmr_mul * static_cast<int>(std::log(depth) * std::log(move_count));
@@ -986,20 +988,22 @@ void Search::update_quiet_histories(Move best_move, int bonus, Stack* stack) {
 }
 
 void Search::update_histories(Move best_move, MoveList<Move>& quiets, MoveList<Move>& noisy, int depth, Stack* stack) {
-    const int bonus = history_bonus(depth);
-    const int malus = std::min<int>(hist_malus_max, hist_malus_mult * depth + hist_malus_bias);
+    const int noisy_bonus = std::min<int>(noisy_hist_bonus_max, noisy_hist_bonus_mult * depth + noisy_hist_bonus_bias);
+    const int noisy_malus = std::min<int>(noisy_hist_malus_max, noisy_hist_malus_mult * depth + noisy_hist_malus_bias);
+    const int quiet_bonus = history_bonus(depth);
+    const int quiet_malus = std::min<int>(quiet_hist_malus_max, quiet_hist_malus_mult * depth + quiet_hist_malus_bias);
 
     if (best_move.is_noisy()) {
-        noisy_history_.update(board, best_move, bonus);
+        noisy_history_.update(board, best_move, noisy_bonus);
     } else if (depth > 3 || !quiets.empty()) {
-        update_quiet_histories(best_move, bonus, stack);
+        update_quiet_histories(best_move, quiet_bonus, stack);
 
         for (const auto& m : quiets)
-            update_quiet_histories(m, -malus, stack);
+            update_quiet_histories(m, -quiet_malus, stack);
     }
 
     for (const auto& m : noisy)
-        noisy_history_.update(board, m, -malus);
+        noisy_history_.update(board, m, -noisy_malus);
 }
 
 void Search::print_uci_info() const {
