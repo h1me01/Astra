@@ -127,12 +127,6 @@ PARAM(hist_malus_mult, 311, 1, 1536);
 PARAM(hist_malus_bias, 104, -500, 500);
 PARAM(hist_malus_max, 1646, 1, 4096);
 
-PARAM(quiet_hist_bonus_mult, 1024, 1, 2048);
-PARAM(quiet_hist_malus_mult, 1024, 1, 2048);
-
-PARAM(noisy_hist_bonus_mult, 1024, 1, 2048);
-PARAM(noisy_hist_malus_mult, 1024, 1, 2048);
-
 PARAM(quiet_checker_bonus, 75, 0, 150);
 
 PARAM(p_corr_weight, 4, 1, 168);

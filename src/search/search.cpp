@@ -988,17 +988,17 @@ void Search::update_histories(Move best_move, MoveList<Move>& quiets, MoveList<M
     int malus = -history_malus(depth);
 
     if (best_move.is_noisy()) {
-        noisy_history_.update(board, best_move, noisy_hist_bonus_mult * bonus / 1024);
+        noisy_history_.update(board, best_move, bonus);
     } else if (depth > 3 || !quiets.empty()) {
-        update_quiet_histories(best_move, quiet_hist_bonus_mult * bonus / 1024, stack);
+        update_quiet_histories(best_move, bonus, stack);
 
-        int quiet_malus = quiet_hist_malus_mult * malus / 1024;
+        int quiet_malus = malus;
         for (const auto& m : quiets)
             update_quiet_histories(m, quiet_malus, stack);
     }
 
     for (const auto& m : noisy)
-        noisy_history_.update(board, m, noisy_hist_malus_mult * malus / 1024);
+        noisy_history_.update(board, m, malus);
 }
 
 void Search::print_uci_info() const {
