@@ -79,7 +79,6 @@ PARAM(nmp_depth_mult, 26, 1, 58);
 PARAM(nmp_base, 192, 50, 400);
 PARAM(nmp_eval_div, 193, 50, 350);
 
-PARAM(pc_depth, 3, 1, 10);
 PARAM(pc_margin, 217, 1, 400);
 PARAM(pc_improving_mult, 60, 1, 120);
 

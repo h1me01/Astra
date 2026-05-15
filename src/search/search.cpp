@@ -420,7 +420,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack* stack, bool cut
     // probcut
     probcut_beta = beta + pc_margin - pc_improving_mult * improving;
     if (!pv_node                                            //
-        && depth >= pc_depth                                //
+        && depth >= 3                                       //
         && !is_decisive(beta)                               //
         && !(is_valid(tt_score) && tt_score < probcut_beta) //
     ) {
