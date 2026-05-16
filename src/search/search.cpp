@@ -230,6 +230,13 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack* stack, bool cut
 
     depth = std::min(depth, MAX_PLY - 1);
 
+    // check for upcoming repetition
+    if (!root_node && alpha < SCORE_DRAW && board.upcoming_repetition(stack->ply)) {
+        alpha = draw_score();
+        if (alpha >= beta)
+            return alpha;
+    }
+
     const Score old_alpha = alpha;
     const Color stm = board.side_to_move();
     const bool in_check = board.in_check();
@@ -239,13 +246,6 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack* stack, bool cut
         sel_depth_ = std::max(sel_depth_, stack->ply);
 
     if (!root_node) {
-        // check for upcoming repetition
-        if (alpha < SCORE_DRAW && board.upcoming_repetition(stack->ply)) {
-            alpha = draw_score();
-            if (alpha >= beta)
-                return alpha;
-        }
-
         if (stack->ply >= MAX_PLY - 1)
             return in_check ? draw_score() : evaluate();
         if (board.is_draw(stack->ply))
