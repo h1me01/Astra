@@ -35,10 +35,10 @@ class MoveList {
         return it != end() ? static_cast<int>(it - begin()) : -1;
     }
 
-    T* begin() { return size() ? &data_(0) : nullptr; }
-    T* end() { return size() ? (&data_(0) + size()) : nullptr; }
-    const T* begin() const { return size() ? &data_(0) : nullptr; }
-    const T* end() const { return size() ? (&data_(0) + size()) : nullptr; }
+    T* begin() { return &data_(0); }
+    T* end() { return &data_(0) + size(); }
+    const T* begin() const { return &data_(0); }
+    const T* end() const { return &data_(0) + size(); }
 
     T& operator[](int i) {
         assert(i >= 0 && i < size());
