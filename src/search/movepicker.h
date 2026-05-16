@@ -7,9 +7,9 @@
 namespace astra::search {
 
 enum SearchType : uint8_t {
-    N_SEARCH,
-    Q_SEARCH,
-    PC_SEARCH,
+    NEGAMAX,
+    QUIESCENCE,
+    PROBCUT,
 };
 
 enum Stage : uint8_t {
@@ -39,7 +39,6 @@ class MovePicker {
     Move next();
 
   private:
-    int idx_;
     Stage stage_;
     bool skip_quiets_ = false;
 
@@ -50,10 +49,13 @@ class MovePicker {
     const Stack* stack_;
     int probcut_threshold_;
 
-    Move tt_move_;
-    MoveList<Move> ml_;
-    MoveList<ScoredMove> ml_main_, ml_bad_noisy_;
+    int curr_move_idx_ = 0;
+    int bad_noisy_idx_ = 0;
+    int bad_noisy_count_ = 0;
 
+    Move tt_move_;
+    MoveList<ScoredMove> ml_main_;
+    
     void gen_score_noisy();
     void gen_score_quiets();
 };

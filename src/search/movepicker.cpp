@@ -35,7 +35,7 @@ MovePicker<st>::MovePicker(
       stack_(stack),
       probcut_threshold_(probcut_threshold) {
 
-    bool use_tt = (st == N_SEARCH) || (st == Q_SEARCH && board.in_check());
+    bool use_tt = (st == NEGAMAX) || (st == QUIESCENCE && board.in_check());
     stage_ = use_tt ? PLAY_TT_MOVE : GEN_NOISY;
     tt_move_ = use_tt ? tt_move : Move::none();
 }
@@ -49,36 +49,35 @@ Move MovePicker<st>::next() {
             return tt_move_;
         [[fallthrough]];
     case GEN_NOISY:
-        idx_ = 0;
         stage_ = PLAY_NOISY;
         gen_score_noisy();
         [[fallthrough]];
     case PLAY_NOISY:
-        while (idx_ < ml_main_.size()) {
-            select_best(ml_main_, idx_);
+        while (curr_move_idx_ < ml_main_.size()) {
+            select_best(ml_main_, curr_move_idx_);
 
-            auto move = ml_main_[idx_++];
+            auto move = ml_main_[curr_move_idx_++];
             if (move == tt_move_)
                 continue;
 
             // we want to play noisy moves first in qsearch, doesn't matter if its see fails
-            int threshold = (st == N_SEARCH) ? -move.score / 32 : probcut_threshold_;
-            if (st == Q_SEARCH || board_.see(move, threshold))
+            int threshold = (st == NEGAMAX) ? -move.score / 32 : probcut_threshold_;
+            if (st == QUIESCENCE || board_.see(move, threshold))
                 return move;
 
-            ml_bad_noisy_.add(move);
+            // overwrite movelist starting from 0 with bad noisy
+            ml_main_[bad_noisy_count_++] = move;
         }
 
-        if (st == PC_SEARCH)
+        if (st == PROBCUT)
             return Move::none();
 
-        if (st == Q_SEARCH && !board_.in_check())
+        if (st == QUIESCENCE && !board_.in_check())
             return Move::none();
 
         stage_ = GEN_QUIETS;
         [[fallthrough]];
     case GEN_QUIETS:
-        idx_ = 0;
         stage_ = PLAY_QUIETS;
 
         if (!skip_quiets_)
@@ -86,25 +85,22 @@ Move MovePicker<st>::next() {
 
         [[fallthrough]];
     case PLAY_QUIETS:
-        while (idx_ < ml_main_.size() && !skip_quiets_) {
-            select_best(ml_main_, idx_);
-            Move move = ml_main_[idx_++];
+        while (curr_move_idx_ < ml_main_.size() && !skip_quiets_) {
+            select_best(ml_main_, curr_move_idx_);
+            Move move = ml_main_[curr_move_idx_++];
             if (move != tt_move_)
                 return move;
         }
 
-        if (st == Q_SEARCH)
+        if (st == QUIESCENCE)
             return Move::none(); // end of evasion qsearch
 
-        idx_ = 0;
         stage_ = PLAY_BAD_NOISY;
 
         [[fallthrough]];
     case PLAY_BAD_NOISY:
-        while (idx_ < ml_bad_noisy_.size()) {
-            select_best(ml_bad_noisy_, idx_);
-            return ml_bad_noisy_[idx_++];
-        }
+        while (bad_noisy_idx_ < bad_noisy_count_)
+            return ml_main_[bad_noisy_idx_++];
 
         return Move::none();
     default:
@@ -117,10 +113,10 @@ Move MovePicker<st>::next() {
 
 template <SearchType st>
 void MovePicker<st>::gen_score_noisy() {
-    ml_main_.clear();
-    gen_moves<GenType::NOISY>(ml_, board_);
+    MoveList<Move> ml;
+    gen_moves<GenType::NOISY>(ml, board_);
 
-    for (auto& m : ml_) {
+    for (auto& m : ml) {
         int score = noisy_history_.get(board_, m) + 16 * piece_values(type_of(board_.capture_piece(m)));
         ml_main_.add(ScoredMove{m, score});
     }
@@ -128,8 +124,8 @@ void MovePicker<st>::gen_score_noisy() {
 
 template <SearchType st>
 void MovePicker<st>::gen_score_quiets() {
-    ml_main_.clear();
-    gen_moves<GenType::QUIET>(ml_, board_);
+    MoveList<Move> ml;
+    gen_moves<GenType::QUIET>(ml, board_);
 
     const Color stm = board_.side_to_move();
 
@@ -140,7 +136,7 @@ void MovePicker<st>::gen_score_quiets() {
     threats(QUEEN) = board_.attacks_by<ROOK>(~stm) | threats(ROOK);
     threats(KING) = 0;
 
-    for (auto& m : ml_) {
+    for (auto& m : ml) {
         const Square from = m.from();
         const Square to = m.to();
         const Piece pc = board_.piece_at(from);
@@ -160,8 +156,8 @@ void MovePicker<st>::gen_score_quiets() {
     }
 }
 
-template class MovePicker<N_SEARCH>;
-template class MovePicker<Q_SEARCH>;
-template class MovePicker<PC_SEARCH>;
+template class MovePicker<NEGAMAX>;
+template class MovePicker<QUIESCENCE>;
+template class MovePicker<PROBCUT>;
 
 } // namespace astra::search

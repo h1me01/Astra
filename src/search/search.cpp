@@ -230,13 +230,6 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack* stack, bool cut
 
     depth = std::min(depth, MAX_PLY - 1);
 
-    // check for upcoming repetition
-    if (!root_node && alpha < SCORE_DRAW && board.upcoming_repetition(stack->ply)) {
-        alpha = draw_score();
-        if (alpha >= beta)
-            return alpha;
-    }
-
     const Score old_alpha = alpha;
     const Color stm = board.side_to_move();
     const bool in_check = board.in_check();
@@ -246,6 +239,13 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack* stack, bool cut
         sel_depth_ = std::max(sel_depth_, stack->ply);
 
     if (!root_node) {
+        // check for upcoming repetition
+        if (alpha < SCORE_DRAW && board.upcoming_repetition(stack->ply)) {
+            alpha = draw_score();
+            if (alpha >= beta)
+                return alpha;
+        }
+
         if (stack->ply >= MAX_PLY - 1)
             return in_check ? draw_score() : evaluate();
         if (board.is_draw(stack->ply))
@@ -345,9 +345,9 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack* stack, bool cut
     if (in_check) {
         raw_eval = eval = stack->static_eval = SCORE_NONE;
         goto movesloop;
-    } else if (stack->skipped)
+    } else if (stack->skipped) {
         raw_eval = eval = stack->static_eval;
-    else {
+    } else {
         raw_eval = is_valid(tt_eval) ? tt_eval : evaluate();
         eval = stack->static_eval = adjust_eval(raw_eval, stack);
 
@@ -401,9 +401,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack* stack, bool cut
     ) {
         assert(!(stack - 1)->move.is_null());
 
-        int R = 4           //
-                + depth / 3 //
-                + std::min<int>(4, (eval - beta) / nmp_eval_div);
+        const int r = 4 + depth / 3 + std::min<int>(4, (eval - beta) / nmp_eval_div);
 
         stack->move = Move::null();
         stack->moved_piece = NO_PIECE;
@@ -411,7 +409,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack* stack, bool cut
         stack->cont_corr_hist = cont_corr_history_.get();
 
         board.make_move();
-        Score score = -negamax<NON_PV>(depth - R, -beta, -beta + 1, stack + 1, !cut_node);
+        Score score = -negamax<NON_PV>(depth - r, -beta, -beta + 1, stack + 1, !cut_node);
         board.undo_move();
 
         if (thread_pool.is_stopped())
@@ -423,8 +421,8 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack* stack, bool cut
 
             assert(!nmp_min_ply_);
 
-            nmp_min_ply_ = stack->ply + 3 * (depth - R) / 4;
-            Score v = negamax<NON_PV>(depth - R, beta - 1, beta, stack, false);
+            nmp_min_ply_ = stack->ply + 3 * (depth - r) / 4;
+            Score v = negamax<NON_PV>(depth - r, beta - 1, beta, stack, false);
             nmp_min_ply_ = 0;
 
             if (v >= beta)
@@ -443,7 +441,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack* stack, bool cut
         && !is_decisive(beta)                               //
         && !(is_valid(tt_score) && tt_score < probcut_beta) //
     ) {
-        MovePicker<PC_SEARCH> mp(
+        MovePicker<PROBCUT> mp(
             board, tt_move, quiet_history_, pawn_history_, noisy_history_, stack, probcut_beta - stack->static_eval
         );
 
@@ -476,7 +474,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack* stack, bool cut
 
 movesloop:
 
-    MovePicker<N_SEARCH> mp(board, tt_move, quiet_history_, pawn_history_, noisy_history_, stack);
+    MovePicker<NEGAMAX> mp(board, tt_move, quiet_history_, pawn_history_, noisy_history_, stack);
     Move move = Move::none();
 
     MoveList<Move> quiets, noisy;
@@ -792,7 +790,7 @@ Score Search::quiescence(Score alpha, Score beta, Stack* stack) {
 
     const Square prev_sq = ((stack - 1)->move) ? ((stack - 1)->move).to() : NO_SQUARE;
 
-    MovePicker<Q_SEARCH> mp(board, tt_move, quiet_history_, pawn_history_, noisy_history_, stack);
+    MovePicker<QUIESCENCE> mp(board, tt_move, quiet_history_, pawn_history_, noisy_history_, stack);
     Move move = Move::none();
 
     int move_count = 0;
