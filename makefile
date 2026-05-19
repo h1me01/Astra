@@ -1,5 +1,5 @@
 
-DEFAULT_WEIGHTS := selfgen_v19.nnue
+DEFAULT_WEIGHTS := selfgen_v20.nnue
 
 # Allow custom EVALFILE path via command line
 ifndef EVALFILE
