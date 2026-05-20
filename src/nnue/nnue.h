@@ -1,106 +1,70 @@
 #pragma once
 
-#include <array>
 #include <cassert>
 #include <cstring>
+#include <utility>
 
-#include "../chess/misc.h"
-#include "constants.h"
-
+#include "../chess/types.h"
+#include "accumulator.h"
+#include "arch.h"
 #include "simd.h"
+#include "util.h"
 
-using namespace chess;
-
-namespace chess {
+namespace astra {
 class Board;
-} // namespace chess
+} // namespace astra
 
-namespace nnue {
-
-struct Accum;
-
-// (13x768->1536)x2->(16->32->1)x8->selected output
-
-template <typename T, size_t N>
-class LayerOutput {
-  public:
-    LayerOutput() {
-        std::memset(data, 0, sizeof(T) * N);
-    }
-
-    LayerOutput(T* init_data) {
-        std::memcpy(data, init_data, sizeof(T) * N);
-    }
-
-    T operator[](size_t idx) const {
-        assert(idx < N);
-        return data[idx];
-    }
-
-    T& operator[](size_t idx) {
-        assert(idx < N);
-        return data[idx];
-    }
-
-    operator T*() {
-        return data;
-    }
-
-    operator const T*() const {
-        return data;
-    }
-
-  private:
-    alignas(ALIGNMENT) T data[N];
-};
+namespace astra::nnue {
 
 class NNUE {
+    using NNZOutput = std::pair<int, NDArray<uint16_t, FT_SIZE / 4>>;
+
   public:
     void init();
-    void init_accum(Accum& acc) const;
 
-    Score forward(Board& board, const Accum& acc);
-
-    void put(Accum& acc, const Accum& prev, Piece pc, Square psq, Square ksq, Color view) const;
-    void remove(Accum& acc, const Accum& prev, Piece pc, Square psq, Square ksq, Color view) const;
-    void move(Accum& acc, const Accum& prev, Piece pc, Square from, Square to, Square ksq, Color view) const;
-
-  private:
-    using NNZOutput = std::pair<int, LayerOutput<uint16_t, FT_SIZE / 4>>;
-
-  private:
-    alignas(ALIGNMENT) int16_t ft_weights[INPUT_SIZE * FT_SIZE];
-    alignas(ALIGNMENT) int16_t ft_biases[FT_SIZE];
-    alignas(ALIGNMENT) int8_t l1_weights[OUTPUT_BUCKETS][FT_SIZE * L1_SIZE];
-    alignas(ALIGNMENT) float l1_biases[OUTPUT_BUCKETS][L1_SIZE];
-    alignas(ALIGNMENT) float l2_weights[OUTPUT_BUCKETS][L1_SIZE * L2_SIZE];
-    alignas(ALIGNMENT) float l2_biases[OUTPUT_BUCKETS][L2_SIZE];
-    alignas(ALIGNMENT) float l3_weights[OUTPUT_BUCKETS][L2_SIZE];
-    alignas(ALIGNMENT) float l3_biases[OUTPUT_BUCKETS];
-
-    alignas(ALIGNMENT) uint16_t nnz_lookup[256][8];
-
-    int feature_idx(Piece pc, Square psq, Square ksq, Color view) const {
-        assert(valid_piece(pc) && valid_sq(psq));
-
-        if (sq_file(ksq) > FILE_D)
-            psq = Square(psq ^ 7); // mirror psq horizontally if king is on other half
-
-        return rel_sq(view, psq)                 //
-               + piece_type(pc) * 64             //
-               + (piece_color(pc) != view) * 384 //
-               + INPUT_BUCKET[rel_sq(view, ksq)] * FEATURE_SIZE;
+    void init_accum(Accumulator& acc) const {
+        for (Color c : {WHITE, BLACK})
+            std::memcpy(&acc.data(c, 0), &ft_bias_, sizeof(int16_t) * FT_SIZE);
     }
 
-    LayerOutput<uint8_t, FT_SIZE> prep_l1_input(const Color stm, const Accum& acc);
-    NNZOutput find_nnz(const LayerOutput<uint8_t, FT_SIZE>& input);
-    LayerOutput<float, L1_SIZE> forward_l1(int bucket, const LayerOutput<uint8_t, FT_SIZE>& input);
-    LayerOutput<float, L2_SIZE> forward_l2(int bucket, const LayerOutput<float, L1_SIZE>& input);
-    float forward_l3(int bucket, const LayerOutput<float, L2_SIZE>& input);
+    int16_t* feature_weight(Piece pc, Square psq, Square ksq, Color view) {
+        assert(is_valid(psq));
+        assert(is_valid(pc));
+
+        // mirror psq horizontally if king is on other half
+        if (file_of(ksq) > FILE_D)
+            psq = static_cast<Square>(psq ^ 7);
+
+        int idx = relative_sq(view, psq)            //
+                  + type_of(pc) * 64                //
+                  + (color_of(pc) != view) * 6 * 64 //
+                  + INPUT_BUCKET(relative_sq(view, ksq)) * 768;
+
+        return &ft_weight_(idx * FT_SIZE);
+    }
+
+    int32_t forward(Board& board, const Accumulator& acc);
+
+  private:
+    alignas(64) NDArray<int16_t, INPUT_SIZE * FT_SIZE> ft_weight_;
+    alignas(64) NDArray<int16_t, FT_SIZE> ft_bias_;
+    alignas(64) NDArray<int8_t, OUTPUT_BUCKETS, FT_SIZE * L1_SIZE> l1_weight_;
+    alignas(64) NDArray<float, OUTPUT_BUCKETS, L1_SIZE> l1_bias_;
+    alignas(64) NDArray<float, OUTPUT_BUCKETS, 2 * L1_SIZE * L2_SIZE> l2_weight_;
+    alignas(64) NDArray<float, OUTPUT_BUCKETS, L2_SIZE> l2_bias_;
+    alignas(64) NDArray<float, OUTPUT_BUCKETS, L2_SIZE> l3_weight_;
+    alignas(64) NDArray<float, OUTPUT_BUCKETS> l3_bias_;
+    alignas(64) NDArray<uint16_t, 256, 8> nnz_lookup_;
+
+    NDArray<uint8_t, FT_SIZE> prep_l1_input(const Color stm, const Accumulator& acc);
+    NNZOutput find_nnz(const NDArray<uint8_t, FT_SIZE>& input);
+    NDArray<float, 2 * L1_SIZE> forward_l1(int bucket, const NDArray<uint8_t, FT_SIZE>& input);
+    NDArray<float, L2_SIZE> forward_l2(int bucket, const NDArray<float, 2 * L1_SIZE>& input);
+    float forward_l3(int bucket, const NDArray<float, L2_SIZE>& input);
 };
 
 // Global Variable
 
 extern NNUE nnue;
 
-} // namespace nnue
+} // namespace astra::nnue

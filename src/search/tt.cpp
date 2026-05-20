@@ -1,37 +1,14 @@
+#include <algorithm>
 #include <cstdlib>
 #include <cstring>
 #include <thread>
 #include <vector>
 
-#if defined(__linux__)
-#include <sys/mman.h>
-#include <xmmintrin.h>
-#endif
-
+#include "../util.h"
 #include "threads.h"
 #include "tt.h"
 
-namespace search {
-
-// Helper
-
-void* alloc_align(size_t size) {
-#if defined(__linux__)
-    constexpr size_t alignment = 2 * 1024 * 1024;
-#else
-    constexpr size_t alignment = 4096;
-#endif
-    size = ((size + alignment - 1) / alignment) * alignment;
-    void* ptr = _mm_malloc(size, alignment);
-#if defined(__linux__)
-    madvise(ptr, size, MADV_HUGEPAGE);
-#endif
-    return ptr;
-}
-
-void free_align(void* ptr) {
-    _mm_free(ptr);
-}
+namespace astra::search {
 
 // Constants
 
@@ -41,113 +18,101 @@ constexpr int AGE_MASK = 0xF8;
 
 // TTEntry
 
-void TTEntry::refresh_age() {
-    agepvbound = static_cast<uint8_t>(tt.get_age() | (agepvbound & (AGE_STEP - 1)));
-}
+void TTEntry::refresh_age() { agepvbound = static_cast<uint8_t>(tt.age() | (agepvbound & (AGE_STEP - 1))); }
+int TTEntry::relative_age() const { return (AGE_CYCLE + tt.age() - agepvbound) & AGE_MASK; }
+uint8_t TTEntry::age() const { return agepvbound & AGE_MASK; }
 
-int TTEntry::relative_age() const {
-    return 4 * ((AGE_CYCLE + tt.get_age() - agepvbound) & AGE_MASK);
-}
-
-uint8_t TTEntry::get_age() const {
-    return agepvbound & AGE_MASK;
-}
-
-void TTEntry::store(U64 hash, Move move, Score score, Score eval, Bound bound, int depth, int ply, bool pv) {
+void TTEntry::store(Hash hash, Move move, Score score, Score eval, Bound bound, int depth, int ply, bool pv) {
     uint16_t hash16 = static_cast<uint16_t>(hash);
 
-    if (move || this->hash != hash16)
-        this->move = move;
+    if (move || hash_ != hash16)
+        move_ = move;
 
-    if (valid_score(score)) {
+    if (is_valid(score)) {
         if (is_win(score))
             score += ply;
         if (is_loss(score))
             score -= ply;
     }
 
-    if (bound == EXACT_BOUND || this->hash != hash16 || depth + 4 + 2 * pv > this->depth) {
-        this->hash = hash16;
-        this->depth = depth;
-        this->score = score;
-        this->eval = eval;
-        agepvbound = static_cast<uint8_t>(bound + (pv << 2)) | tt.get_age();
+    if (bound == EXACT_BOUND || hash_ != hash16 || depth + 4 + 2 * pv > depth_) {
+        hash_ = hash16;
+        depth_ = depth;
+        score_ = score;
+        eval_ = eval;
+        agepvbound = static_cast<uint8_t>(bound + (pv << 2)) | tt.age();
     }
 }
 
 // TTable
 
-TTable::TTable(U64 size_mb)
-    : buckets(nullptr) {
+TTable::TTable(uint64_t size_mb)
+    : buckets_(nullptr) {
     init(size_mb);
 }
 
-TTable::~TTable() {
-    free_align(buckets);
-}
+TTable::~TTable() { free_align(buckets_); }
 
-void TTable::init(U64 size_mb) {
-    if (buckets)
-        free_align(buckets);
+void TTable::init(uint64_t size_mb) {
+    if (buckets_)
+        free_align(buckets_);
 
-    U64 size_bytes = size_mb * 1024 * 1024;
-    bucket_size = size_bytes / sizeof(TTBucket);
+    uint64_t size_bytes = size_mb * 1024 * 1024;
+    bucket_size_ = size_bytes / sizeof(TTBucket);
 
-    buckets = static_cast<TTBucket*>(alloc_align(size_bytes));
+    buckets_ = static_cast<TTBucket*>(alloc_align(size_bytes));
 
     clear();
 }
 
 void TTable::clear() {
-    age = 0;
+    age_ = 0;
 
-    const int worker_count = std::max(1, threads.size());
-    const U64 chunk_size = bucket_size / worker_count;
+    const int worker_count = std::max(1, thread_pool.size());
+    const uint64_t chunk_size = bucket_size_ / worker_count;
 
     std::vector<std::thread> threads;
     threads.reserve(worker_count);
 
     for (int i = 0; i < worker_count; i++) {
         threads.emplace_back([this, i, chunk_size]() {
-            for (U64 j = 0; j < chunk_size; ++j)
-                buckets[i * chunk_size + j] = TTBucket{};
+            for (uint64_t j = 0; j < chunk_size; ++j)
+                buckets_[i * chunk_size + j] = TTBucket{};
         });
     }
 
-    const U64 cleared = chunk_size * worker_count;
-    if (cleared < bucket_size)
-        for (U64 i = cleared; i < bucket_size; ++i)
-            buckets[i] = TTBucket{};
+    const uint64_t cleared = chunk_size * worker_count;
+    if (cleared < bucket_size_)
+        for (uint64_t i = cleared; i < bucket_size_; ++i)
+            buckets_[i] = TTBucket{};
 
     for (auto& t : threads)
         t.join();
 }
 
-void TTable::increment() {
-    age += AGE_STEP;
-}
+void TTable::increment() { age_ += AGE_STEP; }
 
-TTEntry* TTable::lookup(U64 hash, bool* hit) const {
+TTEntry* TTable::lookup(Hash hash, bool* hit) const {
     uint16_t hash16 = static_cast<uint16_t>(hash);
-    auto* entries = buckets[index(hash)].entries;
+    auto& entries = buckets_[index(hash)].entries;
 
-    for (int i = 0; i < BUCKET_SIZE; i++) {
-        uint16_t entry_hash = entries[i].get_hash();
+    for (int i = 0; i < TTBucket::SIZE; ++i) {
+        uint16_t entry_hash = entries(i).hash();
         if (entry_hash == hash16 || !entry_hash) {
-            entries[i].refresh_age();
+            entries(i).refresh_age();
             *hit = (entry_hash == hash16);
-            return &entries[i];
+            return &entries(i);
         }
     }
 
-    auto* replace = &entries[0];
-    int min_value = replace->get_depth() - replace->relative_age();
+    auto* replace = &entries(0);
+    int min_value = replace->depth() - 4 * replace->relative_age();
 
-    for (int i = 1; i < BUCKET_SIZE; i++) {
-        int value = entries[i].get_depth() - entries[i].relative_age();
+    for (int i = 1; i < TTBucket::SIZE; ++i) {
+        int value = entries(i).depth() - 4 * entries(i).relative_age();
         if (value < min_value) {
             min_value = value;
-            replace = &entries[i];
+            replace = &entries(i);
         }
     }
 
@@ -157,18 +122,18 @@ TTEntry* TTable::lookup(U64 hash, bool* hit) const {
 
 int TTable::hashfull() const {
     int used = 0;
-    for (int i = 0; i < 1000; i++) {
-        for (int j = 0; j < BUCKET_SIZE; j++) {
-            const auto* entry = &buckets[i].entries[j];
-            if (entry->get_age() == age && entry->get_hash() != 0)
+    for (int i = 0; i < 1000; ++i) {
+        for (int j = 0; j < TTBucket::SIZE; ++j) {
+            const auto& entry = buckets_[i].entries(j);
+            if (entry.age() == age_ && entry.hash() != 0)
                 used++;
         }
     }
-    return used / BUCKET_SIZE;
+    return used / TTBucket::SIZE;
 }
 
 // Global Variable
 
 TTable tt(16);
 
-} // namespace search
+} // namespace astra::search

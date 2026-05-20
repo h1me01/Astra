@@ -1,13 +1,19 @@
 #include "zobrist.h"
-#include "board.h"
-#include "misc.h"
+#include "../ndarray.h"
 
-namespace chess::zobrist {
+namespace astra::zobrist {
+
+namespace {
+Hash SIDE;
+NDArray<Hash, 8> EP_SQ_HASH;
+NDArray<Hash, 16> CASTLING;
+NDArray<Hash, NUM_PIECES, NUM_SQUARES> PSQ;
+} // namespace
 
 // psuedorandom number generator from stockfish
 class PRNG {
   public:
-    explicit PRNG(U64 seed)
+    explicit PRNG(Hash seed)
         : s(seed) {}
 
     template <typename T>
@@ -16,54 +22,50 @@ class PRNG {
     }
 
   private:
-    U64 s;
+    Hash s;
 
-    U64 rand64() {
-        s ^= s >> 12, s ^= s << 25, s ^= s >> 27;
+    Hash rand64() {
+        s ^= s >> 12;
+        s ^= s << 25;
+        s ^= s >> 27;
         return s * 2685821657736338717LL;
     }
 };
 
-U64 side;
-U64 ep[8];
-U64 castle[16];
-U64 psq[NUM_PIECES][NUM_SQUARES];
-
 void init() {
     PRNG rng(1070372);
 
-    for (int p = WHITE_PAWN; p <= BLACK_KING; p++)
-        for (int sq = a1; sq <= h8; sq++)
-            psq[p][sq] = rng.rand<U64>();
+    for (int p = WHITE_PAWN; p <= BLACK_KING; ++p)
+        for (int sq = SQ_A1; sq < NUM_SQUARES; ++sq)
+            PSQ(p, sq) = rng.rand<Hash>();
 
-    for (int f = FILE_A; f <= FILE_H; f++)
-        ep[f] = rng.rand<U64>();
+    for (int i = FILE_A; i <= FILE_H; ++i)
+        EP_SQ_HASH(i) = rng.rand<Hash>();
 
-    castle[0] = 0;
-    for (int i = 1; i < 16; i++)
-        castle[i] = rng.rand<U64>();
+    CASTLING(0) = 0;
+    for (int i = 1; i < 16; ++i)
+        CASTLING(i) = rng.rand<Hash>();
 
-    side = rng.rand<U64>();
+    SIDE = rng.rand<Hash>();
 }
 
-U64 side_hash() {
-    return side;
+Hash side() { return SIDE; }
+
+Hash psq(Piece pc, Square sq) {
+    assert(is_valid(sq));
+    assert(is_valid(pc));
+    return PSQ(pc, sq);
 }
 
-U64 psq_hash(Piece pc, Square sq) {
-    assert(valid_piece(pc) && valid_sq(sq));
-    return psq[pc][sq];
-}
-
-U64 castling_hash(int idx) {
+Hash castling(int idx) {
     assert(idx >= 0 && idx < 16);
-    return castle[idx];
+    return CASTLING(idx);
 }
 
-U64 ep_hash(Square sq) {
-    if (!valid_sq(sq))
+Hash ep_sq(Square sq) {
+    if (!is_valid(sq))
         return 0;
-    return ep[sq_file(sq)];
+    return EP_SQ_HASH(file_of(sq));
 }
 
-} // namespace chess::zobrist
+} // namespace astra::zobrist

@@ -1,51 +1,56 @@
-#include "cuckoo.h"
+#include <utility>
+
+#include "../ndarray.h"
 #include "bitboard.h"
+#include "cuckoo.h"
 #include "zobrist.h"
 
-namespace chess::cuckoo {
+namespace astra::cuckoo {
 
-U64 hashes[8192];
-Move moves[8192];
+namespace {
+NDArray<Hash, 8192> HASHES;
+NDArray<Move, 8192> MOVES;
+} // namespace
 
-U64 hash(const int idx) {
-    return hashes[idx];
+Hash hash(const int idx) {
+    assert(idx >= 0 && idx < 8192);
+    return HASHES(idx);
 }
 
 Move move(const int idx) {
-    return moves[idx];
+    assert(idx >= 0 && idx < 8192);
+    return MOVES(idx);
 }
 
 void init() {
-    for (int i = 0; i < 8192; i++) {
-        hashes[i] = 0;
-        moves[i] = Move::none();
-    }
+    HASHES.fill(0);
+    MOVES.fill(Move::none());
 
     int count = 0;
     for (Color c : {WHITE, BLACK}) {
         for (PieceType pt : {KNIGHT, BISHOP, ROOK, QUEEN, KING}) {
             Piece p = make_piece(c, pt);
 
-            for (Square sq1 = a1; sq1 <= h8; ++sq1) {
-                for (Square sq2 = Square(sq1 + 1); sq2 <= h8; ++sq2) {
+            for (Square sq1 = SQ_A1; sq1 < NUM_SQUARES; ++sq1) {
+                for (Square sq2 = static_cast<Square>(sq1 + 1); sq2 < NUM_SQUARES; ++sq2) {
                     if (!(attacks_bb(pt, sq1) & sq_bb(sq2)))
                         continue;
 
                     Move move = Move(sq1, sq2, QUIET);
-                    U64 hash = zobrist::psq_hash(p, sq1) ^ zobrist::psq_hash(p, sq2) ^ zobrist::side_hash();
+                    Hash hash = zobrist::psq(p, sq1) ^ zobrist::psq(p, sq2) ^ zobrist::side();
 
-                    int i = cuckoo_h1(hash);
+                    int i = h1(hash);
                     while (true) {
-                        std::swap(hashes[i], hash);
-                        std::swap(moves[i], move);
+                        std::swap(HASHES(i), hash);
+                        std::swap(MOVES(i), move);
 
                         if (!move)
                             break;
 
-                        i = (i == cuckoo_h1(hash)) ? cuckoo_h2(hash) : cuckoo_h1(hash);
+                        i = (i == h1(hash)) ? h2(hash) : h1(hash);
                     }
 
-                    count++;
+                    ++count;
                 }
             }
         }
@@ -54,4 +59,4 @@ void init() {
     assert(count == 3668);
 }
 
-} // namespace chess::cuckoo
+} // namespace astra::cuckoo

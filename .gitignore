@@ -3,14 +3,13 @@
 venv/
 
 build/
-pgns/
-misc/
-python/
 openbench/
+misc/
 
 *.exe
+astra*
+build.mk
+
 *.nnue
-astra
-src/build.mk
 
 CMakeLists.txt

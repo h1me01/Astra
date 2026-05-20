@@ -1,84 +1,79 @@
 #pragma once
 
+#include <algorithm>
+#include <type_traits>
+
 #include "board.h"
 
-namespace chess {
+namespace astra {
 
-enum GenType : uint8_t {
-    ADD_NOISY = 1,
-    ADD_QUIETS = 2,
-    ADD_LEGALS = 3,
+enum class GenType : uint8_t {
+    NOISY,
+    QUIET,
+    LEGAL,
 };
-
-template <GenType gt>
-Move* gen_moves(const Board& board, Move* ml);
 
 template <typename T>
 class MoveList {
   public:
+    static constexpr int MAX_MOVES = 256;
+
     MoveList()
-        : last(list) {}
-
-    template <GenType gt>
-    void gen(const Board& board) {
-        last = list; // reset the list
-
-        if constexpr (std::is_same_v<T, Move>) {
-            last = gen_moves<gt>(board, list);
-        } else {
-            Move temp_list[MAX_MOVES];
-            Move* temp_last = gen_moves<gt>(board, temp_list);
-
-            for (Move* it = temp_list; it != temp_last; ++it)
-                *last++ = T(*it);
-        }
+        : idx_(-1) {
+        clear();
     }
 
+    void clear() { idx_ = -1; }
+
     void add(T m) {
-        assert(last < list + MAX_MOVES);
-        *last++ = m;
+        assert(idx_ < MAX_MOVES - 1);
+        data_(++idx_) = m;
     }
 
     int idx_of(const T move) const {
-        for (int i = 0; i < size(); i++)
-            if (list[i] == move)
-                return i;
-        return -1;
+        auto it = std::ranges::find(begin(), end(), move);
+        return it != end() ? static_cast<int>(it - begin()) : -1;
     }
 
-    T* begin() {
-        return list;
-    }
-
-    const T* begin() const {
-        return list;
-    }
-
-    T* end() {
-        return last;
-    }
-
-    const T* end() const {
-        return last;
-    }
+    T* begin() { return &data_(0); }
+    T* end() { return &data_(0) + size(); }
+    const T* begin() const { return &data_(0); }
+    const T* end() const { return &data_(0) + size(); }
 
     T& operator[](int i) {
         assert(i >= 0 && i < size());
-        return list[i];
+        return data_(i);
     }
 
     const T& operator[](int i) const {
         assert(i >= 0 && i < size());
-        return list[i];
+        return data_(i);
     }
 
-    int size() const {
-        return last - list;
+    T& back() {
+        assert(!empty());
+        return data_(idx_);
     }
+
+    const T& back() const {
+        assert(!empty());
+        return data_(idx_);
+    }
+
+    void pop() {
+        assert(!empty());
+        --idx_;
+    }
+
+    int size() const { return idx_ + 1; }
+    bool empty() const { return size() == 0; }
 
   private:
-    T list[MAX_MOVES];
-    T* last;
+    int idx_;
+    NDArray<T, MAX_MOVES> data_;
 };
 
-} // namespace chess
+template <GenType gt>
+void gen_moves(MoveList<Move>& ml, const Board& board);
+
+} // namespace astra

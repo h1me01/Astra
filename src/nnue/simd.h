@@ -3,46 +3,73 @@
 #include <cstdint>
 #include <immintrin.h>
 
-#include "constants.h"
+#include "arch.h"
 
-// clang-format off
+namespace astra::simd {
+
+// Types
 
 #if defined(__AVX512F__)
-    #define SIMD_OP(x) _mm512_##x
-    using ivec_t = __m512i;
-    using fvec_t = __m512;
+using ivec_t = __m512i;
+using fvec_t = __m512;
 #elif defined(__AVX2__) || defined(__AVX__)
-    #define SIMD_OP(x) _mm256_##x
-    using ivec_t = __m256i;
-    using fvec_t = __m256;
+using ivec_t = __m256i;
+using fvec_t = __m256;
 #endif
 
-// integer operations
-#define madd_epi16    SIMD_OP(madd_epi16)
-#define add_epi32     SIMD_OP(add_epi32)
-#define add_epi16     SIMD_OP(add_epi16)
-#define sub_epi16     SIMD_OP(sub_epi16)
-#define max_epi16     SIMD_OP(max_epi16)
-#define min_epi16     SIMD_OP(min_epi16)
-#define set1_epi16    SIMD_OP(set1_epi16)
-#define set1_epi32    SIMD_OP(set1_epi32)
-#define slli_epi16    SIMD_OP(slli_epi16)
-#define mulhi_epi16   SIMD_OP(mulhi_epi16)
-#define packus_epi16  SIMD_OP(packus_epi16)
-#define maddubs_epi16 SIMD_OP(maddubs_epi16)
+// Integer operations
 
-// float operations
-#define set1_ps       SIMD_OP(set1_ps)
-#define max_ps        SIMD_OP(max_ps)
-#define min_ps        SIMD_OP(min_ps)
-#define mul_ps        SIMD_OP(mul_ps)
-#define add_ps        SIMD_OP(add_ps)
-#define cvtepi32_ps   SIMD_OP(cvtepi32_ps)
-#define fmadd_ps      SIMD_OP(fmadd_ps)
+#if defined(__AVX512F__)
+inline ivec_t madd_epi16(ivec_t a, ivec_t b) { return _mm512_madd_epi16(a, b); }
+inline ivec_t add_epi32(ivec_t a, ivec_t b) { return _mm512_add_epi32(a, b); }
+inline ivec_t add_epi16(ivec_t a, ivec_t b) { return _mm512_add_epi16(a, b); }
+inline ivec_t sub_epi16(ivec_t a, ivec_t b) { return _mm512_sub_epi16(a, b); }
+inline ivec_t max_epi16(ivec_t a, ivec_t b) { return _mm512_max_epi16(a, b); }
+inline ivec_t min_epi16(ivec_t a, ivec_t b) { return _mm512_min_epi16(a, b); }
+inline ivec_t set1_epi16(int16_t a) { return _mm512_set1_epi16(a); }
+inline ivec_t set1_epi32(int32_t a) { return _mm512_set1_epi32(a); }
+inline ivec_t slli_epi16(ivec_t a, int imm) { return _mm512_slli_epi16(a, imm); }
+inline ivec_t mulhi_epi16(ivec_t a, ivec_t b) { return _mm512_mulhi_epi16(a, b); }
+inline ivec_t packus_epi16(ivec_t a, ivec_t b) { return _mm512_packus_epi16(a, b); }
+inline ivec_t maddubs_epi16(ivec_t a, ivec_t b) { return _mm512_maddubs_epi16(a, b); }
+inline ivec_t zero_ivec() { return _mm512_setzero_si512(); }
+#else
+inline ivec_t madd_epi16(ivec_t a, ivec_t b) { return _mm256_madd_epi16(a, b); }
+inline ivec_t add_epi32(ivec_t a, ivec_t b) { return _mm256_add_epi32(a, b); }
+inline ivec_t add_epi16(ivec_t a, ivec_t b) { return _mm256_add_epi16(a, b); }
+inline ivec_t sub_epi16(ivec_t a, ivec_t b) { return _mm256_sub_epi16(a, b); }
+inline ivec_t max_epi16(ivec_t a, ivec_t b) { return _mm256_max_epi16(a, b); }
+inline ivec_t min_epi16(ivec_t a, ivec_t b) { return _mm256_min_epi16(a, b); }
+inline ivec_t set1_epi16(int16_t a) { return _mm256_set1_epi16(a); }
+inline ivec_t set1_epi32(int32_t a) { return _mm256_set1_epi32(a); }
+inline ivec_t slli_epi16(ivec_t a, int imm) { return _mm256_slli_epi16(a, imm); }
+inline ivec_t mulhi_epi16(ivec_t a, ivec_t b) { return _mm256_mulhi_epi16(a, b); }
+inline ivec_t packus_epi16(ivec_t a, ivec_t b) { return _mm256_packus_epi16(a, b); }
+inline ivec_t maddubs_epi16(ivec_t a, ivec_t b) { return _mm256_maddubs_epi16(a, b); }
+inline ivec_t zero_ivec() { return _mm256_setzero_si256(); }
+#endif
 
-// clang-format on
+// Float operations
 
-namespace simd {
+#if defined(__AVX512F__)
+inline fvec_t set1_ps(float a) { return _mm512_set1_ps(a); }
+inline fvec_t max_ps(fvec_t a, fvec_t b) { return _mm512_max_ps(a, b); }
+inline fvec_t min_ps(fvec_t a, fvec_t b) { return _mm512_min_ps(a, b); }
+inline fvec_t mul_ps(fvec_t a, fvec_t b) { return _mm512_mul_ps(a, b); }
+inline fvec_t add_ps(fvec_t a, fvec_t b) { return _mm512_add_ps(a, b); }
+inline fvec_t cvtepi32_ps(ivec_t a) { return _mm512_cvtepi32_ps(a); }
+inline fvec_t fmadd_ps(fvec_t a, fvec_t b, fvec_t c) { return _mm512_fmadd_ps(a, b, c); }
+inline fvec_t zero_fvec() { return _mm512_setzero_ps(); }
+#else
+inline fvec_t set1_ps(float a) { return _mm256_set1_ps(a); }
+inline fvec_t max_ps(fvec_t a, fvec_t b) { return _mm256_max_ps(a, b); }
+inline fvec_t min_ps(fvec_t a, fvec_t b) { return _mm256_min_ps(a, b); }
+inline fvec_t mul_ps(fvec_t a, fvec_t b) { return _mm256_mul_ps(a, b); }
+inline fvec_t add_ps(fvec_t a, fvec_t b) { return _mm256_add_ps(a, b); }
+inline fvec_t cvtepi32_ps(ivec_t a) { return _mm256_cvtepi32_ps(a); }
+inline fvec_t fmadd_ps(fvec_t a, fvec_t b, fvec_t c) { return _mm256_fmadd_ps(a, b, c); }
+inline fvec_t zero_fvec() { return _mm256_setzero_ps(); }
+#endif
 
 // Constants
 
@@ -50,27 +77,13 @@ constexpr int FLOAT_VEC_SIZE = sizeof(fvec_t) / sizeof(float);
 constexpr int INT32_VEC_SIZE = sizeof(ivec_t) / sizeof(int32_t);
 constexpr int INT16_VEC_SIZE = sizeof(ivec_t) / sizeof(int16_t);
 
-const ivec_t FT_QUANT_IVEC = set1_epi16(nnue::FT_QUANT);
-const fvec_t DEQUANT_MULT_PS = set1_ps(nnue::DEQUANT_MULT);
-const fvec_t ONE_FVEC = set1_ps(1.0f);
-
-#if defined(__AVX512F__)
-const ivec_t ZERO_IVEC = _mm512_setzero_si512();
-const fvec_t ZERO_FVEC = _mm512_setzero_ps();
-#else
-const ivec_t ZERO_IVEC = _mm256_setzero_si256();
-const fvec_t ZERO_FVEC = _mm256_setzero_ps();
-#endif
-
 // Utility Functions
 
 inline ivec_t clamp_epi16(ivec_t val, ivec_t min_val, ivec_t max_val) {
     return min_epi16(max_epi16(val, min_val), max_val);
 }
 
-inline fvec_t clamp_ps(fvec_t val, fvec_t min_val, fvec_t max_val) {
-    return min_ps(max_ps(val, min_val), max_val);
-}
+inline fvec_t clamp_ps(fvec_t val, fvec_t min_val, fvec_t max_val) { return min_ps(max_ps(val, min_val), max_val); }
 
 inline float hor_sum_ps(fvec_t* v) {
 #if defined(__AVX512F__)
@@ -80,61 +93,55 @@ inline float hor_sum_ps(fvec_t* v) {
     __m128 high = _mm256_extractf128_ps(v[0], 1);
     __m128 low = _mm256_castps256_ps128(v[0]);
     __m128 sum = _mm_add_ps(high, low);
-    __m128 high64 = _mm_movehl_ps(sum, sum);
-    __m128 sum64 = _mm_add_ps(sum, high64);
-    return reinterpret_cast<float*>(&sum64)[0] + reinterpret_cast<float*>(&sum64)[1];
+    __m128 hi64 = _mm_movehl_ps(sum, sum);
+    __m128 sum64 = _mm_add_ps(sum, hi64);
+    auto* f = reinterpret_cast<float*>(&sum64);
+    return f[0] + f[1];
 #endif
 }
 
 inline uint32_t nnz_non_zero_mask(ivec_t v) {
 #if defined(__AVX512F__) && defined(__AVX512BW__)
-    return _mm512_cmpgt_epi32_mask(v, ZERO_IVEC);
+    return _mm512_cmpgt_epi32_mask(v, zero_ivec());
 #else
-    return _mm256_movemask_ps(_mm256_castsi256_ps(_mm256_cmpgt_epi32(v, ZERO_IVEC)));
+    return _mm256_movemask_ps(_mm256_castsi256_ps(_mm256_cmpgt_epi32(v, zero_ivec())));
 #endif
 }
 
+inline ivec_t dpbusd_epi32(ivec_t sum, ivec_t a, ivec_t b) {
 #if defined(__AVX512VNNI__)
-inline ivec_t dpbusd_epi32(ivec_t sum, ivec_t a, ivec_t b) {
     return _mm512_dpbusd_epi32(sum, a, b);
-}
-
-inline ivec_t double_dpbusd_epi32(ivec_t sum, ivec_t a, ivec_t b, ivec_t c, ivec_t d) {
-    return _mm512_dpbusd_epi32(_mm512_dpbusd_epi32(sum, a, b), c, d);
-}
 #else
-inline ivec_t dpbusd_epi32(ivec_t sum, ivec_t a, ivec_t b) {
-    auto product = maddubs_epi16(a, b);
-    auto sum32 = madd_epi16(product, set1_epi16(1));
-    return add_epi32(sum, sum32);
+    return add_epi32(sum, madd_epi16(maddubs_epi16(a, b), set1_epi16(1)));
+#endif
 }
 
 inline ivec_t double_dpbusd_epi32(ivec_t sum, ivec_t a, ivec_t b, ivec_t c, ivec_t d) {
-    auto mul1 = maddubs_epi16(a, b);
-    auto mul2 = maddubs_epi16(c, d);
-    auto sum32 = madd_epi16(add_epi16(mul1, mul2), set1_epi16(1));
-    return add_epi32(sum, sum32);
-}
+#if defined(__AVX512VNNI__)
+    return _mm512_dpbusd_epi32(_mm512_dpbusd_epi32(sum, a, b), c, d);
+#else
+    return add_epi32(sum, madd_epi16(add_epi16(maddubs_epi16(a, b), maddubs_epi16(c, d)), set1_epi16(1)));
 #endif
+}
 
 inline void permute_simd_data(__m128i* vec, int count) {
     count /= (sizeof(__m128i) / sizeof(int16_t));
 
 #if (defined(__AVX512F__) && defined(__AVX512BW__))
-    const int PACKUS_BLOCKS = 8;
-    const int PERMUTATION[PACKUS_BLOCKS] = {0, 2, 4, 6, 1, 3, 5, 7};
+    const int packus_blocks = 8;
+    const int perm[packus_blocks] = {0, 2, 4, 6, 1, 3, 5, 7};
 #else
-    const int PACKUS_BLOCKS = 4;
-    const int PERMUTATION[PACKUS_BLOCKS] = {0, 2, 1, 3};
+    const int packus_blocks = 4;
+    const int perm[packus_blocks] = {0, 2, 1, 3};
 #endif
 
-    __m128i regs[PACKUS_BLOCKS];
-    for (int i = 0; i < count; i += PACKUS_BLOCKS) {
-        for (int j = 0; j < PACKUS_BLOCKS; j++)
+    __m128i regs[packus_blocks];
+    for (int i = 0; i < count; i += packus_blocks) {
+        for (int j = 0; j < packus_blocks; ++j)
             regs[j] = vec[i + j];
-        for (int j = 0; j < PACKUS_BLOCKS; j++)
-            vec[i + j] = regs[PERMUTATION[j]];
+        for (int j = 0; j < packus_blocks; ++j)
+            vec[i + j] = regs[perm[j]];
     }
 }
 
-} // namespace simd
+} // namespace astra::simd

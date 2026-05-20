@@ -1,180 +1,193 @@
 #pragma once
 
+#include <algorithm>
+#include <cstring>
+
 #include "../chess/board.h"
 #include "../chess/movegen.h"
-
+#include "../ndarray.h"
 #include "tune_params.h"
+#include "types.h"
 
-#include "stack.h"
+namespace astra::search {
 
-using namespace chess;
+namespace {
 
-namespace search {
+void update_history(int16_t& v, int bonus) { v += bonus - v * std::abs(bonus) / 16384; }
+void update_correction(int16_t& v, int bonus) { v += bonus - v * std::abs(bonus) / 1024; }
 
-inline int history_bonus(int d) {
-    return std::min<int>(max_hist_bonus, hist_bonus_mult * d + hist_bonus_minus);
-}
-
-inline int history_malus(int d) {
-    return std::min<int>(max_hist_malus, hist_malus_mult * d + hist_malus_minus);
-}
+} // namespace
 
 class QuietHistory {
   public:
-    QuietHistory() {
-        clear();
-    }
+    QuietHistory() { clear(); }
 
-    void clear() {
-        std::memset(data, 0, sizeof(data));
-    }
+    void clear() { data_.fill(0); }
 
-    void update(Color c, Move move, int bonus);
+    void update(Color c, Move move, int bonus) {
+        assert(move);
+        assert(is_valid(c));
+        update_history(data_(c, move.from(), move.to()), bonus);
+    }
 
     int get(Color c, Move move) const {
-        assert(valid_color(c) && move);
-        return data[c][move.from()][move.to()];
+        assert(move);
+        assert(is_valid(c));
+        return data_(c, move.from(), move.to());
     }
 
   private:
-    int16_t data[NUM_COLORS][NUM_SQUARES][NUM_SQUARES];
+    NDArray<int16_t, NUM_COLORS, NUM_SQUARES, NUM_SQUARES> data_;
 };
 
 class NoisyHistory {
   public:
-    NoisyHistory() {
-        clear();
-    }
+    NoisyHistory() { clear(); }
 
-    void clear() {
-        std::memset(data, 0, sizeof(data));
-    }
+    void clear() { data_.fill(0); }
 
-    void update(const Board& board, Move move, int bonus);
+    void update(const Board& board, Move move, int bonus) {
+        assert(move);
+
+        Piece pc = board.piece_at(move.from());
+        PieceType captured = type_of(board.capture_piece(move));
+
+        assert(is_valid(pc));
+        assert(is_valid(captured) || move.is_prom());
+
+        update_history(data_(pc, move.to(), captured), bonus);
+    }
 
     int get(const Board& board, Move move) const {
         assert(move);
 
         Piece pc = board.piece_at(move.from());
-        PieceType captured = piece_type(board.capture_piece(move));
+        PieceType captured = type_of(board.capture_piece(move));
 
-        assert(valid_piece(pc));
+        assert(is_valid(pc));
         assert(captured != KING);
-        assert(valid_piece_type(captured) || move.is_prom());
+        assert(is_valid(captured) || move.is_prom());
 
-        return data[pc][move.to()][captured];
+        return data_(pc, move.to(), captured);
     }
 
   private:
-    int16_t data[NUM_PIECES][NUM_SQUARES][NUM_PIECE_TYPES + 1];
+    NDArray<int16_t, NUM_PIECES, NUM_SQUARES, NUM_PIECE_TYPES + 1> data_;
 };
 
 class PawnHistory {
+    static constexpr size_t SIZE = 8192;
+
   public:
-    PawnHistory() {
-        clear();
-    }
+    PawnHistory() { clear(); }
 
-    void clear() {
-        std::memset(data, 0, sizeof(data));
-    }
+    void clear() { data_.fill(0); }
 
-    void update(const Board& board, Move move, int bonus);
+    void update(const Board& board, Move move, int bonus) {
+        assert(move);
+
+        Piece pc = board.piece_at(move.from());
+        assert(is_valid(pc));
+
+        update_history(data_(idx(board.pawn_hash()), pc, move.to()), bonus);
+    }
 
     int get(const Board& board, Move move) const {
         assert(move);
 
         Piece pc = board.piece_at(move.from());
-        assert(valid_piece(pc));
+        assert(is_valid(pc));
 
-        return data[idx(board.pawn_hash())][pc][move.to()];
+        return data_(idx(board.pawn_hash()), pc, move.to());
     }
 
   private:
-    static constexpr size_t size = 8192;
+    NDArray<int16_t, SIZE, NUM_PIECES, NUM_SQUARES> data_;
 
-  private:
-    int16_t data[size][NUM_PIECES][NUM_SQUARES];
-
-    int idx(U64 hash) const {
-        return hash & (size - 1);
-    }
+    int idx(Hash hash) const { return hash & (SIZE - 1); }
 };
 
 class ContinuationHistory {
   public:
-    ContinuationHistory() {
-        clear();
+    ContinuationHistory() { clear(); }
+
+    void clear() { data_.fill(PieceToContinuation{}); }
+
+    void update(Piece pc, Square to, int bonus, Stack* stack) {
+        assert(is_valid(to));
+        assert(is_valid(pc));
+
+        for (int i : {1, 2, 4, 6})
+            if ((stack - i)->move)
+                update_history((*(stack - i)->cont_hist)(pc, to), bonus);
     }
 
-    void clear() {
-        std::memset(data, 0, sizeof(data));
-    }
-
-    void update(Piece pc, Square to, int bonus, Stack* stack);
-
-    PieceToContinuation* get() {
-        return &data[0][0][NO_PIECE][0];
-    }
-
+    PieceToContinuation* get() { return &data_(0, 0, NO_PIECE, 0); }
     PieceToContinuation* get(bool in_check, bool is_cap, Piece pc, Square to) {
-        assert(valid_piece(pc) && valid_sq(to));
-
-        return &data[in_check][is_cap][pc][to];
+        assert(is_valid(to));
+        assert(is_valid(pc));
+        return &data_(in_check, is_cap, pc, to);
     }
 
   private:
-    int16_t data[2][2][NUM_PIECES + 1][NUM_SQUARES][NUM_PIECES + 1][NUM_SQUARES];
+    NDArray<PieceToContinuation, 2, 2, NUM_PIECES + 1, NUM_SQUARES> data_;
 };
 
 class CorrectionHistories {
+    static constexpr size_t SIZE = 16384;
+
   public:
-    CorrectionHistories() {
-        clear();
-    }
+    CorrectionHistories() { clear(); }
 
     void clear() {
-        std::memset(pawn, 0, sizeof(pawn));
-        std::memset(minor_piece, 0, sizeof(minor_piece));
-        std::memset(w_non_pawn, 0, sizeof(w_non_pawn));
-        std::memset(b_non_pawn, 0, sizeof(b_non_pawn));
+        pawn_.fill(0);
+        minor_piece_.fill(0);
+        w_non_pawn_.fill(0);
+        b_non_pawn_.fill(0);
     }
 
-    void update(const Board& board, int bonus);
+    void update(const Board& board, int bonus) {
+        Color stm = board.side_to_move();
+
+        update_correction(pawn_(stm, idx(board.pawn_hash())), bonus);
+        update_correction(minor_piece_(stm, idx(board.minor_piece_hash())), bonus);
+        update_correction(w_non_pawn_(stm, idx(board.non_pawn_hash(WHITE))), bonus);
+        update_correction(b_non_pawn_(stm, idx(board.non_pawn_hash(BLACK))), bonus);
+    }
 
     int get(const Board& board) const {
         Color stm = board.side_to_move();
-        return p_corr_weight * pawn[stm][idx(board.pawn_hash())]                   //
-               + m_corr_weight * minor_piece[stm][idx(board.minor_piece_hash())]   //
-               + np_corr_weight * w_non_pawn[stm][idx(board.non_pawn_hash(WHITE))] //
-               + np_corr_weight * b_non_pawn[stm][idx(board.non_pawn_hash(BLACK))];
+        return p_corr_weight * pawn_(stm, idx(board.pawn_hash()))                   //
+               + m_corr_weight * minor_piece_(stm, idx(board.minor_piece_hash()))   //
+               + np_corr_weight * w_non_pawn_(stm, idx(board.non_pawn_hash(WHITE))) //
+               + np_corr_weight * b_non_pawn_(stm, idx(board.non_pawn_hash(BLACK)));
     }
 
   private:
-    static constexpr size_t size = 16384;
+    NDArray<int16_t, NUM_COLORS, SIZE> pawn_;
+    NDArray<int16_t, NUM_COLORS, SIZE> minor_piece_;
+    NDArray<int16_t, NUM_COLORS, SIZE> w_non_pawn_;
+    NDArray<int16_t, NUM_COLORS, SIZE> b_non_pawn_;
 
-  private:
-    int16_t pawn[NUM_COLORS][size];
-    int16_t minor_piece[NUM_COLORS][size];
-    int16_t w_non_pawn[NUM_COLORS][size];
-    int16_t b_non_pawn[NUM_COLORS][size];
-
-    int idx(U64 hash) const {
-        return hash & (size - 1);
-    }
+    int idx(Hash hash) const { return hash & (SIZE - 1); }
 };
 
 class ContinuationCorrectionHistory {
   public:
-    ContinuationCorrectionHistory() {
-        clear();
-    }
+    ContinuationCorrectionHistory() { clear(); }
 
-    void clear() {
-        std::memset(data, 0, sizeof(data));
-    }
+    void clear() { data_.fill(PieceToContinuation{}); }
 
-    void update(const Board& board, int bonus, const Stack* stack);
+    void update(const Board& board, int bonus, const Stack* stack) {
+        Move m = (stack - 1)->move;
+        if (!m || !(stack - 2)->move)
+            return;
+
+        Piece pc = board.piece_at(m.to());
+        assert(is_valid(pc));
+
+        update_correction((*(stack - 2)->cont_corr_hist)(pc, m.to()), bonus);
+    }
 
     int get(const Board& board, const Stack* stack) const {
         Move m = (stack - 1)->move;
@@ -182,21 +195,16 @@ class ContinuationCorrectionHistory {
             return 0;
 
         Piece pc = board.piece_at(m.to());
-        assert(valid_piece(pc));
+        assert(is_valid(pc));
 
-        return cont_corr_weight * (*(stack - 2)->cont_corr_hist)[pc][m.to()];
+        return cont_corr_weight * (*(stack - 2)->cont_corr_hist)(pc, m.to());
     }
 
-    PieceToContinuation* get() {
-        return &data[NO_PIECE][0];
-    }
-
-    PieceToContinuation* get(Piece pc, Square to) {
-        return &data[pc][to];
-    }
+    PieceToContinuation* get() { return &data_(NO_PIECE, 0); }
+    PieceToContinuation* get(Piece pc, Square to) { return &data_(pc, to); }
 
   private:
-    int16_t data[NUM_PIECES + 1][NUM_SQUARES][NUM_PIECES + 1][NUM_SQUARES];
+    NDArray<PieceToContinuation, NUM_PIECES + 1, NUM_SQUARES> data_;
 };
 
-} // namespace search
+} // namespace astra::search

@@ -2,16 +2,14 @@
 
 #include "../chess/movegen.h"
 #include "search.h"
-#include "stack.h"
+#include "types.h"
 
-using namespace chess;
-
-namespace search {
+namespace astra::search {
 
 enum SearchType : uint8_t {
-    N_SEARCH,
-    Q_SEARCH,
-    PC_SEARCH,
+    NEGAMAX,
+    QUIESCENCE,
+    PROBCUT,
 };
 
 enum Stage : uint8_t {
@@ -32,28 +30,34 @@ class MovePicker {
         const QuietHistory& quiet_history,
         const PawnHistory& pawn_history,
         const NoisyHistory& noisy_history,
-        const Stack* stack
+        const Stack* stack,
+        int probcut_threshold = 0
     );
 
-    int probcut_threshold = 0;
+    void skip_quiets() { skip_quiets_ = true; }
 
-    Move next(bool skip_quiets = false);
+    Move next();
 
   private:
-    int idx;
-    Stage stage;
+    Stage stage_;
+    bool skip_quiets_ = false;
 
-    const Board& board;
-    const QuietHistory& quiet_history;
-    const PawnHistory& pawn_history;
-    const NoisyHistory& noisy_history;
-    const Stack* stack;
+    const Board& board_;
+    const QuietHistory& quiet_history_;
+    const PawnHistory& pawn_history_;
+    const NoisyHistory& noisy_history_;
+    const Stack* stack_;
+    int probcut_threshold_;
 
-    Move tt_move;
-    MoveList<ScoredMove> ml_main, ml_bad_noisy;
+    int curr_move_idx_ = 0;
+    int bad_noisy_idx_ = 0;
+    int bad_noisy_count_ = 0;
 
+    Move tt_move_;
+    MoveList<ScoredMove> ml_main_;
+    
     void gen_score_noisy();
     void gen_score_quiets();
 };
 
-} // namespace search
+} // namespace astra::search

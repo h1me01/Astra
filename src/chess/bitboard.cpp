@@ -1,82 +1,111 @@
 #include <cassert>
 #include <cstring> // memcpy
 
+#include "../ndarray.h"
 #include "bitboard.h"
 #include "magics.h"
-#include "misc.h"
 
-namespace chess {
+namespace astra {
 
 namespace bitboards {
+
+namespace {
+
+template <int N>
+struct SliderAttackTable {
+    NDArray<Bitboard, NUM_SQUARES> mask{};
+    NDArray<Bitboard, NUM_SQUARES> magics{};
+    NDArray<int, NUM_SQUARES> shifts{};
+    NDArray<Bitboard, NUM_SQUARES, N> attacks{};
+
+    Bitboard attacks_bb(Square sq, Bitboard occ) const {
+        assert(is_valid(sq));
+
+#if defined(__BMI2__)
+        int idx = _pext_u64(occ, mask(sq));
+#else
+        int idx = (occ & mask(sq)) * magics(sq) >> shifts(sq);
+#endif
+        return attacks(sq, idx);
+    }
+};
 
 SliderAttackTable<4096> ROOK_TABLE;
 SliderAttackTable<512> BISHOP_TABLE;
 
-U64 PAWN_ATTACKS[NUM_COLORS][NUM_SQUARES];
-U64 PSEUDO_ATTACKS[NUM_PIECE_TYPES][NUM_SQUARES];
+NDArray<Bitboard, NUM_PIECE_TYPES, NUM_SQUARES> PSEUDO_ATTACKS{};
+NDArray<Bitboard, NUM_SQUARES, NUM_SQUARES> SQUARES_BETWEEN{};
+NDArray<Bitboard, NUM_SQUARES, NUM_SQUARES> LINE{};
 
-U64 SQUARES_BETWEEN[NUM_SQUARES][NUM_SQUARES];
-U64 LINE[NUM_SQUARES][NUM_SQUARES];
+} // namespace
 
-void init_slider_attacks(PieceType pt) {
-    for (Square sq = a1; sq <= h8; ++sq) {
-        U64 edges = ((rank_bb<RANK_1>() | rank_bb<RANK_8>()) & ~rank_bb(sq_rank(sq))) |
-                    ((file_bb<FILE_A>() | file_bb<FILE_H>()) & ~file_bb(sq_file(sq)));
-        U64 mask = bitboards::sliding_attack(pt, sq, 0) & ~edges;
+Bitboard sliding_attack(PieceType pt, Square sq, Bitboard occ) {
+    assert(pt == ROOK || pt == BISHOP);
+    assert(is_valid(sq));
 
-        if (pt == ROOK)
-            ROOK_TABLE.mask[sq] = mask;
-        else
-            BISHOP_TABLE.mask[sq] = mask;
+    Direction root_dir[4] = {NORTH, SOUTH, EAST, WEST};
+    Direction bishop_dir[4] = {NORTH_EAST, SOUTH_EAST, SOUTH_WEST, NORTH_WEST};
 
-        U64 blockers = 0;
+    Bitboard attacks = 0;
+    for (auto d : (pt == ROOK ? root_dir : bishop_dir)) {
+        Square s = sq;
+        while (valid_destination(s, d)) {
+            s += d;
+            attacks |= sq_bb(s);
+            if (occ & sq_bb(s))
+                break;
+        }
+    }
+
+    return attacks;
+}
+
+template <typename Table>
+void init_slider_table(Table& table, PieceType pt) {
+    for (Square sq = SQ_A1; sq < NUM_SQUARES; ++sq) {
+        Bitboard edges = ((rank_bb<RANK_1>() | rank_bb<RANK_8>()) & ~rank_bb(rank_of(sq))) |
+                         ((file_bb<FILE_A>() | file_bb<FILE_H>()) & ~file_bb(file_of(sq)));
+
+        table.mask(sq) = sliding_attack(pt, sq, 0) & ~edges;
+
+        Bitboard blockers = 0;
         do {
 #if defined(__BMI2__)
-            const int idx = _pext_u64(blockers, mask);
+            const int idx = _pext_u64(blockers, table.mask(sq));
 #else
-            U64 magic = (pt == ROOK) ? ROOK_TABLE.magics[sq] : BISHOP_TABLE.magics[sq];
-            int shift = (pt == ROOK) ? ROOK_TABLE.shifts[sq] : BISHOP_TABLE.shifts[sq];
-            const U64 idx = (blockers * magic) >> shift;
+            const int idx = (blockers * table.magics(sq)) >> table.shifts(sq);
 #endif
-
-            U64 attack = bitboards::sliding_attack(pt, sq, blockers);
-            if (pt == ROOK)
-                ROOK_TABLE.attacks[sq][idx] = attack;
-            else
-                BISHOP_TABLE.attacks[sq][idx] = attack;
-
-            blockers = (blockers - mask) & mask;
+            table.attacks(sq, idx) = sliding_attack(pt, sq, blockers);
+            blockers = (blockers - table.mask(sq)) & table.mask(sq);
         } while (blockers);
     }
 }
 
 void init() {
-    std::memcpy(ROOK_TABLE.magics, magics::ROOK_MAGICS, sizeof(magics::ROOK_MAGICS));
-    std::memcpy(ROOK_TABLE.shifts, magics::ROOK_SHIFTS, sizeof(magics::ROOK_SHIFTS));
-    std::memcpy(BISHOP_TABLE.magics, magics::BISHOP_MAGICS, sizeof(magics::BISHOP_MAGICS));
-    std::memcpy(BISHOP_TABLE.shifts, magics::BISHOP_SHIFTS, sizeof(magics::BISHOP_SHIFTS));
+    ROOK_TABLE.magics = magics::ROOK_MAGICS;
+    ROOK_TABLE.shifts = magics::ROOK_SHIFTS;
+    BISHOP_TABLE.magics = magics::BISHOP_MAGICS;
+    BISHOP_TABLE.shifts = magics::BISHOP_SHIFTS;
 
-    init_slider_attacks(ROOK);
-    init_slider_attacks(BISHOP);
+    init_slider_table(ROOK_TABLE, ROOK);
+    init_slider_table(BISHOP_TABLE, BISHOP);
 
-    for (Square sq = a1; sq <= h8; ++sq) {
-        PAWN_ATTACKS[WHITE][sq] = pawn_attacks_bb<WHITE>(sq);
-        PAWN_ATTACKS[BLACK][sq] = pawn_attacks_bb<BLACK>(sq);
-        PSEUDO_ATTACKS[KNIGHT][sq] = knight_attacks_bb(sq);
-        PSEUDO_ATTACKS[BISHOP][sq] = bishop_attacks_bb(sq, 0);
-        PSEUDO_ATTACKS[ROOK][sq] = rook_attacks_bb(sq, 0);
-        PSEUDO_ATTACKS[QUEEN][sq] = PSEUDO_ATTACKS[ROOK][sq] | PSEUDO_ATTACKS[BISHOP][sq];
-        PSEUDO_ATTACKS[KING][sq] = king_attacks_bb(sq);
+    for (Square sq = SQ_A1; sq < NUM_SQUARES; ++sq) {
+        PSEUDO_ATTACKS(KNIGHT, sq) = knight_attacks_bb(sq);
+        PSEUDO_ATTACKS(BISHOP, sq) = bishop_attacks_bb(sq, 0);
+        PSEUDO_ATTACKS(ROOK, sq) = rook_attacks_bb(sq, 0);
+        PSEUDO_ATTACKS(QUEEN, sq) = PSEUDO_ATTACKS(ROOK, sq) | PSEUDO_ATTACKS(BISHOP, sq);
+        PSEUDO_ATTACKS(KING, sq) = king_attacks_bb(sq);
     }
 
-    for (Square sq1 = a1; sq1 <= h8; ++sq1) {
+    for (Square sq1 = SQ_A1; sq1 < NUM_SQUARES; ++sq1) {
         for (PieceType pt : {BISHOP, ROOK}) {
-            for (Square sq2 = a1; sq2 <= h8; ++sq2) {
-                if (PSEUDO_ATTACKS[pt][sq1] & sq_bb(sq2)) {
-                    LINE[sq1][sq2] = (attacks_bb(pt, sq1) & attacks_bb(pt, sq2)) | sq_bb(sq1) | sq_bb(sq2);
-                    SQUARES_BETWEEN[sq1][sq2] = attacks_bb(pt, sq1, sq_bb(sq2)) & attacks_bb(pt, sq2, sq_bb(sq1));
+            for (Square sq2 = SQ_A1; sq2 < NUM_SQUARES; ++sq2) {
+                if (PSEUDO_ATTACKS(pt, sq1) & sq_bb(sq2)) {
+                    LINE(sq1, sq2) = (attacks_bb(pt, sq1) & attacks_bb(pt, sq2)) | sq_bb(sq1) | sq_bb(sq2);
+                    SQUARES_BETWEEN(sq1, sq2) = attacks_bb(pt, sq1, sq_bb(sq2)) & attacks_bb(pt, sq2, sq_bb(sq1));
                 }
-                SQUARES_BETWEEN[sq1][sq1] |= sq_bb(sq2);
+                SQUARES_BETWEEN(sq1, sq1) |= sq_bb(sq2);
             }
         }
     }
@@ -84,4 +113,47 @@ void init() {
 
 } // namespace bitboards
 
-} // namespace chess
+Bitboard between_bb(Square sq1, Square sq2) {
+    assert(is_valid(sq1));
+    assert(is_valid(sq2));
+    return bitboards::SQUARES_BETWEEN(sq1, sq2);
+}
+
+Bitboard line(Square sq1, Square sq2) {
+    assert(is_valid(sq1));
+    assert(is_valid(sq2));
+    return bitboards::LINE(sq1, sq2);
+}
+
+Bitboard rook_attacks_bb(Square sq, const Bitboard occ) {
+    assert(is_valid(sq));
+    return bitboards::ROOK_TABLE.attacks_bb(sq, occ);
+}
+
+Bitboard bishop_attacks_bb(Square sq, const Bitboard occ) {
+    assert(is_valid(sq));
+    return bitboards::BISHOP_TABLE.attacks_bb(sq, occ);
+}
+
+template <PieceType pt>
+Bitboard attacks_bb(Square sq) {
+    assert(pt != PAWN);
+    assert(is_valid(sq));
+    assert(is_valid(pt));
+    return bitboards::PSEUDO_ATTACKS(pt, sq);
+}
+
+template Bitboard attacks_bb<KNIGHT>(Square sq);
+template Bitboard attacks_bb<BISHOP>(Square sq);
+template Bitboard attacks_bb<ROOK>(Square sq);
+template Bitboard attacks_bb<QUEEN>(Square sq);
+template Bitboard attacks_bb<KING>(Square sq);
+
+Bitboard attacks_bb(PieceType pt, Square sq) {
+    assert(pt != PAWN);
+    assert(is_valid(sq));
+    assert(is_valid(pt));
+    return bitboards::PSEUDO_ATTACKS(pt, sq);
+}
+
+} // namespace astra

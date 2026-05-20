@@ -2,30 +2,14 @@
 
 #include <cassert>
 #include <cstdint>
-#include <iostream>
-#include <string>
+#include <string_view>
 
-namespace chess {
+namespace astra {
 
-using U64 = uint64_t;
-using Score = int;
+using Bitboard = uint64_t;
+using Hash = uint64_t;
 
-const std::string PIECE_STR = "PNBRQKpnbrqk.";
-const std::string STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-
-constexpr int MAX_PLY = 128;
-constexpr int MAX_MOVES = 128;
-
-constexpr Score SCORE_DRAW = 0;
-constexpr Score SCORE_NONE = 32002;
-constexpr Score SCORE_INFINITE = 32001;
-
-constexpr Score SCORE_MATE = 32000;
-constexpr Score SCORE_MATE_IN_MAX_PLY = SCORE_MATE - MAX_PLY;
-
-constexpr Score SCORE_TB = SCORE_MATE_IN_MAX_PLY - 1;
-constexpr Score SCORE_TB_WIN_IN_MAX_PLY = SCORE_TB - MAX_PLY;
-constexpr Score SCORE_TB_LOSS_IN_MAX_PLY = -SCORE_TB_WIN_IN_MAX_PLY;
+constexpr std::string_view PIECE_STR = "PNBRQKpnbrqk.";
 
 constexpr int NUM_COLORS = 2;
 enum Color : uint8_t {
@@ -55,33 +39,35 @@ enum PieceType : uint8_t {
     NO_PIECE_TYPE,
 };
 
-// clang-format off
 constexpr int NUM_PIECES = 12;
-enum Piece: uint8_t {
-    WHITE_PAWN, WHITE_KNIGHT, WHITE_BISHOP, WHITE_ROOK, WHITE_QUEEN, WHITE_KING,
-    BLACK_PAWN, BLACK_KNIGHT, BLACK_BISHOP, BLACK_ROOK, BLACK_QUEEN, BLACK_KING,
-    NO_PIECE
+enum Piece : uint8_t {
+    WHITE_PAWN,
+    WHITE_KNIGHT,
+    WHITE_BISHOP,
+    WHITE_ROOK,
+    WHITE_QUEEN,
+    WHITE_KING,
+    BLACK_PAWN,
+    BLACK_KNIGHT,
+    BLACK_BISHOP,
+    BLACK_ROOK,
+    BLACK_QUEEN,
+    BLACK_KING,
+    NO_PIECE,
 };
 
-constexpr PieceType PIECE_TO_PIECE_TYPE[] = {
-    PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING,         
-    PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING,         
-    NO_PIECE_TYPE 
-};
-// clang-format on
-
-// clang-format off
 constexpr int NUM_SQUARES = 64;
+// clang-format off
 enum Square: uint8_t
 {
-    a1, b1, c1, d1, e1, f1, g1, h1,
-    a2, b2, c2, d2, e2, f2, g2, h2,
-    a3, b3, c3, d3, e3, f3, g3, h3,
-    a4, b4, c4, d4, e4, f4, g4, h4,
-    a5, b5, c5, d5, e5, f5, g5, h5,
-    a6, b6, c6, d6, e6, f6, g6, h6,
-    a7, b7, c7, d7, e7, f7, g7, h7,
-    a8, b8, c8, d8, e8, f8, g8, h8,
+    SQ_A1, SQ_B1, SQ_C1, SQ_D1, SQ_E1, SQ_F1, SQ_G1, SQ_H1,
+    SQ_A2, SQ_B2, SQ_C2, SQ_D2, SQ_E2, SQ_F2, SQ_G2, SQ_H2,
+    SQ_A3, SQ_B3, SQ_C3, SQ_D3, SQ_E3, SQ_F3, SQ_G3, SQ_H3,
+    SQ_A4, SQ_B4, SQ_C4, SQ_D4, SQ_E4, SQ_F4, SQ_G4, SQ_H4,
+    SQ_A5, SQ_B5, SQ_C5, SQ_D5, SQ_E5, SQ_F5, SQ_G5, SQ_H5,
+    SQ_A6, SQ_B6, SQ_C6, SQ_D6, SQ_E6, SQ_F6, SQ_G6, SQ_H6,
+    SQ_A7, SQ_B7, SQ_C7, SQ_D7, SQ_E7, SQ_F7, SQ_G7, SQ_H7,
+    SQ_A8, SQ_B8, SQ_C8, SQ_D8, SQ_E8, SQ_F8, SQ_G8, SQ_H8,
     NO_SQUARE
 };
 // clang-format on
@@ -108,95 +94,59 @@ enum Rank : uint8_t {
     RANK_8,
 };
 
-// clang-format off
 enum MoveType : uint8_t {
     QUIET,
     CAPTURE,
     CASTLING,
     EN_PASSANT,
-    PQ_KNIGHT, PQ_BISHOP, PQ_ROOK, PQ_QUEEN,
-    PC_KNIGHT, PC_BISHOP, PC_ROOK, PC_QUEEN,
+    PQ_KNIGHT,
+    PQ_BISHOP,
+    PQ_ROOK,
+    PQ_QUEEN,
+    PC_KNIGHT,
+    PC_BISHOP,
+    PC_ROOK,
+    PC_QUEEN,
 };
-// clang-format on
 
 class Move {
   public:
-    // default no move (a1a1)
     Move()
-        : data(0) {}
+        : data_(0) {}
 
     explicit constexpr Move(uint16_t m)
-        : data(m) {}
+        : data_(m) {}
 
-    Move(const Move& other)
-        : data(other.data) {}
+    Move(Square from, Square to, MoveType mt)
+        : data_((mt << 12) | (to << 6) | from) {}
 
-    Move(Square from, Square to, MoveType mt) //
-        : data((mt << 12) | (to << 6) | from) {}
+    Square from() const { return static_cast<Square>(data_ & 0x3f); }
+    Square to() const { return static_cast<Square>((data_ >> 6) & 0x3f); }
 
-    Square from() const {
-        return Square(data & 0x3f);
-    }
+    MoveType type() const { return static_cast<MoveType>(data_ >> 12); }
 
-    Square to() const {
-        return Square((data >> 6) & 0x3f);
-    }
+    static constexpr Move null() { return Move(65); }
+    static constexpr Move none() { return Move(0); }
 
-    MoveType type() const {
-        return MoveType(data >> 12);
-    }
-
-    Move& operator=(const Move move) {
-        if (this != &move)
-            data = move.data;
-        return *this;
-    }
-
-    static constexpr Move null() {
-        return Move(65);
-    }
-
-    static constexpr Move none() {
-        return Move(0);
-    }
-
-    bool is_null() const {
-        return *this == Move::null();
-    }
-
-    bool is_none() const {
-        return *this == Move::none();
-    }
-
-    bool is_valid() const {
-        return !is_null() && !is_none();
-    }
+    bool is_null() const { return *this == Move::null(); }
+    bool is_none() const { return *this == Move::none(); }
+    bool is_valid() const { return !is_null() && !is_none(); }
 
     bool is_cap() const {
         assert(is_valid());
         return type() == CAPTURE || is_ep() || type() >= PC_KNIGHT;
     }
 
-    bool is_castling() const {
-        return type() == CASTLING;
-    }
-
-    bool is_ep() const {
-        return type() == EN_PASSANT;
-    }
+    bool is_castling() const { return type() == CASTLING; }
+    bool is_ep() const { return type() == EN_PASSANT; }
 
     bool is_prom() const {
         assert(is_valid());
         return type() >= PQ_KNIGHT;
     }
 
-    bool is_noisy() const {
-        return is_cap() || type() == PQ_QUEEN;
-    }
-
-    bool is_quiet() const {
-        return !is_noisy();
-    }
+    bool is_noisy() const { return is_cap() || type() == PQ_QUEEN; }
+    bool is_quiet() const { return !is_noisy(); }
 
     PieceType prom_type() const {
         switch (type()) {
@@ -217,67 +167,113 @@ class Move {
         }
     }
 
-    uint16_t raw() const {
-        return data;
-    }
+    uint16_t raw() const { return data_; }
 
-    bool operator==(const Move move) const {
-        return data == move.data;
-    }
+    bool operator==(const Move move) const { return data_ == move.data_; }
+    bool operator!=(const Move move) const { return data_ != move.data_; }
+    bool operator!() const { return !is_valid(); }
 
-    bool operator!=(const Move move) const {
-        return data != move.data;
-    }
-
-    bool operator!() const {
-        return !is_valid();
-    }
-
-    explicit operator bool() const {
-        return is_valid();
-    }
+    explicit operator bool() const { return is_valid(); }
 
   private:
     // first 6 bits represent the from square
     // next 6 bits represent the to square
     // last 4 bits represent the move type
-    uint16_t data;
+    uint16_t data_;
 };
 
 struct ScoredMove : public Move {
-    ScoredMove()
-        : Move(),
-          score(0) {}
+    int score = 0;
 
-    ScoredMove(const Move move)
+    ScoredMove() = default;
+    ScoredMove(Move move, int score = 0)
         : Move(move),
-          score(0) {}
-
-    ScoredMove(const ScoredMove& other)
-        : Move(other),
-          score(other.score) {}
-
-    ScoredMove& operator=(const ScoredMove& other) {
-        if (this != &other) {
-            Move::operator=(other);
-            score = other.score;
-        }
-        return *this;
-    }
-
-    ScoredMove(ScoredMove&& other) noexcept
-        : Move(std::move(other)),
-          score(other.score) {}
-
-    ScoredMove& operator=(ScoredMove&& other) noexcept {
-        if (this != &other) {
-            Move::operator=(std::move(other));
-            score = other.score;
-        }
-        return *this;
-    }
-
-    int score;
+          score(score) {}
 };
 
-} // namespace chess
+constexpr bool is_valid(Color c) { return c == WHITE || c == BLACK; }
+constexpr bool is_valid(Square sq) { return sq >= SQ_A1 && sq <= SQ_H8; }
+constexpr bool is_valid(PieceType pt) { return pt >= PAWN && pt <= KING; }
+constexpr bool is_valid(Piece pc) { return pc >= WHITE_PAWN && pc <= BLACK_KING; }
+constexpr bool is_valid(File f) { return f >= FILE_A && f <= FILE_H; }
+constexpr bool is_valid(Rank r) { return r >= RANK_1 && r <= RANK_8; }
+
+constexpr Color operator~(Color c) {
+    assert(is_valid(c));
+    return static_cast<Color>(c ^ 1);
+}
+
+constexpr Square make_square(Rank r, File f) {
+    assert(is_valid(r));
+    assert(is_valid(f));
+    return static_cast<Square>((r << 3) + f);
+}
+
+constexpr Piece make_piece(Color c, PieceType pt) {
+    assert(is_valid(c));
+    assert(is_valid(pt));
+    return static_cast<Piece>(pt + 6 * c);
+}
+
+constexpr PieceType type_of(Piece pc) {
+    assert(is_valid(pc) || pc == NO_PIECE);
+    return pc == NO_PIECE ? NO_PIECE_TYPE : static_cast<PieceType>(pc % 6);
+}
+
+constexpr Color color_of(Piece pc) {
+    assert(is_valid(pc));
+    return static_cast<Color>(pc / 6);
+}
+
+constexpr Square& operator++(Square& sq) { return sq = static_cast<Square>(static_cast<int>(sq) + 1); }
+
+constexpr Square operator+(Square sq, Direction d) {
+    Square _sq = static_cast<Square>(static_cast<int>(sq) + static_cast<int>(d));
+    assert(is_valid(_sq));
+    return _sq;
+}
+
+constexpr Square operator-(Square sq, Direction d) {
+    Square _sq = static_cast<Square>(static_cast<int>(sq) - static_cast<int>(d));
+    assert(is_valid(_sq));
+    return _sq;
+}
+
+constexpr Square& operator+=(Square& sq, Direction d) {
+    sq = sq + d;
+    return sq;
+}
+
+constexpr Square& operator-=(Square& sq, Direction d) {
+    sq = sq - d;
+    return sq;
+}
+
+constexpr Square ep_sq(Square sq) {
+    assert(is_valid(sq));
+    return static_cast<Square>(sq ^ 8);
+}
+
+constexpr Rank rank_of(Square sq) {
+    assert(is_valid(sq));
+    return static_cast<Rank>(sq >> 3);
+}
+
+constexpr File file_of(Square sq) {
+    assert(is_valid(sq));
+    return static_cast<File>(sq & 0b111);
+}
+
+constexpr Square relative_sq(Color c, Square sq) {
+    assert(is_valid(sq));
+    assert(is_valid(c));
+    return c == WHITE ? sq : static_cast<Square>(sq ^ 56);
+}
+
+constexpr Rank relative_rank(Color c, Rank r) {
+    assert(is_valid(r));
+    assert(is_valid(c));
+    return c == WHITE ? r : static_cast<Rank>(RANK_8 - r);
+}
+
+} // namespace astra

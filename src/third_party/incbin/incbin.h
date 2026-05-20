@@ -279,12 +279,15 @@
 #define INCBIN_EXTERN(...) INCBIN_CONCATENATE(INCBIN_EXTERN_, INCBIN_VA_ARGC(__VA_ARGS__))(__VA_ARGS__)
 #define INCBIN_EXTERN_1(NAME, ...) INCBIN_EXTERN_2(unsigned char, NAME)
 #define INCBIN_EXTERN_2(TYPE, NAME)                                                                                    \
-    INCBIN_EXTERNAL const INCBIN_ALIGN TYPE INCBIN_CONCATENATE(INCBIN_CONCATENATE(INCBIN_PREFIX, NAME),                \
-                                                               INCBIN_STYLE_IDENT(DATA))[];                            \
-    INCBIN_EXTERNAL const INCBIN_ALIGN TYPE *const INCBIN_CONCATENATE(INCBIN_CONCATENATE(INCBIN_PREFIX, NAME),         \
-                                                                      INCBIN_STYLE_IDENT(END));                        \
-    INCBIN_EXTERNAL const unsigned int INCBIN_CONCATENATE(INCBIN_CONCATENATE(INCBIN_PREFIX, NAME),                     \
-                                                          INCBIN_STYLE_IDENT(SIZE))
+    INCBIN_EXTERNAL const INCBIN_ALIGN TYPE INCBIN_CONCATENATE(                                                        \
+        INCBIN_CONCATENATE(INCBIN_PREFIX, NAME), INCBIN_STYLE_IDENT(DATA)                                              \
+    )[];                                                                                                               \
+    INCBIN_EXTERNAL const INCBIN_ALIGN TYPE* const INCBIN_CONCATENATE(                                                 \
+        INCBIN_CONCATENATE(INCBIN_PREFIX, NAME), INCBIN_STYLE_IDENT(END)                                               \
+    );                                                                                                                 \
+    INCBIN_EXTERNAL const unsigned int INCBIN_CONCATENATE(                                                             \
+        INCBIN_CONCATENATE(INCBIN_PREFIX, NAME), INCBIN_STYLE_IDENT(SIZE)                                              \
+    )
 
 /**
  * @brief Externally reference textual data included in another translation unit.
@@ -360,17 +363,16 @@
 #endif
 #define INCBIN_2(NAME, FILENAME) INCBIN_3(unsigned char, NAME, FILENAME)
 #define INCBIN_3(TYPE, NAME, FILENAME) INCBIN_COMMON(TYPE, NAME, FILENAME, /* No terminator for binary data */)
-#define INCBIN_COMMON(TYPE, NAME, FILENAME, TERMINATOR)                                                                      \
-    __asm__(                                                                                                                 \
-        INCBIN_SECTION INCBIN_GLOBAL_LABELS(NAME, DATA)                                                                      \
-            INCBIN_ALIGN_HOST INCBIN_MANGLE INCBIN_STRINGIZE(INCBIN_PREFIX) #NAME INCBIN_STYLE_STRING(                       \
-                DATA) ":\n" INCBIN_MACRO " \"" FILENAME "\"\n" TERMINATOR INCBIN_GLOBAL_LABELS(NAME, END)                    \
-                INCBIN_ALIGN_BYTE INCBIN_MANGLE INCBIN_STRINGIZE(INCBIN_PREFIX) #NAME INCBIN_STYLE_STRING(                   \
-                    END) ":\n" INCBIN_BYTE "1\n" INCBIN_GLOBAL_LABELS(NAME, SIZE)                                            \
-                    INCBIN_ALIGN_HOST INCBIN_MANGLE INCBIN_STRINGIZE(INCBIN_PREFIX) #NAME INCBIN_STYLE_STRING(               \
-                        SIZE) ":\n" INCBIN_INT INCBIN_MANGLE                                                                 \
-                        INCBIN_STRINGIZE(INCBIN_PREFIX) #NAME INCBIN_STYLE_STRING(END) " - " INCBIN_MANGLE INCBIN_STRINGIZE( \
-                            INCBIN_PREFIX) #NAME INCBIN_STYLE_STRING(DATA) "\n" INCBIN_ALIGN_HOST ".text\n");                \
+#define INCBIN_COMMON(TYPE, NAME, FILENAME, TERMINATOR)                                                                \
+    __asm__(INCBIN_SECTION INCBIN_GLOBAL_LABELS(NAME, DATA)                                                            \
+                INCBIN_ALIGN_HOST INCBIN_MANGLE INCBIN_STRINGIZE(INCBIN_PREFIX) #NAME INCBIN_STYLE_STRING(DATA         \
+                ) ":\n" INCBIN_MACRO " \"" FILENAME "\"\n" TERMINATOR INCBIN_GLOBAL_LABELS(NAME, END)                  \
+                    INCBIN_ALIGN_BYTE INCBIN_MANGLE INCBIN_STRINGIZE(INCBIN_PREFIX) #NAME INCBIN_STYLE_STRING(END      \
+                    ) ":\n" INCBIN_BYTE "1\n" INCBIN_GLOBAL_LABELS(NAME, SIZE)                                         \
+                        INCBIN_ALIGN_HOST INCBIN_MANGLE INCBIN_STRINGIZE(INCBIN_PREFIX) #NAME INCBIN_STYLE_STRING(SIZE \
+                        ) ":\n" INCBIN_INT INCBIN_MANGLE INCBIN_STRINGIZE(INCBIN_PREFIX) #NAME INCBIN_STYLE_STRING(END \
+                        ) " - " INCBIN_MANGLE INCBIN_STRINGIZE(INCBIN_PREFIX) #NAME INCBIN_STYLE_STRING(DATA           \
+                        ) "\n" INCBIN_ALIGN_HOST ".text\n");                                                           \
     INCBIN_EXTERN(TYPE, NAME)
 #endif
 

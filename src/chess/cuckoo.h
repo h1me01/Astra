@@ -1,20 +1,15 @@
 #pragma once
 
-#include "misc.h"
+#include "types.h"
 
-namespace chess::cuckoo {
+namespace astra::cuckoo {
 
-inline int cuckoo_h1(U64 hash) {
-    return hash & 0x1fff;
-}
+inline int h1(Hash hash) { return hash & 0x1fff; }
+inline int h2(Hash hash) { return (hash >> 16) & 0x1fff; }
 
-inline int cuckoo_h2(U64 hash) {
-    return (hash >> 16) & 0x1fff;
-}
-
-U64 hash(const int idx);
+Hash hash(const int idx);
 Move move(const int idx);
 
 void init();
 
-} // namespace chess::cuckoo
+} // namespace astra::cuckoo

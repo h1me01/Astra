@@ -1,214 +1,154 @@
 #pragma once
 
+#include <cassert>
+#include <cstdlib>
+
 #if defined(__BMI2__)
 #include <immintrin.h>
 #endif
 
-#include "misc.h"
+#include "types.h"
 
-namespace chess {
+namespace astra {
 
-constexpr U64 sq_bb(Square sq) {
+constexpr Bitboard sq_bb(Square sq) {
+    assert(is_valid(sq));
     return (1ULL << sq);
 }
 
 template <File f>
-constexpr U64 file_bb() {
-    assert(valid_file(f));
+constexpr Bitboard file_bb() {
+    assert(is_valid(f));
     return 0x0101010101010101ULL << f;
 }
 
-constexpr U64 file_bb(File f) {
-    assert(valid_file(f));
+constexpr Bitboard file_bb(File f) {
+    assert(is_valid(f));
     return 0x0101010101010101ULL << f;
 }
 
 template <Rank r>
-constexpr U64 rank_bb() {
-    assert(valid_rank(r));
+constexpr Bitboard rank_bb() {
+    assert(is_valid(r));
     return 0xFFULL << (r * 8);
 }
 
-constexpr U64 rank_bb(Rank r) {
-    assert(valid_rank(r));
+constexpr Bitboard rank_bb(Rank r) {
+    assert(is_valid(r));
     return 0xFFULL << (r * 8);
 }
 
-constexpr U64 ks_castle_path_bb(Color c) {
-    assert(valid_color(c));
-    return (c == WHITE) ? 0x60ULL : 0x6000000000000000ULL;
-}
-
-constexpr U64 qs_castle_path_bb(Color c) {
-    assert(valid_color(c));
-    return (c == WHITE) ? 0x0EULL : 0x0E00000000000000ULL;
-}
-
-constexpr U64 oo_bb(Color c) {
-    assert(valid_color(c));
+constexpr Bitboard kingside_castling_bb(Color c) {
+    assert(is_valid(c));
     return (c == WHITE) ? 0x90ULL : 0x9000000000000000ULL;
 }
 
-constexpr U64 ooo_bb(Color c) {
-    assert(valid_color(c));
+constexpr Bitboard queenside_castling_bb(Color c) {
+    assert(is_valid(c));
     return (c == WHITE) ? 0x11ULL : 0x1100000000000000ULL;
 }
 
-inline Square lsb(const U64 b) {
-    return Square(__builtin_ctzll(b));
+constexpr Bitboard kingside_castling_path_bb(Color c) {
+    assert(is_valid(c));
+    return (c == WHITE) ? 0x60ULL : 0x6000000000000000ULL;
 }
 
-inline int pop_count(U64 b) {
-    return __builtin_popcountll(b);
+constexpr Bitboard queenside_castling_path_bb(Color c) {
+    assert(is_valid(c));
+    return (c == WHITE) ? 0x0EULL : 0x0E00000000000000ULL;
 }
 
-inline Square pop_lsb(U64& b) {
+inline Square lsb(const Bitboard b) { return static_cast<Square>(__builtin_ctzll(b)); }
+
+inline int pop_count(Bitboard b) { return __builtin_popcountll(b); }
+
+inline Square pop_lsb(Bitboard& b) {
     int n = lsb(b);
     b &= b - 1;
-    return Square(n);
+    return static_cast<Square>(n);
 }
 
 template <Direction d>
-constexpr U64 shift(const U64 b) {
+constexpr Bitboard shift(const Bitboard b) {
     switch (d) {
-        // clang-format off
-        case NORTH:      return b << 8;
-        case SOUTH:      return b >> 8;
-        case EAST:       return (b & ~file_bb(FILE_H)) << 1;
-        case WEST:       return (b & ~file_bb(FILE_A)) >> 1;
-        case NORTH_EAST: return (b & ~file_bb(FILE_H)) << 9;
-        case NORTH_WEST: return (b & ~file_bb(FILE_A)) << 7;
-        case SOUTH_EAST: return (b & ~file_bb(FILE_H)) >> 7;
-        case SOUTH_WEST: return (b & ~file_bb(FILE_A)) >> 9;
-        default:         return 0;
-        // clang-format on
+    case NORTH:
+        return b << 8;
+    case SOUTH:
+        return b >> 8;
+    case EAST:
+        return (b & ~file_bb<FILE_H>()) << 1;
+    case WEST:
+        return (b & ~file_bb<FILE_A>()) >> 1;
+    case NORTH_EAST:
+        return (b & ~file_bb<FILE_H>()) << 9;
+    case NORTH_WEST:
+        return (b & ~file_bb<FILE_A>()) << 7;
+    case SOUTH_EAST:
+        return (b & ~file_bb<FILE_H>()) >> 7;
+    case SOUTH_WEST:
+        return (b & ~file_bb<FILE_A>()) >> 9;
+    default:
+        return 0;
     }
 }
+
+constexpr Bitboard valid_destination(Square sq, int step) {
+    Square to = static_cast<Square>(static_cast<int>(sq) + step);
+    return is_valid(to) && std::abs(file_of(sq) - file_of(to)) <= 2 ? sq_bb(to) : 0;
+};
 
 namespace bitboards {
-
-template <int N>
-struct SliderAttackTable {
-    U64 mask[NUM_SQUARES]{};
-    U64 magics[NUM_SQUARES]{};
-    int shifts[NUM_SQUARES]{};
-    U64 attacks[NUM_SQUARES][N]{};
-
-    U64 attacks_bb(Square sq, U64 occ) const {
-        assert(valid_sq(sq));
-
-#if defined(__BMI2__)
-        int idx = _pext_u64(occ, mask[sq]);
-#else
-        int idx = (occ & mask[sq]) * magics[sq] >> shifts[sq];
-#endif
-
-        return attacks[sq][idx];
-    }
-};
-
-extern SliderAttackTable<4096> ROOK_TABLE;
-extern SliderAttackTable<512> BISHOP_TABLE;
-
-extern U64 PAWN_ATTACKS[NUM_COLORS][NUM_SQUARES];
-// doesnt include pawn attacks
-extern U64 PSEUDO_ATTACKS[NUM_PIECE_TYPES][NUM_SQUARES];
-
-extern U64 SQUARES_BETWEEN[NUM_SQUARES][NUM_SQUARES];
-extern U64 LINE[NUM_SQUARES][NUM_SQUARES];
-
-constexpr U64 valid_destination(Square sq, int step) {
-    Square to = Square(int(sq) + step);
-    return valid_sq(to) && std::abs(sq_file(sq) - sq_file(to)) <= 2 ? sq_bb(to) : 0;
-};
-
-constexpr U64 sliding_attack(PieceType pt, Square sq, U64 occ) {
-    assert(pt == ROOK || pt == BISHOP);
-    assert(valid_sq(sq));
-
-    Direction root_dir[4] = {NORTH, SOUTH, EAST, WEST};
-    Direction bishop_dir[4] = {NORTH_EAST, SOUTH_EAST, SOUTH_WEST, NORTH_WEST};
-
-    U64 attacks = 0;
-    for (auto d : (pt == ROOK ? root_dir : bishop_dir)) {
-        Square s = sq;
-        while (valid_destination(s, d)) {
-            s += d;
-            attacks |= sq_bb(s);
-            if (occ & sq_bb(s))
-                break;
-        }
-    }
-
-    return attacks;
-}
-
 void init();
-
 } // namespace bitboards
 
-inline U64 between_bb(Square sq1, Square sq2) {
-    assert(valid_sq(sq1) && valid_sq(sq2));
-    return bitboards::SQUARES_BETWEEN[sq1][sq2];
-}
-
-inline U64 line(Square sq1, Square sq2) {
-    assert(valid_sq(sq1) && valid_sq(sq2));
-    return bitboards::LINE[sq1][sq2];
-}
+Bitboard between_bb(Square sq1, Square sq2);
+Bitboard line(Square sq1, Square sq2);
 
 template <Color c>
-constexpr U64 pawn_attacks_bb(Square sq) {
-    assert(valid_color(c) && valid_sq(sq));
+constexpr Bitboard pawn_attacks_bb(Bitboard b) {
+    assert(is_valid(c));
 
-    U64 b = sq_bb(sq);
     return (c == WHITE) ? shift<NORTH_WEST>(b) | shift<NORTH_EAST>(b) //
                         : shift<SOUTH_WEST>(b) | shift<SOUTH_EAST>(b);
 }
 
-constexpr U64 knight_attacks_bb(Square sq) {
-    U64 b = 0;
+template <Color c>
+constexpr Bitboard pawn_attacks_bb(Square sq) {
+    assert(is_valid(sq));
+    assert(is_valid(c));
+    return pawn_attacks_bb<c>(sq_bb(sq));
+}
+
+constexpr Bitboard pawn_attacks_bb(Color c, Square sq) {
+    return (c == WHITE) ? pawn_attacks_bb<WHITE>(sq) : pawn_attacks_bb<BLACK>(sq);
+}
+
+constexpr Bitboard knight_attacks_bb(Square sq) {
+    Bitboard b = 0;
     for (int step : {-17, -15, -10, -6, 6, 10, 15, 17})
-        b |= bitboards::valid_destination(sq, step);
+        b |= valid_destination(sq, step);
     return b;
 }
 
-inline U64 rook_attacks_bb(Square sq, const U64 occ) {
-    assert(valid_sq(sq));
-    return bitboards::ROOK_TABLE.attacks_bb(sq, occ);
-}
-
-inline U64 bishop_attacks_bb(Square sq, const U64 occ) {
-    assert(valid_sq(sq));
-    return bitboards::BISHOP_TABLE.attacks_bb(sq, occ);
-}
-
-constexpr U64 king_attacks_bb(Square sq) {
-    U64 b = 0;
+constexpr Bitboard king_attacks_bb(Square sq) {
+    Bitboard b = 0;
     for (int step : {-9, -8, -7, -1, 1, 7, 8, 9})
-        b |= bitboards::valid_destination(sq, step);
+        b |= valid_destination(sq, step);
     return b;
 }
 
-inline U64 attacks_bb(Color c, Square sq) {
-    assert(valid_color(c) && valid_sq(sq));
-    return bitboards::PAWN_ATTACKS[c][sq];
-}
+Bitboard rook_attacks_bb(Square sq, const Bitboard occ);
+Bitboard bishop_attacks_bb(Square sq, const Bitboard occ);
 
 template <PieceType pt>
-U64 attacks_bb(Square sq) {
-    assert(valid_piece_type(pt) && valid_sq(sq) && pt != PAWN);
-    return bitboards::PSEUDO_ATTACKS[pt][sq];
-}
-
-inline U64 attacks_bb(PieceType pt, Square sq) {
-    assert(valid_piece_type(pt) && valid_sq(sq) && pt != PAWN);
-    return bitboards::PSEUDO_ATTACKS[pt][sq];
-}
+Bitboard attacks_bb(Square sq);
+Bitboard attacks_bb(PieceType pt, Square sq);
 
 template <PieceType pt>
-U64 attacks_bb(Square sq, const U64 occ) {
-    assert(valid_piece_type(pt) && valid_sq(sq) && occ && pt != PAWN);
+Bitboard attacks_bb(Square sq, const Bitboard occ) {
+    assert(pt != PAWN);
+    assert(is_valid(sq));
+    assert(is_valid(pt));
 
     switch (pt) {
     case ROOK:
@@ -218,12 +158,14 @@ U64 attacks_bb(Square sq, const U64 occ) {
     case QUEEN:
         return rook_attacks_bb(sq, occ) | bishop_attacks_bb(sq, occ);
     default:
-        return bitboards::PSEUDO_ATTACKS[pt][sq];
+        return attacks_bb<pt>(sq);
     }
 }
 
-inline U64 attacks_bb(PieceType pt, Square sq, const U64 occ) {
-    assert(valid_piece_type(pt) && valid_sq(sq) && occ && pt != PAWN);
+inline Bitboard attacks_bb(PieceType pt, Square sq, const Bitboard occ) {
+    assert(pt != PAWN);
+    assert(is_valid(sq));
+    assert(is_valid(pt));
 
     switch (pt) {
     case ROOK:
@@ -233,8 +175,8 @@ inline U64 attacks_bb(PieceType pt, Square sq, const U64 occ) {
     case QUEEN:
         return attacks_bb<QUEEN>(sq, occ);
     default:
-        return bitboards::PSEUDO_ATTACKS[pt][sq];
+        return attacks_bb(pt, sq);
     }
 }
 
-} // namespace chess
+} // namespace astra
