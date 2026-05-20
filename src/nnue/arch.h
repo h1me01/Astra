@@ -18,7 +18,7 @@ constexpr NDArray<int, 64> INPUT_BUCKET = {
 constexpr int INPUT_BUCKETS = INPUT_BUCKET.max() + 1;
 
 constexpr int INPUT_SIZE = INPUT_BUCKETS * 768;
-constexpr int FT_SIZE = 1024;
+constexpr int FT_SIZE = 1536;
 constexpr int L1_SIZE = 16;
 constexpr int L2_SIZE = 32;
 constexpr int OUTPUT_BUCKETS = 8;
