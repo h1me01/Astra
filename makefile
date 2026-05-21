@@ -1,5 +1,5 @@
 
-DEFAULT_WEIGHTS := weights-v3.nnue
+DEFAULT_WEIGHTS := weights-v3-perm.nnue
 
 # Allow custom EVALFILE path via command line
 ifndef EVALFILE
