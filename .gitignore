@@ -8,7 +8,7 @@ misc/
 
 *.exe
 astra*
-build.mk
+makefile.windows
 
 *.nnue
 
