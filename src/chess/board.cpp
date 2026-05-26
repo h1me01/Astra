@@ -19,7 +19,7 @@ std::pair<Square, Square> castling_rook_sqs(Color c, Square to) {
     return {relative_sq(c, ks ? SQ_H1 : SQ_A1), relative_sq(c, ks ? SQ_F1 : SQ_D1)};
 }
 
-inline Square sq_from(std::string_view sq_str) {
+Square sq_from(std::string_view sq_str) {
     assert(sq_str.size() >= 2);
     int file = sq_str[0] - 'a';
     int rank = sq_str[1] - '1';
@@ -28,30 +28,9 @@ inline Square sq_from(std::string_view sq_str) {
     return static_cast<Square>(rank * 8 + file);
 }
 
-int piece_values_see(PieceType pt) {
-    assert(is_valid(pt) || pt == NO_PIECE_TYPE);
-
-    switch (pt) {
-    case PAWN:
-        return search::pawn_value_see;
-    case KNIGHT:
-        return search::knight_value_see;
-    case BISHOP:
-        return search::bishop_value_see;
-    case ROOK:
-        return search::rook_value_see;
-    case QUEEN:
-        return search::queen_value_see;
-    default:
-        return 0;
-    }
-}
-
 } // namespace
 
-// Board
-
-Board::Board(const std::string fen) { set_fen(fen); }
+Board::Board(const std::string& fen) { set_fen(fen); }
 
 void Board::set_fen(const std::string& fen) {
     occ_.fill(0);
@@ -59,7 +38,7 @@ void Board::set_fen(const std::string& fen) {
     board_.fill(NO_PIECE);
 
     states_.clear();
-    StateInfo& info = states_.push();
+    StateInfo& info = states_.add();
 
     std::vector<std::string> fen_parts = split(fen, ' ');
     if (fen_parts.size() != 6) {
@@ -172,7 +151,7 @@ std::string Board::fen() const {
     return fen.str();
 }
 
-nnue::DirtyPieceStack Board::make_move(Move move) {
+nnue::DirtyPieceList Board::make_move(Move move) {
     using nnue::DirtyPiece;
 
     const Square from = move.from();
@@ -181,14 +160,14 @@ nnue::DirtyPieceStack Board::make_move(Move move) {
     const PieceType pt = type_of(pc);
     const Piece captured = capture_piece(move);
 
-    nnue::DirtyPieceStack dirty_pieces;
+    nnue::DirtyPieceList dirty_pieces;
 
     assert(move);
     assert(is_valid(pc));
     assert(type_of(captured) != KING);
     assert(is_valid(captured) == move.is_cap());
 
-    StateInfo& info = states_.push();
+    StateInfo& info = states_.add();
 
     ++info.fifty_move_counter;
     ++info.plies_from_null;
@@ -208,18 +187,18 @@ nnue::DirtyPieceStack Board::make_move(Move move) {
         assert(piece_at(rook_from) == make_piece(stm_, ROOK));
 
         move_piece(rook_from, rook_to);
-        dirty_pieces.push(DirtyPiece::removed(make_piece(stm_, ROOK), rook_from));
-        dirty_pieces.push(DirtyPiece::added(make_piece(stm_, ROOK), rook_to));
+        dirty_pieces.add(DirtyPiece::removed(make_piece(stm_, ROOK), rook_from));
+        dirty_pieces.add(DirtyPiece::added(make_piece(stm_, ROOK), rook_to));
     }
 
     if (move.is_cap()) {
         Square cap_sq = move.is_ep() ? ep_sq(to) : to;
         remove_piece(cap_sq);
-        dirty_pieces.push(DirtyPiece::removed(captured, cap_sq));
+        dirty_pieces.add(DirtyPiece::removed(captured, cap_sq));
     }
 
     move_piece(from, to);
-    dirty_pieces.push(DirtyPiece::moved(pc, from, to));
+    dirty_pieces.add(DirtyPiece::moved(pc, from, to));
 
     if (pt == PAWN) {
         Square new_ep_sq = ep_sq(to);
@@ -233,11 +212,11 @@ nnue::DirtyPieceStack Board::make_move(Move move) {
 
             // remove pawn
             remove_piece(to);
-            dirty_pieces.pop();                               // first remove moved pawn
-            dirty_pieces.push(DirtyPiece::removed(pc, from)); // pawn is still in from sq
+            dirty_pieces.pop();                              // first remove moved pawn
+            dirty_pieces.add(DirtyPiece::removed(pc, from)); // pawn is still in from sq
 
             put_piece(prom_pc, to);
-            dirty_pieces.push(DirtyPiece::added(prom_pc, to));
+            dirty_pieces.add(DirtyPiece::added(prom_pc, to));
         }
     }
 
@@ -302,7 +281,7 @@ void Board::undo_move(Move move) {
 }
 
 void Board::make_move() {
-    StateInfo& info = states_.push();
+    StateInfo& info = states_.add();
 
     ++info.fifty_move_counter;
     info.plies_from_null = 0;
@@ -553,11 +532,11 @@ bool Board::see(Move move, int threshold) const {
     assert(is_valid(victim) || move.is_quiet());
     assert(color_of(piece_at(from)) == stm_);
 
-    int swap = piece_values_see(victim) - threshold;
+    int swap = search::piece_values_see(victim) - threshold;
     if (swap < 0)
         return false;
 
-    swap = piece_values_see(attacker) - swap;
+    swap = search::piece_values_see(attacker) - swap;
     if (swap <= 0)
         return true;
 
@@ -618,8 +597,6 @@ bool Board::see(Move move, int threshold) const {
 
     return bool(res);
 }
-
-// private function
 
 void Board::init_movegen_info() {
     StateInfo& info = state();

@@ -69,8 +69,7 @@ class Options {
     const Option& get(const std::string& name) const {
         auto it = options_.find(name);
         assert(it != options_.end());
-        static const Option empty_option;
-        return (it != options_.end()) ? it->second : empty_option;
+        return it->second;
     }
 
   private:

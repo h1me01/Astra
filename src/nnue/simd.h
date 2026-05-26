@@ -7,8 +7,6 @@
 
 namespace astra::simd {
 
-// Types
-
 #if defined(__AVX512F__)
 using ivec_t = __m512i;
 using fvec_t = __m512;
@@ -16,8 +14,6 @@ using fvec_t = __m512;
 using ivec_t = __m256i;
 using fvec_t = __m256;
 #endif
-
-// Integer operations
 
 #if defined(__AVX512F__)
 inline ivec_t madd_epi16(ivec_t a, ivec_t b) { return _mm512_madd_epi16(a, b); }
@@ -49,8 +45,6 @@ inline ivec_t maddubs_epi16(ivec_t a, ivec_t b) { return _mm256_maddubs_epi16(a,
 inline ivec_t zero_ivec() { return _mm256_setzero_si256(); }
 #endif
 
-// Float operations
-
 #if defined(__AVX512F__)
 inline fvec_t set1_ps(float a) { return _mm512_set1_ps(a); }
 inline fvec_t max_ps(fvec_t a, fvec_t b) { return _mm512_max_ps(a, b); }
@@ -71,13 +65,9 @@ inline fvec_t fmadd_ps(fvec_t a, fvec_t b, fvec_t c) { return _mm256_fmadd_ps(a,
 inline fvec_t zero_fvec() { return _mm256_setzero_ps(); }
 #endif
 
-// Constants
-
 constexpr int FLOAT_VEC_SIZE = sizeof(fvec_t) / sizeof(float);
 constexpr int INT32_VEC_SIZE = sizeof(ivec_t) / sizeof(int32_t);
 constexpr int INT16_VEC_SIZE = sizeof(ivec_t) / sizeof(int16_t);
-
-// Utility Functions
 
 inline ivec_t clamp_epi16(ivec_t val, ivec_t min_val, ivec_t max_val) {
     return min_epi16(max_epi16(val, min_val), max_val);

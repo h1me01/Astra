@@ -84,8 +84,6 @@ inline bool valid_tt_score(Score tt_score, Score score, Bound bound) {
     return (tt_score >= score) ? (bound & LOWER_BOUND) : (bound & UPPER_BOUND);
 }
 
-// Global Variable
-
 extern TTable tt;
 
 } // namespace astra::search

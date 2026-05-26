@@ -61,7 +61,7 @@ void ThreadPool::launch_workers(const Board& board, Limits limits) {
         th->board = board;
         th->limits = limits;
         th->searching = true;
-        th.get()->cv.notify_all();
+        th->cv.notify_all();
     }
 }
 
@@ -110,8 +110,6 @@ Search* ThreadPool::pick_best() {
 
     return best_thread;
 }
-
-// Global Variable
 
 ThreadPool thread_pool;
 

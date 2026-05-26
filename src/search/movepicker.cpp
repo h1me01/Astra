@@ -16,8 +16,6 @@ void select_best(MoveList<ScoredMove>& ml, int idx) {
     std::swap(ml[idx], ml[best_idx]);
 }
 
-// MovePicker
-
 template <SearchType st>
 MovePicker<st>::MovePicker(
     const Board& board,
@@ -109,8 +107,6 @@ Move MovePicker<st>::next() {
     }
 }
 
-// private functions
-
 template <SearchType st>
 void MovePicker<st>::gen_score_noisy() {
     MoveList<Move> ml;
@@ -130,11 +126,9 @@ void MovePicker<st>::gen_score_quiets() {
     const Color stm = board_.side_to_move();
 
     NDArray<Bitboard, NUM_PIECE_TYPES> threats;
-    threats(PAWN) = 0;
     threats(KNIGHT) = threats(BISHOP) = board_.attacks_by<PAWN>(~stm);
     threats(ROOK) = board_.attacks_by<KNIGHT>(~stm) | board_.attacks_by<BISHOP>(~stm) | threats(KNIGHT);
     threats(QUEEN) = board_.attacks_by<ROOK>(~stm) | threats(ROOK);
-    threats(KING) = 0;
 
     for (auto& m : ml) {
         const Square from = m.from();

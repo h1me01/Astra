@@ -25,7 +25,7 @@ else
 endif
 
 rwildcard = $(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2) $(filter $(subst *,%,$2),$d))
-SRC := $(call rwildcard,src/,*.cpp) src/third_party/fathom/src/tbprobe.c
+SRC := $(call rwildcard,src/,*.cpp) third_party/fathom/tbprobe.c
 TARGET := $(if $(EXE),$(EXE),astra)$(SUFFIX)
 
 .PHONY: all download-net clean

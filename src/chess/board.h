@@ -17,7 +17,7 @@ namespace astra {
 class Board {
   public:
     Board() = default;
-    Board(const std::string fen);
+    Board(const std::string& fen);
 
     void print() const;
 
@@ -26,7 +26,7 @@ class Board {
 
     void reset_ply();
 
-    nnue::DirtyPieceStack make_move(Move move);
+    nnue::DirtyPieceList make_move(Move move);
     void undo_move(Move move);
 
     void make_move();
@@ -85,7 +85,7 @@ class Board {
     NDArray<Bitboard, NUM_COLORS> occ_;
     NDArray<Bitboard, NUM_PIECES> piece_bb_;
     NDArray<Piece, NUM_SQUARES> board_;
-    StateInfoStack states_;
+    StateInfoList states_;
 
     void update_hash(Piece pc, Hash hash);
     void put_piece(Piece pc, Square sq);
@@ -98,7 +98,7 @@ class Board {
 inline void Board::reset_ply() {
     auto current_state = state();
     states_.clear();
-    StateInfo& info = states_.push();
+    StateInfo& info = states_.add();
     info = current_state;
     info.plies_from_null = 0;
 }
@@ -218,8 +218,6 @@ inline int Board::ply_count() const {
 inline int Board::fifty_move_count() const { return state().fifty_move_counter; }
 inline StateInfo& Board::state() { return states_.back(); }
 inline const StateInfo& Board::state() const { return states_.back(); }
-
-// private functions
 
 inline void Board::update_hash(Piece pc, Hash hash) {
     assert(is_valid(pc));

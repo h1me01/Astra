@@ -10,13 +10,9 @@
 
 namespace astra::search {
 
-// Constants
-
 constexpr int AGE_STEP = 0x8;
 constexpr int AGE_CYCLE = 255 + AGE_STEP;
 constexpr int AGE_MASK = 0xF8;
-
-// TTEntry
 
 void TTEntry::refresh_age() { agepvbound = static_cast<uint8_t>(tt.age() | (agepvbound & (AGE_STEP - 1))); }
 int TTEntry::relative_age() const { return (AGE_CYCLE + tt.age() - agepvbound) & AGE_MASK; }
@@ -43,8 +39,6 @@ void TTEntry::store(Hash hash, Move move, Score score, Score eval, Bound bound, 
         agepvbound = static_cast<uint8_t>(bound + (pv << 2)) | tt.age();
     }
 }
-
-// TTable
 
 TTable::TTable(uint64_t size_mb)
     : buckets_(nullptr) {
@@ -131,8 +125,6 @@ int TTable::hashfull() const {
     }
     return used / TTBucket::SIZE;
 }
-
-// Global Variable
 
 TTable tt(16);
 

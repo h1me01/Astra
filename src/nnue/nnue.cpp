@@ -1,6 +1,6 @@
 #include <cstring>
 
-#include "../third_party/incbin/incbin.h"
+#include "../../third_party/incbin/incbin.h"
 
 #include "../chess/board.h"
 #include "accumulator.h"
@@ -217,8 +217,6 @@ float NNUE::forward_l3(int bucket, const NDArray<float, L2_SIZE>& input) {
 
     return simd::hor_sum_ps(output) + l3_bias_(bucket);
 }
-
-// Global Variable
 
 NNUE nnue;
 

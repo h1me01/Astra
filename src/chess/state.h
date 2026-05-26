@@ -68,18 +68,18 @@ struct StateInfo {
     NDArray<Bitboard, NUM_PIECE_TYPES> check_squares;
 };
 
-class StateInfoStack {
+class StateInfoList {
     static constexpr int MAX_SIZE = 1024;
 
   public:
-    StateInfoStack() { clear(); }
+    StateInfoList() { clear(); }
 
     void clear() {
         idx_ = -1;
         data_.fill(StateInfo());
     }
 
-    StateInfo& push() {
+    StateInfo& add() {
         assert(idx_ < MAX_SIZE - 1);
         ++idx_;
         if (idx_ > 0)

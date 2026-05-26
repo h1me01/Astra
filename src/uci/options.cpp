@@ -1,9 +1,9 @@
 #include <algorithm>
 #include <cctype>
 
+#include "../../third_party/fathom/tbprobe.h"
 #include "../search/threads.h"
 #include "../search/tune_params.h"
-#include "../third_party/fathom/src/tbprobe.h"
 #include "../util.h"
 #include "options.h"
 
@@ -105,11 +105,12 @@ void Options::update_syzygy_path(const std::string& path) {
 }
 
 void Options::apply(const std::string& name) {
-    if (to_lower(name) == "syzygypath")
+    const std::string lower_name = to_lower(name);
+    if (lower_name == "syzygypath")
         update_syzygy_path(options_[name]);
-    else if (to_lower(name) == "hash")
+    else if (lower_name == "hash")
         search::tt.init(std::stoi(options_[name]));
-    else if (to_lower(name) == "threads")
+    else if (lower_name == "threads")
         search::thread_pool.set_count(std::stoi(get("Threads")));
 }
 

@@ -35,18 +35,18 @@ struct DirtyPiece {
     constexpr bool is_move() const { return is_valid(from) && is_valid(to); }
 };
 
-class DirtyPieceStack {
+class DirtyPieceList {
     static constexpr int MAX_SIZE = 3;
 
   public:
-    DirtyPieceStack() { clear(); }
+    DirtyPieceList() { clear(); }
 
     void clear() {
         idx_ = -1;
         data_.fill(DirtyPiece());
     }
 
-    void push(DirtyPiece dp) {
+    void add(DirtyPiece dp) {
         assert(idx_ < MAX_SIZE - 1);
         assert(is_valid(dp.pc));
         assert(is_valid(dp.from) || is_valid(dp.to));
@@ -83,7 +83,7 @@ class DirtyPieceStack {
 };
 
 struct Accumulator {
-    DirtyPieceStack dirty_pieces;
+    DirtyPieceList dirty_pieces;
     NDArray<Square, NUM_COLORS> king_sq;
     NDArray<bool, NUM_COLORS> initialized;
     alignas(64) NDArray<int16_t, NUM_COLORS, FT_SIZE> data;
@@ -120,23 +120,23 @@ struct Accumulator {
 // idea from koivisto
 struct AccumulatorEntry {
     Accumulator accum;
-    Bitboard pieces_bb[NUM_COLORS][NUM_PIECE_TYPES];
+    NDArray<Bitboard, NUM_COLORS, NUM_PIECE_TYPES> pieces_bb;
 
     void reset();
 };
 
-class AccumulatorStack {
+class AccumulatorList {
     static constexpr int MAX_SIZE = search::MAX_PLY + 1;
 
   public:
-    AccumulatorStack()
+    AccumulatorList()
         : idx_(0) {}
 
     void reset(Board& board) {
         idx_ = 0;
         for (Color c : {WHITE, BLACK})
             for (int i = 0; i < 2 * INPUT_BUCKETS; ++i)
-                entries_[c][i].reset();
+                entries_(c, i).reset();
 
         data_(0).clear();
 
@@ -146,7 +146,7 @@ class AccumulatorStack {
 
     void refresh(Color view, Board& board);
 
-    void push(DirtyPieceStack dirty_pieces, Square w_ksq, Square b_ksq) {
+    void add(DirtyPieceList dirty_pieces, Square w_ksq, Square b_ksq) {
         assert(idx_ < MAX_SIZE - 1);
 
         ++idx_;
@@ -178,7 +178,7 @@ class AccumulatorStack {
   private:
     int idx_;
     NDArray<Accumulator, MAX_SIZE> data_;
-    AccumulatorEntry entries_[NUM_COLORS][2 * INPUT_BUCKETS];
+    NDArray<AccumulatorEntry, NUM_COLORS, 2 * INPUT_BUCKETS> entries_;
 };
 
 } // namespace astra::nnue

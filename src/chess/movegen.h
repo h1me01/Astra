@@ -19,9 +19,7 @@ class MoveList {
     static constexpr int MAX_MOVES = 256;
 
     MoveList()
-        : idx_(-1) {
-        clear();
-    }
+        : idx_(-1) {}
 
     void clear() { idx_ = -1; }
 
@@ -31,8 +29,10 @@ class MoveList {
     }
 
     int idx_of(const T move) const {
-        auto it = std::ranges::find(begin(), end(), move);
-        return it != end() ? static_cast<int>(it - begin()) : -1;
+        for (const auto& m : *this)
+            if (m == move)
+                return static_cast<int>(&m - begin());
+        return -1;
     }
 
     T* begin() { return &data_(0); }

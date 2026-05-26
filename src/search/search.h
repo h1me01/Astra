@@ -56,7 +56,7 @@ class Search {
   private:
     TimeMan tm_;
 
-    nnue::AccumulatorStack accum_stack_;
+    nnue::AccumulatorList accum_list_;
     MoveList<RootMove> root_moves_;
 
     QuietHistory quiet_history_;
@@ -92,7 +92,7 @@ class Search {
     Score draw_score() const;
 
     unsigned int probe_wdl() const;
-    bool is_limit_reached() const;
+    bool limit_reached() const;
     void sort_root_moves(int offset);
     bool found_root_move(Move move);
     void update_quiet_histories(Move best_move, int bonus, Stack* stack);

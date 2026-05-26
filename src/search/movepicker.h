@@ -55,7 +55,7 @@ class MovePicker {
 
     Move tt_move_;
     MoveList<ScoredMove> ml_main_;
-    
+
     void gen_score_noisy();
     void gen_score_quiets();
 };

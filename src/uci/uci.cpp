@@ -1,11 +1,11 @@
 #include <chrono>
 #include <sstream>
 
+#include "../../third_party/fathom/tbprobe.h"
 #include "../chess/perft.h"
 #include "../nnue/nnue.h"
 #include "../search/threads.h"
 #include "../search/tune_params.h"
-#include "../third_party/fathom/src/tbprobe.h"
 #include "../util.h"
 #include "uci.h"
 
@@ -105,10 +105,10 @@ void UCI::loop(int argc, char** argv) {
         } else if (token == "bench") {
             bench();
         } else if (token == "eval") {
-            nnue::AccumulatorStack accum_stack_;
-            accum_stack_.reset(board_);
+            nnue::AccumulatorList accum_list;
+            accum_list.reset(board_);
             board_.print();
-            println("NNUE evaluation: {}", nnue::nnue.forward(board_, accum_stack_.back()));
+            println("NNUE evaluation: {}", nnue::nnue.forward(board_, accum_list.back()));
         } else if (token == "tune") {
             for (const auto& param : search::params) {
                 println(

@@ -166,7 +166,28 @@ constexpr int piece_values(PieceType pt) {
     }
 }
 
-// Global Variable
+#ifdef TUNE
+inline int piece_values_see(PieceType pt) {
+#else
+constexpr int piece_values_see(PieceType pt) {
+#endif
+    assert(is_valid(pt) || pt == NO_PIECE_TYPE);
+
+    switch (pt) {
+    case PAWN:
+        return pawn_value_see;
+    case KNIGHT:
+        return knight_value_see;
+    case BISHOP:
+        return bishop_value_see;
+    case ROOK:
+        return rook_value_see;
+    case QUEEN:
+        return queen_value_see;
+    default:
+        return 0;
+    }
+}
 
 extern std::vector<Param*> params;
 

@@ -3,9 +3,9 @@
 #include <iostream>
 #include <sstream>
 
+#include "../../third_party/fathom/tbprobe.h"
 #include "../chess/movegen.h"
 #include "../nnue/nnue.h"
-#include "../third_party/fathom/src/tbprobe.h"
 #include "../util.h"
 #include "movepicker.h"
 #include "search.h"
@@ -15,7 +15,6 @@
 
 namespace astra::search {
 
-// helper
 namespace {
 
 int history_bonus(int d) { return std::min<int>(hist_bonus_max, hist_bonus_mult * d + hist_bonus_bias); }
@@ -83,7 +82,7 @@ void Search::start() {
     }
 
     limits.multipv = std::min(limits.multipv, root_moves_.size());
-    accum_stack_.reset(board);
+    accum_list_.reset(board);
 
     const bool is_main_thread = (this == thread_pool.main_thread());
 
@@ -220,7 +219,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack* stack, bool cut
     if (pv_node)
         stack->pv.length = stack->ply;
 
-    if (is_limit_reached()) {
+    if (limit_reached()) {
         thread_pool.stop();
         return 0;
     }
@@ -867,7 +866,7 @@ void Search::make_move(Move move, Stack* stack) {
     stack->moved_piece = board.piece_at(move.from());
 
     auto dirty_pieces = board.make_move(move);
-    accum_stack_.push(dirty_pieces, board.king_sq(WHITE), board.king_sq(BLACK));
+    accum_list_.add(dirty_pieces, board.king_sq(WHITE), board.king_sq(BLACK));
 
     stack->cont_hist = cont_history_.get(board.in_check(), move.is_noisy(), stack->moved_piece, move.to());
     stack->cont_corr_hist = cont_corr_history_.get(stack->moved_piece, move.to());
@@ -876,39 +875,39 @@ void Search::make_move(Move move, Stack* stack) {
 }
 
 void Search::undo_move(Move move) {
-    accum_stack_.pop();
+    accum_list_.pop();
     board.undo_move(move);
 }
 
 Score Search::evaluate() {
-    assert(accum_stack_[0].initialized(WHITE));
-    assert(accum_stack_[0].initialized(BLACK));
+    assert(accum_list_[0].initialized(WHITE));
+    assert(accum_list_[0].initialized(BLACK));
 
-    auto& acc = accum_stack_.back();
+    auto& acc = accum_list_.back();
 
     for (Color c : {WHITE, BLACK}) {
         if (acc.initialized(c))
             continue;
 
-        const int accums_idx = accum_stack_.size() - 1;
+        const int accums_idx = accum_list_.size() - 1;
         assert(accums_idx > 0);
 
         // apply lazy update
         for (int i = accums_idx; i >= 0; i--) {
-            if (accum_stack_[i].initialized(c)) {
+            if (accum_list_[i].initialized(c)) {
                 for (int j = i + 1; j <= accums_idx; ++j)
-                    accum_stack_[j].update(accum_stack_[j - 1], c);
+                    accum_list_[j].update(accum_list_[j - 1], c);
                 break;
             }
 
-            if (accum_stack_[i].should_refresh(c)) {
-                accum_stack_.refresh(c, board);
+            if (accum_list_[i].should_refresh(c)) {
+                accum_list_.refresh(c, board);
                 break;
             }
         }
     }
 
-    int32_t eval = nnue::nnue.forward(board, accum_stack_.back());
+    int32_t eval = nnue::nnue.forward(board, accum_list_.back());
 
     return std::clamp(eval, -SCORE_MATE_IN_MAX_PLY, SCORE_MATE_IN_MAX_PLY);
 }
@@ -956,9 +955,9 @@ unsigned int Search::probe_wdl() const {
     );
 }
 
-bool Search::is_limit_reached() const {
+bool Search::limit_reached() const {
     if (this != thread_pool.main_thread())
-        return false; // only main thread checks limits
+        return false;
     if (limits.nodes && thread_pool.total_nodes() >= limits.nodes)
         return true;
     if (limits.time.maximum && tm_.elapsed_time() >= limits.time.maximum)
@@ -991,7 +990,6 @@ void Search::update_histories(Move best_move, MoveList<Move>& quiets, MoveList<M
         noisy_history_.update(board, best_move, noisy_hist_bonus_mul * bonus / 1024);
     } else if (depth > 3 || !quiets.empty()) {
         update_quiet_histories(best_move, quiet_histories_bonus_mul * bonus / 1024, stack);
-
         for (const auto& m : quiets)
             update_quiet_histories(m, quiet_histories_malus_mul * malus / 1024, stack);
     }

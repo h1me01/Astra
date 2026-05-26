@@ -63,8 +63,6 @@ class NNUE {
     float forward_l3(int bucket, const NDArray<float, L2_SIZE>& input);
 };
 
-// Global Variable
-
 extern NNUE nnue;
 
 } // namespace astra::nnue

@@ -5,8 +5,6 @@
 #include <cassert>
 #include <cstddef>
 #include <initializer_list>
-#include <ostream>
-#include <string>
 
 namespace astra {
 
@@ -73,18 +71,6 @@ class NDArray {
     constexpr const T* begin() const noexcept { return data_; }
     constexpr const T* end() const noexcept { return data_ + total; }
 
-    friend std::ostream& operator<<(std::ostream& os, const NDArray& arr) {
-        os << "NDArray<";
-        for (size_t i = 0; i < ndim; ++i) {
-            os << shape[i];
-            if (i + 1 < ndim)
-                os << "x";
-        }
-        os << ">\n";
-        arr.print_recursive(os, 0, 0, 0);
-        return os;
-    }
-
   private:
     T data_[total];
 
@@ -101,24 +87,6 @@ class NDArray {
         assert(static_cast<size_t>(i) < shape[Axis]);
         if constexpr (sizeof...(Rest) > 0)
             check_bounds<Axis + 1>(rest...);
-    }
-
-    void print_recursive(std::ostream& os, size_t dim, size_t offset, int depth) const {
-        std::string indent(depth * 2, ' ');
-        if (dim == ndim - 1) {
-            os << indent << "[";
-            for (size_t i = 0; i < shape[dim]; ++i) {
-                os << data_[offset + i];
-                if (i + 1 < shape[dim])
-                    os << ", ";
-            }
-            os << "]\n";
-        } else {
-            os << indent << "[\n";
-            for (size_t i = 0; i < shape[dim]; ++i)
-                print_recursive(os, dim + 1, offset + i * strides[dim], depth + 1);
-            os << indent << "]\n";
-        }
     }
 };
 

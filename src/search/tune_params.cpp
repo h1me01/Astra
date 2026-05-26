@@ -25,8 +25,6 @@ Param::Param(std::string name, int value, int min, int max)
     params.push_back(this);
 }
 
-// Global Variable
-
 std::vector<Param*> params;
 
 } // namespace astra::search

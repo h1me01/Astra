@@ -56,8 +56,6 @@ class ThreadPool {
     std::vector<std::unique_ptr<std::thread>> running_threads_;
 };
 
-// Global Variable
-
 extern ThreadPool thread_pool;
 
 } // namespace astra::search

@@ -6,17 +6,15 @@
 
 namespace astra::nnue {
 
-// Accum
-
 void Accumulator::update(const Accumulator& src, Color view) {
     assert(is_valid(view));
 
     for (const auto& dp : dirty_pieces) {
         if (dp.is_move())
             move(src, dp.pc, dp.from, dp.to, king_sq(view), view);
-        if (dp.is_add())
+        else if (dp.is_add())
             put(src, dp.pc, dp.to, king_sq(view), view);
-        if (dp.is_remove())
+        else
             remove(src, dp.pc, dp.from, king_sq(view), view);
     }
 
@@ -60,34 +58,30 @@ void Accumulator::move(const Accumulator& src, Piece pc, Square from, Square to,
     initialized(view) = true;
 }
 
-// AccumEntry
-
 void AccumulatorEntry::reset() {
-    std::memset(pieces_bb, 0, sizeof(pieces_bb));
+    pieces_bb.fill(0);
     nnue.init_accum(accum);
 }
 
-// AccumStack
-
-void AccumulatorStack::refresh(Color view, Board& board) {
+void AccumulatorList::refresh(Color view, Board& board) {
     assert(is_valid(view));
 
     const Square ksq = board.king_sq(view);
     const int ksq_idx = INPUT_BUCKET(relative_sq(view, ksq));
-    auto& entry = entries_[view][(file_of(ksq) > FILE_D) * INPUT_BUCKETS + ksq_idx];
+    auto& entry = entries_(view, (file_of(ksq) > FILE_D) * INPUT_BUCKETS + ksq_idx);
 
     for (Color c : {WHITE, BLACK}) {
         for (PieceType pt : {PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING}) {
             Piece pc = make_piece(c, pt);
             Bitboard pc_bb = board.piece_bb(c, pt);
-            Bitboard entry_bb = entry.pieces_bb[c][pt];
+            Bitboard entry_bb = entry.pieces_bb(c, pt);
 
             for (Bitboard bb = pc_bb & ~entry_bb; bb;)
                 entry.accum.put(entry.accum, pc, pop_lsb(bb), ksq, view);
             for (Bitboard bb = entry_bb & ~pc_bb; bb;)
                 entry.accum.remove(entry.accum, pc, pop_lsb(bb), ksq, view);
 
-            entry.pieces_bb[c][pt] = pc_bb;
+            entry.pieces_bb(c, pt) = pc_bb;
         }
     }
 
