@@ -139,6 +139,11 @@ void Search::start() {
 
         prev_best_move = best_move;
         scores(root_depth_) = score;
+
+        if (is_main_thread && limits.nodes && thread_pool.total_nodes() >= limits.nodes) {
+            thread_pool.stop();
+            break;
+        }
     }
 
     if (!is_main_thread)
@@ -913,14 +918,6 @@ Score Search::evaluate() {
 }
 
 Score Search::adjust_eval(int32_t eval, Stack* stack) const {
-    int material = ms_pawn * board.count<PAWN>()       //
-                   + ms_knight * board.count<KNIGHT>() //
-                   + ms_bishop * board.count<BISHOP>() //
-                   + ms_rook * board.count<ROOK>()     //
-                   + ms_queen * board.count<QUEEN>();
-
-    eval = eval * (ms_base + material) / ms_div;
-
     eval = (eval * (200 - board.fifty_move_count())) / 200;
     eval += (corr_histories_.get(board) + cont_corr_history_.get(board, stack)) / 1024;
 
@@ -973,7 +970,7 @@ unsigned int Search::probe_wdl() const {
 bool Search::limit_reached() const {
     if (this != thread_pool.main_thread())
         return false;
-    if (limits.nodes && thread_pool.total_nodes() >= limits.nodes)
+    if (limits.nodes && thread_pool.total_nodes() >= 10'000'000)
         return true;
     if (limits.time.maximum && tm_.elapsed_time() >= limits.time.maximum)
         return true;
@@ -1023,7 +1020,7 @@ void Search::print_uci_info() const {
     if (std::abs(rm.score) >= SCORE_MATE_IN_MAX_PLY)
         print("mate {}", (SCORE_MATE - std::abs(rm.score) + 1) / 2 * (rm.score > 0 ? 1 : -1));
     else
-        print("cp {}", (rm.score * 100) / 200);
+        print("cp {}", rm.score);
 
     print(
         " nodes {} nps {} tbhits {} hashfull {} time {} pv {}",
