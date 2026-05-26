@@ -6,6 +6,7 @@ build/
 openbench/
 misc/
 
+*.o
 *.exe
 astra*
 makefile.windows
