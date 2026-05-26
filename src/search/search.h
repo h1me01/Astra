@@ -90,6 +90,7 @@ class Search {
     Score evaluate();
     Score adjust_eval(int32_t eval, Stack* stack) const;
     Score draw_score() const;
+    Score normalize_score(Score score) const;
 
     unsigned int probe_wdl() const;
     bool limit_reached() const;

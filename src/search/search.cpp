@@ -929,6 +929,21 @@ Score Search::adjust_eval(int32_t eval, Stack* stack) const {
 
 Score Search::draw_score() const { return Score(nodes() & 0x2) - 1; }
 
+Score Search::normalize_score(Score score) const {
+    int material = board.count<PAWN>()         //
+                   + 3 * board.count<KNIGHT>() //
+                   + 3 * board.count<BISHOP>() //
+                   + 5 * board.count<ROOK>()   //
+                   + 9 * board.count<QUEEN>();
+
+    double m = std::clamp(material, 17, 78) / 58.0;
+
+    static constexpr double as[] = {-135.51012108, 382.01964431, -400.77866873, 431.32612894};
+    double a = as[0] * std::pow(m, 3) + as[1] * std::pow(m, 2) + as[2] * m + as[3];
+
+    return static_cast<Score>(std::round(100 * static_cast<Score>(score) / a));
+}
+
 unsigned int Search::probe_wdl() const {
     Bitboard w_occ = board.occupancy(WHITE);
     Bitboard b_occ = board.occupancy(BLACK);
