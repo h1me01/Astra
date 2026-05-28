@@ -1,6 +1,7 @@
 #include <array>
 #include <cstdlib>
 #include <fstream>
+#include <random>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -14,6 +15,8 @@
 
 namespace astra::datagen {
 
+size_t random_value(size_t max, std::mt19937_64& rng) { return std::uniform_int_distribution<size_t>{0, max - 1}(rng); }
+
 search::Score evaluate_board(const std::string& fen, const search::Limits& limit) {
     Board board{fen};
     search::thread_pool.new_game();
@@ -22,7 +25,7 @@ search::Score evaluate_board(const std::string& fen, const search::Limits& limit
     return search::thread_pool.main_thread()->best_root_move().score;
 }
 
-Board random_board(const std::string& startpos, const int num_moves) {
+Board random_board(const std::string& startpos, const int num_moves, std::mt19937_64& rng) {
     MoveList<Move> ml;
 
     while (true) {
@@ -35,7 +38,7 @@ Board random_board(const std::string& startpos, const int num_moves) {
                 valid = false;
                 break;
             }
-            board.make_move(ml[std::rand() % ml.size()]);
+            board.make_move(ml[random_value(ml.size(), rng)]);
         }
 
         if (!valid)
@@ -71,7 +74,7 @@ void generate_fens(int argc, char** argv) {
             iss >> book_path;
     }
 
-    std::srand(seed);
+    std::mt19937_64 rng(seed);
 
     std::vector<std::string> fens;
     if (!book_path.empty() && to_lower(book_path) != "none") {
@@ -90,18 +93,19 @@ void generate_fens(int argc, char** argv) {
         std::string fen = uci::STARTING_FEN;
 
         if (!fens.empty()) {
-            fen = fens[std::rand() % fens.size()];
-            moves_to_play = plies(std::rand() % plies.total);
+            fen = fens[random_value(fens.size(), rng)];
+            moves_to_play = plies(random_value(plies.total, rng));
         }
 
-        Board board = random_board(fen, moves_to_play);
+        Board board = random_board(fen, moves_to_play, rng);
 
         search::Limits limit;
         limit.depth = 10;
+        limit.nodes = 1'000'000;
         limit.minimal = true;
 
         search::Score eval = evaluate_board(board.fen(), limit);
-        if (std::abs(eval) <= 800) {
+        if (std::abs(eval) <= 1000) {
             println("info string genfens {} ", board.fen());
             ++counter;
         }

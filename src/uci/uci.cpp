@@ -64,7 +64,7 @@ UCI::UCI() {
     println("Astra by Semih Oezalp");
 
     options_.add("SyzygyPath", {OptionType::STRING});
-    options_.add("Minimal", {OptionType::CHECK, "false"});
+    options_.add("Minimal", {OptionType::CHECK, "true"});
     options_.add("MoveOverhead", {OptionType::SPIN, "10", 1, 10000});
     options_.add("MultiPV", {OptionType::SPIN, "1", 1, 218});
     options_.add("Threads", {OptionType::SPIN, "1", 1, 128});
