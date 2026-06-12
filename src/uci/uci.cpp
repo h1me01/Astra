@@ -67,8 +67,8 @@ UCI::UCI() {
     options_.add("Minimal", {OptionType::CHECK, "false"});
     options_.add("MoveOverhead", {OptionType::SPIN, "10", 1, 10000});
     options_.add("MultiPV", {OptionType::SPIN, "1", 1, 218});
-    options_.add("Threads", {OptionType::SPIN, "1", 1, 128});
-    options_.add("Hash", {OptionType::SPIN, "16", 1, 8192});
+    options_.add("Threads", {OptionType::SPIN, "1", 1, 256});
+    options_.add("Hash", {OptionType::SPIN, "16", 1, 256 * 1024});
 }
 
 void UCI::loop(int argc, char** argv) {
