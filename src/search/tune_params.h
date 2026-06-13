@@ -56,6 +56,7 @@ PARAM(tm_node_mult, 242, 100, 350);
 PARAM(tm_node_base, 55, 10, 90);
 
 PARAM(asp_delta, 9, 1, 30);
+PARAM(asp_delta_div, 13000, 1, 26000);
 
 PARAM(tt_hist_bonus_mult, 456, 1, 1536);
 PARAM(tt_hist_bonus_bias, -57, -500, 500);

@@ -172,6 +172,7 @@ Score Search::aspiration(int depth, Stack* stack) {
     int delta = asp_delta;
     if (depth >= 4) {
         Score avg_score = root_moves_[multipv_idx_].avg_score;
+        delta += avg_score * avg_score / asp_delta_div;
         alpha = std::max(avg_score - delta, -SCORE_INFINITE);
         beta = std::min(avg_score + delta, SCORE_INFINITE);
     }
