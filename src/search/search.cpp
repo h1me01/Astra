@@ -810,7 +810,7 @@ Score Search::quiescence(Score alpha, Score beta, Stack* stack) {
                     break;
 
                 // futility pruning
-                if (!in_check && futility <= alpha && !board.see(move, 1)) {
+                if (futility <= alpha && !board.see(move, 1)) {
                     best_score = std::max(best_score, futility);
                     continue;
                 }
