@@ -63,6 +63,7 @@ struct PVLine {
 struct Stack {
     int ply = 0;
     int move_count = 0;
+    int reduction = 0;
 
     Move move = Move::none();
     Move skipped = Move::none();

@@ -375,6 +375,10 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack* stack, bool cut
         quiet_history_.update(~stm, (stack - 1)->move, bonus);
     }
 
+    // hindsight adjustment
+    if ((stack - 1)->reduction >= 2250 && !(stack->static_eval > -(stack - 1)->static_eval))
+        depth++;
+
     // razoring
     if (!pv_node && eval < alpha - rzr_base - rzr_mult * depth * depth)
         return quiescence<NON_PV>(alpha, beta, stack);
@@ -596,7 +600,9 @@ movesloop:
 
             const int r_depth = std::clamp(new_depth - r / 1024, 1, new_depth + 1) + pv_node;
 
+            stack->reduction = r;
             score = -negamax<NON_PV>(r_depth, -alpha - 1, -alpha, stack + 1, true);
+            stack->reduction = 0;
 
             if (score > alpha && new_depth > r_depth) {
                 new_depth += (score > best_score + dp_margin);
