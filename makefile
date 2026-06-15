@@ -15,7 +15,7 @@ else
     RM_RF   := rm -rf
 endif
 
-DEFAULT_WEIGHTS := weights-v3-perm.nnue
+DEFAULT_WEIGHTS := weights-v4-perm.nnue
 EVALFILE_URL    := https://github.com/h1me01/Astra-Networks/releases/download/weights/$(DEFAULT_WEIGHTS)
 
 ifndef EVALFILE
