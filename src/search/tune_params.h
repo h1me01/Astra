@@ -70,6 +70,8 @@ PARAM(static_hist_mult, -70, -200, -1);
 PARAM(static_hist_min, -162, -400, -1);
 PARAM(static_hist_max, 318, 1, 1000);
 
+PARAM(hindsight_r, 2250, 1, 4500);
+
 PARAM(rzr_base, 299, 50, 750);
 PARAM(rzr_mult, 198, 1, 500);
 

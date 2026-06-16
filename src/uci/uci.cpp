@@ -11,7 +11,7 @@
 
 namespace astra::uci {
 
-const std::string version = "7.0";
+const std::string version = "7.1-dev";
 
 const std::vector<std::string> bench_positions = {
     "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",

@@ -377,7 +377,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack* stack, bool cut
 
     // hindsight adjustment
     if (is_valid((stack - 1)->static_eval)                   //
-        && (stack - 1)->reduction >= 2250                    //
+        && (stack - 1)->reduction >= hindsight_r             //
         && !(stack->static_eval > -(stack - 1)->static_eval) //
     ) {
         depth++;
