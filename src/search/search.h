@@ -88,9 +88,11 @@ class Search {
     void undo_move(Move move);
 
     Score evaluate();
-    Score adjust_eval(int32_t eval, Stack* stack) const;
+    Score adjust_eval(int32_t eval, int correction_val) const;
     Score draw_score() const;
     Score normalize_score(Score score) const;
+
+    int correction_value(Stack* stack) const;
 
     unsigned int probe_wdl() const;
     bool limit_reached() const;

@@ -341,6 +341,8 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack* stack, bool cut
         }
     }
 
+    const int correction_val = correction_value(stack);
+
     // set eval and static eval
     if (in_check) {
         raw_eval = eval = stack->static_eval = SCORE_NONE;
@@ -349,7 +351,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack* stack, bool cut
         raw_eval = eval = stack->static_eval;
     } else {
         raw_eval = is_valid(tt_eval) ? tt_eval : evaluate();
-        eval = stack->static_eval = adjust_eval(raw_eval, stack);
+        eval = stack->static_eval = adjust_eval(raw_eval, correction_val);
 
         if (is_valid(tt_score) && valid_tt_score(tt_score, eval + 1, tt_bound))
             eval = tt_score;
@@ -600,6 +602,8 @@ movesloop:
 
             r -= board.in_check() * lmr_in_check;
 
+            r -= lmr_corr * std::abs(correction_val) / 1024;
+
             r -= (move.is_quiet() ? lmr_quiet_hist_mul : lmr_noisy_hist_mul) * history_score / 1024;
 
             const int r_depth = std::clamp(new_depth - r / 1024, 1, new_depth + 1) + pv_node;
@@ -779,7 +783,7 @@ Score Search::quiescence(Score alpha, Score beta, Stack* stack) {
         futility = raw_eval = stack->static_eval = SCORE_NONE;
     } else {
         raw_eval = is_valid(tt_eval) ? tt_eval : evaluate();
-        best_score = stack->static_eval = adjust_eval(raw_eval, stack);
+        best_score = stack->static_eval = adjust_eval(raw_eval, correction_value(stack));
         futility = best_score + qfp_margin;
 
         if (is_valid(tt_score) && valid_tt_score(tt_score, best_score + 1, tt_bound))
@@ -923,7 +927,7 @@ Score Search::evaluate() {
     return std::clamp(eval, -SCORE_MATE_IN_MAX_PLY, SCORE_MATE_IN_MAX_PLY);
 }
 
-Score Search::adjust_eval(int32_t eval, Stack* stack) const {
+Score Search::adjust_eval(int32_t eval, int correction_val) const {
     int material = ms_pawn * board.count<PAWN>()       //
                    + ms_knight * board.count<KNIGHT>() //
                    + ms_bishop * board.count<BISHOP>() //
@@ -933,7 +937,7 @@ Score Search::adjust_eval(int32_t eval, Stack* stack) const {
     eval = eval * (ms_base + material) / ms_div;
 
     eval = (eval * (200 - board.fifty_move_count())) / 200;
-    eval += (corr_histories_.get(board) + cont_corr_history_.get(board, stack)) / 1024;
+    eval += correction_val;
 
     return std::clamp(eval, SCORE_TB_LOSS_IN_MAX_PLY + 1, SCORE_TB_WIN_IN_MAX_PLY - 1);
 }
@@ -953,6 +957,10 @@ Score Search::normalize_score(Score score) const {
     double a = as[0] * std::pow(m, 3) + as[1] * std::pow(m, 2) + as[2] * m + as[3];
 
     return static_cast<Score>(std::round(100 * static_cast<Score>(score) / a));
+}
+
+int Search::correction_value(Stack* stack) const {
+    return (corr_histories_.get(board) + cont_corr_history_.get(board, stack)) / 1024;
 }
 
 unsigned int Search::probe_wdl() const {

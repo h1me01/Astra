@@ -108,6 +108,7 @@ PARAM(lmr_tt_depth, 1090, 1, 2048);
 PARAM(lmr_tt_score, 603, 1, 2048);
 PARAM(lmr_tt_move_noisy, 883, 1, 2048);
 PARAM(lmr_in_check, 1070, 1, 2048);
+PARAM(lmr_corr, 3072, 1, 6144);
 PARAM(lmr_quiet_hist_mul, 96, 1, 300);
 PARAM(lmr_noisy_hist_mul, 78, 1, 300);
 
