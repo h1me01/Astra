@@ -376,8 +376,12 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack* stack, bool cut
     }
 
     // hindsight adjustment
-    if ((stack - 1)->reduction >= 2250 && !(stack->static_eval > -(stack - 1)->static_eval))
+    if (is_valid((stack - 1)->static_eval)                   //
+        && (stack - 1)->reduction >= 2250                    //
+        && !(stack->static_eval > -(stack - 1)->static_eval) //
+    ) {
         depth++;
+    }
 
     // razoring
     if (!pv_node && eval < alpha - rzr_base - rzr_mult * depth * depth)
