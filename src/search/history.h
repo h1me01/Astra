@@ -180,24 +180,32 @@ class ContinuationCorrectionHistory {
 
     void update(const Board& board, int bonus, const Stack* stack) {
         Move m = (stack - 1)->move;
-        if (!m || !(stack - 2)->move)
+        if (!m)
             return;
 
         Piece pc = board.piece_at(m.to());
         assert(is_valid(pc));
 
-        update_correction((*(stack - 2)->cont_corr_hist)(pc, m.to()), bonus);
+        for (auto i : {2, 4})
+            if ((stack - i)->move)
+                update_correction((*(stack - i)->cont_corr_hist)(pc, m.to()), bonus);
     }
 
     int get(const Board& board, const Stack* stack) const {
         Move m = (stack - 1)->move;
-        if (!m || !(stack - 2)->move)
+        if (!m)
             return 0;
 
         Piece pc = board.piece_at(m.to());
         assert(is_valid(pc));
 
-        return cont_corr_weight * (*(stack - 2)->cont_corr_hist)(pc, m.to());
+        int value = 0;
+        if ((stack - 2)->move)
+            value += cont_corr_weight * (*(stack - 2)->cont_corr_hist)(pc, m.to());
+        if ((stack - 4)->move)
+            value += 7 * (*(stack - 4)->cont_corr_hist)(pc, m.to());
+
+        return value;
     }
 
     PieceToContinuation* get() { return &data_(NO_PIECE, 0); }
