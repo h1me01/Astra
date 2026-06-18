@@ -143,7 +143,9 @@ PARAM(quiet_checker_bonus, 72, 0, 150);
 PARAM(p_corr_weight, 21, 1, 168);
 PARAM(m_corr_weight, 17, 1, 168);
 PARAM(np_corr_weight, 46, 1, 168);
-PARAM(cont_corr_weight, 13, 1, 168);
+PARAM(cont_corr_weight2, 13, 1, 168);
+PARAM(cont_corr_weight4, 7, 1, 168);
+
 
 PARAM(mp_threat_mul, 15, 1, 40);
 

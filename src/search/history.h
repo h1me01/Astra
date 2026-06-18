@@ -201,9 +201,9 @@ class ContinuationCorrectionHistory {
 
         int value = 0;
         if ((stack - 2)->move)
-            value += cont_corr_weight * (*(stack - 2)->cont_corr_hist)(pc, m.to());
+            value += cont_corr_weight2 * (*(stack - 2)->cont_corr_hist)(pc, m.to());
         if ((stack - 4)->move)
-            value += 7 * (*(stack - 4)->cont_corr_hist)(pc, m.to());
+            value += cont_corr_weight4 * (*(stack - 4)->cont_corr_hist)(pc, m.to());
 
         return value;
     }
