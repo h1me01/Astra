@@ -10,6 +10,7 @@ misc/
 *.exe
 astra*
 makefile.windows
+makefile.linux
 
 *.nnue
 
