@@ -390,7 +390,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack* stack, bool cut
         return quiescence<NON_PV>(alpha, beta, stack);
 
     // reverse futility pruning
-    if (!pv_node                                                                    //
+    if (!tt_pv                                                                      //
         && depth < 11                                                               //
         && !is_win(eval)                                                            //
         && !is_loss(beta)                                                           //
