@@ -97,7 +97,7 @@ void gen_pawn_moves(MoveList<Move>& ml, const Board& board, const Bitboard targe
     }
 }
 
-template <Color us, GenType gt, PieceType pt>
+template <Color us, PieceType pt>
 void gen_piece_moves(MoveList<Move>& ml, const Board& board, Bitboard pieces, const Bitboard targets) {
     assert(pt != PAWN);
     assert(is_valid(pt));
@@ -137,19 +137,19 @@ void gen_all_moves(MoveList<Move>& ml, const Board& board) {
     if constexpr (gt != GenType::NOISY)
         targets |= ~occ;
 
-    gen_piece_moves<us, gt, KING>(ml, board, board.piece_bb<KING>(us), targets);
+    gen_piece_moves<us, KING>(ml, board, board.piece_bb<KING>(us), targets);
 
     // if double check, then only king moves are legal
     if (pop_count(checkers) > 1)
         return;
 
-    const Bitboard check_targets = checkers ? between_bb(our_ksq, lsb(checkers)) | checkers : ~0;
+    const Bitboard check_targets = checkers ? between_bb(our_ksq, lsb(checkers)) | checkers : ~Bitboard(0);
     const Bitboard piece_targets = targets & check_targets;
 
     gen_pawn_moves<us, gt>(ml, board, check_targets);
-    gen_piece_moves<us, gt, KNIGHT>(ml, board, board.piece_bb<KNIGHT>(us), piece_targets);
-    gen_piece_moves<us, gt, BISHOP>(ml, board, board.diag_sliders(us), piece_targets);
-    gen_piece_moves<us, gt, ROOK>(ml, board, board.orth_sliders(us), piece_targets);
+    gen_piece_moves<us, KNIGHT>(ml, board, board.piece_bb<KNIGHT>(us), piece_targets);
+    gen_piece_moves<us, BISHOP>(ml, board, board.diag_sliders(us), piece_targets);
+    gen_piece_moves<us, ROOK>(ml, board, board.orth_sliders(us), piece_targets);
 
     // castling moves
     if ((gt != GenType::NOISY) && !checkers) {

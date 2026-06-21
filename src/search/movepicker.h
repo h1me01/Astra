@@ -6,13 +6,9 @@
 
 namespace astra::search {
 
-enum SearchType : uint8_t {
-    NEGAMAX,
-    QUIESCENCE,
-    PROBCUT,
-};
+enum class SearchType : uint8_t { NEGAMAX, QUIESCENCE, PROBCUT };
 
-enum Stage : uint8_t {
+enum class Stage : uint8_t {
     PLAY_TT_MOVE,
     GEN_NOISY,
     PLAY_NOISY,

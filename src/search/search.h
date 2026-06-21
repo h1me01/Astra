@@ -14,11 +14,7 @@
 
 namespace astra::search {
 
-enum NodeType : uint8_t {
-    ROOT,
-    PV,
-    NON_PV,
-};
+enum class Node : uint8_t { ROOT, PV, NON_PV };
 
 struct RootMove : public Move {
     RootMove() = default;
@@ -78,10 +74,10 @@ class Search {
 
     Score aspiration(int depth, Stack* stack);
 
-    template <NodeType nt>
+    template <Node node>
     Score negamax(int depth, Score alpha, Score beta, Stack* stack, bool cut_node = false);
 
-    template <NodeType nt>
+    template <Node node>
     Score quiescence(Score alpha, Score beta, Stack* stack);
 
     void make_move(Move move, Stack* stack);

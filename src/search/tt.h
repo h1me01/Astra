@@ -5,12 +5,7 @@
 
 namespace astra::search {
 
-enum Bound : uint8_t {
-    NO_BOUND,
-    LOWER_BOUND,
-    UPPER_BOUND,
-    EXACT_BOUND,
-};
+enum class Bound : uint8_t { NONE, LOWER, UPPER, EXACT };
 
 #pragma pack(push, 1)
 class TTEntry {
@@ -44,7 +39,7 @@ class TTEntry {
     Move move_ = Move::none();
     int16_t score_ = SCORE_NONE;
     int16_t eval_ = SCORE_NONE;
-    uint8_t agepvbound = NO_BOUND;
+    uint8_t agepvbound = 0;
 };
 #pragma pack(pop)
 
@@ -81,7 +76,11 @@ class TTable {
 };
 
 inline bool valid_tt_score(Score tt_score, Score score, Bound bound) {
-    return (tt_score >= score) ? (bound & LOWER_BOUND) : (bound & UPPER_BOUND);
+    if (bound == Bound::LOWER)
+        return tt_score >= score;
+    if (bound == Bound::UPPER)
+        return tt_score < score;
+    return bound == Bound::EXACT;
 }
 
 extern TTable tt;

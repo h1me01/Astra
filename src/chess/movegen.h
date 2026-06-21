@@ -29,9 +29,9 @@ class MoveList {
     }
 
     int idx_of(const T move) const {
-        for (const auto& m : *this)
-            if (m == move)
-                return static_cast<int>(&m - begin());
+        for (int i = 0; i < size(); ++i)
+            if (data_(i) == move)
+                return i;
         return -1;
     }
 

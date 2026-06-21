@@ -359,7 +359,7 @@ bool Board::is_pseudo_legal(Move move) const {
     const Bitboard occ = us_bb | them_bb;
     const Bitboard from_bb = sq_bb(from);
 
-    const Bitboard target_bb = in_check() ? between_bb(ksq, lsb(info.checkers)) | info.checkers : ~0ULL;
+    const Bitboard target_bb = in_check() ? between_bb(ksq, lsb(info.checkers)) | info.checkers : ~Bitboard(0);
 
     if (!move)
         return false;

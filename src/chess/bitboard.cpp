@@ -22,9 +22,9 @@ struct SliderAttackTable {
         assert(is_valid(sq));
 
 #if defined(__BMI2__)
-        int idx = _pext_u64(occ, mask(sq));
+        uint64_t idx = _pext_u64(occ, mask(sq));
 #else
-        int idx = (occ & mask(sq)) * magics(sq) >> shifts(sq);
+        uint64_t idx = (occ & mask(sq)) * magics(sq) >> shifts(sq);
 #endif
         return attacks(sq, idx);
     }
@@ -71,9 +71,9 @@ void init_slider_table(Table& table, PieceType pt) {
         Bitboard blockers = 0;
         do {
 #if defined(__BMI2__)
-            const int idx = _pext_u64(blockers, table.mask(sq));
+            uint64_t idx = _pext_u64(blockers, table.mask(sq));
 #else
-            const int idx = (blockers * table.magics(sq)) >> table.shifts(sq);
+            uint64_t idx = (blockers * table.magics(sq)) >> table.shifts(sq);
 #endif
             table.attacks(sq, idx) = sliding_attack(pt, sq, blockers);
             blockers = (blockers - table.mask(sq)) & table.mask(sq);
@@ -99,13 +99,13 @@ void init() {
     }
 
     for (Square sq1 = SQ_A1; sq1 < NUM_SQUARES; ++sq1) {
-        for (PieceType pt : {BISHOP, ROOK}) {
-            for (Square sq2 = SQ_A1; sq2 < NUM_SQUARES; ++sq2) {
+        for (Square sq2 = SQ_A1; sq2 < NUM_SQUARES; ++sq2) {
+            SQUARES_BETWEEN(sq1, sq1) |= sq_bb(sq2);
+            for (PieceType pt : {BISHOP, ROOK}) {
                 if (PSEUDO_ATTACKS(pt, sq1) & sq_bb(sq2)) {
                     LINE(sq1, sq2) = (attacks_bb(pt, sq1) & attacks_bb(pt, sq2)) | sq_bb(sq1) | sq_bb(sq2);
                     SQUARES_BETWEEN(sq1, sq2) = attacks_bb(pt, sq1, sq_bb(sq2)) & attacks_bb(pt, sq2, sq_bb(sq1));
                 }
-                SQUARES_BETWEEN(sq1, sq1) |= sq_bb(sq2);
             }
         }
     }

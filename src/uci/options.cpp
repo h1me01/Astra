@@ -107,11 +107,11 @@ void Options::update_syzygy_path(const std::string& path) {
 void Options::apply(const std::string& name) {
     const std::string lower_name = to_lower(name);
     if (lower_name == "syzygypath")
-        update_syzygy_path(options_[name]);
+        update_syzygy_path(get(name));
     else if (lower_name == "hash")
-        search::tt.init(std::stoi(options_[name]));
+        search::tt.init(std::stoi(get(name)));
     else if (lower_name == "threads")
-        search::thread_pool.set_count(std::stoi(get("Threads")));
+        search::thread_pool.set_count(std::stoi(get(name)));
 }
 
 } // namespace astra::uci

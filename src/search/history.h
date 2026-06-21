@@ -13,12 +13,16 @@ namespace astra::search {
 
 namespace {
 
-void update_history(int16_t& v, int bonus) { v += bonus - v * std::abs(bonus) / 16384; }
-void update_correction(int16_t& v, int bonus) { v += bonus - v * std::abs(bonus) / 1024; }
+template <int Div>
+void apply_bonus(int16_t& v, int bonus) {
+    v += bonus - v * std::abs(bonus) / Div;
+}
 
 } // namespace
 
 class QuietHistory {
+    static constexpr int BONUS_DIV = 16384;
+
   public:
     QuietHistory() { clear(); }
 
@@ -27,7 +31,7 @@ class QuietHistory {
     void update(Color c, Move move, int bonus) {
         assert(move);
         assert(is_valid(c));
-        update_history(data_(c, move.from(), move.to()), bonus);
+        apply_bonus<BONUS_DIV>(data_(c, move.from(), move.to()), bonus);
     }
 
     int get(Color c, Move move) const {
@@ -41,6 +45,8 @@ class QuietHistory {
 };
 
 class NoisyHistory {
+    static constexpr int BONUS_DIV = 16384;
+
   public:
     NoisyHistory() { clear(); }
 
@@ -55,7 +61,7 @@ class NoisyHistory {
         assert(is_valid(pc));
         assert(is_valid(captured) || move.is_prom());
 
-        update_history(data_(pc, move.to(), captured), bonus);
+        apply_bonus<BONUS_DIV>(data_(pc, move.to(), captured), bonus);
     }
 
     int get(const Board& board, Move move) const {
@@ -77,6 +83,7 @@ class NoisyHistory {
 
 class PawnHistory {
     static constexpr size_t SIZE = 8192;
+    static constexpr int BONUS_DIV = 16384;
 
   public:
     PawnHistory() { clear(); }
@@ -89,7 +96,7 @@ class PawnHistory {
         Piece pc = board.piece_at(move.from());
         assert(is_valid(pc));
 
-        update_history(data_(idx(board.pawn_hash()), pc, move.to()), bonus);
+        apply_bonus<BONUS_DIV>(data_(idx(board.pawn_hash()), pc, move.to()), bonus);
     }
 
     int get(const Board& board, Move move) const {
@@ -108,6 +115,8 @@ class PawnHistory {
 };
 
 class ContinuationHistory {
+    static constexpr int BONUS_DIV = 16384;
+
   public:
     ContinuationHistory() { clear(); }
 
@@ -119,10 +128,11 @@ class ContinuationHistory {
 
         for (int i : {1, 2, 4, 6})
             if ((stack - i)->move)
-                update_history((*(stack - i)->cont_hist)(pc, to), bonus);
+                apply_bonus<BONUS_DIV>((*(stack - i)->cont_hist)(pc, to), bonus);
     }
 
     PieceToContinuation* get() { return &data_(0, 0, NO_PIECE, 0); }
+
     PieceToContinuation* get(bool in_check, bool is_cap, Piece pc, Square to) {
         assert(is_valid(to));
         assert(is_valid(pc));
@@ -135,44 +145,46 @@ class ContinuationHistory {
 
 class CorrectionHistories {
     static constexpr size_t SIZE = 16384;
+    static constexpr int BONUS_DIV = 1024;
 
   public:
     CorrectionHistories() { clear(); }
 
-    void clear() {
-        pawn_.fill(0);
-        minor_piece_.fill(0);
-        w_non_pawn_.fill(0);
-        b_non_pawn_.fill(0);
-    }
+    void clear() { data_.fill(0); }
 
     void update(const Board& board, int bonus) {
-        Color stm = board.side_to_move();
-
-        update_correction(pawn_(stm, idx(board.pawn_hash())), bonus);
-        update_correction(minor_piece_(stm, idx(board.minor_piece_hash())), bonus);
-        update_correction(w_non_pawn_(stm, idx(board.non_pawn_hash(WHITE))), bonus);
-        update_correction(b_non_pawn_(stm, idx(board.non_pawn_hash(BLACK))), bonus);
+        int i = 0;
+        for (auto hash : hashes(board))
+            apply_bonus<BONUS_DIV>(data_(i++, board.side_to_move(), idx(hash)), bonus);
     }
 
     int get(const Board& board) const {
-        Color stm = board.side_to_move();
-        return p_corr_weight * pawn_(stm, idx(board.pawn_hash()))                   //
-               + m_corr_weight * minor_piece_(stm, idx(board.minor_piece_hash()))   //
-               + np_corr_weight * w_non_pawn_(stm, idx(board.non_pawn_hash(WHITE))) //
-               + np_corr_weight * b_non_pawn_(stm, idx(board.non_pawn_hash(BLACK)));
+        const auto hashes = this->hashes(board);
+
+        int i = 0, value = 0;
+        for (auto weight : {p_corr_weight, m_corr_weight, np_corr_weight, np_corr_weight}) {
+            value += weight * data_(i, board.side_to_move(), idx(hashes(i)));
+            ++i;
+        }
+
+        return value;
     }
 
   private:
-    NDArray<int16_t, NUM_COLORS, SIZE> pawn_;
-    NDArray<int16_t, NUM_COLORS, SIZE> minor_piece_;
-    NDArray<int16_t, NUM_COLORS, SIZE> w_non_pawn_;
-    NDArray<int16_t, NUM_COLORS, SIZE> b_non_pawn_;
+    NDArray<int16_t, 4, NUM_COLORS, SIZE> data_;
 
     int idx(Hash hash) const { return hash & (SIZE - 1); }
+
+    NDArray<Hash, 4> hashes(const Board& board) const {
+        return NDArray<Hash, 4>{
+            board.pawn_hash(), board.minor_piece_hash(), board.non_pawn_hash(WHITE), board.non_pawn_hash(BLACK)
+        };
+    }
 };
 
 class ContinuationCorrectionHistory {
+    static constexpr int BONUS_DIV = 1024;
+
   public:
     ContinuationCorrectionHistory() { clear(); }
 
@@ -188,7 +200,7 @@ class ContinuationCorrectionHistory {
 
         for (auto i : {2, 4})
             if ((stack - i)->move)
-                update_correction((*(stack - i)->cont_corr_hist)(pc, m.to()), bonus);
+                apply_bonus<BONUS_DIV>((*(stack - i)->cont_corr_hist)(pc, m.to()), bonus);
     }
 
     int get(const Board& board, const Stack* stack) const {

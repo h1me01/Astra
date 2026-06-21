@@ -69,10 +69,10 @@ class DirtyPieceList {
         return data_(i);
     }
 
-    DirtyPiece* begin() { return size() ? &data_(0) : nullptr; }
-    DirtyPiece* end() { return size() ? (&data_(0) + size()) : nullptr; }
-    const DirtyPiece* begin() const { return size() ? &data_(0) : nullptr; }
-    const DirtyPiece* end() const { return size() ? (&data_(0) + size()) : nullptr; }
+    DirtyPiece* begin() { return &data_(0); }
+    DirtyPiece* end() { return &data_(0) + size(); }
+    const DirtyPiece* begin() const { return &data_(0); }
+    const DirtyPiece* end() const { return &data_(0) + size(); }
 
     bool empty() const { return idx_ < 0; }
     int size() const { return idx_ + 1; }

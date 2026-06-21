@@ -146,7 +146,6 @@ PARAM(np_corr_weight, 46, 1, 168);
 PARAM(cont_corr_weight2, 13, 1, 168);
 PARAM(cont_corr_weight4, 7, 1, 168);
 
-
 PARAM(mp_threat_mul, 15, 1, 40);
 
 #ifdef TUNE

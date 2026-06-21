@@ -31,12 +31,12 @@ void TTEntry::store(Hash hash, Move move, Score score, Score eval, Bound bound, 
             score -= ply;
     }
 
-    if (bound == EXACT_BOUND || hash_ != hash16 || depth + 4 + 2 * pv > depth_) {
+    if (bound == Bound::EXACT || hash_ != hash16 || depth + 4 + 2 * pv > depth_) {
         hash_ = hash16;
         depth_ = depth;
         score_ = score;
         eval_ = eval;
-        agepvbound = static_cast<uint8_t>(bound + (pv << 2)) | tt.age();
+        agepvbound = static_cast<uint8_t>(static_cast<uint8_t>(bound) + (pv << 2)) | tt.age();
     }
 }
 

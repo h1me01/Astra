@@ -16,26 +16,24 @@ constexpr Bitboard sq_bb(Square sq) {
     return (1ULL << sq);
 }
 
-template <File f>
-constexpr Bitboard file_bb() {
-    assert(is_valid(f));
-    return 0x0101010101010101ULL << f;
-}
-
 constexpr Bitboard file_bb(File f) {
     assert(is_valid(f));
     return 0x0101010101010101ULL << f;
 }
 
-template <Rank r>
-constexpr Bitboard rank_bb() {
-    assert(is_valid(r));
-    return 0xFFULL << (r * 8);
+template <File f>
+constexpr Bitboard file_bb() {
+    return file_bb(f);
 }
 
 constexpr Bitboard rank_bb(Rank r) {
     assert(is_valid(r));
     return 0xFFULL << (r * 8);
+}
+
+template <Rank r>
+constexpr Bitboard rank_bb() {
+    return rank_bb(r);
 }
 
 constexpr Bitboard kingside_castling_bb(Color c) {
