@@ -51,10 +51,7 @@ Move MovePicker<st>::next() {
     case Stage::PLAY_NOISY:
         while (curr_move_idx_ < ml_main_.size()) {
             select_best(ml_main_, curr_move_idx_);
-
             auto move = ml_main_[curr_move_idx_++];
-            if (move == tt_move_)
-                continue;
 
             // we want to play noisy moves first in qsearch, doesn't matter if its see fails
             int threshold = (st == SearchType::NEGAMAX) ? -move.score / 32 : probcut_threshold_;
@@ -80,9 +77,7 @@ Move MovePicker<st>::next() {
     case Stage::PLAY_QUIETS:
         while (curr_move_idx_ < ml_main_.size() && !skip_quiets_) {
             select_best(ml_main_, curr_move_idx_);
-            Move move = ml_main_[curr_move_idx_++];
-            if (move != tt_move_)
-                return move;
+            return ml_main_[curr_move_idx_++];
         }
 
         if (st == SearchType::QUIESCENCE)
@@ -107,6 +102,8 @@ void MovePicker<st>::gen_score_noisy() {
     gen_moves<GenType::NOISY>(ml, board_);
 
     for (auto& m : ml) {
+        if (m == tt_move_)
+            continue;
         int score = noisy_history_.get(board_, m) + 16 * piece_values(type_of(board_.capture_piece(m)));
         ml_main_.add(ScoredMove{m, score});
     }
@@ -125,6 +122,9 @@ void MovePicker<st>::gen_score_quiets() {
     threats(QUEEN) = board_.attacks_by<ROOK>(~stm) | threats(ROOK);
 
     for (auto& m : ml) {
+        if (m == tt_move_)
+            continue;
+
         const Square from = m.from();
         const Square to = m.to();
         const Piece pc = board_.piece_at(from);
