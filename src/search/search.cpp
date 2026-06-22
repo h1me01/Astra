@@ -293,7 +293,7 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack* stack, bool cut
             Square prev_sq = (stack - 1)->move ? (stack - 1)->move.to() : NO_SQUARE;
             if (is_valid(prev_sq) && (stack - 1)->move.is_quiet() && (stack - 1)->move_count <= 3) {
                 int malus = std::min<int>(tt_hist_malus_mult * depth + tt_hist_malus_bias, tt_hist_malus_max);
-                cont_history_.update((stack - 1)->moved_piece, prev_sq, -malus, stack - 1);
+                cont_history_.update(board.piece_at(prev_sq), prev_sq, -malus, stack - 1);
             }
         }
 
@@ -410,7 +410,6 @@ Score Search::negamax(int depth, Score alpha, Score beta, Stack* stack, bool cut
         const int r = 4 + depth / 3 + std::min<int>(4, (eval - beta) / nmp_eval_div);
 
         stack->move = Move::null();
-        stack->moved_piece = NO_PIECE;
         stack->cont_hist = cont_history_.get();
         stack->cont_corr_hist = cont_corr_history_.get();
 
@@ -492,7 +491,8 @@ movesloop:
         if (root_node && !found_root_move(move))
             continue;
 
-        uint64_t start_nodes = nodes_;
+        const uint64_t start_nodes = nodes_;
+        const Piece moved_piece = board.piece_at(move.from());
 
         stack->move_count = ++move_count;
 
@@ -502,9 +502,9 @@ movesloop:
         if (move.is_quiet()) {
             auto pc = board.piece_at(move.from());
 
-            history = quiet_history_.get(board.side_to_move(), move) //
-                      + pawn_history_.get(board, move)               //
-                      + (*(stack - 1)->cont_hist)(pc, move.to())     //
+            history = quiet_history_.get(stm, move)              //
+                      + pawn_history_.get(board, move)           //
+                      + (*(stack - 1)->cont_hist)(pc, move.to()) //
                       + (*(stack - 2)->cont_hist)(pc, move.to());
         } else {
             history = noisy_history_.get(board, move);
@@ -617,7 +617,7 @@ movesloop:
 
                 if (move.is_quiet()) {
                     int bonus = (score <= alpha ? -1 : score >= beta ? 1 : 0) * history_bonus(new_depth);
-                    cont_history_.update(stack->moved_piece, move.to(), bonus, stack);
+                    cont_history_.update(moved_piece, move.to(), bonus, stack);
                 }
             }
         }
@@ -868,14 +868,15 @@ void Search::make_move(Move move, Stack* stack) {
 
     nodes_.fetch_add(1, std::memory_order_relaxed);
 
+    Piece moved_piece = board.piece_at(move.from());
+
     stack->move = move;
-    stack->moved_piece = board.piece_at(move.from());
 
     auto dirty_pieces = board.make_move(move);
     accum_list_.add(dirty_pieces, board.king_sq(WHITE), board.king_sq(BLACK));
 
-    stack->cont_hist = cont_history_.get(board.in_check(), move.is_noisy(), stack->moved_piece, move.to());
-    stack->cont_corr_hist = cont_corr_history_.get(stack->moved_piece, move.to());
+    stack->cont_hist = cont_history_.get(board.in_check(), move.is_noisy(), moved_piece, move.to());
+    stack->cont_corr_hist = cont_corr_history_.get(moved_piece, move.to());
 
     tt.prefetch(board.hash());
 }

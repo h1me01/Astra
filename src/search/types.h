@@ -68,7 +68,6 @@ struct Stack {
     Move move = Move::none();
     Move skipped = Move::none();
 
-    Piece moved_piece = NO_PIECE;
     Score static_eval = SCORE_NONE;
 
     PVLine pv;
